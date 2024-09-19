@@ -1,2 +1,2 @@
 # ALTITUDE SITE
- Site de uma instituição para prover cursos profissionais, tecnicos e superiores.
+ Site de uma instituição para prover cursos profissionais, técnicos e superiores.

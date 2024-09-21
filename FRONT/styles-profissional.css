@@ -538,3 +538,34 @@ footer p {
     margin: 0;
     font-size: 14px;
 }
+/* Estilo do Cabeçalho */
+header {
+    background-color: var(--branco);
+    border-bottom: 2px solid var(--azul-escuro);
+    padding: 10px 20px;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+
+.top-bar {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    max-width: 1200px;
+    margin: 0 auto;
+    flex-wrap: wrap;
+}
+
+.institution-logo {
+    display: flex;
+    align-items: center;
+    justify-content: center; /* Centraliza a logo dentro do contêiner */
+    width: auto;
+    height: auto;
+}
+
+.institution-logo .logo {
+    width: 160px; /*largura*/
+    height: auto; /* Mantém a proporção da imagem */
+    max-width: 100%; /* Garante que a logo não ultrapasse o tamanho do contêiner */
+    max-height: 110px; /*  altura */
+}

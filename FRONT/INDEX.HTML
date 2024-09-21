@@ -5,17 +5,41 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Página Inicial - Instituição de Ensino Altitude</title>
     <link rel="stylesheet" href="styles-inicial.css">
+    <style>
+        /* Estilo do Cabeçalho Fixo Apenas para index.html */
+        header {
+            background-color: var(--branco);
+            border-bottom: 2px solid var(--azul-escuro);
+            padding: 10px 20px;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+            position: fixed; /* Cabeçalho fixo apenas no index.html */
+            top: 0;
+            width: 100%;
+            z-index: 1000;
+        }
+
+        main {
+            padding-top: 80px; /* Adiciona espaço para evitar que o conteúdo fique oculto atrás do cabeçalho */
+        }
+
+        /* Ajuste adicional para logo clicável */
+        .institution-logo a {
+            text-decoration: none; /* Remove sublinhado do link */
+            color: inherit; /* Mantém a cor original do texto */
+        }
+    </style>
 </head>
 <body>
-    
     <header>
         <div class="top-bar">
             <div class="institution-logo">
-                <img src="LOGO.png" alt="Emblema Altitude" class="logo">
+                <a href="index.html">
+                    <img src="LOGO.png" alt="Emblema Altitude" class="logo">
+                </a>
             </div>
             <nav class="navbar">
                 <ul>
-                    <li><a href="index.html" class="nav-item">Início</a></li>
+                    <li><span class="current-page">Início</span></li> <!-- Indicação de página atual -->
                     <li class="dropdown">
                         <a href="#" class="dropbtn nav-item">Cursos</a>
                         <div class="dropdown-content">
@@ -23,9 +47,9 @@
                             <a href="cursos-tecnico.html">Técnico</a>
                         </div>
                     </li>
-                    <li><a href="#certificados" class="nav-item">Certificados</a></li>
-                    <li><a href="#sobre" class="nav-item">Sobre Nós</a></li>
-                    <li><a href="#ajuda" class="nav-item">Ajuda</a></li>
+                    <li><a href="#certificados">Certificados</a></li>
+                    <li><a href="#sobre">Sobre Nós</a></li>
+                    <li><a href="#ajuda">Ajuda</a></li>
                 </ul>
             </nav>
             <div class="header-buttons">
@@ -34,10 +58,9 @@
             </div>
         </div>
     </header>
-    
     <main>
         <section id="inicio">
-            <h2>Bem-vindo à Altitude</h2>
+            <h1>Bem-vindo à Altitude</h1>
             <p>Estamos comprometidos com a excelência em educação e o desenvolvimento dos nossos alunos. Explore nossos cursos e faça parte da nossa comunidade.</p>
         </section>
     </main>

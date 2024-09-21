@@ -1,0 +1,422 @@
+/* Paleta de Cores */
+:root {
+    --azul-escuro: #003366;  /* Azul escuro elegante */
+    --azul-medio: #005b99;   /* Azul suave e moderno */
+    --azul-claro: #1e90ff;   /* Azul claro para destaques */
+    --cinza-claro: #f0f0f0;  /* Cinza claro suave */
+    --cinza-medio: #888888;  /* Cinza médio para textos secundários */
+    --branco: #ffffff;       /* Branco limpo */
+}
+
+/* Estilos Gerais */
+body {
+    font-family: 'Arial', sans-serif;
+    margin: 0;
+    padding: 0;
+    background-color: var(--cinza-claro); /* Fundo cinza claro */
+    color: var(--azul-escuro); /* Texto padrão em azul escuro */
+    line-height: 1.6;
+}
+
+/* Estilo do Cabeçalho */
+header {
+    background-color: var(--branco); /* Fundo branco */
+    border-bottom: 2px solid var(--azul-escuro); /* Borda azul escuro */
+    padding: 10px 20px;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1); /* Sombra sutil */
+}
+
+.top-bar {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    max-width: 1200px;
+    margin: 0 auto;
+    flex-wrap: wrap; /* Reordena itens em telas menores */
+}
+
+.institution-logo {
+    display: flex;
+    align-items: center;
+}
+
+.institution-logo .logo {
+    width: 80px; /* Tamanho do logo */
+    height: auto;
+}
+
+/* Menu de Navegação */
+.navbar {
+    flex-grow: 1;
+    display: flex;
+    justify-content: center;
+}
+
+.navbar ul {
+    list-style: none;
+    padding: 0;
+    margin: 0;
+    display: flex;
+    gap: 20px; /* Espaçamento entre os itens do menu */
+}
+
+.navbar ul li {
+    position: relative; /* Necessário para o dropdown */
+}
+
+.navbar ul li a {
+    text-decoration: none;
+    color: var(--azul-escuro); /* Azul escuro para links */
+    font-size: 16px;
+    font-weight: bold;
+    transition: color 0.3s ease;
+    padding: 10px 15px;
+}
+
+.navbar ul li a:hover {
+    color: var(--azul-claro); /* Destaque azul claro para hover */
+}
+
+/* Estilos do Dropdown */
+.dropdown {
+    display: inline-block;
+}
+
+.dropdown-content {
+    display: none;
+    position: absolute;
+    background-color: var(--branco); /* Fundo branco */
+    min-width: 160px;
+    box-shadow: 0 8px 16px rgba(0, 0, 0, 0.1); /* Sombra sutil */
+    z-index: 1;
+    border: 1px solid var(--azul-escuro); /* Borda */
+    top: 100%; /* Alinha o dropdown abaixo do menu principal */
+}
+
+.dropdown-content a {
+    color: var(--azul-escuro); /* Cor dos links */
+    padding: 12px 16px;
+    text-decoration: none;
+    display: block;
+    transition: background-color 0.3s ease;
+}
+
+.dropdown-content a:hover {
+    background-color: var(--cinza-claro); /* Fundo cinza no hover */
+}
+
+/* Mostrar o dropdown ao passar o mouse */
+.dropdown:hover .dropdown-content {
+    display: block; /* Exibe o dropdown ao passar o mouse */
+}
+
+/* Botões do Cabeçalho */
+.header-buttons {
+    display: flex;
+    gap: 10px; /* Espaçamento entre os botões */
+}
+
+.btn-outline, .btn-primary {
+    padding: 10px 20px;
+    text-decoration: none;
+    font-size: 14px;
+    border-radius: 5px;
+    transition: background-color 0.3s, color 0.3s;
+    text-align: center; /* Centraliza o texto nos botões */
+}
+
+.btn-outline {
+    border: 2px solid var(--azul-escuro); /* Azul escuro */
+    background-color: transparent;
+    color: var(--azul-escuro); /* Azul escuro */
+}
+
+.btn-outline:hover {
+    background-color: var(--azul-escuro); /* Fundo azul escuro no hover */
+    color: var(--branco); /* Texto branco no hover */
+}
+
+.btn-primary {
+    border: none;
+    background-color: var(--azul-claro); /* Azul claro */
+    color: var(--branco);
+}
+
+.btn-primary:hover {
+    background-color: var(--azul-medio); /* Azul médio ao passar o mouse */
+}
+
+/* Responsividade */
+@media (max-width: 768px) {
+    .navbar ul {
+        flex-direction: column; /* Itens do menu em coluna */
+        align-items: center; /* Centraliza os itens do menu */
+        gap: 10px; /* Reduz o espaço entre os itens do menu */
+    }
+
+    .header-buttons {
+        flex-direction: column; /* Botões um embaixo do outro */
+        align-items: center; /* Centraliza os botões */
+        gap: 5px; /* Espaçamento reduzido entre os botões */
+        margin-top: 10px; /* Espaçamento superior */
+    }
+
+    .btn-outline, .btn-primary {
+        width: 100%; /* Botões ocupam 100% da largura do contêiner */
+    }
+
+    .institution-logo {
+        justify-content: center; /* Centraliza o logo em telas menores */
+        margin-bottom: 20px; /* Espaço extra para separar logo do menu */
+    }
+}
+
+@media (max-width: 480px) {
+    header {
+        padding: 10px; /* Reduz o padding para telas menores */
+    }
+
+    .navbar ul li a {
+        font-size: 14px; /* Reduz o tamanho da fonte do menu */
+    }
+
+    .btn-outline, .btn-primary {
+        font-size: 12px; /* Reduz o tamanho da fonte dos botões */
+    }
+}
+
+/* Estilos do Rodapé */
+footer {
+    background-color: var(--azul-escuro); /* Azul escuro */
+    color: var(--branco);
+    text-align: center;
+    padding: 10px 0;
+}
+
+footer p {
+    margin: 0;
+    font-size: 14px;
+}
+.current-page {
+    color: var(--azul-claro); /* Cor diferenciada para a página atual */
+    font-weight: bold; /* Negrito para destaque */
+    font-size: 18px; /* Aumenta o tamanho da fonte */
+    cursor: default; /* Remove o cursor de link */
+    pointer-events: none; /* Desativa a interação */
+    background-color: var(--cinza-claro); /* Fundo cinza claro */
+    padding: 8px 12px; /* Adiciona espaçamento interno */
+    border-radius: 5px; /* Arredonda os cantos */
+}
+
+.current-page:hover {
+    color: var(--azul-claro); /* Mantém a mesma cor ao passar o mouse */
+}
+/* Paleta de Cores */
+:root {
+    --azul-escuro: #003366;
+    --azul-medio: #005b99;
+    --azul-claro: #1e90ff;
+    --cinza-claro: #f0f0f0;
+    --cinza-medio: #888888;
+    --branco: #ffffff;
+}
+
+/* Estilo do Corpo */
+body {
+    font-family: 'Arial', sans-serif;
+    margin: 0;
+    padding: 0;
+    background-color: var(--cinza-claro);
+    color: var(--azul-escuro);
+    line-height: 1.6;
+}
+
+/* Estilo do Cabeçalho */
+header {
+    background-color: var(--branco);
+    border-bottom: 2px solid var(--azul-escuro);
+    padding: 10px 20px;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+
+.top-bar {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    max-width: 1200px;
+    margin: 0 auto;
+    flex-wrap: wrap;
+}
+
+.institution-logo {
+    display: flex;
+    align-items: center;
+}
+
+.institution-logo .logo {
+    width: 80px;
+    height: auto;
+}
+
+.navbar {
+    flex-grow: 1;
+    display: flex;
+    justify-content: center;
+}
+
+.navbar ul {
+    list-style: none;
+    padding: 0;
+    margin: 0;
+    display: flex;
+    gap: 20px;
+}
+
+.navbar ul li {
+    position: relative;
+}
+
+.navbar ul li a, .navbar ul li .current-page {
+    text-decoration: none;
+    color: var(--azul-escuro);
+    font-size: 16px;
+    font-weight: bold;
+    transition: color 0.3s ease;
+    padding: 10px 15px;
+}
+
+.navbar ul li a:hover {
+    color: var(--azul-claro);
+}
+
+.current-page {
+    color: var(--azul-claro);
+    font-weight: bold;
+    font-size: 18px;
+    cursor: default;
+    pointer-events: none;
+    background-color: var(--cinza-claro);
+    padding: 8px 12px;
+    border-radius: 5px;
+}
+
+/* Dropdown Menu */
+.dropdown {
+    display: inline-block;
+}
+
+.dropdown-content {
+    display: none;
+    position: absolute;
+    background-color: var(--branco);
+    min-width: 160px;
+    box-shadow: 0 8px 16px rgba(0, 0, 0, 0.1);
+    z-index: 1;
+    border: 1px solid var(--azul-escuro);
+    top: 100%;
+}
+
+.dropdown-content a {
+    color: var(--azul-escuro);
+    padding: 12px 16px;
+    text-decoration: none;
+    display: block;
+    transition: background-color 0.3s ease;
+}
+
+.dropdown-content a:hover {
+    background-color: var(--cinza-claro);
+}
+
+/* Mostrar o dropdown ao passar o mouse */
+.dropdown:hover .dropdown-content {
+    display: block;
+}
+
+/* Botões do Cabeçalho */
+.header-buttons {
+    display: flex;
+    gap: 10px;
+}
+
+.btn-outline, .btn-primary {
+    padding: 10px 20px;
+    text-decoration: none;
+    font-size: 14px;
+    border-radius: 5px;
+    transition: background-color 0.3s, color 0.3s;
+    text-align: center;
+}
+
+.btn-outline {
+    border: 2px solid var(--azul-escuro);
+    background-color: transparent;
+    color: var(--azul-escuro);
+}
+
+.btn-outline:hover {
+    background-color: var(--azul-escuro);
+    color: var(--branco);
+}
+
+.btn-primary {
+    border: none;
+    background-color: var(--azul-claro);
+    color: var(--branco);
+}
+
+.btn-primary:hover {
+    background-color: var(--azul-medio);
+}
+
+/* Responsividade */
+@media (max-width: 768px) {
+    .navbar ul {
+        flex-direction: column;
+        align-items: center;
+        gap: 10px;
+    }
+
+    .header-buttons {
+        flex-direction: column;
+        align-items: center;
+        gap: 5px;
+        margin-top: 10px;
+    }
+
+    .btn-outline, .btn-primary {
+        width: 100%;
+    }
+
+    .institution-logo {
+        justify-content: center;
+        margin-bottom: 20px;
+    }
+}
+
+@media (max-width: 480px) {
+    header {
+        padding: 10px;
+    }
+
+    .navbar ul li a {
+        font-size: 14px;
+    }
+
+    .btn-outline, .btn-primary {
+        font-size: 12px;
+    }
+}
+
+/* Estilos do Rodapé */
+footer {
+    background-color: var(--azul-escuro);
+    color: var(--branco);
+    text-align: center;
+    padding: 10px 0;
+}
+
+footer p {
+    margin: 0;
+    font-size: 14px;
+}

@@ -1,0 +1,227 @@
+/* Estilos Gerais */
+body {
+    font-family: Arial, sans-serif;
+    margin: 0;
+    padding: 0;
+    background-color: #f4f4f4;
+    color: #333;
+}
+
+/* Estilo do Cabeçalho */
+header {
+    background-color: #ffffff; /* Fundo branco */
+    color: #333;
+    border-bottom: 2px solid #004080; /* Borda azul escuro */
+    padding: 10px 20px;
+}
+
+.top-bar {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    max-width: 1200px;
+    margin: 0 auto;
+    flex-wrap: wrap; /* Permite que os itens se reordenem em telas menores */
+}
+
+.institution-logo {
+    display: flex;
+    align-items: center;
+}
+
+.institution-logo .logo {
+    width: 80px; /* Ajuste o tamanho do logo conforme necessário */
+    height: auto;
+}
+
+.navbar {
+    flex-grow: 1;
+    display: flex;
+    justify-content: center;
+}
+
+.navbar ul {
+    list-style: none;
+    padding: 0;
+    margin: 0;
+    display: flex;
+    gap: 20px; /* Espaçamento entre os itens do menu */
+}
+
+.navbar ul li a {
+    text-decoration: none;
+    color: #004080; /* Azul escuro do emblema */
+    font-size: 16px;
+    font-weight: bold;
+    transition: color 0.3s;
+}
+
+.navbar ul li a:hover {
+    color: #1e90ff; /* Azul claro do emblema */
+}
+
+.header-buttons {
+    display: flex;
+    gap: 10px; /* Espaçamento entre os botões */
+}
+
+.btn-outline, .btn-primary {
+    padding: 10px 20px;
+    text-decoration: none;
+    font-size: 14px;
+    border-radius: 5px;
+    transition: background-color 0.3s, color 0.3s;
+    text-align: center; /* Centraliza o texto nos botões */
+}
+
+.btn-outline {
+    border: 2px solid #004080; /* Azul escuro */
+    background-color: transparent;
+    color: #004080; /* Azul escuro */
+}
+
+.btn-outline:hover {
+    background-color: #004080; /* Azul escuro */
+    color: white; /* Texto branco ao passar o mouse */
+}
+
+.btn-primary {
+    border: none;
+    background-color: #1e90ff; /* Azul claro do emblema */
+    color: white;
+}
+
+.btn-primary:hover {
+    background-color: #004080; /* Azul escuro ao passar o mouse */
+}
+
+/* Estilos da Página de Cursos */
+main {
+    padding: 20px;
+    max-width: 1200px;
+    margin: 20px auto;
+    background-color: #f4f4f4;
+    border-radius: 5px;
+}
+
+section h2 {
+    text-align: center;
+    color: #4B0082; /* Cor roxa semelhante ao título na imagem */
+    font-size: 24px;
+    margin-bottom: 20px;
+}
+
+.cursos-container {
+    display: flex;
+    flex-wrap: wrap; /* Permite que os cartões se ajustem em várias linhas */
+    justify-content: space-between; /* Espaçamento entre os cartões */
+    gap: 20px; /* Espaçamento entre os cartões */
+}
+
+.curso-card {
+    background-color: white;
+    border-radius: 10px;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+    width: calc(25% - 20px); /* 4 cartões por linha */
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    padding: 15px;
+    transition: transform 0.3s, box-shadow 0.3s;
+}
+
+.curso-card img {
+    max-width: 100%;
+    border-radius: 10px 10px 0 0;
+}
+
+.curso-card h3 {
+    color: #4B0082; /* Cor roxa */
+    font-size: 18px;
+    text-align: center;
+    margin: 10px 0;
+}
+
+.curso-card p {
+    color: #666;
+    font-size: 14px;
+    margin: 5px 0;
+}
+
+.btn-course {
+    margin-top: auto; /* Empurra o botão para o final do cartão */
+    padding: 10px 15px;
+    background-color: #4B0082; /* Cor roxa do botão */
+    color: white;
+    text-decoration: none;
+    border-radius: 5px;
+    transition: background-color 0.3s;
+}
+
+.btn-course:hover {
+    background-color: #3a0066; /* Efeito de hover mais escuro */
+}
+
+/* Responsividade */
+@media (max-width: 768px) {
+    .navbar ul {
+        flex-direction: column; /* Itens do menu em coluna */
+        align-items: center; /* Centraliza os itens do menu */
+        gap: 10px; /* Reduz o espaço entre os itens do menu */
+    }
+
+    .header-buttons {
+        flex-direction: column; /* Botões um embaixo do outro */
+        align-items: center; /* Centraliza os botões */
+        gap: 5px; /* Espaçamento reduzido entre os botões */
+        margin-top: 10px; /* Espaçamento superior */
+    }
+
+    .btn-outline, .btn-primary {
+        width: 100%; /* Botões ocupam 100% da largura do contêiner */
+    }
+
+    .institution-logo {
+        justify-content: center; /* Centraliza o logo em telas menores */
+        margin-bottom: 20px; /* Espaço extra para separar logo do menu */
+    }
+
+    .cursos-container {
+        justify-content: center; /* Centraliza os cartões */
+    }
+
+    .curso-card {
+        width: calc(50% - 20px); /* 2 cartões por linha */
+    }
+}
+
+@media (max-width: 480px) {
+    header {
+        padding: 10px; /* Reduz o padding para telas menores */
+    }
+
+    .navbar ul li a {
+        font-size: 14px; /* Reduz o tamanho da fonte do menu */
+    }
+
+    .btn-outline, .btn-primary {
+        font-size: 12px; /* Reduz o tamanho da fonte dos botões */
+    }
+
+    .curso-card {
+        width: calc(100% - 20px); /* 1 cartão por linha */
+    }
+}
+
+/* Estilos do Rodapé */
+footer {
+    background-color: #004080; /* Azul escuro */
+    color: white;
+    text-align: center;
+    padding: 10px 0;
+}
+
+footer p {
+    margin: 0;
+    font-size: 14px;
+}

@@ -3,6 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    
     <title>Página Inicial - Instituição de Ensino Altitude</title>
     <link rel="stylesheet" href="styles-inicial.css">
     <style>
@@ -28,7 +29,22 @@
             color: inherit; /* Mantém a cor original do texto */
         }
     </style>
+
+<script>
+    // Função para detectar se o usuário está em um dispositivo móvel
+    function isMobile() {
+        return /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
+    }
+
+    // Verifica se o usuário está acessando de um dispositivo móvel
+    if (isMobile()) {
+        document.body.classList.add('mobile-view'); // Adiciona uma classe específica ao corpo
+    }
+</script>
+
+
 </head>
+
 <body>
     <header>
         <div class="top-bar">
@@ -57,7 +73,24 @@
                 <a href="#cadastrar" class="btn-primary">Cadastrar</a>
             </div>
         </div>
+
+        <!-- Botão de Menu Móvel -->
+<button class="menu-toggle" aria-label="Menu">☰</button>
+
+<!-- Menu Móvel Oculto -->
+<nav class="mobile-menu">
+    <ul>
+        <li><a href="index.html#inicio">Início</a></li>
+        <li><a href="cursos-profissional.html">Profissional</a></li>
+        <li><a href="cursos-tecnico.html">Técnico</a></li>
+        <li><a href="certificados.html">Certificados</a></li>
+        <li><a href="sobre.html">Sobre Nós</a></li>
+        <li><a href="ajuda.html">Ajuda</a></li>
+    </ul>
+</nav>
+
     </header>
+   
     <main>
         <section id="inicio">
             <h1>Bem-vindo à Altitude</h1>
@@ -67,5 +100,19 @@
     <footer>
         <p>&copy; 2024 Altitude. Todos os direitos reservados.</p>
     </footer>
+
+    <script>
+        // Seleciona o botão de menu e o menu móvel
+        const menuToggle = document.querySelector('.menu-toggle');
+        const mobileMenu = document.querySelector('.mobile-menu');
+    
+        // Adiciona um evento de clique ao botão de menu
+        menuToggle.addEventListener('click', () => {
+            // Alterna a classe 'active' no menu móvel
+            mobileMenu.classList.toggle('active');
+        });
+    </script>
+    
+
 </body>
 </html>

@@ -476,3 +476,224 @@ header {
 main {
     margin-top: 80px; /* Adiciona espaço para evitar que o conteúdo fique oculto atrás do cabeçalho */
 }
+
+/* Paleta de Cores */
+:root {
+    --azul-escuro: #003366;
+    --azul-claro: #1e90ff;
+    --branco: #ffffff;
+}
+
+/* Estilo Geral */
+body {
+    font-family: Arial, sans-serif;
+    margin: 0;
+    padding: 0;
+    background-color: var(--branco);
+    color: var(--azul-escuro);
+    line-height: 1.6;
+}
+
+/* Cabeçalho */
+header {
+    background-color: var(--branco);
+    border-bottom: 2px solid var(--azul-escuro);
+    position: fixed;
+    top: 0;
+    width: 100%;
+    z-index: 1000;
+}
+
+.top-bar {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    max-width: 1200px;
+    margin: 0 auto;
+    padding: 10px 20px;
+}
+
+.institution-logo .logo {
+    width: 120px; /* Ajuste conforme necessário */
+    height: auto;
+}
+
+/* Navegação */
+.navbar ul {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+    display: flex;
+    gap: 20px;
+}
+
+.navbar ul li a {
+    text-decoration: none;
+    color: var(--azul-escuro);
+    font-weight: bold;
+    padding: 10px;
+    transition: color 0.3s;
+}
+
+.navbar ul li a:hover {
+    color: var(--azul-claro);
+}
+
+/* Botões do Cabeçalho */
+.header-buttons {
+    display: flex;
+    gap: 15px;
+}
+
+.btn-contact .icon {
+    width: 24px; /* Tamanho dos ícones */
+    height: auto;
+}
+
+.btn-outline, .btn-primary {
+    padding: 10px 15px;
+    text-decoration: none;
+    font-size: 14px;
+    border-radius: 5px;
+    text-align: center;
+}
+
+.btn-outline {
+    border: 2px solid var(--azul-escuro);
+    background-color: transparent;
+    color: var(--azul-escuro);
+}
+
+.btn-outline:hover {
+    background-color: var(--azul-escuro);
+    color: var(--branco);
+}
+
+.btn-primary {
+    border: none;
+    background-color: var(--azul-claro);
+    color: var(--branco);
+}
+
+.btn-primary:hover {
+    background-color: var(--azul-escuro);
+}
+
+/* Estilos para Menu Colapsável em Dispositivos Móveis */
+.menu-toggle {
+    display: none; /* Escondido em dispositivos grandes */
+    background: none;
+    border: none;
+    font-size: 24px;
+    cursor: pointer;
+    margin-left: 15px;
+}
+
+@media (max-width: 768px) {
+    /* Ajustes para dispositivos móveis */
+    .navbar ul {
+        display: none; /* Esconde o menu por padrão */
+        flex-direction: column;
+        position: absolute;
+        top: 60px; /* Abaixo do cabeçalho */
+        right: 20px;
+        background-color: var(--branco);
+        border: 1px solid var(--azul-escuro);
+        width: 200px;
+        box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+    }
+
+    .navbar ul li {
+        width: 100%;
+    }
+
+    .navbar ul li a {
+        display: block;
+        padding: 15px;
+        text-align: left;
+    }
+
+    .header-buttons {
+        display: none; /* Esconde os botões no cabeçalho */
+    }
+
+    .menu-toggle {
+        display: block; /* Mostra o botão de menu */
+    }
+
+    /* Menu ativo */
+    .navbar.active ul {
+        display: flex; /* Mostra o menu ao clicar */
+    }
+
+    .header-buttons {
+        display: flex; /* Mostra os botões ao clicar no menu */
+        flex-direction: column;
+        gap: 10px;
+        margin-top: 20px;
+    }
+}
+/* Estilos específicos para dispositivos móveis */
+.mobile-view .navbar, .mobile-view .header-buttons {
+    display: none; /* Esconde a navegação e os botões padrão */
+}
+
+.mobile-view .mobile-menu {
+    display: block; /* Mostra o menu móvel */
+}
+
+/* Menu Móvel */
+.mobile-menu {
+    display: none; /* Esconde o menu por padrão */
+    background-color: var(--branco);
+    position: fixed;
+    top: 60px; /* Alinhado ao cabeçalho */
+    left: 0;
+    width: 100%;
+    border-top: 1px solid var(--cinza-medio);
+    z-index: 1000;
+}
+
+.mobile-menu ul {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+}
+
+.mobile-menu ul li {
+    border-bottom: 1px solid var(--cinza-medio);
+}
+
+.mobile-menu ul li a {
+    display: block;
+    padding: 15px;
+    color: var(--azul-escuro);
+    text-decoration: none;
+}
+
+.mobile-menu ul li a:hover {
+    background-color: var(--cinza-claro);
+}
+
+/* Botão de Menu */
+.menu-toggle {
+    display: none; /* Esconde o botão de menu padrão */
+    background: none;
+    border: none;
+    font-size: 24px;
+    cursor: pointer;
+    position: fixed;
+    top: 15px;
+    right: 20px;
+    z-index: 1001; /* Acima de outros elementos */
+}
+
+/* Mostra o botão de menu e o menu móvel apenas na visualização móvel */
+.mobile-view .menu-toggle {
+    display: block; /* Mostra o botão de menu em dispositivos móveis */
+}
+
+/* Menu Ativo */
+.mobile-view .mobile-menu.active {
+    display: block; /* Mostra o menu quando ativo */
+}

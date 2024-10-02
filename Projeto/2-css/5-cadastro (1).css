@@ -1,0 +1,215 @@
+/* Reset de estilo */
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+    font-family: Arial, sans-serif;
+}
+
+/* Estilo do corpo da página */
+body {
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+    align-items: center; /* Centraliza a caixa horizontalmente */
+    min-height: 100vh;
+    background-color: #f0f0f0; /* Cor de fundo clara */
+}
+
+/* Estilo do cabeçalho */
+header {
+    background-color: #fff;
+    border-bottom: 2px solid #003366;
+    padding: 10px 20px;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+    position: fixed;
+    top: 0;
+    width: 100%;
+    z-index: 1000;
+}
+
+/* Espaço reservado abaixo do cabeçalho */
+main {
+    padding-top: 100px; /* Espaço para o cabeçalho fixo */
+    display: flex;
+    justify-content: center; /* Centraliza a caixa de cadastro */
+    align-items: center;
+    flex-grow: 1; /* Faz o main ocupar todo o espaço vertical disponível */
+    background-color: #e6e9f2; /* Cor de fundo leve */
+}
+
+/* Container de cadastro */
+.cadastro-container {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    width: 100%;
+}
+
+/* Caixa de cadastro */
+.cadastro-box {
+    background-color: #fff;
+    padding: 40px 60px; /* Maior espaçamento interno */
+    border-radius: 8px;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1); /* Sombra suave para destaque */
+    text-align: center;
+    width: 500px; /* Largura maior para a caixa */
+    margin: 40px 0; /* Margem superior e inferior para espaçamento */
+}
+
+/* Título do formulário */
+.cadastro-box h2 {
+    margin-bottom: 20px;
+    color: #1e90ff; /* Cor do título */
+}
+
+/* Grupo de inputs */
+.input-group {
+    margin-bottom: 20px;
+    text-align: left;
+}
+
+/* Labels dos inputs */
+.input-group label {
+    font-size: 14px;
+    color: #333;
+}
+
+/* Inputs e Select */
+.input-group input, .input-group select {
+    width: 100%;
+    padding: 12px; /* Aumenta o padding para inputs */
+    border: 1px solid #ddd;
+    border-radius: 4px;
+    margin-top: 8px;
+    font-size: 14px;
+}
+
+/* Botão de cadastro */
+.cadastro-button {
+    width: 100%;
+    padding: 14px; /* Maior espaçamento para o botão */
+    border: none;
+    border-radius: 4px;
+    background-color: #1e90ff; /* Cor do botão */
+    color: #fff;
+    font-size: 16px;
+    cursor: pointer;
+    margin-top: 10px;
+}
+
+.cadastro-button:hover {
+    background-color: #003366; /* Efeito de hover */
+}
+
+/* Estilo do rodapé */
+footer {
+    background-color: #003366;
+    color: #fff;
+    text-align: center;
+    padding: 10px 0;
+    width: 100%;
+    position: relative;
+    bottom: 0;
+}
+
+/* Rodapé */
+footer {
+    background-color: #4b2e83; /* Cor de fundo roxa */
+    color: #fff; /* Cor do texto branco */
+    padding: 40px 0; /* Espaçamento interno */
+    display: flex;
+    justify-content: space-around; /* Distribui os elementos ao longo do rodapé */
+    flex-wrap: wrap; /* Permite quebra de linha para dispositivos menores */
+    align-items: flex-start;
+}
+
+/* Seção do rodapé para cada coluna */
+.footer-column {
+    max-width: 250px; /* Largura máxima de cada coluna */
+    margin-bottom: 20px; /* Espaço inferior entre as colunas */
+}
+
+/* Título de cada seção do rodapé */
+.footer-column h3 {
+    font-size: 16px;
+    margin-bottom: 15px; /* Espaçamento abaixo do título */
+    color: #ffcd00; /* Cor do título amarelo */
+}
+
+/* Lista de links */
+.footer-column ul {
+    list-style: none; /* Remove os marcadores */
+    padding: 0; /* Remove o padding */
+    margin: 0; /* Remove a margem */
+}
+
+/* Links do rodapé */
+.footer-column ul li {
+    margin-bottom: 10px; /* Espaçamento entre os links */
+}
+
+.footer-column ul li a {
+    text-decoration: none; /* Remove sublinhado */
+    color: #ffffff; /* Cor branca */
+    font-size: 14px;
+}
+
+.footer-column ul li a:hover {
+    color: #ffcd00; /* Cor amarela ao passar o mouse */
+}
+
+/* Estilo para a seção de informações da instituição */
+.footer-info {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+}
+
+.footer-info img {
+    width: 80px; /* Largura da logo */
+    margin-bottom: 10px; /* Espaço abaixo da logo */
+}
+
+.footer-info p {
+    text-align: center;
+    font-size: 14px;
+    margin: 5px 0; /* Margem vertical dos parágrafos */
+}
+
+/* Seção de ícones de pagamento */
+.payment-methods {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    flex-wrap: wrap;
+    margin-top: 20px;
+}
+
+.payment-methods img {
+    margin: 0 10px; /* Espaço entre os ícones */
+    width: 50px; /* Largura dos ícones */
+}
+
+/* Barra inferior com copyright */
+.footer-bottom {
+    text-align: center;
+    padding: 15px 0;
+    background-color: #372b67; /* Cor mais escura para a barra inferior */
+    font-size: 12px;
+    color: #ccc; /* Cor do texto mais clara */
+    margin-top: 20px; /* Espaço acima da barra inferior */
+}
+
+/* Estilo Responsivo para Rodapé */
+@media (max-width: 768px) {
+    footer {
+        flex-direction: column; /* Muda para coluna em dispositivos menores */
+        align-items: center;
+    }
+    .footer-column {
+        max-width: none; /* Remove a largura máxima */
+        width: 80%; /* Largura de 80% */
+        text-align: center; /* Centraliza o texto */
+    }
+}

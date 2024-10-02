@@ -1,0 +1,158 @@
+/* Estilos principais para a página de cursos técnicos */
+
+/* Estilo padrão do corpo da página */
+body {
+    font-family: Arial, sans-serif; /* Define a fonte padrão */
+    margin: 0;
+    padding: 0;
+    background-color: #f5f5f5; /* Define a cor de fundo da página */
+    color: #333; /* Cor do texto */
+}
+
+/* Cabeçalho fixo no topo */
+header {
+    background-color: #005b99; /* Fundo azul médio */
+    padding: 10px 20px; /* Espaçamento interno do cabeçalho */
+    color: #fff; /* Cor do texto branco */
+    position: fixed; /* Cabeçalho fixo no topo */
+    top: 0;
+    width: 100%;
+    z-index: 1000; /* Garante que o cabeçalho fique acima de outros elementos */
+}
+
+/* Barra superior contendo logo e navegação */
+.top-bar {
+    display: flex; /* Alinha os itens em uma linha */
+    align-items: center; /* Centraliza verticalmente os itens */
+    justify-content: space-between; /* Espaça os itens uniformemente */
+    max-width: 1200px; /* Largura máxima da barra */
+    margin: 0 auto; /* Centraliza horizontalmente */
+}
+
+/* Estilo da logo */
+.institution-logo img {
+    width: 120px; /* Largura da logo */
+    height: auto; /* Mantém a proporção da imagem */
+}
+
+/* Estilo da barra de navegação */
+.navbar ul {
+    list-style: none; /* Remove os marcadores da lista */
+    margin: 0;
+    padding: 0;
+    display: flex; /* Alinha os itens horizontalmente */
+    gap: 20px; /* Espaçamento entre os itens */
+}
+
+/* Estilo dos links na navegação */
+.navbar ul li a {
+    text-decoration: none; /* Remove o sublinhado dos links */
+    color: #fff; /* Cor branca para os links */
+    font-weight: bold; /* Negrito */
+    padding: 10px; /* Espaçamento interno dos links */
+    transition: color 0.3s; /* Transição suave para a cor */
+}
+
+/* Estilo ao passar o mouse sobre os links */
+.navbar ul li a:hover {
+    color: #1e90ff; /* Azul claro ao passar o mouse */
+}
+
+/* Estilo dos botões de acesso e cadastro */
+.header-buttons {
+    display: flex; /* Alinha os botões em linha */
+    gap: 15px; /* Espaçamento entre os botões */
+}
+
+/* Botões de borda */
+.btn-outline {
+    border: 2px solid #fff; /* Borda branca */
+    background-color: transparent; /* Fundo transparente */
+    color: #fff; /* Texto branco */
+    padding: 10px 15px; /* Espaçamento interno */
+    border-radius: 5px; /* Borda arredondada */
+    text-decoration: none; /* Remove sublinhado */
+}
+
+/* Estilo ao passar o mouse sobre o botão */
+.btn-outline:hover {
+    background-color: #fff; /* Fundo branco */
+    color: #005b99; /* Texto azul médio */
+}
+
+/* Botões principais */
+.btn-primary {
+    border: none; /* Sem borda */
+    background-color: #1e90ff; /* Fundo azul claro */
+    color: #fff; /* Texto branco */
+    padding: 10px 15px; /* Espaçamento interno */
+    border-radius: 5px; /* Borda arredondada */
+    text-decoration: none; /* Remove sublinhado */
+}
+
+/* Estilo ao passar o mouse sobre o botão principal */
+.btn-primary:hover {
+    background-color: #003366; /* Fundo azul mais escuro */
+}
+
+/* Contêiner principal dos cursos */
+.cursos-container {
+    display: flex; /* Define um layout flexível */
+    flex-wrap: wrap; /* Permite que os itens quebrem de linha */
+    justify-content: space-around; /* Espaça os itens uniformemente */
+    padding: 20px; /* Espaçamento interno do contêiner */
+    margin-top: 80px; /* Espaçamento superior para não sobrepor o cabeçalho */
+}
+
+/* Cartão de cada curso */
+.curso-card {
+    background-color: #fff; /* Fundo branco para o cartão */
+    border: 1px solid #ccc; /* Borda cinza clara */
+    border-radius: 10px; /* Bordas arredondadas */
+    padding: 15px; /* Espaçamento interno do cartão */
+    margin: 10px; /* Espaçamento externo */
+    width: 250px; /* Largura fixa do cartão */
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1); /* Sombra para dar profundidade */
+    transition: transform 0.3s; /* Transição suave para o efeito de hover */
+}
+
+/* Estilo ao passar o mouse sobre o cartão */
+.curso-card:hover {
+    transform: scale(1.05); /* Aumenta o cartão levemente */
+}
+
+/* Título de cada curso */
+.curso-card h3 {
+    margin: 0 0 10px 0; /* Margem inferior para separar do texto */
+    color: #005b99; /* Cor azul médio */
+}
+
+/* Texto de cada curso */
+.curso-card p {
+    margin: 0; /* Remove margem */
+    color: #666; /* Cor cinza para o texto */
+}
+
+/* Estilo para o rodapé */
+footer {
+    background-color: #005b99; /* Fundo azul médio */
+    color: #fff; /* Texto branco */
+    text-align: center; /* Alinha o texto ao centro */
+    padding: 10px 0; /* Espaçamento interno do rodapé */
+    margin-top: 20px; /* Espaçamento superior */
+}
+
+/* Estilos de responsividade para telas menores */
+@media (max-width: 768px) {
+    /* Ajusta a navegação para telas pequenas */
+    .navbar ul {
+        flex-direction: column; /* Navegação vertical */
+        align-items: center; /* Centraliza os itens */
+    }
+
+    /* Ajusta o contêiner de cursos para telas pequenas */
+    .cursos-container {
+        flex-direction: column; /* Empilha os cartões verticalmente */
+        align-items: center; /* Centraliza os itens */
+    }
+}

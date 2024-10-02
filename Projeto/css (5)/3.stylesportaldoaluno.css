@@ -1,4 +1,4 @@
-/* Reset de estilo */
+/* Reseta o estilo padrão */
 * {
     margin: 0;
     padding: 0;
@@ -12,16 +12,7 @@ body {
     justify-content: center;
     align-items: center;
     height: 100vh;
-    background-color: #1e90ff;; /* Cor de fundo baseada na instituição */
-}
-  /* Imagem de fundo para o corpo da página */
-  body {
-    background-image: url('..//3-img/background\ portaldoaluno.png'); /* Substitua pelo caminho correto da imagem */
-    background-size: cover; /* Ajusta a imagem para cobrir todo o fundo */
-    background-repeat: no-repeat; /* Impede que a imagem se repita */
-    background-position: center; /* Centraliza a imagem */
-    height: 100vh; /* Ajusta a altura do corpo */
-    margin: 100; /* Remove as margens padrão */
+    background-color: #004B87; /* Cor de fundo baseada na instituição */
 }
 
 /* Container do login */
@@ -45,14 +36,14 @@ body {
 
 /* Logo da instituição */
 .logo {
-    width: 150px;
+    width: 100px;
     margin-bottom: 20px;
 }
 
 /* Título do formulário */
 .login-box h2 {
     margin-bottom: 20px;
-    color:  #1e90ff; /* Cor do título */
+    color: #004B87; /* Cor baseada na instituição */
 }
 
 /* Grupo de inputs */
@@ -83,7 +74,7 @@ body {
     padding: 12px;
     border: none;
     border-radius: 4px;
-    background-color:  #1e90ff; /* Cor do botão */
+    background-color: #004B87; /* Cor do botão */
     color: #fff;
     font-size: 16px;
     cursor: pointer;
@@ -106,31 +97,3 @@ body {
 .forgot-password:hover {
     text-decoration: underline;
 }
-
-
-/*-- tentativa de fazer o login e cadastro em uma pagina só */
-.wrapper {
-    height: 430px;
-    width: 320px;
-    position: absolute;
-    top: 50%;
-    left: 50%;
-    transform: translate(-50%, -50%);
-    perspective: 1000px;
-    backdrop-filter: blur(5px);
-    background-color: #52C0D9; /* Cor de fundo */
-}
-
-.wrapper .card,
-.wrapper .content{
-    position: absolute;
-    width: 100%;
-    height: 100%;
-    padding: 40px 20px;
-    text-align: center;
-    background: #ddd;
-    transition: all a.5s ease-in-out;
-    backface-visibility: hidden;
-    border: 1px solid #333;
-/}
-

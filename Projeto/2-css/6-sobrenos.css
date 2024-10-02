@@ -137,7 +137,10 @@ header {
     box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2); /* Sombra ao passar o mouse */
 }
 
-/* Estilo da seção principal */
+
+/*Estilos de seção principal*/
+
+
 main {
     padding: 60px 20px; /* Espaçamento interno */
     text-align: center; /* Alinhamento centralizado */
@@ -157,17 +160,29 @@ main p {
     text-align: justify;
 }
 
+h2{
+    margin: center;
+    text-align: center;
+    color: var(--azul-escuro);
+}
+
+
+
+
 /* Estilos do Rodapé */
 .rodape {
     background-color: var(--azul-escuro); /* Fundo azul escuro */
     color: var(--branco); /* Texto em branco */
     padding: 40px 20px; /* Espaçamento interno */
+    width: 100%; /* Garante que o rodapé ocupe 100% da largura */
+    box-sizing: border-box; /* Inclui o padding na largura total */
 }
 
 .footer-container {
     display: flex; /* Layout flexível */
     justify-content: space-between; /* Espaça as colunas */
-    max-width: 1200px; /* Largura máxima do conteúdo */
+    width: 100%; /* Garante que o container ocupe toda a largura */
+    max-width: 1200px; /* Define um limite máximo opcional */
     margin: 0 auto; /* Centraliza o conteúdo */
     flex-wrap: wrap; /* Quebra linha em telas menores */
 }
@@ -175,7 +190,7 @@ main p {
 .footer-column {
     flex: 1; /* Cada coluna ocupa um espaço igual */
     margin: 10px; /* Espaço entre colunas */
-    min-width: 200px; /* Largura mínima das colunas */
+    min-width: auto; /* Largura mínima das colunas */
 }
 
 .logo-info {
@@ -241,5 +256,3 @@ main p {
     color: var(--branco); /* Texto em azul escuro */
     font-size: 18px; /* Tamanho do texto */
 }
-
-

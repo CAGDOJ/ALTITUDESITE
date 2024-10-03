@@ -255,16 +255,16 @@ main p {
     /* Estilos para o cabeçalho */
 header {
     display: flex;
-    justify-content: space-between;
+    justify-content: center;
     align-items: center;
     padding: 10px 20px;
-    background-color: #003399; /* Cor de fundo azul */
+    background-color: var(--azul-claro); /* Cor de fundo azul */
     color: white;
 }
 
 /* Estilo da logo */
 .logo img {
-    height: 50px; /* Ajuste conforme o tamanho desejado */
+    height: 60px; /* Ajuste conforme o tamanho desejado */
 }
 
 /* Estilos para os botões */
@@ -279,7 +279,7 @@ header {
 }
 
 .quick-access .btn:hover {
-    background-color: #002288;
+    background-color:var (var(--azul-claro));
 }
 
 /* Menu ícone para dispositivos móveis */

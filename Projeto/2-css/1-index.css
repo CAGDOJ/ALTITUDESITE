@@ -3,18 +3,17 @@
     --azul-claro: #52C0D9; /* Azul claro */
     --azul-escuro: #0A3D62; /* Azul escuro */
     --branco: #FFFFFF; /* Branco */
+    --cinzaclarin: #cccccc; /* Cinza claro */
+    --cinzaescuro:  #999999; /* Cinza escuro */
 }
 
 /* Estilo do Corpo */
 body {
-    font-family: Arial, sans-serif; /* Fonte geral */
+    font-family: Arial, sans-serif; /* Define a fonte geral da página */
     margin: 0; /* Remove margens padrão */
     padding: 0; /* Remove preenchimento padrão */
-    background-color: var(--branco); /* Fundo branco */
-    color: var(--azul-claro); /* Texto em azul claro */
-    line-height: 1.6; /* Altura das linhas para facilitar a leitura */
-    overflow: hidden; /* Remove a barra de rolagem */
-    overflow-y: auto;   /* Mantém a rolagem vertical */
+    background-color: var(--branco); /* Define o fundo branco */
+    line-height: 1.6; /* Define a altura da linha para melhor legibilidade */
 }
 
 html, body {
@@ -26,81 +25,114 @@ html, body {
 }
 
 /* Cabeçalho */
-header .old-header {
-    background-color: var(--branco); /* Fundo branco */
-    padding: 0px 0px; /* Espaçamento interno */
-    width: 100%; /* Largura total */
-    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2); /* Sombra para destaque */
-    border-bottom: 2px solid var(--azul-claro); /* Linha de destaque abaixo do cabeçalho */
-    z-index: 1000; /* Mantém o cabeçalho acima de outros elementos */
-    position: relative; /* Cabeçalho não fixo */
+header {
+    background-color: var(--branco); /* Define o fundo branco */
+    padding: 15px 20px; /* Define espaçamento interno */
+    width: 100%; /* Largura total do cabeçalho */
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2); /* Adiciona uma sombra suave */
+    border-bottom: 2px solid var(--azul-claro); /* Linha de destaque abaixo */
+    z-index: 1000; /* Garante que o cabeçalho fique acima dos outros elementos */
+    position: relative; /* Permite controle de posicionamento */
 }
 
+/* Dispositivos Moveis*/
+.new-header{
+    /* Estilos para o cabeçalho */
+header {
+    display: flex;/
+    justify-content: center;
+    align-items: center;
+    padding: 10px 20px;
+    background-color: var(--azul-claro); /* Cor de fundo azul */
+    color: white;
+}
+
+/* Estilo da logo */
+.logo img {
+    height: 60px; /* Ajuste conforme o tamanho desejado */
+}
+
+/* Estilos para os botões */
+.quick-access .btn {
+    border-color: var(--azul-claro);
+    color: white;
+    padding: 10px 10px;
+    border-radius: 8px;
+    text-decoration: none;
+    margin-left: 10px;
+    font-weight: bold;
+}
+
+.quick-access .btn:hover {
+    background-color:var (var(--azul-claro));
+}
+}
+
+
+/* Barra superior */
 .top-bar {
-    display: flex; /* Layout em linha */
-    align-items: center; /* Alinha itens verticalmente */
-    justify-content: space-between; /* Espaço entre os itens */
-    max-width: 1200px; /* Largura máxima */
-    margin: 0 auto; /* Centraliza */
+    display: flex; /* Layout flexível (em linha) */
+    align-items: center; /* Alinha itens verticalmente no centro */
+    justify-content: space-between; /* Espaça os itens */
+    max-width: 1200px; /* Define a largura máxima */
+    margin: 0 auto; /* Centraliza o conteúdo */
 }
 
 .institution-logo .logo {
-    width: 150px; /* Tamanho da logo */
-    height: auto;
+    width: 150px; /* Define a largura da logo */
+    height: auto; /* Mantém a proporção da logo */
 }
 
 /* Menu de Navegação */
 .navbar ul {
-    list-style: none; /* Remove os marcadores de lista */
-    padding: 0; /* Remove preenchimento */
-    margin: 0; /* Remove margens */
-    display: flex; /* Itens em linha */
+    list-style: none; /* Remove os marcadores da lista */
+    padding: 0; /* Remove o preenchimento */
+    margin: 0; /* Remove as margens */
+    display: flex; /* Exibe os itens em linha */
     gap: 20px; /* Espaço entre os itens */
-
 }
 
 .navbar ul li {
-    position: relative; /* Necessário para o dropdown */
+    position: relative; /* Necessário para dropdown */
 }
 
 .navbar ul li a {
-    text-decoration: none; /* Remove sublinhado */
-    color: var(--azul-claro); /* Texto em azul claro */
+    text-decoration: none; /* Remove o sublinhado dos links */
+    color: var(--azul-claro); /* Define a cor do texto dos links */
     font-size: 16px; /* Tamanho do texto */
-    font-weight: bold; /* Texto mais grosso */
-    padding: 10px 15px; /* Espaçamento interno */
-    transition: background-color 0.3s ease, color 0.3s ease, box-shadow 0.3s ease; /* Efeito de transição */
-
+    font-weight: bold; /* Deixa o texto mais grosso */
+    padding: 10px 15px; /* Define o espaçamento interno */
+    transition: background-color 0.3s ease, color 0.3s ease, box-shadow 0.3s ease; /* Adiciona uma transição suave ao passar o mouse */
 }
 
 .navbar ul li a:hover,
 .navbar ul li a:focus {
-    background-color: var(--azul-claro); /* Fundo azul escuro ao passar o mouse */
-    color: var(--branco); /* Texto em branco */
+    background-color: var(--azul-claro); /* Fundo azul claro ao passar o mouse */
+    color: var(--branco); /* Texto branco ao passar o mouse */
     box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2); /* Sombra ao passar o mouse */
     border-radius: 5px; /* Bordas arredondadas */
 }
 
 /* Dropdown */
 .dropdown-content {
-    display: none; /* Escondido por padrão */
-    position: absolute; /* Posição relativa ao item pai */
-    background-color: var(--branco); /* Fundo azul escuro */
-    box-shadow: 0px 8px 16px rgba(0, 0, 0, 0.2); /* Sombra */
-    z-index: 1; /* Nível acima dos outros itens */
+    display: none; /* Esconde o dropdown por padrão */
+    position: absolute; /* Posiciona de forma absoluta */
+    background-color: var(--branco); /* Fundo branco */
+    box-shadow: 0px 8px 16px rgba(0, 0, 0, 0.2); /* Adiciona sombra */
+    z-index: 1; /* Eleva o dropdown sobre outros elementos */
     width: 160px; /* Largura do dropdown */
-    top: 30px; /* Posicionamento abaixo do menu */
+    top: 30px; /* Distância do dropdown em relação ao menu */
     border-radius: 5px; /* Bordas arredondadas */
-    border: #52C0D9 1px;
+    border: 1px solid var(--azul-claro); /* Borda em azul claro */
 }
 
 .dropdown-content a {
-    color: var(--azul-claro); /* Texto do dropdown em azul claro */
-    padding: 12px 16px; /* Espaçamento interno */
-    text-decoration: none; /* Remove sublinhado */
-    display: block; /* Ocupa a largura total */
-    font-size: 14px; /* Tamanho do texto */
-    font-weight: normal; /* Texto normal no dropdown */
+    color: var(--azul-claro); /* Cor do texto no dropdown */
+    padding: 12px 16px; /* Define o espaçamento interno */
+    text-decoration: none; /* Remove o sublinhado */
+    display: block; /* Exibe como bloco completo */
+    font-size: 14px; /* Define o tamanho do texto */
+    font-weight: normal; /* Deixa o texto normal */
 }
 
 .dropdown-content a:hover {
@@ -109,7 +141,7 @@ header .old-header {
 }
 
 .dropdown:hover .dropdown-content {
-    display: block; /* Mostra o dropdown ao passar o mouse */
+    display: block; /* Exibe o dropdown ao passar o mouse */
 }
 
 /* Botões do Cabeçalho */
@@ -117,9 +149,9 @@ header .old-header {
     border: 2px solid var(--azul-claro); /* Borda azul claro */
     color: var(--azul-claro); /* Texto azul claro */
     background-color: transparent; /* Fundo transparente */
-    padding: 10px 20px; /* Espaçamento interno */
+    padding: 10px 20px; /* Define espaçamento interno */
     border-radius: 5px; /* Bordas arredondadas */
-    text-decoration: none; /* Remove sublinhado */
+    text-decoration: none; /* Remove o sublinhado */
     transition: background-color 0.3s ease, color 0.3s ease, box-shadow 0.3s ease; /* Transição suave */
 }
 
@@ -128,7 +160,7 @@ header .old-header {
     color: var(--branco); /* Texto branco */
     padding: 10px 20px; /* Espaçamento interno */
     border-radius: 5px; /* Bordas arredondadas */
-    text-decoration: none; /* Remove sublinhado */
+    text-decoration: none; /* Remove o sublinhado */
     font-weight: bold; /* Texto mais grosso */
     transition: background-color 0.3s ease, box-shadow 0.3s ease; /* Transição suave */
 }
@@ -264,7 +296,6 @@ h2 {
 
 
 /* Dispositivos Moveis*/
-
 .new-header{
     /* Estilos para o cabeçalho */
 header {

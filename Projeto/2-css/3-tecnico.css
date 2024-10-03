@@ -286,7 +286,7 @@ h4:hover {
 }
 
 .payment-icon {
-    width: 50px; /* Tamanho dos ícones de pagamento */
+    width: 80px; /* Tamanho dos ícones de pagamento */
     height: auto; /* Mantém a proporção */
     margin: 0 10px; /* Espaço entre os ícones */
     transition: transform 0.3s ease; /* Transição suave para o efeito de zoom */

@@ -269,4 +269,52 @@ main p {
     /* Ajustar outros elementos conforme necessário */
 }
 
- 
+ /* Estilos para o cabeçalho */
+header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 10px 20px;
+    background-color: #003399; /* Cor de fundo azul */
+    color: white;
+}
+
+/* Estilo da logo */
+.logo img {
+    height: 50px; /* Ajuste conforme o tamanho desejado */
+}
+
+/* Estilos para os botões */
+.quick-access .btn {
+    background-color: #0044cc;
+    color: white;
+    padding: 10px 15px;
+    border-radius: 5px;
+    text-decoration: none;
+    margin-left: 10px;
+    font-weight: bold;
+}
+
+.quick-access .btn:hover {
+    background-color: #002288;
+}
+
+/* Menu ícone para dispositivos móveis */
+.menu-icon img {
+    width: 30px; /* Ajuste conforme necessário */
+}
+
+/* Media query para telas menores */
+@media screen and (max-width: 768px) {
+    header {
+        flex-direction: column;
+        align-items: center;
+    }
+
+    .quick-access {
+        margin-top: 10px;
+        display: flex;
+        justify-content: space-around;
+        width: 100%;
+    }
+}

@@ -250,26 +250,7 @@ main p {
 
 
 /* Dispositivos Moveis*/
-
-@media (max-width: 768px) {
-    /* Estilos específicos para telas menores */
-    .footer-column {
-        flex: 1 1 100%; /* Cada coluna ocupa 100% da largura em dispositivos móveis */
-        margin: 5px 0; /* Ajusta o espaçamento entre colunas */
-    }
-
-    .logo-info {
-        text-align: center;
-    }
-
-    .footer-logo {
-        width: 80px; /* Reduz o tamanho da logo para dispositivos móveis */
-    }
-
-    /* Ajustar outros elementos conforme necessário */
-}
-
- /* Estilos para o cabeçalho */
+/* Estilos para o cabeçalho */
 header {
     display: flex;
     justify-content: space-between;

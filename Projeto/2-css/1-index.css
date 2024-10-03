@@ -250,52 +250,27 @@ main p {
 
 
 /* Dispositivos Moveis*/
-/* Estilos para o cabeçalho */
-header {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    padding: 10px 20px;
-    background-color: #003399; /* Cor de fundo azul */
-    color: white;
-}
 
-/* Estilo da logo */
-.logo img {
-    height: 50px; /* Ajuste conforme o tamanho desejado */
-}
-
-/* Estilos para os botões */
-.quick-access .btn {
-    background-color: #0044cc;
-    color: white;
-    padding: 10px 15px;
-    border-radius: 5px;
-    text-decoration: none;
-    margin-left: 10px;
-    font-weight: bold;
-}
-
-.quick-access .btn:hover {
-    background-color: #002288;
-}
-
-/* Menu ícone para dispositivos móveis */
-.menu-icon img {
-    width: 30px; /* Ajuste conforme necessário */
-}
-
-/* Media query para telas menores */
+/* Esconder o cabeçalho atual em dispositivos móveis (telas menores que 768px) */
 @media screen and (max-width: 768px) {
-    header {
-        flex-direction: column;
-        align-items: center;
+    .old-header {
+        display: none;
     }
 
-    .quick-access {
-        margin-top: 10px;
+    /* Mostrar o novo cabeçalho em telas menores */
+    .new-header {
         display: flex;
-        justify-content: space-around;
-        width: 100%;
+    }
+}
+
+/* Esconder o novo cabeçalho em telas maiores (acima de 768px) */
+@media screen and (min-width: 769px) {
+    .new-header {
+        display: none;
+    }
+
+    /* Mostrar o cabeçalho antigo em telas grandes */
+    .old-header {
+        display: flex;
     }
 }

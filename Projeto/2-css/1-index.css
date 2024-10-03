@@ -335,6 +335,44 @@ header {
 
 
 
+.new-header{
+    /* Estilos para o cabeçalho */
+header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 10px 20px;
+    background-color: #003399; /* Cor de fundo azul */
+    color: white;
+}
+
+/* Estilo da logo */
+.logo img {
+    height: 50px; /* Ajuste conforme o tamanho desejado */
+}
+
+/* Estilos para os botões */
+.quick-access .btn {
+    background-color: #0044cc;
+    color: white;
+    padding: 10px 15px;
+    border-radius: 5px;
+    text-decoration: none;
+    margin-left: 10px;
+    font-weight: bold;
+}
+
+.quick-access .btn:hover {
+    background-color: #002288;
+}
+
+/* Menu ícone para dispositivos móveis */
+.menu-icon img {
+    width: 30px; /* Ajuste conforme necessário */
+}
+}
+
+
 /* Esconder o cabeçalho atual em dispositivos móveis (telas menores que 768px) */
 @media screen and (max-width: 768px) {
     .old-header {

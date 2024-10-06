@@ -71,7 +71,7 @@ header {
 
 
 /* Barra superior */
-.top-bar {
+.old-header .top-bar {
     display: flex; /* Layout flexível (em linha) */
     align-items: center; /* Alinha itens verticalmente no centro */
     justify-content: space-between; /* Espaça os itens */
@@ -79,25 +79,27 @@ header {
     margin: 0 auto; /* Centraliza o conteúdo */
 }
 
-.institution-logo .logo {
+.old-header .institution-logo .logo {
     width: 150px; /* Define a largura da logo */
+    flex: 1; /* Ocupa o espaço à esquerda */
     height: auto; /* Mantém a proporção da logo */
 }
 
 /* Menu de Navegação */
-.navbar ul {
+.old-header .navbar ul {
     list-style: none; /* Remove os marcadores da lista */
     padding: 0; /* Remove o preenchimento */
     margin: 0; /* Remove as margens */
     display: flex; /* Exibe os itens em linha */
     gap: 20px; /* Espaço entre os itens */
+
 }
 
-.navbar ul li {
+.old-header .navbar ul li {
     position: relative; /* Necessário para dropdown */
 }
 
-.navbar ul li a {
+.old-header .navbar ul li a {
     text-decoration: none; /* Remove o sublinhado dos links */
     color: var(--azul-claro); /* Define a cor do texto dos links */
     font-size: 16px; /* Tamanho do texto */
@@ -106,8 +108,8 @@ header {
     transition: background-color 0.3s ease, color 0.3s ease, box-shadow 0.3s ease; /* Adiciona uma transição suave ao passar o mouse */
 }
 
-.navbar ul li a:hover,
-.navbar ul li a:focus {
+.old-header .navbar ul li a:hover,
+.old-header .navbar ul li a:focus {
     background-color: var(--azul-claro); /* Fundo azul claro ao passar o mouse */
     color: var(--branco); /* Texto branco ao passar o mouse */
     box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2); /* Sombra ao passar o mouse */
@@ -115,7 +117,7 @@ header {
 }
 
 /* Dropdown */
-.dropdown-content {
+,.old-header .dropdown-content {
     display: none; /* Esconde o dropdown por padrão */
     position: absolute; /* Posiciona de forma absoluta */
     background-color: var(--branco); /* Fundo branco */
@@ -127,7 +129,7 @@ header {
     border: 1px solid var(--azul-claro); /* Borda em azul claro */
 }
 
-.dropdown-content a {
+.old-header .dropdown-content a {
     color: var(--azul-claro); /* Cor do texto no dropdown */
     padding: 12px 16px; /* Define o espaçamento interno */
     text-decoration: none; /* Remove o sublinhado */
@@ -136,17 +138,17 @@ header {
     font-weight: normal; /* Deixa o texto normal */
 }
 
-.dropdown-content a:hover {
+,.old-header .dropdown-content a:hover {
     background-color: var(--branco); /* Destaque em branco ao passar o mouse */
     color: var(--azul-escuro); /* Texto em azul escuro */
 }
 
-.dropdown:hover .dropdown-content {
+.old-header .dropdown:hover .dropdown-content {
     display: block; /* Exibe o dropdown ao passar o mouse */
 }
 
 /* Botões do Cabeçalho */
-.header-buttons .btn-outline {
+.old-header .header-buttons .btn-outline {
     border: 2px solid var(--azul-claro); /* Borda azul claro */
     color: var(--azul-claro); /* Texto azul claro */
     background-color: transparent; /* Fundo transparente */
@@ -156,7 +158,7 @@ header {
     transition: background-color 0.3s ease, color 0.3s ease, box-shadow 0.3s ease; /* Transição suave */
 }
 
-.header-buttons .btn-primary {
+.old-header .header-buttons .btn-primary {
     background-color: var(--azul-claro); /* Fundo azul claro */
     color: var(--branco); /* Texto branco */
     padding: 10px 20px; /* Espaçamento interno */
@@ -166,15 +168,15 @@ header {
     transition: background-color 0.3s ease, box-shadow 0.3s ease; /* Transição suave */
 }
 
-.btn-outline:hover,
-.btn-outline:focus {
+.old-header .btn-outline:hover,
+.old-header .btn-outline:focus {
     background-color: var(--azul-escuro); /* Fundo azul escuro ao passar o mouse */
     color: var(--branco); /* Texto branco */
     box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2); /* Sombra ao passar o mouse */
 }
 
-.btn-primary:hover,
-.btn-primary:focus {
+.old-header .btn-primary:hover,
+.old-header .btn-primary:focus {
     background-color: var(--azul-escuro); /* Fundo azul escuro */
     color: var(--branco); /* Texto branco */
     box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2); /* Sombra ao passar o mouse */
@@ -309,12 +311,12 @@ header {
 }
 
 /* Estilo da logo */
-.logo img {
+.new-header .logo img {
     height: 60px; /* Ajuste conforme o tamanho desejado */
 }
 
 /* Estilos para os botões */
-.quick-access .btn {
+.new-header .quick-access .btn {
     border-color: var(--azul-claro);
     color: white;
     padding: 10px 10px;
@@ -324,12 +326,12 @@ header {
     font-weight: bold;
 }
 
-.quick-access .btn:hover {
+.new-header .quick-access .btn:hover {
     background-color:var (var(--azul-claro));
 }
 
 /* Menu ícone para dispositivos móveis */
-.menu-icon img {
+.new-header .menu-icon img {
     width: 30px; /* Ajuste conforme necessário */
 }
 }
@@ -348,12 +350,12 @@ header {
 }
 
 /* Estilo da logo */
-.logo img {
+. .new-header .logo img {
     height: 50px; /* Ajuste conforme o tamanho desejado */
 }
 
 /* Estilos para os botões */
-.quick-access .btn {
+.new-header .quick-access .btn {
     background-color: #0044cc;
     color: white;
     padding: 10px 15px;
@@ -363,12 +365,12 @@ header {
     font-weight: bold;
 }
 
-.quick-access .btn:hover {
+.new-header .quick-access .btn:hover {
     background-color: #002288;
 }
 
 /* Menu ícone para dispositivos móveis */
-.menu-icon img {
+.new-header .menu-icon img {
     width: 30px; /* Ajuste conforme necessário */
 }
 }

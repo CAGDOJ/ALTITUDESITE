@@ -25,7 +25,7 @@ html, body {
 }
 
 /* Cabeçalho */
-.old-header header {
+header {
     background-color: var(--branco); /* Define o fundo branco */
     padding: 15px 20px; /* Define espaçamento interno */
     width: 100%; /* Largura total do cabeçalho */
@@ -35,8 +35,10 @@ html, body {
     position: relative; /* Permite controle de posicionamento */
 }
 
-/* Dispositivos Moveis*//* Estilos para o cabeçalho */
-.new-header header {
+/* Dispositivos Moveis*/
+.new-header{
+    /* Estilos para o cabeçalho */
+header {
     display: flex;/
     justify-content: center;
     align-items: center;
@@ -46,13 +48,13 @@ html, body {
 }
 
 /* Estilo da logo */
-.old-header .logo img {
+.logo img {
     height: 60px; /* Ajuste conforme o tamanho desejado */
     
 }
 
 /* Estilos para os botões */
-.old-header .quick-access .btn {
+.quick-access .btn {
     border-color: var(--azul-claro);
     color: white;
     padding: 10px 10px;
@@ -62,12 +64,14 @@ html, body {
     font-weight: bold;
 }
 
-.old-header .quick-access .btn:hover {
+.quick-access .btn:hover {
     background-color:var (var(--azul-claro));
 }
+}
+
 
 /* Barra superior */
-.old-header .top-bar {
+.top-bar {
     display: flex; /* Layout flexível (em linha) */
     align-items: center; /* Alinha itens verticalmente no centro */
     justify-content: space-between; /* Espaça os itens */
@@ -75,27 +79,25 @@ html, body {
     margin: 0 auto; /* Centraliza o conteúdo */
 }
 
-.old-header .institution-logo .logo {
+.institution-logo .logo {
     width: 150px; /* Define a largura da logo */
-    flex: 1; /* Ocupa o espaço à esquerda */
     height: auto; /* Mantém a proporção da logo */
 }
 
 /* Menu de Navegação */
-.old-header .navbar ul {
+.navbar ul {
     list-style: none; /* Remove os marcadores da lista */
     padding: 0; /* Remove o preenchimento */
     margin: 0; /* Remove as margens */
     display: flex; /* Exibe os itens em linha */
     gap: 20px; /* Espaço entre os itens */
-
 }
 
-.old-header .navbar ul li {
+.navbar ul li {
     position: relative; /* Necessário para dropdown */
 }
 
-.old-header .navbar ul li a {
+.navbar ul li a {
     text-decoration: none; /* Remove o sublinhado dos links */
     color: var(--azul-claro); /* Define a cor do texto dos links */
     font-size: 16px; /* Tamanho do texto */
@@ -104,8 +106,8 @@ html, body {
     transition: background-color 0.3s ease, color 0.3s ease, box-shadow 0.3s ease; /* Adiciona uma transição suave ao passar o mouse */
 }
 
-.old-header .navbar ul li a:hover,
-.old-header .navbar ul li a:focus {
+.navbar ul li a:hover,
+.navbar ul li a:focus {
     background-color: var(--azul-claro); /* Fundo azul claro ao passar o mouse */
     color: var(--branco); /* Texto branco ao passar o mouse */
     box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2); /* Sombra ao passar o mouse */
@@ -113,7 +115,7 @@ html, body {
 }
 
 /* Dropdown */
-,.old-header .dropdown-content {
+.dropdown-content {
     display: none; /* Esconde o dropdown por padrão */
     position: absolute; /* Posiciona de forma absoluta */
     background-color: var(--branco); /* Fundo branco */
@@ -125,7 +127,7 @@ html, body {
     border: 1px solid var(--azul-claro); /* Borda em azul claro */
 }
 
-.old-header .dropdown-content a {
+.dropdown-content a {
     color: var(--azul-claro); /* Cor do texto no dropdown */
     padding: 12px 16px; /* Define o espaçamento interno */
     text-decoration: none; /* Remove o sublinhado */
@@ -134,17 +136,17 @@ html, body {
     font-weight: normal; /* Deixa o texto normal */
 }
 
-,.old-header .dropdown-content a:hover {
+.dropdown-content a:hover {
     background-color: var(--branco); /* Destaque em branco ao passar o mouse */
     color: var(--azul-escuro); /* Texto em azul escuro */
 }
 
-.old-header .dropdown:hover .dropdown-content {
+.dropdown:hover .dropdown-content {
     display: block; /* Exibe o dropdown ao passar o mouse */
 }
 
 /* Botões do Cabeçalho */
-.old-header .header-buttons .btn-outline {
+.header-buttons .btn-outline {
     border: 2px solid var(--azul-claro); /* Borda azul claro */
     color: var(--azul-claro); /* Texto azul claro */
     background-color: transparent; /* Fundo transparente */
@@ -154,7 +156,7 @@ html, body {
     transition: background-color 0.3s ease, color 0.3s ease, box-shadow 0.3s ease; /* Transição suave */
 }
 
-.old-header .header-buttons .btn-primary {
+.header-buttons .btn-primary {
     background-color: var(--azul-claro); /* Fundo azul claro */
     color: var(--branco); /* Texto branco */
     padding: 10px 20px; /* Espaçamento interno */
@@ -164,93 +166,19 @@ html, body {
     transition: background-color 0.3s ease, box-shadow 0.3s ease; /* Transição suave */
 }
 
-.old-header .btn-outline:hover,
-.old-header .btn-outline:focus {
+.btn-outline:hover,
+.btn-outline:focus {
     background-color: var(--azul-escuro); /* Fundo azul escuro ao passar o mouse */
     color: var(--branco); /* Texto branco */
     box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2); /* Sombra ao passar o mouse */
 }
 
-.old-header .btn-primary:hover,
-.old-header .btn-primary:focus {
+.btn-primary:hover,
+.btn-primary:focus {
     background-color: var(--azul-escuro); /* Fundo azul escuro */
     color: var(--branco); /* Texto branco */
     box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2); /* Sombra ao passar o mouse */
 }
-
-/* Dispositivos Moveis*/
-    /* Estilos para o cabeçalho */
-    .new-header {
-        display: flex;/
-        justify-content: center;
-        align-items: center;
-        padding: 10px 20px;
-        background-color: var(--azul-claro); /* Cor de fundo azul */
-        color: white;
-    }
-    
-    /* Estilo da logo */
-    .new-header .logo img {
-        height: 60px; /* Ajuste conforme o tamanho desejado */
-    }
-    
-    /* Estilos para os botões */
-    .new-header .quick-access .btn {
-        border-color: var(--azul-claro);
-        color: white;
-        padding: 10px 10px;
-        border-radius: 8px;
-        text-decoration: none;
-        margin-left: 10px;
-        font-weight: bold;
-    }
-    
-    .new-header .quick-access .btn:hover {
-        background-color:var (var(--azul-claro));
-    }
-    
-    /* Menu ícone para dispositivos móveis */
-    .new-header .menu-icon img {
-        width: 30px; /* Ajuste conforme necessário */
-    }
-    
-    
-    /* Estilos para o cabeçalho */
-    .new-header header {
-        display: flex;
-        justify-content: space-between;
-        align-items: center;
-        padding: 10px 20px;
-        background-color: #003399; /* Cor de fundo azul */
-        color: white;
-    }
-    
-    /* Estilo da logo */
-    .new-header .logo img {
-        height: 50px; /* Ajuste conforme o tamanho desejado */
-    }
-    
-    /* Estilos para os botões */
-    .new-header .quick-access .btn {
-        background-color: #0044cc;
-        color: white;
-        padding: 10px 15px;
-        border-radius: 5px;
-        text-decoration: none;
-        margin-left: 10px;
-        font-weight: bold;
-    }
-    
-    .new-header .quick-access .btn:hover {
-        background-color: #002288;
-    }
-    
-    /* Menu ícone para dispositivos móveis */
-    .new-header .menu-icon img {
-        width: 30px; /* Ajuste conforme necessário */
-    }
-    
-
 
 /* Estilo da seção principal */
 main {
@@ -366,6 +294,85 @@ h2 {
     color: var(--branco); /* Texto em branco */
     font-size: 18px; /* Tamanho do texto */
 }
+
+
+/* Dispositivos Moveis*/
+.new-header{
+    /* Estilos para o cabeçalho */
+header {
+    display: flex;/
+    justify-content: center;
+    align-items: center;
+    padding: 10px 20px;
+    background-color: var(--azul-claro); /* Cor de fundo azul */
+    color: white;
+}
+
+/* Estilo da logo */
+.logo img {
+    height: 60px; /* Ajuste conforme o tamanho desejado */
+}
+
+/* Estilos para os botões */
+.quick-access .btn {
+    border-color: var(--azul-claro);
+    color: white;
+    padding: 10px 10px;
+    border-radius: 8px;
+    text-decoration: none;
+    margin-left: 10px;
+    font-weight: bold;
+}
+
+.quick-access .btn:hover {
+    background-color:var (var(--azul-claro));
+}
+
+/* Menu ícone para dispositivos móveis */
+.menu-icon img {
+    width: 30px; /* Ajuste conforme necessário */
+}
+}
+
+
+
+.new-header{
+    /* Estilos para o cabeçalho */
+header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 10px 20px;
+    background-color: #003399; /* Cor de fundo azul */
+    color: white;
+}
+
+/* Estilo da logo */
+.logo img {
+    height: 50px; /* Ajuste conforme o tamanho desejado */
+}
+
+/* Estilos para os botões */
+.quick-access .btn {
+    background-color: #0044cc;
+    color: white;
+    padding: 10px 15px;
+    border-radius: 5px;
+    text-decoration: none;
+    margin-left: 10px;
+    font-weight: bold;
+}
+
+.quick-access .btn:hover {
+    background-color: #002288;
+}
+
+/* Menu ícone para dispositivos móveis */
+.menu-icon img {
+    width: 30px; /* Ajuste conforme necessário */
+}
+}
+
 
 /* Esconder o cabeçalho atual em dispositivos móveis (telas menores que 768px) */
 @media screen and (max-width: 768px) {

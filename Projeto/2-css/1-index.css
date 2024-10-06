@@ -46,13 +46,13 @@ html, body {
 }
 
 /* Estilo da logo */
-.logo img {
+.old-header .logo img {
     height: 60px; /* Ajuste conforme o tamanho desejado */
     
 }
 
 /* Estilos para os botões */
-.quick-access .btn {
+.old-header .quick-access .btn {
     border-color: var(--azul-claro);
     color: white;
     padding: 10px 10px;
@@ -62,11 +62,9 @@ html, body {
     font-weight: bold;
 }
 
-.quick-access .btn:hover {
+.old-header .quick-access .btn:hover {
     background-color:var (var(--azul-claro));
 }
-
-
 
 /* Barra superior */
 .old-header .top-bar {
@@ -179,6 +177,80 @@ html, body {
     color: var(--branco); /* Texto branco */
     box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2); /* Sombra ao passar o mouse */
 }
+
+/* Dispositivos Moveis*/
+    /* Estilos para o cabeçalho */
+    .new-header {
+        display: flex;/
+        justify-content: center;
+        align-items: center;
+        padding: 10px 20px;
+        background-color: var(--azul-claro); /* Cor de fundo azul */
+        color: white;
+    }
+    
+    /* Estilo da logo */
+    .new-header .logo img {
+        height: 60px; /* Ajuste conforme o tamanho desejado */
+    }
+    
+    /* Estilos para os botões */
+    .new-header .quick-access .btn {
+        border-color: var(--azul-claro);
+        color: white;
+        padding: 10px 10px;
+        border-radius: 8px;
+        text-decoration: none;
+        margin-left: 10px;
+        font-weight: bold;
+    }
+    
+    .new-header .quick-access .btn:hover {
+        background-color:var (var(--azul-claro));
+    }
+    
+    /* Menu ícone para dispositivos móveis */
+    .new-header .menu-icon img {
+        width: 30px; /* Ajuste conforme necessário */
+    }
+    
+    
+    /* Estilos para o cabeçalho */
+    .new-header header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        padding: 10px 20px;
+        background-color: #003399; /* Cor de fundo azul */
+        color: white;
+    }
+    
+    /* Estilo da logo */
+    .new-header .logo img {
+        height: 50px; /* Ajuste conforme o tamanho desejado */
+    }
+    
+    /* Estilos para os botões */
+    .new-header .quick-access .btn {
+        background-color: #0044cc;
+        color: white;
+        padding: 10px 15px;
+        border-radius: 5px;
+        text-decoration: none;
+        margin-left: 10px;
+        font-weight: bold;
+    }
+    
+    .new-header .quick-access .btn:hover {
+        background-color: #002288;
+    }
+    
+    /* Menu ícone para dispositivos móveis */
+    .new-header .menu-icon img {
+        width: 30px; /* Ajuste conforme necessário */
+    }
+    
+
 
 /* Estilo da seção principal */
 main {
@@ -294,84 +366,6 @@ h2 {
     color: var(--branco); /* Texto em branco */
     font-size: 18px; /* Tamanho do texto */
 }
-
-
-/* Dispositivos Moveis*/
-    /* Estilos para o cabeçalho */
-.new-header {
-    display: flex;/
-    justify-content: center;
-    align-items: center;
-    padding: 10px 20px;
-    background-color: var(--azul-claro); /* Cor de fundo azul */
-    color: white;
-}
-
-/* Estilo da logo */
-.new-header .logo img {
-    height: 60px; /* Ajuste conforme o tamanho desejado */
-}
-
-/* Estilos para os botões */
-.new-header .quick-access .btn {
-    border-color: var(--azul-claro);
-    color: white;
-    padding: 10px 10px;
-    border-radius: 8px;
-    text-decoration: none;
-    margin-left: 10px;
-    font-weight: bold;
-}
-
-.new-header .quick-access .btn:hover {
-    background-color:var (var(--azul-claro));
-}
-
-/* Menu ícone para dispositivos móveis */
-.new-header .menu-icon img {
-    width: 30px; /* Ajuste conforme necessário */
-}
-
-
-
-
-.new-header{
-    /* Estilos para o cabeçalho */
-header {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    padding: 10px 20px;
-    background-color: #003399; /* Cor de fundo azul */
-    color: white;
-}
-
-/* Estilo da logo */
-. .new-header .logo img {
-    height: 50px; /* Ajuste conforme o tamanho desejado */
-}
-
-/* Estilos para os botões */
-.new-header .quick-access .btn {
-    background-color: #0044cc;
-    color: white;
-    padding: 10px 15px;
-    border-radius: 5px;
-    text-decoration: none;
-    margin-left: 10px;
-    font-weight: bold;
-}
-
-.new-header .quick-access .btn:hover {
-    background-color: #002288;
-}
-
-/* Menu ícone para dispositivos móveis */
-.new-header .menu-icon img {
-    width: 30px; /* Ajuste conforme necessário */
-}
-}
-
 
 /* Esconder o cabeçalho atual em dispositivos móveis (telas menores que 768px) */
 @media screen and (max-width: 768px) {

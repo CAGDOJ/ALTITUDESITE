@@ -25,7 +25,7 @@ html, body {
 }
 
 /* Cabeçalho */
-header {
+.old-header header {
     background-color: var(--branco); /* Define o fundo branco */
     padding: 15px 20px; /* Define espaçamento interno */
     width: 100%; /* Largura total do cabeçalho */
@@ -35,10 +35,8 @@ header {
     position: relative; /* Permite controle de posicionamento */
 }
 
-/* Dispositivos Moveis*/
-.new-header{
-    /* Estilos para o cabeçalho */
-header {
+/* Dispositivos Moveis*//* Estilos para o cabeçalho */
+.new-header header {
     display: flex;/
     justify-content: center;
     align-items: center;
@@ -67,7 +65,7 @@ header {
 .quick-access .btn:hover {
     background-color:var (var(--azul-claro));
 }
-}
+
 
 
 /* Barra superior */
@@ -299,9 +297,8 @@ h2 {
 
 
 /* Dispositivos Moveis*/
-.new-header{
     /* Estilos para o cabeçalho */
-header {
+.new-header {
     display: flex;/
     justify-content: center;
     align-items: center;
@@ -334,7 +331,7 @@ header {
 .new-header .menu-icon img {
     width: 30px; /* Ajuste conforme necessário */
 }
-}
+
 
 
 

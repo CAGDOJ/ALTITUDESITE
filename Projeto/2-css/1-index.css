@@ -211,6 +211,8 @@ header {
     padding: 10px 20px;
     background-color: var(--azul-claro); /* Cor de fundo azul */
     color: white;
+    overflow-y: scroll;
+    overflow-x: hidden;
 }
 
 /* Estilo da logo */
@@ -244,6 +246,8 @@ header {
     padding: 10px 20px;
     background-color: var(--azul-claro); /* Cor de fundo azul */
     color: white;
+    overflow-y: scroll;
+    overflow-x: hidden;
 }
 
 /* Estilo da logo */

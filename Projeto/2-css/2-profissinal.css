@@ -41,7 +41,7 @@ header {
     align-items: center; /* Alinha itens verticalmente no centro */
     justify-content: space-between; /* Espaça os itens */
     max-width: 1200px; /* Define a largura máxima */
-    margin: 0 auto; /* Centraliza o conteúdo */
+    margin: auto; /* Centraliza o conteúdo */
 }
 
 .institution-logo .logo {

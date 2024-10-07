@@ -284,6 +284,8 @@ header {
     padding: 10px 20px;
     background-color: #003399; /* Cor de fundo azul */
     color: white;
+    overflow-y: scroll;
+    overflow-x: hidden;
 }
 
 /* Estilo da logo */
@@ -421,7 +423,10 @@ header {
     .new-header {
         display: flex;
     }
+
 }
+
+
 
 /* Esconder o novo cabeçalho em telas maiores (acima de 768px) */
 @media screen and (min-width: 769px) {

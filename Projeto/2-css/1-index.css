@@ -22,6 +22,8 @@ html, body {
     width: 100%; /* Define a largura total */
     height: 100%; /* Define a altura total */
     box-sizing: border-box; /* Inclui o padding e borda na largura e altura */
+    overflow-y: scroll;
+    overflow-x: hidden;
 }
 
 /*________________________*/
@@ -111,6 +113,8 @@ html, body {
     display: block; /* Exibe como bloco completo */
     font-size: 14px; /* Define o tamanho do texto */
     font-weight: normal; /* Deixa o texto normal */
+    text-align: left;
+    
 }
 
 .dropdown-content a:hover {

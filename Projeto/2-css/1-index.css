@@ -24,52 +24,18 @@ html, body {
     box-sizing: border-box; /* Inclui o padding e borda na largura e altura */
 }
 
-/* Cabeçalho */
-
-header {
+/*________________________*/
+/* -------Cabeçalho------ */
+/*________________________*/
+.old-header {
     background-color: var(--branco); /* Define o fundo branco */
     padding: 15px 20px; /* Define espaçamento interno */
     width: 100%; /* Largura total do cabeçalho */
     box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2); /* Adiciona uma sombra suave */
     border-bottom: 2px solid var(--azul-claro); /* Linha de destaque abaixo */
     z-index: 1000; /* Garante que o cabeçalho fique acima dos outros elementos */
-    position: relative; /* Permite controle de posicionamento */
+   
 }
-
-/* Dispositivos Moveis*/
-.new-header{
-    /* Estilos para o cabeçalho */
-header {
-    display: flex;/
-    justify-content: center;
-    align-items: center;
-    padding: 10px 20px;
-    background-color: var(--azul-claro); /* Cor de fundo azul */
-    color: white;
-}
-
-/* Estilo da logo */
-.logo img {
-    height: 60px; /* Ajuste conforme o tamanho desejado */
-    
-}
-
-/* Estilos para os botões */
-.quick-access .btn {
-    border-color: var(--azul-claro);
-    color: white;
-    padding: 10px 10px;
-    border-radius: 8px;
-    text-decoration: none;
-    margin-left: 10px;
-    font-weight: bold;
-}
-
-.quick-access .btn:hover {
-    background-color:var (var(--azul-claro));
-}
-}
-
 
 /* Barra superior */
 .top-bar {
@@ -80,15 +46,19 @@ header {
     margin: auto; /* Centraliza o conteúdo */
 }
 
-.institution-logo .logo {
-    top: 10px; /* distância do topo */
-    left: px; /* distância da esquerda */
+.old-header .institution-logo .logo {
+    top: 6px; /* distância do topo */
     height: auto; /* mantém a proporção */
     z-index: 1000; /* garante que fique acima de outros elementos */
     width: 150px; /* Define a largura da logo */
     height: auto; /* Mantém a proporção da logo */
-    
+    position: relative;
+    left: -145px;
+
+
 }
+
+ 
 
 /* Menu de Navegação */
 .navbar ul {
@@ -152,7 +122,16 @@ header {
     display: block; /* Exibe o dropdown ao passar o mouse */
 }
 
+
+
 /* Botões do Cabeçalho */
+
+
+.header-buttons  {
+position: relative;
+    right: -130px;
+}
+
 .header-buttons .btn-outline {
     border: 2px solid var(--azul-claro); /* Borda azul claro */
     color: var(--azul-claro); /* Texto azul claro */
@@ -213,7 +192,130 @@ h2 {
     color: var(--azul-escuro); /* Cor do subtítulo em azul escuro */
 }
 
-/* Estilos do Rodapé */
+
+/* ______________________*/
+/* -----NOVO CABEÇALHO----*/
+/* ______________________*/
+
+
+.new-header{
+    /* Estilos para o cabeçalho */
+header {
+    display: flex;/
+    justify-content: center;
+    align-items: center;
+    padding: 10px 20px;
+    background-color: var(--azul-claro); /* Cor de fundo azul */
+    color: white;
+}
+
+/* Estilo da logo */
+.logo img {
+    height: 60px; /* Ajuste conforme o tamanho desejado */
+   
+}
+
+/* Estilos para os botões */
+.quick-access .btn {
+    border-color: var(--azul-claro);
+    color: white;
+    padding: 10px 10px;
+    border-radius: 8px;
+    text-decoration: none;
+    margin-left: 10px;
+    font-weight: bold;
+}
+
+.quick-access .btn:hover {
+    background-color:var (var(--azul-claro));
+}
+
+
+.new-header{
+    /* Estilos para o cabeçalho */
+header {
+    display: flex;/
+    justify-content: center;
+    align-items: center;
+    padding: 10px 20px;
+    background-color: var(--azul-claro); /* Cor de fundo azul */
+    color: white;
+}
+
+/* Estilo da logo */
+.logo img {
+    height: 60px; /* Ajuste conforme o tamanho desejado */
+}
+
+/* Estilos para os botões */
+.quick-access .btn {
+    border-color: var(--azul-claro);
+    color: white;
+    padding: 10px 10px;
+    border-radius: 8px;
+    text-decoration: none;
+    margin-left: 10px;
+    font-weight: bold;
+}
+
+.quick-access .btn:hover {
+    background-color:var (var(--azul-claro));
+}
+
+
+
+
+
+/* Menu ícone para dispositivos móveis */
+.new-header .menu-icon img {
+    width: 30px; /* Ajuste conforme necessário */
+}
+
+.new-header{
+    /* Estilos para o cabeçalho */
+header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 10px 20px;
+    background-color: #003399; /* Cor de fundo azul */
+    color: white;
+}
+
+/* Estilo da logo */
+.logo img {
+    height: 50px; /* Ajuste conforme o tamanho desejado */
+}
+
+/* Estilos para os botões */
+.quick-access .btn {
+    background-color: #0044cc;
+    color: white;
+    padding: 10px 15px;
+    border-radius: 5px;
+    text-decoration: none;
+    margin-left: 10px;
+    font-weight: bold;
+}
+
+.quick-access .btn:hover {
+    background-color: #002288;
+}
+
+/* Menu ícone para dispositivos móveis */
+.menu-icon img {
+    width: 30px; /* Ajuste conforme necessário */
+}
+
+
+}}}
+
+
+
+/* ______________________*/
+/*----Estilos do Rodapé---- */
+/* ______________________*/
+
 .rodape {
     background-color: var(--azul-escuro); /* Fundo azul escuro */
     color: var(--branco); /* Texto em branco */
@@ -303,83 +405,6 @@ h2 {
 }
 
 
-/* Dispositivos Moveis*/
-.new-header{
-    /* Estilos para o cabeçalho */
-header {
-    display: flex;/
-    justify-content: center;
-    align-items: center;
-    padding: 10px 20px;
-    background-color: var(--azul-claro); /* Cor de fundo azul */
-    color: white;
-}
-
-/* Estilo da logo */
-.logo img {
-    height: 60px; /* Ajuste conforme o tamanho desejado */
-}
-
-/* Estilos para os botões */
-.quick-access .btn {
-    border-color: var(--azul-claro);
-    color: white;
-    padding: 10px 10px;
-    border-radius: 8px;
-    text-decoration: none;
-    margin-left: 10px;
-    font-weight: bold;
-}
-
-.quick-access .btn:hover {
-    background-color:var (var(--azul-claro));
-}
-
-
-
-
-
-/* Menu ícone para dispositivos móveis */
-.new-header .menu-icon img {
-    width: 30px; /* Ajuste conforme necessário */
-}
-
-.new-header{
-    /* Estilos para o cabeçalho */
-header {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    padding: 10px 20px;
-    background-color: #003399; /* Cor de fundo azul */
-    color: white;
-}
-
-/* Estilo da logo */
-.logo img {
-    height: 50px; /* Ajuste conforme o tamanho desejado */
-}
-
-/* Estilos para os botões */
-.quick-access .btn {
-    background-color: #0044cc;
-    color: white;
-    padding: 10px 15px;
-    border-radius: 5px;
-    text-decoration: none;
-    margin-left: 10px;
-    font-weight: bold;
-}
-
-.quick-access .btn:hover {
-    background-color: #002288;
-}
-
-/* Menu ícone para dispositivos móveis */
-.menu-icon img {
-    width: 30px; /* Ajuste conforme necessário */
-}
-}
 
 
 /* Esconder o cabeçalho atual em dispositivos móveis (telas menores que 768px) */

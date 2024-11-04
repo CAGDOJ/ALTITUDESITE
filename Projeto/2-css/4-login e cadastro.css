@@ -243,7 +243,7 @@ button:focus.signup, button:active.signup, button:hover.signup {
   background: #0288D1;
 }
 button:focus.login, button:active.login, button:hover.login {
-  background: #03A9F4;
+  background: #03A9F4.;
 }
 button:focus.off, button:active.off, button:hover.off {
   box-shadow: none;

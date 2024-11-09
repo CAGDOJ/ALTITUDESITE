@@ -1,35 +1,47 @@
 <!DOCTYPE html>
-<html lang="pt-br">
+<html lang="pt-BR">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <!--<link rel="stylesheet" href="..//2-css/1-index.css" -->
-    <link rel="stylesheet" href="../2-css/6-sobrenos.css"
-   
-
+    <title>Sobre Nós - Instituto Altitude</title>
+    <link rel="stylesheet" href="../2-css/1-index.css"> <!-- Link para o CSS padrão -->
+</head>
 <body>
 
-     <!-- Cabeçalho -->
-     <header>
+    <!-- Cabeçalho para dispositivos móveis -->
+    <header class="new-header">
+        <div class="logo">
+            <img src="../Projeto/3-img/LOGO.png" alt="logo Altitude">
+        </div>
+        <div class="quick-access">
+            <a href="../Projeto/1-html/4-login e cadastro.html" class="btn candidato">Candidato(a)</a>
+            <a href="../Projeto/1-html/4-login e cadastro.html" class="btn aluno">Sou Aluno(a)</a>
+        </div>
+        <div class="menu-icon">
+            <img src="../Projeto/3-img/iconeamburguer.png" alt="Menu">
+        </div>
+    </header>
+
+    <!-- Cabeçalho para PC -->
+    <header class="old-header">
         <div class="top-bar">
             <div class="institution-logo">
-                <a href="1-index.html">
+                <a href="./index.html">
                     <img src="../3-img/LOGO.png" alt="Emblema Altitude" class="logo">
                 </a>
             </div>
             <nav class="navbar">
                 <ul>
-                    <li><a href="1-index.html">Início</a></li>
+                    <li><a href="./index.html">Início</a></li>
                     <li class="dropdown">
                         <a href="" class="dropbtn">Cursos</a>
                         <div class="dropdown-content">
-                            <a href="..//1-html/2-cursos-profissional.html">Profissional</a>
-                            <!-- <a href="..//1-html/3-cursos-tecnico.html">Técnico</a>-->
+                            <a href="../1-html/2-cursos-profissional.html">Profissional</a>
                         </div>
                     </li>
-                    <li><a href="#">Certificados</a></li>
-                    <li><a href="..//1-html/6-sobrenos.html">Sobre Nós</a></li>
-                    <li><a href="#">Ajuda</a></li>
+                    <li><a href="../1-html/8-certificados.html">Certificados</a></li>
+                    <li><a href="../1-html/6-sobrenos.html">Sobre Nós</a></li>
+                    <li><a href="../1-html/7-ajuda.html">Ajuda</a></li>
                 </ul>
             </nav>
             <div class="header-buttons">
@@ -38,48 +50,21 @@
             </div>
         </div>
     </header>
-    
-   <main>
-    <h1>Sobre Nós - Altitude</h1>
-    <p>A Altitude é uma instituição de ensino dedicada à formação de profissionais altamente capacitados e preparados para os desafios do mercado de trabalho. Com uma abordagem inovadora e focada no desenvolvimento integral dos nossos alunos, oferecemos cursos técnicos e profissionalizantes que visam promover o crescimento pessoal e profissional, sempre alinhados com as demandas atuais de diversas áreas.</p>
 
-        <p>Compromisso é proporcionar uma educação de qualidade, combinando teoria e prática para garantir que nossos estudantes adquiram as habilidades e competências necessárias para se destacarem em suas respectivas áreas de atuação. Contamos com uma equipe de professores experientes e qualificados, além de uma infraestrutura moderna, equipada com tecnologia de ponta, que proporciona um ambiente de aprendizagem dinâmico e acolhedor.</p> 
+    <!-- Conteúdo Principal -->
+    <main>
+        <section class="sobre-nos">
+            <h1>Sobre Nós</h1>
+            <p>Bem-vindo ao Instituto Altitude! Nossa missão é fornecer uma educação de qualidade que empodere pessoas e transforma vidas.</p>
+            <!-- Conteúdo adicional da página "Sobre Nós" -->
+        </section>
+    </main>
 
-        <p> Na Altitude, acreditamos que a educação é o caminho para elevar o potencial de cada indivíduo, e estamos empenhados em oferecer uma formação que inspire confiança e prepare nossos alunos para alcançar novos patamares em suas carreiras.</p>        
-        <p> Seja na área de administração, logística, informática ou outras, na Altitude você encontra o suporte e as ferramentas para conquistar seus objetivos profissionais com excelência.</p>
-        
-      
-
-    
-        
-        <h1>Missão</h1>
-         <p>Formar profissionais competentes, críticos e capazes de enfrentar os desafios do mercado de trabalho, contribuindo para o desenvolvimento socioeconômico por meio da educação de qualidade. </p>
-        
-        
-         <h1>Nossa Visão</h1> 
-          <p>  Ser uma instituição de referência em ensino técnico e profissionalizante, reconhecida pela inovação, qualidade e impacto positivo na vida dos alunos e na comunidade. </p>
-      
-        
-
-        <h1> Nossos Valores</h1>
-        
-        
-        <P>Excelência acadêmica
-        Compromisso com a formação prática e ética
-        Inovação e tecnologia
-        Inclusão e diversidade
-        Desenvolvimento contínuo</p>
-
-
-
-   </main>
-    
-
-         <!-- Rodapé -->
+    <!-- Rodapé -->
     <footer class="rodape">
         <div class="footer-container">
             <div class="footer-column logo-info">
-                <img src="../3-img/LOGO.png" alt="Logo Altitude" class="footer-logo"> <!-- Logo da instituição -->
+                <img src="../3-img/LOGO.png" alt="Logo Altitude" class="footer-logo">
                 <p>Portal Altitude</p>
                 <p>Aprender é alcançar novos horizontes</p>
                 <p>CNPJ: 45.628.030/0001-85</p>
@@ -114,14 +99,14 @@
             </div>
         </div>
         <div class="footer-payments">
-            <img src="pagseguro.png" alt="PagSeguro" class="payment-icon"> <!-- Exemplo de ícone de pagamento -->
-            <img src="paypal.png" alt="PayPal" class="payment-icon"> <!-- Exemplo de ícone de pagamento -->
-            <img src="picpay.png" alt="PicPay" class="payment-icon"> <!-- Exemplo de ícone de pagamento -->
-            <!-- Adicione outros ícones conforme necessário -->
+            <img src="../3-img/PIX.png" alt="PIX" class="payment-icon">
+            <img src="../3-img/paypal.png" alt="PayPal" class="payment-icon">
+            <img src="../3-img/PICPAY.png" alt="PicPay" class="payment-icon">
         </div>
         <div class="footer-bottom">
             <p>&copy; 2024 - Portal IDEA: Instituto de Desenvolvimento e Aprendizagem LTDA. Todos os Direitos Reservados.</p>
         </div>
     </footer>
+
 </body>
 </html>

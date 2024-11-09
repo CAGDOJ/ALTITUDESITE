@@ -13,6 +13,7 @@ body {
     background-color: var(--branco); /* Fundo branco */
     color: var(--azul-claro); /* Texto em azul claro */
     line-height: 1.6; /* Altura das linhas para facilitar a leitura */
+    overflow-x: hidden;
 }
 
 /* Cabeçalho */
@@ -255,4 +256,451 @@ h2{
     padding: 10px; /* Espaçamento interno */
     color: var(--branco); /* Texto em azul escuro */
     font-size: 18px; /* Tamanho do texto */
+}
+
+
+/* Esconder o cabeçalho atual em dispositivos móveis (telas menores que 768px) */
+@media screen and (max-width: 768px) {
+    .old-header {
+        display: none;
+    }
+
+    /* Mostrar o novo cabeçalho em telas menores */
+    .new-header {
+        display: flex;
+    }
+
+}
+
+
+
+/* Esconder o novo cabeçalho em telas maiores (acima de 768px) */
+@media screen and (min-width: 769px) {
+    .new-header {
+        display: none;
+    }
+
+    /* Mostrar o cabeçalho antigo em telas grandes */
+    .old-header {
+        display: flex;
+    }
+}
+
+
+/*________________________*/
+/* -------Cabeçalho------ */
+/*________________________*/
+.old-header {
+    background-color: var(--branco); /* Define o fundo branco */
+    padding: 15px 20px; /* Define espaçamento interno */
+    width: 100%; /* Largura total do cabeçalho */
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2); /* Adiciona uma sombra suave */
+    border-bottom: 2px solid var(--azul-claro); /* Linha de destaque abaixo */
+    z-index: 1000; /* Garante que o cabeçalho fique acima dos outros elementos */
+   
+}
+
+/* Barra superior */
+.top-bar {
+    display: flex; /* Layout flexível (em linha) */
+    align-items: center; /* Alinha itens verticalmente no centro */
+    justify-content: space-between; /* Espaça os itens */
+    max-width: 1200px; /* Define a largura máxima */
+    margin: auto; /* Centraliza o conteúdo */
+}
+
+.old-header .institution-logo .logo {
+    top: 6px; /* distância do topo */
+    height: auto; /* mantém a proporção */
+    z-index: 1000; /* garante que fique acima de outros elementos */
+    width: 150px; /* Define a largura da logo */
+    height: auto; /* Mantém a proporção da logo */
+    position: relative;
+    left: -145px;
+
+
+}
+
+ 
+
+/* Menu de Navegação */
+.navbar ul {
+    list-style: none; /* Remove os marcadores da lista */
+    padding: 0; /* Remove o preenchimento */
+    margin: 0; /* Remove as margens */
+    display: flex; /* Exibe os itens em linha */
+    gap: 20px; /* Espaço entre os itens */
+    text-align: center;
+}
+
+.navbar ul li {
+    position: relative; /* Necessário para dropdown */
+}
+
+.navbar ul li a {
+    text-decoration: none; /* Remove o sublinhado dos links */
+    color: var(--azul-claro); /* Define a cor do texto dos links */
+    font-size: 16px; /* Tamanho do texto */
+    font-weight: bold; /* Deixa o texto mais grosso */
+    padding: 10px 15px; /* Define o espaçamento interno */
+    transition: background-color 0.3s ease, color 0.3s ease, box-shadow 0.3s ease; /* Adiciona uma transição suave ao passar o mouse */
+}
+
+.navbar ul li a:hover,
+.navbar ul li a:focus {
+    background-color: var(--azul-claro); /* Fundo azul claro ao passar o mouse */
+    color: var(--branco); /* Texto branco ao passar o mouse */
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2); /* Sombra ao passar o mouse */
+    border-radius: 5px; /* Bordas arredondadas */
+}
+
+/* Dropdown */
+.dropdown-content {
+    display: none; /* Esconde o dropdown por padrão */
+    position: absolute; /* Posiciona de forma absoluta */
+    background-color: var(--branco); /* Fundo branco */
+    box-shadow: 0px 8px 16px rgba(0, 0, 0, 0.2); /* Adiciona sombra */
+    z-index: 1; /* Eleva o dropdown sobre outros elementos */
+    width: 160px; /* Largura do dropdown */
+    top: 30px; /* Distância do dropdown em relação ao menu */
+    border-radius: 5px; /* Bordas arredondadas */
+    border: 1px solid var(--azul-claro); /* Borda em azul claro */
+}
+
+.dropdown-content a {
+    color: var(--azul-claro); /* Cor do texto no dropdown */
+    padding: 12px 16px; /* Define o espaçamento interno */
+    text-decoration: none; /* Remove o sublinhado */
+    display: block; /* Exibe como bloco completo */
+    font-size: 14px; /* Define o tamanho do texto */
+    font-weight: normal; /* Deixa o texto normal */
+    text-align: left;
+    
+}
+
+.dropdown-content a:hover {
+    background-color: var(--branco); /* Destaque em branco ao passar o mouse */
+    color: var(--azul-escuro); /* Texto em azul escuro */
+}
+
+.dropdown:hover .dropdown-content {
+    display: block; /* Exibe o dropdown ao passar o mouse */
+}
+
+
+
+/* Botões do Cabeçalho */
+
+
+.header-buttons  {
+position: relative;
+    right: -130px;
+}
+
+.header-buttons .btn-outline {
+    border: 2px solid var(--azul-claro); /* Borda azul claro */
+    color: var(--azul-claro); /* Texto azul claro */
+    background-color: transparent; /* Fundo transparente */
+    padding: 10px 20px; /* Define espaçamento interno */
+    border-radius: 5px; /* Bordas arredondadas */
+    text-decoration: none; /* Remove o sublinhado */
+    transition: background-color 0.3s ease, color 0.3s ease, box-shadow 0.3s ease; /* Transição suave */
+}
+
+.header-buttons .btn-primary {
+    background-color: var(--azul-claro); /* Fundo azul claro */
+    color: var(--branco); /* Texto branco */
+    padding: 10px 20px; /* Espaçamento interno */
+    border-radius: 5px; /* Bordas arredondadas */
+    text-decoration: none; /* Remove o sublinhado */
+    font-weight: bold; /* Texto mais grosso */
+    transition: background-color 0.3s ease, box-shadow 0.3s ease; /* Transição suave */
+}
+
+.btn-outline:hover,
+.btn-outline:focus {
+    background-color: var(--azul-escuro); /* Fundo azul escuro ao passar o mouse */
+    color: var(--branco); /* Texto branco */
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2); /* Sombra ao passar o mouse */
+}
+
+.btn-primary:hover,
+.btn-primary:focus {
+    background-color: var(--azul-escuro); /* Fundo azul escuro */
+    color: var(--branco); /* Texto branco */
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2); /* Sombra ao passar o mouse */
+}
+
+/* Estilo da seção principal */
+main {
+    padding: 60px 20px; /* Espaçamento interno */
+    text-align: center; /* Alinhamento centralizado */
+}
+
+main h1 {
+    color: var(--azul-claro); /* Título em azul claro */
+    margin-bottom: 20px; /* Espaço abaixo do título */
+    
+}
+
+main p {
+    color: var(--azul-escuro); /* Texto em azul escuro */
+    font-size: 18px; /* Tamanho do texto */
+    max-width: 800px; /* Largura máxima do parágrafo */
+    margin: 0 auto; /* Centraliza o parágrafo */
+    text-align: justify;
+}
+
+h2 {
+    margin: center;
+    text-align: center;
+    color: var(--azul-escuro); /* Cor do subtítulo em azul escuro */
+}
+
+
+/* ______________________*/
+/* -----NOVO CABEÇALHO----*/
+/* ______________________*/
+
+
+.new-header{
+    /* Estilos para o cabeçalho */
+header {
+    display: flex;/
+    justify-content: center;
+    align-items: center;
+    padding: 10px 20px;
+    background-color: var(--azul-claro); /* Cor de fundo azul */
+    color: white;
+    overflow-y: scroll;
+    overflow-x: hidden;
+}
+
+/* Estilo da logo */
+.logo img {
+    height: 60px; /* Ajuste conforme o tamanho desejado */
+   
+}
+
+/* Estilos para os botões */
+.quick-access .btn {
+    border-color: var(--azul-claro);
+    color: white;
+    padding: 10px 10px;
+    border-radius: 8px;
+    text-decoration: none;
+    margin-left: 10px;
+    font-weight: bold;
+}
+
+.quick-access .btn:hover {
+    background-color:var (var(--azul-claro));
+}
+
+
+.new-header{
+    /* Estilos para o cabeçalho */
+header {
+    display: flex;/
+    justify-content: center;
+    align-items: center;
+    padding: 10px 20px;
+    background-color: var(--azul-claro); /* Cor de fundo azul */
+    color: white;
+    overflow-y: scroll;
+    overflow-x: hidden;
+}
+
+/* Estilo da logo */
+.logo img {
+    height: 60px; /* Ajuste conforme o tamanho desejado */
+}
+
+/* Estilos para os botões */
+.quick-access .btn {
+    border-color: var(--azul-claro);
+    color: white;
+    padding: 10px 10px;
+    border-radius: 8px;
+    text-decoration: none;
+    margin-left: 10px;
+    font-weight: bold;
+}
+
+.quick-access .btn:hover {
+    background-color:var (var(--azul-claro));
+}
+
+
+
+
+
+/* Menu ícone para dispositivos móveis */
+.new-header .menu-icon img {
+    width: 30px; /* Ajuste conforme necessário */
+}
+
+.new-header{
+    /* Estilos para o cabeçalho */
+header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 10px 20px;
+    background-color: #003399; /* Cor de fundo azul */
+    color: white;
+    overflow-y: scroll;
+    overflow-x: hidden;
+}
+
+/* Estilo da logo */
+.logo img {
+    height: 50px; /* Ajuste conforme o tamanho desejado */
+}
+
+/* Estilos para os botões */
+.quick-access .btn {
+    background-color: #0044cc;
+    color: white;
+    padding: 10px 15px;
+    border-radius: 5px;
+    text-decoration: none;
+    margin-left: 10px;
+    font-weight: bold;
+}
+
+.quick-access .btn:hover {
+    background-color: #002288;
+}
+
+/* Menu ícone para dispositivos móveis */
+.menu-icon img {
+    width: 30px; /* Ajuste conforme necessário */
+}
+
+
+}}}
+
+
+
+/* ______________________*/
+/*----Estilos do Rodapé---- */
+/* ______________________*/
+
+.rodape {
+    background-color: var(--azul-escuro); /* Fundo azul escuro */
+    color: var(--branco); /* Texto em branco */
+    padding: 60px; /* Espaçamento interno */
+    width: 100%; /* Certifica-se de que o rodapé ocupe 100% da largura */
+    box-sizing: border-box; /* Inclui padding na largura total */
+}
+
+.footer-container {
+    display: flex; /* Layout flexível */
+    justify-content: center; /* Centraliza as colunas horizontalmente */
+    max-width: 1200px; /* Largura máxima do conteúdo */
+    margin: 0 auto; /* Centraliza o conteúdo */
+    flex-wrap: wrap; /* Quebra linha em telas menores */
+}
+
+.footer-column {
+    flex: 1; /* Cada coluna ocupa um espaço igual */
+    margin: 10px; /* Espaço entre colunas */
+    min-width: 200px; /* Largura mínima das colunas */
+}
+
+.logo-info {
+    text-align: center; /* Alinha o conteúdo da coluna de logo ao centro */
+}
+
+.footer-logo {
+    width: 130px; /* Tamanho da logo */
+    height: auto; /* Mantém a proporção */
+    margin-bottom: 1px; /* Espaço abaixo da logo */
+}
+
+.footer-column h3 {
+    margin-bottom: 10px; /* Espaço abaixo do título */
+    font-size: 18px; /* Tamanho da fonte */
+    text-align: center; /* Centraliza os títulos */
+}
+
+.footer-column ul {
+    list-style: none; /* Remove marcadores de lista */
+    padding: 0; /* Remove preenchimento */
+    margin: 0; /* Remove margens */
+    text-align: center; /* Centraliza o conteúdo da lista */
+}
+
+.footer-column ul li {
+    margin-bottom: 10px; /* Espaço entre itens */
+}
+
+.footer-column ul li a {
+    text-decoration: none; /* Remove sublinhado */
+    color: var(--branco); /* Cor do texto */
+    transition: color 0.3s ease; /* Transição suave */
+}
+
+.footer-column ul li a i {
+    margin-right: 7px; /* Espaço entre o ícone e o texto */
+}
+
+.footer-column ul li a:hover {
+    color: var(--azul-claro); /* Destaque em azul claro */
+}
+
+.footer-payments {
+    display: flex; /* Layout flexível */
+    justify-content: center; /* Centraliza os ícones de pagamento */
+    align-items: center; /* Alinha verticalmente */
+    margin-top: 30px; /* Espaço acima dos ícones de pagamento */
+}
+
+.payment-icon {
+    width: 80px; /* Tamanho dos ícones de pagamento */
+    height: auto; /* Mantém a proporção */
+    margin: 0 10px; /* Espaço entre os ícones */
+    transition: transform 0.3s ease; /* Transição suave para o efeito de zoom */
+}
+
+.payment-icon:hover {
+    transform: scale(1.1); /* Aumenta o ícone ao passar o mouse */
+}
+
+.footer-bottom {
+    text-align: center; /* Alinha o texto ao centro */
+    padding: 10px; /* Espaçamento interno */
+    color: var(--branco); /* Texto em branco */
+    font-size: 18px; /* Tamanho do texto */
+}
+
+
+
+
+/* Esconder o cabeçalho atual em dispositivos móveis (telas menores que 768px) */
+@media screen and (max-width: 768px) {
+    .old-header {
+        display: none;
+    }
+
+    /* Mostrar o novo cabeçalho em telas menores */
+    .new-header {
+        display: flex;
+    }
+
+}
+
+
+
+/* Esconder o novo cabeçalho em telas maiores (acima de 768px) */
+@media screen and (min-width: 769px) {
+    .new-header {
+        display: none;
+    }
+
+    /* Mostrar o cabeçalho antigo em telas grandes */
+    .old-header {
+        display: flex;
+    }
 }

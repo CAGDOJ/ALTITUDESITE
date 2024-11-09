@@ -3,9 +3,112 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Document</title>
+    <title>Ajuda - Instituto Altitude</title>
+    <link rel="stylesheet" href="../2-css/1-index.css"> <!-- Link para o CSS padrão -->
 </head>
 <body>
-    
+
+    <!-- Cabeçalho para dispositivos móveis -->
+    <header class="new-header">
+        <div class="logo">
+            <img src="../Projeto/3-img/LOGO.png" alt="Logo Altitude">
+        </div>
+        <div class="quick-access">
+            <a href="../Projeto/1-html/4-login e cadastro.html" class="btn candidato">Candidato(a)</a>
+            <a href="../Projeto/1-html/4-login e cadastro.html" class="btn aluno">Sou Aluno(a)</a>
+        </div>
+        <div class="menu-icon">
+            <img src="../Projeto/3-img/iconeamburguer.png" alt="Menu">
+        </div>
+    </header>
+
+    <!-- Cabeçalho para desktop -->
+    <header class="old-header">
+        <div class="top-bar">
+            <div class="institution-logo">
+                <a href="./index.html">
+                    <img src="../3-img/LOGO.png" alt="Emblema Altitude" class="logo">
+                </a>
+            </div>
+            <nav class="navbar">
+                <ul>
+                    <li><a href="./index.html">Início</a></li>
+                    <li class="dropdown">
+                        <a href="#" class="dropbtn">Cursos</a>
+                        <div class="dropdown-content">
+                            <a href="../1-html/2-cursos-profissional.html">Profissional</a>
+                            <!-- <a href="../1-html/3-cursos-tecnico.html">Técnico</a> -->
+                        </div>
+                    </li>
+                    <li><a href="../1-html/8-certificados.html">Certificados</a></li>
+                    <li><a href="../1-html/6-sobrenos.html">Sobre Nós</a></li>
+                    <li><a href="../1-html/7-ajuda.html">Ajuda</a></li>
+                </ul>
+            </nav>
+            <div class="header-buttons">
+                <a href="../1-html/4-login e cadastro.html" class="btn-outline">Acessar</a>
+                <a href="../1-html/4-login e cadastro.html" class="btn-primary">Cadastrar</a>
+            </div>
+        </div>
+    </header>
+
+    <!-- Conteúdo Principal -->
+    <main>
+        <section class="ajuda">
+            <h1>Ajuda</h1>
+            <p>Bem-vindo à seção de ajuda do Instituto Altitude. Aqui você encontrará respostas para as perguntas mais frequentes e recursos para auxiliá-lo em sua jornada conosco.</p>
+            <!-- Adicione aqui o conteúdo específico da página de ajuda -->
+        </section>
+    </main>
+
+    <!-- Rodapé -->
+    <footer class="rodape">
+        <div class="footer-container">
+            <div class="footer-column logo-info">
+                <img src="../3-img/LOGO.png" alt="Logo Altitude" class="footer-logo">
+                <p>Portal Altitude</p>
+                <p>Aprender é alcançar novos horizontes</p>
+                <p>CNPJ: 45.628.030/0001-85</p>
+            </div>
+            <div class="footer-column redes-sociais">
+                <h3>Redes Sociais</h3>
+                <ul>
+                    <li><a href="#"><i class="fab fa-facebook-f"></i> Facebook</a></li>
+                    <li><a href="#"><i class="fab fa-instagram"></i> Instagram</a></li>
+                    <li><a href="#"><i class="fab fa-whatsapp"></i> WhatsApp</a></li>
+                    <li><a href="#"><i class="fab fa-linkedin-in"></i> LinkedIn</a></li>
+                </ul>
+            </div>
+            <div class="footer-column contato">
+                <h3>Entre em contato</h3>
+                <ul>
+                    <li><a href="#"><i class="fab fa-whatsapp"></i> WhatsApp</a></li>
+                    <li><a href="#"><i class="fas fa-envelope"></i> E-mail</a></li>
+                    <li><a href="#"><i class="fas fa-phone-alt"></i> Telefone</a></li>
+                </ul>
+            </div>
+            <div class="footer-column links-rapidos">
+                <h3>Links Rápidos</h3>
+                <ul>
+                    <li><a href="#">Reclame Aqui</a></li>
+                    <li><a href="#">Validar Certificado</a></li>
+                    <li><a href="#">Validar Documento</a></li>
+                    <li><a href="#">Contato</a></li>
+                    <li><a href="#">Termos de Contrato</a></li>
+                    <li><a href="#">Política de Privacidade</a></li>
+                </ul>
+            </div>
+        </div>
+        <div class="footer-payments">
+            <img src="../3-img/PIX.png" alt="PIX" class="payment-icon">
+            <img src="../3-img/paypal.png" alt="PayPal" class="payment-icon">
+            <img src="../3-img/PICPAY.png" alt="PicPay" class="payment-icon">
+            <!-- Adicione outros ícones conforme necessário -->
+        </div>
+        <div class="footer-bottom">
+            <p>&copy; 2024 - Portal IDEA: Instituto de Desenvolvimento e Aprendizagem LTDA. Todos os Direitos Reservados.</p>
+        </div>
+    </footer>
+
 </body>
 </html>

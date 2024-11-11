@@ -19,6 +19,7 @@ body {
     background-color: var(--branco);
     line-height: 1.6;
     color: var(--azul-escuro); /* Texto padrão no azul escuro */
+    overflow-x: hidden;
 }
 
 main {
@@ -70,7 +71,7 @@ h2 {
     height: auto;
     top: 6px;
     position: relative;
-    left: -145px;
+    left: -200px;
     z-index: 1000;
 }
 
@@ -176,6 +177,37 @@ h2 {
     color: var(--branco);
     box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
 }
+
+/* Ajuste para cabeçalho e botões */
+.old-header .header-buttons, .new-header .header-buttons {
+    display: flex;
+    align-items: center;
+    gap: 10px; /* Espaçamento entre os botões */
+}
+
+.header-buttons .btn-outline,
+.header-buttons .btn-primary {
+    padding: 5px 15px; /* Reduz o padding para economizar espaço */
+    font-size: 14px;   /* Ajusta o tamanho da fonte */
+    white-space: nowrap; /* Impede quebra de linha no botão */
+    margin: 0;
+}
+
+/* Ajuste do espaçamento dos botões em telas pequenas */
+@media screen and (max-width: 768px) {
+    .header-buttons .btn-outline,
+    .header-buttons .btn-primary {
+        padding: 5px 10px; /* Reduz o padding ainda mais em telas pequenas */
+        font-size: 13px;   /* Ajusta o tamanho da fonte para caber melhor */
+        white-space: nowrap;
+    }
+
+    .old-header, .new-header {
+        padding: 10px 15px; /* Reduz o padding do cabeçalho */
+    }
+}
+
+
 
 /*==============================*/
 /* Rodapé                       */
@@ -298,6 +330,7 @@ h2 {
     }
 
     .new-header .logo img {
+
         height: 60px;
     }
 
@@ -308,9 +341,11 @@ h2 {
     }
 
     .menu-icon img {
+        top:10px;
         width: 35px;
-        height: auto;
+       left: -40px;
         cursor: pointer;
+        position: absolute;
     }
 
     /* Botões em Mobile */

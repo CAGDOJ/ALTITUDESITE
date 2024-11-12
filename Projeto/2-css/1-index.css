@@ -9,9 +9,10 @@
     --cinza-escuro: #999999;
 }
 
-/*==============================*/
+/*===================================*/
 /* Estilo do Corpo e Seção Principal */
-/*==============================*/
+/*===================================*/
+
 body {
     font-family: Arial, sans-serif;
     margin: 0;
@@ -290,9 +291,9 @@ h2 {
     font-size: 18px;
 }
 
-/*==============================*/
+/*=======================================*/
 /* Responsividade - Estilos para Mobile */
-/*==============================*/
+/*======================================*/
 @media screen and (max-width: 768px) {
 
     /* Estilo do Corpo e Seção Principal em Mobile */
@@ -343,7 +344,7 @@ h2 {
     .menu-icon img {
         top:10px;
         width: 35px;
-       left: -40px;
+        left: -40px;
         cursor: pointer;
         position: absolute;
     }
@@ -361,7 +362,7 @@ h2 {
     /*botão de cadastro e acesso*/
     .quick-access .btn{
         color: var(--azul-claro);
-        right: 70px;
+        right: 50px;
         position: relative;
         
     }

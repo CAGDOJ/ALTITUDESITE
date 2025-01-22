@@ -401,6 +401,11 @@ text-align: center;
         border-bottom: 2px solid var(--azul-claro);
     }
 
+
+
+
+
+    
     .new-header .logo img {
 
         height: 60px;
@@ -435,7 +440,7 @@ text-align: center;
         color: var(--azul-claro);
         right: 50px;
         position: relative;
-        
+        left:auto;
     }
     
      .btn-outline {     

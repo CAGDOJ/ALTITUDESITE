@@ -10,19 +10,27 @@
 </head>
 <body>
 
-<!-- Cabeçalho para dispositivos moveis-->
-<header class="new-header">
-    <div class="logo">
-        <img src="../3-img/LOGO.png" alt="logo Altitude">
-    </div>
-    <div class="quick-access">
-        <a href="../1-html/5-cadastro.html" class="btn candidato">Candidato(a)</a>
-        <a href="../1-html/4-login e cadastro.html e cadastro.html e cadastro.html" class="btn aluno">Sou Aluno(a)</a>
-    </div>
-    <div class="menu-icon">
-        <img src="../3-img/iconeamburguer.png" alt="Menu">
-    </div>
-</header>
+    <header class="new-header">
+        <div class="logo">
+            <a href="./index.html">
+                <img src="../3-img/LOGO.png" alt="logo Altitude">
+            </a>
+        </div>
+        
+        <div class="menu-icon" id="menu-icon">
+            <img src="../3-img/iconeamburguer.png" alt="Menu">
+            <!-- Dropdown do menu hambúrguer -->
+            <div class="dropdown-menu" id="dropdown-menu">
+                <ul>
+                    <li><a href="./index.html">Início</a></li>
+                    <li><a href="../1-html/2-cursos-profissional.html">Cursos Profissionais</a></li>
+                    <li><a href="../1-html/8-certificados.html">Certificados</a></li>
+                    <li><a href="../1-html/6-sobrenos.html">Sobre Nós</a></li>
+                    <li><a href="../1-html/7-ajuda.html">Ajuda</a></li>
+                </ul>
+            </div>
+        </div>
+    </header>
 
     
     <!-- Cabeçalho para pc-->
@@ -121,3 +129,21 @@
 </body>
    
 </html>
+
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        const menuIcon = document.getElementById('menu-icon');
+        const dropdownMenu = document.getElementById('dropdown-menu');
+
+        menuIcon.addEventListener('click', function() {
+            dropdownMenu.classList.toggle('active');
+        });
+
+        // Fechar o dropdown ao clicar fora dele
+        document.addEventListener('click', function(event) {
+            if (!menuIcon.contains(event.target) && !dropdownMenu.contains(event.target)) {
+                dropdownMenu.classList.remove('active');
+            }
+        });
+    });
+</script>

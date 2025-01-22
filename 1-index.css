@@ -346,7 +346,7 @@ h2 {
         width: 35px;
         left: -40px;
         cursor: pointer;
-        position: absolute;
+        position: fixed;
     }
 
     /* Botões em Mobile */

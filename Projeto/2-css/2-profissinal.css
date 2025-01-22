@@ -22,21 +22,19 @@ html, body {
     width: 100%; /* Define a largura total */
     height: 100%; /* Define a altura total */
     box-sizing: border-box; /* Inclui o padding e borda na largura e altura */
-    overflow-y: scroll;
     overflow-x: hidden;
 }
 
-/*________________________*/
-/* -------Cabeçalho------ */
-/*________________________*/
-header {
+/*==============================*/
+/* Cabeçalho - Versão Desktop   */
+/*==============================*/
+.old-header {
     background-color: var(--branco); /* Define o fundo branco */
     padding: 15px 20px; /* Define espaçamento interno */
     width: 100%; /* Largura total do cabeçalho */
     box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2); /* Adiciona uma sombra suave */
     border-bottom: 2px solid var(--azul-claro); /* Linha de destaque abaixo */
     z-index: 1000; /* Garante que o cabeçalho fique acima dos outros elementos */
-   
 }
 
 /* Barra superior */
@@ -48,19 +46,14 @@ header {
     margin: auto; /* Centraliza o conteúdo */
 }
 
- .institution-logo .logo {
-    top: 6px; /* distância do topo */
-    height: auto; /* mantém a proporção */
-    z-index: 1000; /* garante que fique acima de outros elementos */
+.institution-logo .logo {
     width: 150px; /* Define a largura da logo */
     height: auto; /* Mantém a proporção da logo */
+    top: 6px; /* distância do topo */
     position: relative;
-    left: -2px;
-
-
+    left: -200px; /* Posicionamento à esquerda */
+    z-index: 1000; /* garante que fique acima de outros elementos */
 }
-
- 
 
 /* Menu de Navegação */
 .navbar ul {
@@ -114,7 +107,6 @@ header {
     font-size: 14px; /* Define o tamanho do texto */
     font-weight: normal; /* Deixa o texto normal */
     text-align: left;
-    
 }
 
 .dropdown-content a:hover {
@@ -126,14 +118,10 @@ header {
     display: block; /* Exibe o dropdown ao passar o mouse */
 }
 
-
-
 /* Botões do Cabeçalho */
-
-
-.header-buttons  {
-position: relative;
-    right: -2px;
+.header-buttons {
+    position: relative;
+    right: -130px; /* Posicionamento à direita */
 }
 
 .header-buttons .btn-outline {
@@ -170,6 +158,35 @@ position: relative;
     box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2); /* Sombra ao passar o mouse */
 }
 
+/* Ajuste para cabeçalho e botões */
+.old-header .header-buttons, .new-header .header-buttons {
+    display: flex;
+    align-items: center;
+    gap: 10px; /* Espaçamento entre os botões */
+}
+
+.header-buttons .btn-outline,
+.header-buttons .btn-primary {
+    padding: 5px 15px; /* Reduz o padding para economizar espaço */
+    font-size: 14px;   /* Ajusta o tamanho da fonte */
+    white-space: nowrap; /* Impede quebra de linha no botão */
+    margin: 0;
+}
+
+/* Ajuste do espaçamento dos botões em telas pequenas */
+@media screen and (max-width: 768px) {
+    .header-buttons .btn-outline,
+    .header-buttons .btn-primary {
+        padding: 5px 10px; /* Reduz o padding ainda mais em telas pequenas */
+        font-size: 13px;   /* Ajusta o tamanho da fonte para caber melhor */
+        white-space: nowrap;
+    }
+
+    .old-header, .new-header {
+        padding: 10px 15px; /* Reduz o padding do cabeçalho */
+    }
+}
+
 /* Estilo da seção principal */
 main {
     padding: 60px 20px; /* Espaçamento interno */
@@ -179,7 +196,6 @@ main {
 main h1 {
     color: var(--azul-claro); /* Título em azul claro */
     margin-bottom: 20px; /* Espaço abaixo do título */
-    
 }
 
 main p {
@@ -257,7 +273,6 @@ h4:hover {
     color: var(--branco); /* Texto branco ao passar o mouse */
     transform: scale(1.05); /* Leve aumento de tamanho ao passar o mouse */
 }
-
 
 /* ______________________*/
 /*----Estilos do Rodapé---- */
@@ -351,3 +366,113 @@ h4:hover {
     font-size: 18px; /* Tamanho do texto */
 }
 
+/*=======================================*/
+/* Responsividade - Estilos para Mobile */
+/*======================================*/
+@media screen and (max-width: 768px) {
+
+    /* Estilo do Corpo e Seção Principal em Mobile */
+    main {
+        padding: 40px 15px;
+    }
+
+    main h1 {
+        font-size: 24px;
+        margin-bottom: 15px;
+    }
+
+    main p {
+        font-size: 16px;
+        max-width: 100%;
+    }
+
+    h2 {
+        font-size: 20px;
+    }
+
+    /* Cabeçalho Mobile */
+    .old-header {
+        display: none;
+    }
+
+    .new-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        padding: 10px 20px;
+        background-color: var(--branco);
+        color: white;
+        border-bottom: 2px solid var(--azul-claro);
+    }
+
+    .new-header .logo img {
+        height: 60px;
+    }
+
+    .menu-icon {
+        position: absolute;
+        right: 20px;
+        top: 15px;
+    }
+
+    .menu-icon img {
+        width: 35px;
+        cursor: pointer;
+    }
+
+    /* Botões em Mobile */
+    .btn, .btn-outline, .btn-primary {
+        padding: 8px 16px;
+        border-radius: 5px;
+        font-weight: bold;
+        text-decoration: none;
+        transition: background-color 0.3s ease, color 0.3s ease;
+    }
+
+    /* Botão de cadastro e acesso */
+    .quick-access .btn {
+        color: var(--azul-claro);
+        right: 50px;
+        position: relative;
+    }
+
+    .btn-outline {
+        color: var(--azul-claro);
+        background-color: transparent;
+        padding: 10px 20px;
+        border-radius: 5px;
+        text-decoration: none;
+        transition: background-color 0.3s ease, color 0.3s ease, box-shadow 0.3s ease;
+    }
+
+    .btn-outline:hover, .btn-outline:focus {
+        background-color: var(--azul-escuro);
+        color: var(--branco);
+        box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+    }
+
+    .btn-primary {
+        background-color: var(--azul-claro);
+        color: var(--branco);
+        padding: 10px 20px;
+        border-radius: 5px;
+        text-decoration: none;
+        font-weight: bold;
+        transition: background-color 0.3s ease, box-shadow 0.3s ease;
+    }
+
+    .btn-primary:hover, .btn-primary:focus {
+        background-color: var(--azul-escuro);
+        color: var(--branco);
+        box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+    }
+}
+
+@media screen and (min-width: 769px) {
+    .new-header {
+        display: none;
+    }
+    .old-header {
+        display: flex;
+    }
+}

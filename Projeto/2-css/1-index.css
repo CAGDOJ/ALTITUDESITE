@@ -57,6 +57,7 @@ h2 {
     box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
     border-bottom: 2px solid var(--azul-claro);
     z-index: 1000;
+    
 }
 
 .top-bar {
@@ -298,7 +299,9 @@ h2 {
 
     /* Estilo do Corpo e Seção Principal em Mobile */
     main {
-        padding: 40px 15px;
+        padding-top: 80px; /* Ajuste conforme a altura do cabeçalho móvel */
+        padding: 60px 20px;
+        text-align: center;
     }
 
     main h1 {

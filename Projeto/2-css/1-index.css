@@ -14,19 +14,30 @@
 /*===================================*/
 
 body {
-    font-family: Arial, sans-serif;
+    font-family: Arial, sans-serif; /* Define a fonte geral da página */
+    margin: 0; /* Remove margens padrão */
+    padding: 0; /* Remove preenchimento padrão */
+    background-color: var(--branco); /* Define o fundo branco */
+    line-height: 1.6; /* Define a altura da linha para melhor legibilidade */
+}
+
+html, body {
     margin: 0;
     padding: 0;
-    background-color: var(--branco);
-    line-height: 1.6;
-    color: var(--azul-escuro); /* Texto padrão no azul escuro */
+    width: 100%; /* Define a largura total */
+    height: 100%; /* Define a altura total */
+    box-sizing: border-box; /* Inclui o padding e borda na largura e altura */
     overflow-x: hidden;
 }
+
+/*===================================*/
+/* Estilo do Corpo e Seção Principal */
+/*===================================*/
 
 main {
     padding: 60px 20px;
     text-align: center;
-    background-color: var(--branco); /* Fundo branco para o conteúdo */
+   
 }
 
 main h1 {
@@ -43,6 +54,7 @@ main p {
 }
 
 h2 {
+    margin: center;
     text-align: center;
     color: var(--azul-escuro); /* Subtítulos em azul escuro */
 }
@@ -54,7 +66,7 @@ h2 {
     background-color: var(--branco);
     padding: 15px 20px;
     width: 100%;
-    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);   
     border-bottom: 2px solid var(--azul-claro);
     z-index: 1000;
     
@@ -66,6 +78,7 @@ h2 {
     justify-content: space-between;
     max-width: 1200px;
     margin: auto;
+    
 }
 
 .institution-logo .logo {

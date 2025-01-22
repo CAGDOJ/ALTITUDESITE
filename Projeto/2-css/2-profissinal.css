@@ -1,4 +1,6 @@
-/* Paleta de Cores */
+/*==============================*/
+/* Paleta de Cores              */
+/*==============================*/
 :root {
     --azul-claro: #52C0D9; /* Azul claro */
     --azul-escuro: #0A3D62; /* Azul escuro */
@@ -7,7 +9,9 @@
     --cinzaescuro:  #999999; /* Cinza escuro */
 }
 
-/* Estilo do Corpo */
+/*===================================*/
+/* Estilo do Corpo e Seção Principal */
+/*===================================*/
 body {
     font-family: Arial, sans-serif; /* Define a fonte geral da página */
     margin: 0; /* Remove margens padrão */
@@ -24,6 +28,36 @@ html, body {
     box-sizing: border-box; /* Inclui o padding e borda na largura e altura */
     overflow-x: hidden;
 }
+
+/*===================================*/
+/* Estilo do Corpo e Seção Principal */
+/*===================================*/
+
+main {
+    padding: 60px 20px; /* Espaçamento interno */
+    text-align: center; /* Alinhamento centralizado */
+    
+}
+
+main h1 {
+    color: var(--azul-claro); /* Título em azul claro */
+    margin-bottom: 20px; /* Espaço abaixo do título */
+}
+
+main p {
+    color: var(--azul-escuro); /* Texto em azul escuro */
+    font-size: 18px; /* Tamanho do texto */
+    max-width: 800px; /* Largura máxima do parágrafo */
+    margin: 0 auto; /* Centraliza o parágrafo */
+    text-align: justify;
+}
+
+h2 {
+    margin: center;
+    text-align: center;
+    color: var(--azul-escuro); /* Cor do subtítulo em azul escuro */
+}
+
 
 /*==============================*/
 /* Cabeçalho - Versão Desktop   */
@@ -187,32 +221,10 @@ html, body {
     }
 }
 
-/* Estilo da seção principal */
-main {
-    padding: 60px 20px; /* Espaçamento interno */
-    text-align: center; /* Alinhamento centralizado */
-}
 
-main h1 {
-    color: var(--azul-claro); /* Título em azul claro */
-    margin-bottom: 20px; /* Espaço abaixo do título */
-}
-
-main p {
-    color: var(--azul-escuro); /* Texto em azul escuro */
-    font-size: 18px; /* Tamanho do texto */
-    max-width: 800px; /* Largura máxima do parágrafo */
-    margin: 0 auto; /* Centraliza o parágrafo */
-    text-align: justify;
-}
-
-h2 {
-    margin: center;
-    text-align: center;
-    color: var(--azul-escuro); /* Cor do subtítulo em azul escuro */
-}
-
+/*==============================*/
 /* Container dos cursos */
+/*==============================*/
 .cursos-container {
     display: flex; /* Layout flexível */
     flex-wrap: wrap; /* Permite quebrar linha */
@@ -274,9 +286,9 @@ h4:hover {
     transform: scale(1.05); /* Leve aumento de tamanho ao passar o mouse */
 }
 
-/* ______________________*/
+/*==============================*/
 /*----Estilos do Rodapé---- */
-/* ______________________*/
+/*==============================*/
 
 .rodape {
     background-color: var(--azul-escuro); /* Fundo azul escuro */

@@ -1,13 +1,119 @@
-<!doctype html>
-<html lang="en">
-  <head>
-    <meta charset="UTF-8" />
-    <link rel="icon" type="image/svg+xml" href="/vite.svg" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>portal do aluno</title>
-  </head>
-  <body>
-    <div id="root"></div>
-    <script type="module" src="/Projeto/portaldoaluno/src/main.tsx"></script>
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Portal do Aluno</title>
+    <link rel="stylesheet" href="../2-css/portaldoaluno.css">
+    <script src="https://unpkg.com/lucide@latest"></script>
+</head>
+<body>
+    <div class="app">
+        <!-- Menu Lateral -->
+        <div class="sidebar">
+            <button class="logo">
+                <i data-lucide="graduation-cap"></i>
+            </button>
+            <nav>
+                <button class="nav-button active" data-tab="perfil">
+                    <i data-lucide="user"></i>
+                </button>
+                <button class="nav-button" data-tab="disciplinas">
+                    <i data-lucide="book-open"></i>
+                </button>
+                <button class="nav-button" data-tab="calendario">
+                    <i data-lucide="calendar"></i>
+                </button>
+                <button class="nav-button" data-tab="mensagens">
+                    <i data-lucide="mail"></i>
+                </button>
+                <button class="nav-button" data-tab="configuracoes">
+                    <i data-lucide="settings"></i>
+                </button>
+            </nav>
+        </div>
+
+        <!-- Conteúdo Principal -->
+        <main>
+            <header>
+                <h1>Portal do Aluno</h1>
+                <button id="darkModeToggle">
+                    <i data-lucide="moon"></i>
+                </button>
+            </header>
+
+            <!-- Perfil -->
+            <div class="content" id="perfil">
+                    <div class="card">
+                    <h2>Informações Pessoais</h2>
+
+                    <div class="circle-container">
+                    <label for="image-upload" class="circle">
+                    <img id="preview" src="#" alt="Sua imagem" style="display:none;">
+                    <span id="placeholder">Clique para adicionar uma imagem</span>
+                    </label>
+                    <input type="file" id="image-upload" accept="image/*" style="display:none;">
+                    </div>
+                
+
+                    <div class="form-group">
+                        <label>Nome</label>
+                        <input type="text" value="João Silva" readonly>
+                    </div>
+                    <div class="form-group">
+                        <label>Email</label>
+                        <input type="email" value="joao.silva@email.com" readonly>
+                    </div>
+                    <div class="form-group">
+                        <label>Matricula</label>
+                        <input type="email" value="joao.silva@email.com" readonly>
+                    </div>
+
+                </div>
+
+                <div class="card">
+                    <h2>Progresso das Disciplinas</h2>
+                    <div class="cursos">
+                        <!-- Cursos serão inseridos via JavaScript -->
+                    </div>
+                </div>
+            </div>
+
+            <!-- Outras abas -->
+            <div class="content hidden" id="disciplinas">
+                <div class="card">
+                    <h2>Disciplinas</h2>
+                    <p>Conteúdo em desenvolvimento...</p>
+                </div>
+            </div>
+
+            <div class="content hidden" id="calendario">
+                <div class="card">
+                    <h2>Calendário</h2>
+                    <p>Conteúdo em desenvolvimento...</p>
+                </div>
+            </div>
+
+            <div class="content hidden" id="mensagens">
+                <div class="card">
+                    <h2>Mensagens</h2>
+                    <p>Conteúdo em desenvolvimento...</p>
+                </div>
+            </div>
+
+            <div class="content hidden" id="configuracoes">
+                <div class="card">
+                    <h2>Configurações</h2>
+                    <p>Conteúdo em desenvolvimento...</p>
+                </div>
+            </div>
+        </main>
+    </div>
+    <script src="../4-java/portaldoaluno.js"></script>
+  
+
+
+
   </body>
 </html>
+

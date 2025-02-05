@@ -7,6 +7,7 @@
     <link rel="stylesheet" href="../2-css/portaldoaluno.css">
     <script src="https://unpkg.com/lucide@latest"></script>
 </head>
+
 <body>
     <div class="app">
         <!-- Menu Lateral -->
@@ -35,26 +36,47 @@
 
         <!-- Conteúdo Principal -->
         <main>
-            <header>
-                <h1>Portal do Aluno</h1>
-                <button id="darkModeToggle">
+          
+            
+           <header>
+                <div class="Cabecalho">
+                 
+                    <div class="card" >
+                    <h1>Portal do Aluno</h1>
+   
+                    <div class="botaodark">
+                    <button id="darkModeToggle">
                     <i data-lucide="moon"></i>
-                </button>
-            </header>
+                    </div>
+                    
+                </div>
 
-            <!-- Perfil -->
-            <div class="content" id="perfil">
+                <div class="fotoalunocabecalho">
+                    <div class="circle-container">
+                    <img id="preview" src="#" alt="Sua imagem" style="display:none;">
+                    </label>
+                </div>
+                   <output> </output>
+                </div>
+
+            </header> 
+                                    
+                    
+                    
+                    <!-- Perfil -->
+                    <div class="content" id="perfil">
                     <div class="card">
                     <h2>Informações Pessoais</h2>
 
-                    <div class="circle-container">
-                    <label for="image-upload" class="circle">
-                    <img id="preview" src="#" alt="Sua imagem" style="display:none;">
-                    <span id="placeholder">Clique para adicionar uma imagem</span>
-                    </label>
-                    <input type="file" id="image-upload" accept="image/*" style="display:none;">
-                    </div>
-                
+                        <div class="circle-container">
+                        <label for="image-upload" class="circle">
+                        <img id="preview" src="#" alt="Sua imagem" style="display:none;">
+                        <span id="placeholder">Clique para adicionar uma imagem</span>
+                        </label>
+                        <input type="file" id="image-upload" accept="image/*" style="display:none;">
+                        </div>
+    
+
 
                     <div class="form-group">
                         <label>Nome</label>

@@ -15,12 +15,6 @@
     --hover-color: #374151;
 }
 
-* {
-    margin: 0;
-    padding: 0;
-    box-sizing: border-box;
-}
-
 body {
     font-family: system-ui, -apple-system, sans-serif;
     background-color: var(--bg-color);
@@ -48,15 +42,16 @@ body {
 }
 
 .logo {
-    width: 3rem;
+    
+    width: 100%;
     height: 3rem;
-    background-color: var(--primary-color);
+    background-color: transparent;
     border: none;
     border-radius: 0.5rem;
     display: flex;
     align-items: center;
     justify-content: center;
-    color: rgb(255, 255, 255);
+    color: rgb(0, 0, 0);
     cursor: pointer;
 }
 
@@ -99,13 +94,26 @@ main {
 header {
     display: flex;
     justify-content: space-between;
-    align-items: center;
-    margin-bottom: 2rem;
+    align-items: right;
+    margin-bottom:  1.5rem;
+    width: 100%;
+}
+
+
+
+.botaodark{
+display: flex;
+position: relative;
+justify-content: right;
+}
+.card-Cabecalho{
+    width: 100%;
 }
 
 h1 {
     font-size: 1.5rem;
     font-weight: bold;
+    
 }
 
 #darkModeToggle {
@@ -115,19 +123,25 @@ h1 {
     background: transparent;
     color: var(--text-color);
     cursor: pointer;
+    position: flex;
+   
+    
+        
+    
 }
-
 #darkModeToggle:hover {
     background-color: var(--hover-color);
 }
 
 /* Cards */
 .card {
+    
     background-color: var(--card-bg);
     border-radius: 0.5rem;
     padding: 1.5rem;
     margin-bottom: 2rem;
     box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+    width: 100%;
 }
 
 h2 {
@@ -154,6 +168,51 @@ input {
     color: var(--text-color);
 }
 
+/*INSERIR IMAGEM*/
+.circle-container {
+    display: flex;
+    justify-content: left;
+    align-items: center;
+    height: 200px; /* Ajuste a altura conforme necessário */
+}
+
+.circle {
+
+    width: 150px; /* Tamanho do círculo */
+    height: 150px; /* Tamanho do círculo */
+    border-radius: 50%; /* Isso cria o efeito de círculo */
+    background-color: #629eec; /* Cor de fundo do círculo */
+    display: flex;
+    justify-content: left;
+    align-items: center;
+    text-align: center;
+    cursor: pointer;
+    overflow: hidden; /* Para garantir que a imagem não ultrapasse o círculo */
+}
+
+#preview {
+    max-width: 100%;
+    max-height: 100%;
+    border-radius: 50%; /* Garante que a imagem também fique redonda */
+}
+
+#placeholder {
+    font-size: 14px;
+    color: #ffffff;
+}
+
+.circlecabecalho{
+    width: 50px; /* Tamanho do círculo */
+    height: 50px; /* Tamanho do círculo */
+    border-radius: 50%; /* Isso cria o efeito de círculo */
+    background-color: #629eec; /* Cor de fundo do círculo */
+    display: flex;
+    justify-content: left;
+    align-items: center;
+    text-align: center;
+    cursor: pointer;
+    overflow: hidden; /* Para garantir que a imagem não ultrapasse o círculo */
+}
 /* Cursos */
 .curso {
     margin-bottom: 1rem;

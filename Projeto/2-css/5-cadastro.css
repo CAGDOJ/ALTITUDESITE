@@ -19,14 +19,17 @@ body {
     padding: 0;
     background-color: var(--branco);
     line-height: 1.6;
-    color: var(--azul-escuro); /* Texto padrão no azul escuro */
-    overflow-x: hidden;
+    
 }
+
+/*===================================*/
+/* Estilo do Corpo e Seção Principal */
+/*===================================*/
 
 main {
     padding: 60px 20px;
     text-align: center;
-    background-color: var(--branco); /* Fundo branco para o conteúdo */
+    
 }
 
 main h1 {
@@ -43,6 +46,7 @@ main p {
 }
 
 h2 {
+    margin: center;
     text-align: center;
     color: var(--azul-escuro); /* Subtítulos em azul escuro */
 }

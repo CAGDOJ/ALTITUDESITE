@@ -1,74 +1,69 @@
 // Projeto/4-java/cadastro.js
 import { supabase } from "./supabaseClient.js";
 
-const form      = document.querySelector(".registration-form");
-const nameEl    = document.getElementById("name");
-const emailEl   = document.getElementById("email");
-const passEl    = document.getElementById("password");
-const phoneEl   = document.getElementById("phone");
-const objEl     = document.getElementById("objective");
+const form    = document.querySelector(".registration-form");
+const nameEl  = document.getElementById("name");
+const mailEl  = document.getElementById("email");
+const passEl  = document.getElementById("password");
+const telEl   = document.getElementById("phone");
+const objEl   = document.getElementById("objective");
 
-// mensagem simples
-function setMsg(text, ok=false) {
-  let box = document.getElementById("msg");
-  if (!box) {
-    box = document.createElement("p");
-    box.id = "msg";
-    box.style.marginTop = "8px";
-    form.appendChild(box);
+function showMsg(txt, ok=false){
+  let el = document.getElementById("msg");
+  if(!el){
+    el = document.createElement("p");
+    el.id = "msg";
+    el.style.marginTop = "8px";
+    form.appendChild(el);
   }
-  box.style.color = ok ? "seagreen" : "crimson";
-  box.textContent = text;
+  el.style.color = ok ? "seagreen" : "crimson";
+  el.textContent = txt;
 }
 
 form.addEventListener("submit", async (e) => {
   e.preventDefault();
-  setMsg("");
-  const btn = form.querySelector(".btn.submit");
-  btn.disabled = true; btn.textContent = "Enviando...";
+  showMsg("");
+  const btn = form.querySelector(".btn.submit") || form.querySelector('button[type="submit"]');
+  if (btn) { btn.disabled = true; btn.textContent = "Enviando..."; }
 
   const nome     = nameEl.value.trim();
-  const email    = emailEl.value.trim();
-  const senha    = passEl.value;               // fica só no Auth
-  const telefone = phoneEl.value.trim();
+  const email    = mailEl.value.trim();
+  const senha    = passEl.value;          // a senha fica só no Auth (não salva em tabela)
+  const telefone = telEl.value.trim();
   const objetivo = objEl.value.trim();
 
   try {
-    // 1) cria conta no Auth
+    // 1) cria conta no Auth (salva nome como metadado)
     const { data: signUp, error: e1 } = await supabase.auth.signUp({
-      email, password: senha,
-      options: { data: { nome } }  // salva nome nos metadados do usuário
+      email, password: senha, options: { data: { nome } }
     });
     if (e1) throw e1;
 
-    // se confirmação de e-mail estiver ligada, user pode vir null
+    // Se email de confirmação estiver LIGADO, user pode vir null
     const user = signUp.user;
     if (!user) {
-      setMsg("Cadastro criado! Confirme o e-mail e depois faça login.", true);
-      btn.disabled = false; btn.textContent = "Enviar";
+      showMsg("Cadastro criado! Confirme o e-mail e depois faça login.", true);
       return;
     }
 
-    // 2) salva/vincula dados adicionais (1:1 via user_id)
+    // 2) salva/vincula dados do aluno (1:1 via user_id)
     const { error: e2 } = await supabase
       .from("alunos")
       .upsert({ user_id: user.id, nome, telefone, objetivo }, { onConflict: "user_id" });
     if (e2) throw e2;
 
-    setMsg("Cadastro concluído! Redirecionando…", true);
-    setTimeout(() => location.href = "/area-aluno/index.html", 900);
+    showMsg("Cadastro concluído! Redirecionando…", true);
+    setTimeout(()=> location.href = "/area-aluno/index.html", 900);
 
   } catch (err) {
-    // mensagens mais amigáveis
     const mapa = {
       "auth/email_already_in_use": "E-mail já cadastrado.",
-      "auth/weak_password": "Senha fraca (mínimo 6 caracteres).",
+      "auth/weak_password": "Senha fraca (mínimo 6).",
       "auth/invalid_email": "E-mail inválido."
     };
-    const code = err?.code || "";
-    setMsg(mapa[code] || err?.message || "Erro ao cadastrar.");
+    showMsg(mapa[err?.code] || err?.message || "Erro ao cadastrar.");
     console.error(err);
   } finally {
-    btn.disabled = false; btn.textContent = "Enviar";
+    if (btn) { btn.disabled = false; btn.textContent = "Enviar"; }
   }
 });

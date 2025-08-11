@@ -65,3 +65,18 @@ form.addEventListener("submit", async (e) => {
     if (btn) { btn.disabled = false; btn.textContent = "Enviar"; }
   }
 });
+
+// após signUp:
+const user = signUp.user;
+if (!user) {
+  showMsg("Cadastro criado! Confirme o e‑mail e depois faça login.", true);
+  return;
+}
+
+const { error: e2 } = await supabase
+  .from("alunos")
+  .upsert(
+    { user_id: user.id, nome, telefone, objetivo },
+    { onConflict: "user_id" }
+  );
+if (e2) throw e2;

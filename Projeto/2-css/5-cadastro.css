@@ -81,6 +81,38 @@ h2 {
 }
 
 /*==============================*/
+/* css erro da validação bd     */
+/*==============================*/
+
+/* Estado de erro */
+.input-erro {
+  border: 2px solid crimson !important;
+  background-image: url('data:image/svg+xml;utf8,<svg fill="crimson" height="20" viewBox="0 0 24 24" width="20" xmlns="http://www.w3.org/2000/svg"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm4.29 13.29a1 1 0 0 1-1.42 1.42L12 13.41l-2.88 2.88a1 1 0 0 1-1.42-1.42L10.59 12 7.71 9.12a1 1 0 0 1 1.42-1.42L12 10.59l2.88-2.88a1 1 0 0 1 1.42 1.42L13.41 12l2.88 2.88z"/></svg>');
+  background-repeat: no-repeat;
+  background-position: right 8px center;
+  background-size: 20px;
+}
+
+/* Estado de sucesso */
+.input-ok {
+  border: 2px solid seagreen !important;
+  background-image: url('data:image/svg+xml;utf8,<svg fill="seagreen" height="20" viewBox="0 0 24 24" width="20" xmlns="http://www.w3.org/2000/svg"><path d="M9 16.17l-3.88-3.88a1 1 0 0 1 1.41-1.41L9 13.34l7.47-7.47a1 1 0 0 1 1.41 1.41l-8.88 8.88a1 1 0 0 1-1.41 0z"/></svg>');
+  background-repeat: no-repeat;
+  background-position: right 8px center;
+  background-size: 20px;
+}
+
+/* Mensagem de erro abaixo do campo */
+.msg-erro {
+  display: block;
+  margin-top: 4px;
+  font-size: 13px;
+  color: crimson;
+}
+
+
+
+/*==============================*/
 /* Menu de Navegação            */
 /*==============================*/
 .navbar ul {

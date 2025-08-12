@@ -1,16 +1,26 @@
-// Projeto/4-java/cadastro.js
 import { supabase } from "./supabaseClient.js";
 
 // pega o form
-const form = document.querySelector(".registration-form");
+const form   = document.querySelector(".registration-form");
 const nameEl = document.querySelector("#name");
 const mailEl = document.querySelector("#email");
 const passEl = document.querySelector("#password");
 const telEl  = document.querySelector("#phone");
 const objEl  = document.querySelector("#objective");
 
-// helper de mensagens
-function msg(texto, ok = false) {
+// alvo para msg do e-mail
+const emailMsg = document.getElementById("email-msg");
+
+// helpers de UI
+function setFieldState(el, ok, message = "") {
+  if (!el) return;
+  el.classList.remove("input-erro", "input-ok");
+  if (ok === true)  el.classList.add("input-ok");
+  if (ok === false) el.classList.add("input-erro");
+  if (emailMsg && el === mailEl) emailMsg.textContent = message || "";
+}
+
+function msgGeral(texto, ok = false) {
   let el = document.getElementById("msg");
   if (!el) {
     el = document.createElement("p");
@@ -22,9 +32,29 @@ function msg(texto, ok = false) {
   el.textContent = texto;
 }
 
+// valida formato básico do e-mail ao sair do campo
+mailEl?.addEventListener("blur", () => {
+  const val = (mailEl.value || "").trim();
+  if (!val) {
+    setFieldState(mailEl, null, "");
+    return;
+  }
+  const formatoOk = /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(val);
+  if (!formatoOk) {
+    setFieldState(mailEl, false, "E-mail inválido ❌");
+  } else {
+    // formato ok (a existência real será verificada no submit pelo retorno do Supabase)
+    setFieldState(mailEl, true, "");
+  }
+});
+
+// limpando estados enquanto digita
+mailEl?.addEventListener("input", () => setFieldState(mailEl, null, ""));
+
 form.addEventListener("submit", async (e) => {
   e.preventDefault();
-  msg("");
+  msgGeral("");
+  setFieldState(mailEl, null, "");
 
   const btn = form.querySelector(".btn.submit") || form.querySelector('button[type="submit"]');
   if (btn) { btn.disabled = true; btn.textContent = "Enviando..."; }
@@ -42,7 +72,21 @@ form.addEventListener("submit", async (e) => {
       password: senha,
       options: { data: { nome } },
     });
-    if (e1) throw e1;
+
+    if (e1) {
+      // trata e-mail já cadastrado com feedback visual no campo
+      const already =
+        e1?.code === "auth/email_already_in_use" ||
+        /already.*use|exist/i.test(e1?.message || "");
+
+      if (already) {
+        setFieldState(mailEl, false, "Este usuário já existe ❌");
+        msgGeral(""); // sem alerta global, só o inline
+        return;
+      }
+
+      throw e1; // outros erros seguem o fluxo normal
+    }
 
     // 2) garanta que há sessão (se confirmação de e‑mail estiver ON, signUp.session pode ser null)
     let uid = su.user?.id;
@@ -50,35 +94,43 @@ form.addEventListener("submit", async (e) => {
       const { data: login, error: eLogin } =
         await supabase.auth.signInWithPassword({ email, password: senha });
       if (eLogin) {
-        // se você usa TRIGGER no banco, já terá criado o perfil; se não usa, a RLS bloqueará sem sessão
-        msg("Cadastro criado! Confirme o e‑mail e depois faça login.", true);
+        // se usar TRIGGER no banco, o perfil já foi criado; sem sessão, não conseguimos gravar mais campos
+        msgGeral("Cadastro criado! Confirme o e‑mail e depois faça login.", true);
         return;
       }
       uid = login.user.id;
     }
 
     // 3) grava/atualiza perfil em public.alunos (1:1 com user_id)
-    //    Se você criou a TRIGGER no banco, isso aqui só complementa info (telefone/objetivo).
-    const { error: e2 } = await supabase
-      .from("alunos")
-      .upsert(
-        { user_id: uid, nome, email, telefone, objetivo },
-        { onConflict: "user_id" }
-      );
+    //    Se você usa TRIGGER no banco, prefira UPDATE para evitar conflito/duplicidade.
+    const USE_TRIGGER = false; // <-- troque para true se você ativou a trigger no banco
+
+    let e2;
+    if (USE_TRIGGER) {
+      ({ error: e2 } = await supabase
+        .from("alunos")
+        .update({ nome, email, telefone, objetivo })
+        .eq("user_id", uid));
+    } else {
+      ({ error: e2 } = await supabase
+        .from("alunos")
+        .upsert({ user_id: uid, nome, email, telefone, objetivo }, { onConflict: "user_id" }));
+    }
     if (e2) throw e2;
 
-    msg("Cadastro concluído! Redirecionando…", true);
+    setFieldState(mailEl, true, "");
+    msgGeral("Cadastro concluído! Redirecionando…", true);
+
     setTimeout(() => {
       // ajuste a rota desejada:
       // location.href = "/area-aluno/index.html";
       form.reset();
-      if (btn) { btn.disabled = false; btn.textContent = "Enviar"; }
     }, 900);
 
   } catch (err) {
     console.error(err);
     const texto = err?.message || err?.error_description || "Erro ao cadastrar. Tente novamente.";
-    msg(texto);
+    msgGeral(texto);
   } finally {
     if (btn) { btn.disabled = false; btn.textContent = "Enviar"; }
   }

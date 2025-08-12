@@ -6,9 +6,29 @@
     <title>Instituto Altitude - Página Inicial</title>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
     <link rel="stylesheet" href="/1-index.css"> <!-- Link para o CSS atualizado -->
+    <script type="module" src="/Projeto/4-java/supabaseClient.js"></script><!-- Link para o Spbase -->
+    <script type="module" src="/Projeto/4-java/headerAuth.js"></script><!-- lik para identificação de login de user-->
+
+
+    
+
 
 </head>
 <body>
+
+    <!-- botões de visitante -->
+    <div id="auth-actions">
+    <a href="/Projeto/1-html/4-login e cadastro.html" class="btn-outline">Acessar</a>
+    <a href="/Projeto/1-html/5-cadastro.html" class="btn-primary">Cadastrar</a>
+    </div>
+
+    <!-- área do usuário logado -->
+    <div id="user-menu" style="display:none;">
+    <span id="user-name"></span>
+    <button id="logout-btn" class="btn-outline">Sair</button>
+    </div>
+
+
 
     <!-- Cabeçalho para dispositivos moveis-->
 <!-- Novo cabeçalho para dispositivos móveis -->
@@ -52,8 +72,8 @@
                 </ul>
             </nav>
             <div class="header-buttons">
-                <a href="../1-html/4-login e cadastro.html" class="btn-outline">Acessar</a> 
-                <a href="..//1-html/5-cadastro.html" class="btn-primary">Cadastrar</a>   
+                <a href="../ALTITUDESITE/Projeto/1-html/4-login e cadastro.html" class="btn-outline">Acessar</a> 
+                <a href="../ALTITUDESITE/Projeto/1-html/5-cadastro.html" class="btn-primary">Cadastrar</a>   
             </div>
         </div>
     </header>

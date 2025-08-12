@@ -9,6 +9,19 @@ body {
   font-family: "Roboto", sans-serif;
 }
 
+.header-user {
+    display: flex;
+    align-items: center;
+    justify-content: flex-end;
+}
+
+#user-name {
+    font-weight: bold;
+    color: #0ea5e9; /* azul claro do seu tema */
+    font-size: 1rem;
+}
+
+
 .backRight {
   position: absolute;
   right: 0;

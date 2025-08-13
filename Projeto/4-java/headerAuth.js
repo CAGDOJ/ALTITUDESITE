@@ -1,6 +1,6 @@
 import { supabase } from './supabaseClient.js';
 
-document.addEventListener('DOMContentLoaded', async () => {
+async function carregarCabecalhoPosLogin() {
   const { data: { user } } = await supabase.auth.getUser();
 
   const authActions = document.getElementById('auth-actions');
@@ -9,7 +9,7 @@ document.addEventListener('DOMContentLoaded', async () => {
   const logoutBtn = document.getElementById('logout-btn');
 
   if (user) {
-    // Pega o nome do banco
+    // Busca o nome do aluno na tabela "alunos"
     const { data, error } = await supabase
       .from('alunos')
       .select('nome_completo')
@@ -22,15 +22,21 @@ document.addEventListener('DOMContentLoaded', async () => {
       userName.textContent = 'Olá!';
     }
 
+    // Mostra cabeçalho logado
     authActions.style.display = 'none';
     userMenu.style.display = 'flex';
   } else {
+    // Mostra cabeçalho visitante
     authActions.style.display = 'flex';
     userMenu.style.display = 'none';
   }
 
+  // Botão sair
   logoutBtn?.addEventListener('click', async () => {
     await supabase.auth.signOut();
     window.location.href = '/Projeto/1-html/index.html';
   });
-});
+}
+
+// Executa assim que a página carregar
+document.addEventListener('DOMContentLoaded', carregarCabecalhoPosLogin);

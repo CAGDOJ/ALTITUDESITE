@@ -1,35 +1,36 @@
-import { supabase } from "./supabaseClient.js";
+import { supabase } from './supabaseClient.js';
 
-const elActions  = document.getElementById("auth-actions");
-const elMenu     = document.getElementById("user-menu");
-const elName     = document.getElementById("user-name");
-
-async function renderHeader(){
+document.addEventListener('DOMContentLoaded', async () => {
   const { data: { user } } = await supabase.auth.getUser();
 
-  if (!user) {
-    if (elActions) elActions.style.display = "flex";
-    if (elMenu) elMenu.style.display = "none";
-    return;
+  const authActions = document.getElementById('auth-actions');
+  const userMenu = document.getElementById('user-menu');
+  const userName = document.getElementById('user-name');
+  const logoutBtn = document.getElementById('logout-btn');
+
+  if (user) {
+    // Pega o nome do banco
+    const { data, error } = await supabase
+      .from('alunos')
+      .select('nome_completo')
+      .eq('user_id', user.id)
+      .single();
+
+    if (!error && data) {
+      userName.textContent = `Olá, ${data.nome_completo}`;
+    } else {
+      userName.textContent = 'Olá!';
+    }
+
+    authActions.style.display = 'none';
+    userMenu.style.display = 'flex';
+  } else {
+    authActions.style.display = 'flex';
+    userMenu.style.display = 'none';
   }
 
-  // Buscar nome no banco
-  let displayName = user.email;
-  const { data: perfil } = await supabase
-    .from("alunos")
-    .select("nome")
-    .eq("user_id", user.id)
-    .maybeSingle();
-
-  if (perfil?.nome) {
-    const primeiro = perfil.nome.trim().split(" ")[0];
-    displayName = primeiro || perfil.nome;
-  }
-
-  if (elName) elName.textContent = `Olá ${displayName}`;
-  if (elActions) elActions.style.display = "none";
-  if (elMenu) elMenu.style.display = "flex";
-}
-
-renderHeader();
-supabase.auth.onAuthStateChange(() => renderHeader());
+  logoutBtn?.addEventListener('click', async () => {
+    await supabase.auth.signOut();
+    window.location.href = '/Projeto/1-html/index.html';
+  });
+});

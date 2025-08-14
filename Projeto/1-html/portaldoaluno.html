@@ -1,143 +1,164 @@
 <!DOCTYPE html>
 <html lang="pt-BR">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Portal do Aluno</title>
-    <link rel="stylesheet" href="../2-css/portaldoaluno.css">
-    <script src="https://unpkg.com/lucide@latest"></script>
-    <script type="module" src="/Projeto/4-java/supabaseClient.js"></script>
-    <script type="module" src="/Projeto/4-java/headerUser.js"></script>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Portal do Aluno • Dashboard</title>
+<link rel="preconnect" href="https://cdn.jsdelivr.net"/>
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
+<link rel="stylesheet" href="portaldoaluno.css">
+<script type="module" src="portaldoaluno.js"> </script>
+
 </head>
 
 <body>
-    <div class="app">
-        <!-- Menu Lateral -->
-        <div class="sidebar">
-            <button class="logo">
-                <i data-lucide="graduation-cap"></i>
-            </button>
-            <nav>
-                <button class="nav-button active" data-tab="perfil">
-                    <i data-lucide="user"></i>
-                </button>
-                <button class="nav-button" data-tab="disciplinas">
-                    <i data-lucide="book-open"></i>
-                </button>
-                <button class="nav-button" data-tab="calendario">
-                    <i data-lucide="calendar"></i>
-                </button>
-                <button class="nav-button" data-tab="mensagens">
-                    <i data-lucide="mail"></i>
-                </button>
-                <button class="nav-button" data-tab="configuracoes">
-                    <i data-lucide="settings"></i>
-                </button>
-            </nav>
-        </div>
-
-        <!-- Conteúdo Principal -->
-        <main>
-          
-            
-           <header>
-                <div class="Cabecalho">
-                 
-                    <div class="card" >
-                    <h1>Portal do Aluno</h1>
-   
-                    <div class="botaodark">
-                    <button id="darkModeToggle">
-                    <i data-lucide="moon"></i>
-                    </div>
-                    
-                </div>
-
-                <div class="fotoalunocabecalho">
-                    <div class="circle-container">
-                    <img id="preview" src="#" alt="Sua imagem" style="display:none;">
-                    </label>
-                </div>
-                   <output> </output>
-                </div>
-
-            </header> 
-                                    
-                    
-                    
-                    <!-- Perfil -->
-                    <div class="content" id="perfil">
-                    <div class="card">
-                    <h2>Informações Pessoais</h2>
-
-                        <div class="circle-container">
-                        <label for="image-upload" class="circle">
-                        <img id="preview" src="#" alt="Sua imagem" style="display:none;">
-                        <span id="placeholder">Clique para adicionar uma imagem</span>
-                        </label>
-                        <input type="file" id="image-upload" accept="image/*" style="display:none;">
-                        </div>
-    
-
-
-                    <div class="form-group">
-                        <label>Nome</label>
-                        <input type="text" value="João Silva" readonly>
-                    </div>
-                    <div class="form-group">
-                        <label>Email</label>
-                        <input type="email" value="joao.silva@email.com" readonly>
-                    </div>
-                    <div class="form-group">
-                        <label>Matricula</label>
-                        <input type="email" value="joao.silva@email.com" readonly>
-                    </div>
-
-                </div>
-
-                <div class="card">
-                    <h2>Progresso das Disciplinas</h2>
-                    <div class="cursos">
-                        <!-- Cursos serão inseridos via JavaScript -->
-                    </div>
-                </div>
-            </div>
-
-            <!-- Outras abas -->
-            <div class="content hidden" id="disciplinas">
-                <div class="card">
-                    <h2>Disciplinas</h2>
-                    <p>Conteúdo em desenvolvimento...</p>
-                </div>
-            </div>
-
-            <div class="content hidden" id="calendario">
-                <div class="card">
-                    <h2>Calendário</h2>
-                    <p>Conteúdo em desenvolvimento...</p>
-                </div>
-            </div>
-
-            <div class="content hidden" id="mensagens">
-                <div class="card">
-                    <h2>Mensagens</h2>
-                    <p>Conteúdo em desenvolvimento...</p>
-                </div>
-            </div>
-
-            <div class="content hidden" id="configuracoes">
-                <div class="card">
-                    <h2>Configurações</h2>
-                    <p>Conteúdo em desenvolvimento...</p>
-                </div>
-            </div>
-        </main>
+<header>
+  <div class="header-inner container">
+    <div class="brand">
+      <div class="brand-logo">PA</div>
+      <div>
+        <h1>Portal do Aluno</h1>
+        <p>Acompanhe cursos, provas e pagamentos</p>
+      </div>
     </div>
-    <script src="../4-java/portaldoaluno.js"></script>
-  
+    <div class="search"><input id="busca" type="text" placeholder="Buscar curso, fatura, prova..." /></div>
+  </div>
+  <div class="container" style="display:flex;justify-content:flex-end;padding-bottom:8px">
+    <div class="study-pill"><span class="dot" id="pill-dot"></span><span style="font-size:12px;color:var(--muted)">Estudo ao vivo:</span><strong id="pill-timer">00:00:00</strong><span class="badge" id="pill-credits">0 créditos</span></div>
+  </div>
+</header>
+
+<main class="container">
+  <!-- ====== TABS ====== -->
+  <div class="tabs">
+    <button class="tab-btn active" data-tab="inicio">Início</button>
+    <button class="tab-btn" data-tab="cursos">Meus Cursos</button>
+    <button class="tab-btn" data-tab="desempenho">Desempenho</button>
+    <button class="tab-btn" data-tab="provas">Provas</button>
+    <button class="tab-btn" data-tab="pagamentos">Pagamentos</button>
+    <button class="tab-btn" data-tab="inscricoes">Inscrições</button>
+    <button class="tab-btn" data-tab="creditos">Créditos & Certificados</button>
+  </div>
+
+  <!-- ====== INÍCIO ====== -->
+  <section id="tab-inicio" class="active">
+    <div class="grid cols-4">
+      <div class="card metric"><div class="body"><div class="title">Cursos ativos</div><div class="value" id="metric-cursos">0</div><div class="desc">Em andamento neste momento</div></div></div>
+      <div class="card metric"><div class="body"><div class="title">Horas estudadas</div><div class="value" id="metric-horas">0h</div><div class="desc">Acumuladas nos cursos</div></div></div>
+      <div class="card metric"><div class="body"><div class="title">Média geral</div><div class="value" id="metric-media">0.0</div><div class="desc">Últimos 6 meses</div></div></div>
+      <div class="card metric"><div class="body"><div class="title">Provas pendentes</div><div class="value" id="metric-provas">0</div><div class="desc">Agendadas para este mês</div></div></div>
+    </div>
+
+    <div class="grid" style="margin-top:12px;grid-template-columns:2fr 1fr">
+      <div class="card"><div class="body">
+        <h3 style="margin:0 0 8px">Progresso por curso</h3>
+        <div id="lista-progresso" class="list"></div>
+      </div></div>
+      <div class="card"><div class="body">
+        <h3 style="margin:0 0 8px">Evolução de notas</h3>
+        <div class="chart-box small"><canvas id="chart-media"></canvas></div>
+      </div></div>
+    </div>
+  </section>
+
+  <!-- ====== MEUS CURSOS ====== -->
+  <section id="tab-cursos">
+    <div id="grid-cursos" class="grid" style="grid-template-columns:repeat(auto-fill,minmax(260px,1fr))"></div>
+  </section>
+
+  <!-- ====== DESEMPENHO ====== -->
+  <section id="tab-desempenho">
+    <div class="kpi">
+      <div class="card"><div class="body"><div class="title">Média (6 meses)</div><div class="value" id="kpi-media">0.0</div></div></div>
+      <div class="card"><div class="body"><div class="title">Horas totais</div><div class="value" id="kpi-horas">0h</div></div></div>
+      <div class="card"><div class="body"><div class="title">Provas realizadas</div><div class="value" id="kpi-provas">0</div></div></div>
+    </div>
+
+    <div class="card" style="margin-top:12px"><div class="body">
+      <div style="display:flex;align-items:center;justify-content:space-between;gap:12px">
+        <h3 style="margin:0">Desempenho geral</h3>
+        <div style="display:flex;gap:6px">
+          <button class="btn range-btn" data-range="3">Últimos 3 meses</button>
+          <button class="btn primary range-btn" data-range="6">Últimos 6 meses</button>
+        </div>
+      </div>
+      <div class="grid" style="grid-template-columns:1fr 1fr;gap:12px;margin-top:12px">
+        <div class="chart-box"><canvas id="chart-horas"></canvas></div>
+        <div class="chart-box"><canvas id="chart-media-linha"></canvas></div>
+      </div>
+    </div></div>
+
+    <div class="card" style="margin-top:12px"><div class="body">
+      <h3 style="margin:0 0 8px">Provas recentes</h3>
+      <div id="lista-provas-recentes" class="list"></div>
+    </div></div>
+  </section>
+
+  <!-- ====== PROVAS ====== -->
+  <section id="tab-provas">
+    <div class="card"><div class="body">
+      <h3 style="margin:0 0 8px">Agenda de provas</h3>
+      <div id="lista-provas" class="list"></div>
+    </div></div>
+  </section>
+
+  <!-- ====== PAGAMENTOS ====== -->
+  <section id="tab-pagamentos">
+    <div class="grid" style="grid-template-columns:2fr 1fr;gap:12px">
+      <div class="card"><div class="body">
+        <h3 style="margin:0 0 8px">Faturas e assinaturas</h3>
+        <div class="table-wrap">
+          <table class="table" id="tabela-faturas">
+            <thead><tr><th>#</th><th>Referência</th><th>Vencimento</th><th>Valor</th><th>Status</th><th>Ações</th></tr></thead>
+            <tbody></tbody>
+          </table>
+        </div>
+      </div></div>
+      <div class="card"><div class="body">
+        <h3 style="margin:0 0 8px">Assinatura atual</h3>
+        <div id="assinatura"></div>
+        <div style="display:flex;gap:8px;margin-top:12px">
+          <button class="btn">Alterar plano</button>
+          <button class="btn primary">Atualizar pagamento</button>
+        </div>
+      </div></div>
+    </div>
+  </section>
+
+  <!-- ====== INSCRIÇÕES ====== -->
+  <section id="tab-inscricoes">
+    <div style="display:flex;align-items:center;justify-content:space-between;gap:12px">
+      <div>
+        <h3 style="margin:0">Novos cursos disponíveis</h3>
+        <p style="margin:4px 0 0;color:var(--muted)">Inscreva-se em novos conteúdos e trilhas</p>
+      </div>
+      <button class="btn primary">Criar trilha</button>
+    </div>
+    <div id="grid-catalogo" class="grid" style="grid-template-columns:repeat(auto-fill,minmax(260px,1fr));margin-top:12px"></div>
+  </section>
+
+  <!-- ====== CRÉDITOS & CERTIFICADOS ====== -->
+  <section id="tab-creditos">
+    <div class="grid cols-4">
+      <div class="card metric"><div class="body"><div class="title">Tempo total estudado</div><div class="value" id="met-total">00:00:00</div><div class="desc">Somatório de todas as sessões</div></div></div>
+      <div class="card metric"><div class="body"><div class="title">Créditos gerados</div><div class="value" id="met-creditos">0</div><div class="desc">1 crédito = 1 hora</div></div></div>
+      <div class="card metric"><div class="body"><div class="title">Sessão atual</div><div class="value" id="met-sessao">00:00:00</div><div class="desc">Pausa automática por inatividade</div></div></div>
+      <div class="card metric"><div class="body"><div class="title">Curso em estudo</div><div class="value" id="met-curso">—</div><div class="desc">Clique em "Iniciar estudo" em um curso</div></div></div>
+    </div>
+
+    <div class="card" style="margin-top:12px"><div class="body">
+      <h3 style="margin:0 0 8px">Horas por curso</h3>
+      <div id="lista-horas-curso" class="list"></div>
+      <div style="display:flex;gap:8px;margin-top:12px">
+        <button class="btn" id="btn-exportar">Exportar horas (JSON)</button>
+        <button class="btn primary" id="btn-mock-cert">Gerar certificado (mock)</button>
+      </div>
+    </div></div>
+  </section>
+</main>
+
+<footer>© <span id="yr"></span> Portal do Aluno • Todos os direitos reservados</footer>
 
 
-
-  </body>
+</body>
 </html>
-

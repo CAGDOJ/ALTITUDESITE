@@ -1,244 +1,52 @@
-:root {
-    --bg-color: #f3f4f6;
-    --text-color: #111827;
-    --card-bg: #ffffff;
-    --border-color: #e5e7eb;
-    --primary-color: #2563eb;
-    --hover-color: #f3f4f6;
-}
 
-.dark {
-    --bg-color: #111827;
-    --text-color: #ffffff;
-    --card-bg: #1f2937;
-    --border-color: #374151;
-    --hover-color: #374151;
+:root{
+  /* Paleta alinhada ao site que você mostrou */
+  --brand:#1cc3bb;          /* ciano/verde-água principal */
+  --brand-600:#17a9a2;      /* hover */
+  --brand-700:#10807b;      /* active */
+  --nav:#0d2b45;            /* azul escuro topo/rodapé */
+  --bg:#f4f7fa;             /* fundo geral */
+  --panel:#ffffff;          /* cartões */
+  --muted:#5f6b7a;          /* texto secundário */
+  --border:#dce3eb;         /* bordas */
+  --danger:#e74c3c;         /* vermelho */
+  --ok:#27ae60;             /* verde */
 }
-
-body {
-    font-family: system-ui, -apple-system, sans-serif;
-    background-color: var(--bg-color);
-    color: var(--text-color);
-    transition: background-color 0.3s, color 0.3s;
-}
-
-.app {
-    min-height: 100vh;
-    display: flex;
-}
-
-/* Sidebar */
-.sidebar {
-    width: 5rem;
-    background-color: var(--card-bg);
-    border-right: 1px solid var(--border-color);
-    padding: 2rem 0;
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    gap: 2rem;
-    position: fixed;
-    height: 100vh;
-}
-
-.logo {
-    
-    width: 100%;
-    height: 3rem;
-    background-color: transparent;
-    border: none;
-    border-radius: 0.5rem;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    color: rgb(0, 0, 0);
-    cursor: pointer;
-}
-
-nav {
-    display: flex;
-    flex-direction: column;
-    gap: 1.5rem;
-}
-
-.nav-button {
-    width: 3rem;
-    height: 3rem;
-    border: none;
-    border-radius: 0.5rem;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    color: var(--text-color);
-    background: transparent;
-    cursor: pointer;
-    transition: background-color 0.3s;
-}
-
-.nav-button:hover {
-    background-color: var(--hover-color);
-}
-
-.nav-button.active {
-    background-color: var(--primary-color);
-    color: white;
-}
-
-/* Main Content */
-main {
-    flex: 1;
-    margin-left: 5rem;
-    padding: 2rem;
-}
-
-header {
-    display: flex;
-    justify-content: space-between;
-    align-items: right;
-    margin-bottom:  1.5rem;
-    width: 100%;
-}
-
-
-
-.botaodark{
-display: flex;
-position: relative;
-justify-content: right;
-}
-.card-Cabecalho{
-    width: 100%;
-}
-
-h1 {
-    font-size: 1.5rem;
-    font-weight: bold;
-    
-}
-
-#darkModeToggle {
-    padding: 0.5rem;
-    border: none;
-    border-radius: 0.5rem;
-    background: transparent;
-    color: var(--text-color);
-    cursor: pointer;
-    position: flex;
-   
-    
-        
-    
-}
-#darkModeToggle:hover {
-    background-color: var(--hover-color);
-}
-
-/* Cards */
-.card {
-    
-    background-color: var(--card-bg);
-    border-radius: 0.5rem;
-    padding: 1.5rem;
-    margin-bottom: 2rem;
-    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
-    width: 100%;
-}
-
-h2 {
-    font-size: 1.25rem;
-    margin-bottom: 1rem;
-}
-
-.form-group {
-    margin-bottom: 1rem;
-}
-
-label {
-    display: block;
-    font-size: 0.875rem;
-    margin-bottom: 0.25rem;
-}
-
-input {
-    width: 100%;
-    padding: 0.5rem;
-    border: 1px solid var(--border-color);
-    border-radius: 0.25rem;
-    background-color: var(--card-bg);
-    color: var(--text-color);
-}
-
-/*INSERIR IMAGEM*/
-.circle-container {
-    display: flex;
-    justify-content: left;
-    align-items: center;
-    height: 200px; /* Ajuste a altura conforme necessário */
-}
-
-.circle {
-
-    width: 150px; /* Tamanho do círculo */
-    height: 150px; /* Tamanho do círculo */
-    border-radius: 50%; /* Isso cria o efeito de círculo */
-    background-color: #629eec; /* Cor de fundo do círculo */
-    display: flex;
-    justify-content: left;
-    align-items: center;
-    text-align: center;
-    cursor: pointer;
-    overflow: hidden; /* Para garantir que a imagem não ultrapasse o círculo */
-}
-
-#preview {
-    max-width: 100%;
-    max-height: 100%;
-    border-radius: 50%; /* Garante que a imagem também fique redonda */
-}
-
-#placeholder {
-    font-size: 14px;
-    color: #ffffff;
-}
-
-.circlecabecalho{
-    width: 50px; /* Tamanho do círculo */
-    height: 50px; /* Tamanho do círculo */
-    border-radius: 50%; /* Isso cria o efeito de círculo */
-    background-color: #629eec; /* Cor de fundo do círculo */
-    display: flex;
-    justify-content: left;
-    align-items: center;
-    text-align: center;
-    cursor: pointer;
-    overflow: hidden; /* Para garantir que a imagem não ultrapasse o círculo */
-}
-/* Cursos */
-.curso {
-    margin-bottom: 1rem;
-}
-
-.curso-header {
-    display: flex;
-    justify-content: space-between;
-    margin-bottom: 0.5rem;
-}
-
-.progress-bar {
-    width: 100%;
-    height: 0.5rem;
-    background-color: var(--border-color);
-    border-radius: 9999px;
-    overflow: hidden;
-}
-
-.progress-value {
-    height: 100%;
-    background-color: var(--primary-color);
-    border-radius: 9999px;
-    transition: width 0.3s ease;
-}
-
-.hidden {
-    display: none;
-}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:#0f172a;font:14px/1.45 system-ui,-apple-system,Segoe UI,Roboto,Ubuntu,Cantarell,Noto Sans,sans-serif}
+.container{max-width:1120px;margin:auto;padding:16px}
+header{position:sticky;top:0;background:#fff;border-bottom:1px solid var(--border);backdrop-filter:blur(8px);z-index:50}
+.header-inner{display:flex;align-items:center;justify-content:space-between;padding:12px 16px;gap:12px}
+.brand{display:flex;align-items:center;gap:10px}
+.brand-logo{height:40px;width:40px;border-radius:12px;background:var(--nav);display:grid;place-items:center;color:#fff;font-weight:700}
+.brand h1{font-size:16px;margin:0}.brand p{margin:0;color:var(--muted);font-size:12px;margin-top:2px}
+.search{flex:1;max-width:360px}.search input{width:100%;padding:10px 12px;border:1px solid var(--border);border-radius:10px}
+.tabs{display:grid;grid-template-columns:repeat(7,minmax(0,1fr));gap:8px;margin:12px 0}
+.tab-btn{padding:10px;border:1px solid var(--border);background:#fff;border-radius:10px;cursor:pointer;transition:.2s}
+.tab-btn:hover{background:var(--brand);color:#fff;border-color:var(--brand)}
+.tab-btn.active{border-color:var(--brand);background:var(--brand);color:#fff}
+.grid{display:grid;gap:12px}
+.grid.cols-4{grid-template-columns:repeat(1,minmax(0,1fr))}
+@media(min-width:768px){.grid.cols-4{grid-template-columns:repeat(4,minmax(0,1fr))}}
+.card{background:var(--panel);border:1px solid var(--border);border-radius:12px;box-shadow:0 1px 2px rgba(0,0,0,.05)}
+.card .body{padding:16px}
+.metric .title{color:var(--muted);font-size:12px}.metric .value{font-size:22px;font-weight:700;margin-top:4px}.metric .desc{color:var(--muted);font-size:12px;margin-top:2px}
+.list{display:flex;flex-direction:column;gap:10px}
+.row{border:1px solid var(--border);border-radius:8px;padding:12px;display:flex;align-items:center;justify-content:space-between;gap:12px;background:#fff}
+.progress{height:8px;background:#e5e7eb;border-radius:999px;overflow:hidden}
+.progress>span{display:block;height:100%;background:linear-gradient(90deg,var(--brand),#22d3ee)}
+.badge{display:inline-block;font-size:12px;padding:2px 8px;border-radius:999px;border:1px solid var(--border);background:#f8fafc}
+.badge.ok{background:#ecfdf5;border-color:#bbf7d0;color:#14532d}.badge.danger{background:#fef2f2;border-color:#fecaca;color:#7f1d1d}
+.btn{padding:8px 10px;border:1px solid var(--border);background:#fff;border-radius:8px;cursor:pointer;transition:.2s}
+.btn:hover{background:var(--brand);color:#fff;border-color:var(--brand)}
+.btn.primary{background:var(--brand);border-color:transparent;color:#fff}
+.btn.primary:hover{background:var(--brand-600)}.btn.primary:active{background:var(--brand-700)}
+.btn.block{width:100%}.btn.ghost{background:transparent}
+.table{width:100%;border-collapse:collapse}.table th,.table td{padding:8px;border-bottom:1px solid var(--border);text-align:left;font-size:13px}
+footer{background:var(--nav);color:#e2f0f6;font-size:12px;padding:24px 16px;margin-top:16px;text-align:center}
+section{display:none}.active{display:block}
+.study-pill{display:flex;align-items:center;gap:8px;border:1px solid var(--border);background:#fff;border-radius:999px;padding:6px 10px}
+.dot{width:8px;height:8px;border-radius:50%;background:var(--danger)}.dot.active{background:var(--ok)}
+.chart-box{height:200px;width:100%}.chart-box.small{height:160px}
+.kpi{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:12px}
+.kpi .card .value{font-size:20px;font-weight:700}

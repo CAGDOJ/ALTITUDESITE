@@ -3,30 +3,33 @@
 <head>
 <meta charset="utf-8"/>
 <meta name="viewport" content="width=device-width, initial-scale=1"/>
-<title>Portal do Aluno • Supabase</title>
+<title>Portal do Aluno</title>
+<link rel="stylesheet" href="/Projeto/2-css/portaldoaluno.css"/>
 <link rel="preconnect" href="https://cdn.jsdelivr.net"/>
+<!-- Supabase e Chart.js -->
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.min.js" defer></script>
 <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js" defer></script>
-<!-- Supabase JS v2 -->
-<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
-<link rel="stylesheet" href="../2-css/portaldoaluno.css"> <!-- Link para o CSS padrão -->
-<script type="module" src="/Projeto/4-java/portaldoaluno.js"></script>
-
+<!-- App -->
+<script src="/Projeto/4-java/portaldoaluno.js" defer></script>
 </head>
 <body>
+
 <header>
   <div class="header-inner container">
     <div class="brand">
       <div class="brand-logo" id="brandAvatar">PA</div>
       <div>
         <h1 id="brandName">Portal do Aluno</h1>
-        <small>RA: <span id="brandRA">—</span></small>
+        <small class="muted">
+          RA: <span id="brandRA">—</span> • Desde: <span id="brandSince">—</span>
+        </small>
       </div>
     </div>
-    <div class="search"><input id="busca" type="text" placeholder="Buscar curso, certificado, tópico..."/></div>
+    <div class="search"><input id="busca" placeholder="Buscar cursos…" /></div>
   </div>
   <div class="container study-wrap">
     <div class="study-pill">
-      <span class="dot"></span>
+      <span class="dot" id="dotGlobal"></span>
       <span class="muted" style="font-size:12px">Sessão ativa:</span>
       <strong id="pillTimer">00:00:00</strong>
       <span class="badge" id="pillCredits">0 créditos</span>
@@ -35,27 +38,26 @@
 </header>
 
 <main class="container">
-  <div class="tabs" id="tabs">
-    <button class="tab-btn active" data-tab="inicio" data-hash="#inicio">Início</button>
-    <button class="tab-btn" data-tab="cursos" data-hash="#cursos">Meus Cursos</button>
-    <button class="tab-btn" data-tab="desempenho" data-hash="#desempenho">Desempenho</button>
-    <button class="tab-btn" data-tab="inscricoes" data-hash="#inscricoes">Inscrições</button>
-    <button class="tab-btn" data-tab="pagamentos" data-hash="#pagamentos">Pagamentos</button>
-    <button class="tab-btn" data-tab="creditos" data-hash="#creditos">Créditos & Certificados</button>
-    <button class="tab-btn" data-tab="carteirinha" data-hash="#carteirinha">Carteirinha</button>
-    <button class="tab-btn" data-tab="forum" data-hash="#forum">Fórum</button>
-    <button class="tab-btn" data-tab="gestao" data-hash="#gestao" id="btn-gestao" style="display:none">Gestão</button>
-  </div>
+  <nav class="tabs" id="tabs">
+    <button class="tab-btn active" data-tab="inicio">Início / Perfil</button>
+    <button class="tab-btn" data-tab="cursos">Meus Cursos</button>
+    <button class="tab-btn" data-tab="desempenho">Desempenho</button>
+    <button class="tab-btn" data-tab="inscricoes">Inscrições</button>
+    <button class="tab-btn" data-tab="pagamentos">Pagamentos</button>
+    <button class="tab-btn" data-tab="creditos">Créditos & Certificados</button>
+    <button class="tab-btn" data-tab="carteirinha">Carteirinha</button>
+    <button class="tab-btn" data-tab="forum">Fórum</button>
+  </nav>
 
-  <!-- INÍCIO (com Perfil) -->
+  <!-- INÍCIO / PERFIL -->
   <section id="tab-inicio" class="active">
     <div class="grid" style="grid-template-columns:2fr 1fr">
       <div>
         <div class="grid cols-4">
-          <div class="card metric"><div class="body"><div class="title">Cursos ativos</div><div class="value" id="metricCursos">0</div><div class="desc">Em andamento</div></div></div>
-          <div class="card metric"><div class="body"><div class="title">Horas estudadas</div><div class="value" id="metricHoras">0h</div><div class="desc">Acumuladas</div></div></div>
-          <div class="card metric"><div class="body"><div class="title">Média geral</div><div class="value" id="metricMedia">0.0</div><div class="desc">Provas</div></div></div>
-          <div class="card metric"><div class="body"><div class="title">Certificados</div><div class="value" id="metricCerts">0</div><div class="desc">Disponíveis</div></div></div>
+          <div class="card metric"><div class="body"><div class="title">Cursos ativos</div><div class="value" id="metricCursos">0</div></div></div>
+          <div class="card metric"><div class="body"><div class="title">Horas estudadas (sessão)</div><div class="value" id="metricHoras">0h</div></div></div>
+          <div class="card metric"><div class="body"><div class="title">Média geral</div><div class="value" id="metricMedia">0.0</div></div></div>
+          <div class="card metric"><div class="body"><div class="title">Saldo certs</div><div class="value" id="metricSaldo">—</div></div></div>
         </div>
         <div class="grid" style="margin-top:12px;grid-template-columns:2fr 1fr">
           <div class="card"><div class="body">
@@ -68,24 +70,24 @@
           </div></div>
         </div>
       </div>
-      <div>
+
+      <aside>
         <div class="card"><div class="body">
           <h3 style="margin:0 0 8px">Perfil</h3>
           <div class="grid" style="grid-template-columns:100px 1fr;align-items:center">
             <div><div class="brand-logo" id="pfThumb" style="width:80px;height:80px;border-radius:50%">PA</div></div>
             <div>
-              <label>Nome<input type="text" id="pfNome" placeholder="Seu nome"/></label>
-              <label style="margin-top:6px">Telefone<input type="tel" id="pfTel" placeholder="(00) 00000-0000"/></label>
-              <label style="margin-top:6px">Email (login)<input type="email" id="pfEmail" disabled/></label>
-              <label style="margin-top:6px">RA<input type="text" id="pfRA" disabled/></label>
-              <label style="margin-top:6px">Registrado em<input type="text" id="pfReg" disabled/></label>
+              <label>Nome<input type="text" id="pfNome" placeholder="Seu nome"></label>
+              <label style="margin-top:6px">Telefone<input type="tel" id="pfTel" placeholder="(00) 00000-0000"></label>
+              <label style="margin-top:6px">Email<input type="email" id="pfEmail" disabled></label>
+              <label style="margin-top:6px">RA<input type="text" id="pfRA" disabled></label>
               <div style="margin-top:6px"><input type="file" id="pfFoto" accept="image/*"/></div>
               <div style="margin-top:8px"><button class="btn primary" id="btnSalvarPerfil">Salvar</button></div>
               <small class="muted">Foto sincroniza com cabeçalho e carteirinha.</small>
             </div>
           </div>
         </div></div>
-      </div>
+      </aside>
     </div>
   </section>
 
@@ -93,79 +95,97 @@
   <section id="tab-cursos">
     <div id="gridMeusCursos" class="grid" style="grid-template-columns:repeat(auto-fill,minmax(260px,1fr))"></div>
 
-    <div id="cursoPanel" class="course-panel" aria-live="polite">
+    <!-- Painel do curso (abre dentro da mesma página) -->
+    <div id="cursoPanel" class="course-panel">
       <div class="course-bar">
-        <a href="#cursos" class="btn">← Voltar</a>
-        <h2 id="cpTitulo" style="margin:0">Curso</h2>
+        <button class="btn" id="btnVoltarCursos">← Voltar</button>
+        <div style="display:flex;flex-direction:column;gap:6px">
+          <h2 id="cpTitulo" style="margin:0">Curso</h2>
+          <div class="course-tags" id="cpTags"></div>
+        </div>
         <div class="study-pill">
-          <span class="dot"></span>
-          <span class="muted" style="font-size:12px">Tempo no curso:</span>
-          <strong id="cpTimer">00:00:00</strong>
-          <span class="badge" id="cpCreditos">0 créditos</span>
+          <span class="dot" id="dotCourse"></span><span class="muted" style="font-size:12px">Tempo no curso:</span>
+          <strong id="cpTimer">00:00:00</strong><span class="badge" id="cpCreditos">0 créditos</span>
         </div>
       </div>
-      <div class="course-body">
-        <aside class="course-side">
-          <h3 style="margin:0 0 8px">Módulos</h3>
-          <div id="cpModulos"></div>
-          <div class="row" style="margin-top:8px"><span>Progresso</span><strong id="cpProgresso">0%</strong></div>
-          <button class="btn primary block" id="cpBtnProva" disabled>Prova Final</button>
-        </aside>
-        <section>
-          <div id="cpViewModulo" class="card">
-            <div class="body">
-              <h3 id="cpModTitulo" style="margin-top:0">Selecione um módulo</h3>
-              <div class="block">
-                <h4>PDF</h4>
-                <embed id="cpPDF" class="pdf" type="application/pdf" src="">
-                <div style="margin-top:6px"><a id="cpPDFLink" class="btn" href="#" target="_blank">Abrir PDF</a></div>
-              </div>
-              <div class="block">
-                <h4>Vídeo</h4>
-                <video id="cpVideo" class="video" controls></video>
-              </div>
-              <div class="block" style="display:flex;gap:8px;align-items:center">
-                <button id="cpBtnConcluir" class="btn">Marcar como concluído</button>
-                <span id="cpFlagConc" class="tag ok" style="display:none">Concluído</span>
-              </div>
-            </div>
-          </div>
-          <div id="cpViewProva" class="card" style="display:none">
-            <div class="body">
-              <h3 style="margin-top:0">Prova final</h3>
-              <p class="muted" style="margin-top:-6px">Nota máxima 10. Copiar/colar desabilitados.</p>
-              <form id="cpQuiz" class="nocopy">
-                <div class="q"><div class="q-title">1) Hashing é…</div>
-                  <label><input type="radio" name="q1" value="a"> Reversível</label>
-                  <label><input type="radio" name="q1" value="b"> Resumo para integridade</label>
-                  <label><input type="radio" name="q1" value="c"> Protocolo</label>
-                </div><hr>
-                <div class="q"><div class="q-title">2) Porta HTTPS:</div>
-                  <label><input type="radio" name="q2" value="a"> 80</label>
-                  <label><input type="radio" name="q2" value="b"> 21</label>
-                  <label><input type="radio" name="q2" value="c"> 443</label>
-                </div><hr>
-                <div class="q"><div class="q-title">3) LGPD significa:</div>
-                  <label><input type="radio" name="q3" value="a"> Lei Geral de Proteção de Dados</label>
-                  <label><input type="radio" name="q3" value="b"> Lei Geral de Processamento de Dados</label>
-                  <label><input type="radio" name="q3" value="c"> Leis Globais de Privacidade</label>
-                </div><hr>
-                <div class="q"><div class="q-title">4) ICMP é usado no:</div>
-                  <label><input type="radio" name="q4" value="a"> ping</label>
-                  <label><input type="radio" name="q4" value="b"> ftp</label>
-                  <label><input type="radio" name="q4" value="c"> smtp</label>
-                </div><hr>
-                <div class="q"><div class="q-title">5) Cadeia de custódia garante:</div>
-                  <label><input type="radio" name="q5" value="a"> Integridade e rastreabilidade</label>
-                  <label><input type="radio" name="q5" value="b"> Velocidade de CPU</label>
-                  <label><input type="radio" name="q5" value="c"> Otimização de disco</label>
+
+      <div class="subtabs">
+        <button class="subtab-btn active" data-sub="conteudo" id="cpTabConteudo">Conteúdo</button>
+        <button class="subtab-btn" data-sub="obs" id="cpTabObs" style="display:none">Observações do gestor</button>
+      </div>
+
+      <div id="cpSubConteudo">
+        <div class="course-body">
+          <aside class="course-side">
+            <h3 style="margin:0 0 8px">Módulos</h3>
+            <div id="cpModulos"></div>
+            <div class="row" style="margin-top:8px"><span>Progresso</span><strong id="cpProgresso">0%</strong></div>
+            <button class="btn primary block" id="cpBtnProva" disabled>Prova Final</button>
+          </aside>
+          <section>
+            <div id="cpViewModulo" class="card">
+              <div class="body">
+                <h3 id="cpModTitulo" style="margin-top:0">Selecione um módulo</h3>
+                <div class="block">
+                  <h4>PDF</h4>
+                  <embed id="cpPDF" class="pdf" type="application/pdf" src="">
+                  <div style="margin-top:6px"><a id="cpPDFLink" class="btn" href="#" target="_blank">Abrir PDF</a></div>
                 </div>
-                <div style="margin-top:10px"><button class="btn primary" type="submit">Enviar</button></div>
-              </form>
-              <div id="cpResultado" class="row" style="display:none;margin-top:8px"></div>
+                <div class="block">
+                  <h4>Vídeo</h4>
+                  <video id="cpVideo" class="video" controls></video>
+                </div>
+                <div class="block" style="display:flex;gap:8px;align-items:center">
+                  <button id="cpBtnConcluir" class="btn">Marcar como concluído</button>
+                  <span id="cpFlagConc" class="tag ok" style="display:none">Concluído</span>
+                </div>
+              </div>
             </div>
-          </div>
-        </section>
+
+            <div id="cpViewProva" class="card" style="display:none">
+              <div class="body">
+                <h3 style="margin-top:0">Prova final</h3>
+                <p class="muted" style="margin-top:-6px">Nota máxima 10. Copiar/colar desabilitados.</p>
+                <form id="cpQuiz" class="nocopy">
+                  <div class="q"><div class="q-title">1) Hashing é…</div>
+                    <label><input type="radio" name="q1" value="b"> Resumo para integridade</label>
+                    <label><input type="radio" name="q1" value="a"> Reversível</label>
+                    <label><input type="radio" name="q1" value="c"> Protocolo</label>
+                  </div><hr>
+                  <div class="q"><div class="q-title">2) Porta HTTPS:</div>
+                    <label><input type="radio" name="q2" value="c"> 443</label>
+                    <label><input type="radio" name="q2" value="a"> 80</label>
+                    <label><input type="radio" name="q2" value="b"> 21</label>
+                  </div><hr>
+                  <div class="q"><div class="q-title">3) LGPD significa:</div>
+                    <label><input type="radio" name="q3" value="a"> Lei Geral de Proteção de Dados</label>
+                    <label><input type="radio" name="q3" value="b"> Lei Geral de Processamento de Dados</label>
+                    <label><input type="radio" name="q3" value="c"> Leis Globais de Privacidade</label>
+                  </div><hr>
+                  <div class="q"><div class="q-title">4) ICMP é usado no:</div>
+                    <label><input type="radio" name="q4" value="a"> ping</label>
+                    <label><input type="radio" name="q4" value="b"> ftp</label>
+                    <label><input type="radio" name="q4" value="c"> smtp</label>
+                  </div><hr>
+                  <div class="q"><div class="q-title">5) Cadeia de custódia garante:</div>
+                    <label><input type="radio" name="q5" value="a"> Integridade e rastreabilidade</label>
+                    <label><input type="radio" name="q5" value="b"> Velocidade de CPU</label>
+                    <label><input type="radio" name="q5" value="c"> Otimização de disco</label>
+                  </div>
+                  <div style="margin-top:10px"><button class="btn primary" type="submit">Enviar</button></div>
+                </form>
+                <div id="cpResultado" class="row" style="display:none;margin-top:8px"></div>
+              </div>
+            </div>
+          </section>
+        </div>
+      </div>
+
+      <div id="cpSubObs" style="display:none">
+        <div class="card"><div class="body">
+          <h3 style="margin:0 0 8px">Observações do gestor</h3>
+          <div id="cpObsText" class="alert-red">—</div>
+        </div></div>
       </div>
     </div>
   </section>
@@ -173,10 +193,10 @@
   <!-- DESEMPENHO -->
   <section id="tab-desempenho">
     <div class="grid cols-4">
-      <div class="card metric"><div class="body"><div class="title">Média (6 meses)</div><div class="value" id="kpiMedia">0.0</div></div></div>
-      <div class="card metric"><div class="body"><div class="title">Horas totais</div><div class="value" id="kpiHoras">0h</div></div></div>
+      <div class="card metric"><div class="body"><div class="title">Média (provas)</div><div class="value" id="kpiMedia">0.0</div></div></div>
+      <div class="card metric"><div class="body"><div class="title">Horas (sessão)</div><div class="value" id="kpiHoras">0h</div></div></div>
       <div class="card metric"><div class="body"><div class="title">Provas feitas</div><div class="value" id="kpiProvas">0</div></div></div>
-      <div class="card metric"><div class="body"><div class="title">Cursos concluídos</div><div class="value" id="kpiConcluidos">0</div></div></div>
+      <div class="card metric"><div class="body"><div class="title">Concluídos</div><div class="value" id="kpiConcluidos">0</div></div></div>
     </div>
     <div class="card" style="margin-top:12px"><div class="body">
       <h3 style="margin:0 0 6px">Gráficos</h3>
@@ -204,15 +224,14 @@
         <div id="listaPromos" class="grid" style="grid-template-columns:repeat(auto-fill,minmax(240px,1fr))"></div>
       </div></div>
       <div class="card"><div class="body">
-        <h3 style="margin:0 0 8px">Resumo</h3>
+        <h3 style="margin:0 0 8px">Resumo e Cupom</h3>
         <div class="row">
           <input id="cupom" placeholder="Cupom de desconto"/>
           <button class="btn" id="btnCupom">Aplicar</button>
         </div>
         <div id="boxResumo" style="margin:8px 0"></div>
         <button class="btn primary block" id="btnPagar">Pagar</button>
-        <small class="muted">Pagamento processado por intermediadora. Liberação somente após webhook.</small>
-        <div id="devApprove" style="display:none;margin-top:8px"><button class="btn" id="btnDevOk">[DEMO] Confirmar pagamento</button></div>
+        <small class="muted">Liberação só após confirmação do gateway.</small>
       </div></div>
     </div>
   </section>
@@ -220,14 +239,14 @@
   <!-- CRÉDITOS & CERTIFICADOS -->
   <section id="tab-creditos">
     <div class="grid cols-4">
-      <div class="card metric"><div class="body"><div class="title">Tempo total estudado</div><div class="value" id="metTotal">00:00:00</div></div></div>
+      <div class="card metric"><div class="body"><div class="title">Tempo (sessão)</div><div class="value" id="metTotal">00:00:00</div></div></div>
       <div class="card metric"><div class="body"><div class="title">Créditos (1h=1)</div><div class="value" id="metCreditos">0</div></div></div>
-      <div class="card metric"><div class="body"><div class="title">Saldo de certificados</div><div class="value" id="metSaldo">0</div></div></div>
+      <div class="card metric"><div class="body"><div class="title">Saldo</div><div class="value" id="metSaldo">—</div></div></div>
       <div class="card metric"><div class="body"><div class="title">Emitidos</div><div class="value" id="metEmitidos">0</div></div></div>
     </div>
     <div class="row" style="margin-top:10px">
       <button class="btn primary" id="btnEmitir">Emitir certificado</button>
-      <small class="muted">Necessita saldo e pagamento confirmado.</small>
+      <small class="muted">Precisa saldo e pagamento aprovado.</small>
     </div>
     <div class="card" style="margin-top:10px"><div class="body">
       <h3 style="margin:0 0 6px">Histórico</h3>
@@ -270,67 +289,32 @@
     </div></div>
     <div class="card" style="margin-top:10px"><div class="body">
       <h4 style="margin:0 0 6px">Seus chamados</h4>
-      <div class="table-wrap"><table class="table" id="tabChamados"><thead><tr><th>Número</th><th>Título</th><th>Status</th><th>Solucionador</th><th>Data</th></tr></thead><tbody></tbody></table></div>
-      <small class="muted">Numeração reinicia em 1º/01 (formato ANO-000, ANO-001…).</small>
-    </div></div>
-  </section>
-
-  <!-- GESTÃO (admin: ?admin=1) -->
-  <section id="tab-gestao">
-    <div class="row" style="justify-content:space-between">
-      <h3 style="margin:0">Gestão de Alunos</h3>
-      <div id="adminWho" class="tag">Admin</div>
-    </div>
-
-    <div class="card" style="margin-top:10px"><div class="body">
-      <div class="grid" style="grid-template-columns:2fr 1fr">
-        <div>
-          <label>Buscar por RA<input id="gsRA" placeholder="Ex.: RA2025-000123"/></label>
-          <label style="margin-top:6px">ou Email<input id="gsEmail" placeholder="aluno@exemplo.com"/></label>
-          <div style="margin-top:8px"><button class="btn primary" id="btnBuscarAluno">Buscar</button></div>
-        </div>
-        <div class="row">
-          <div><strong>Encontrado:</strong> <span id="gsFound">—</span></div>
-          <div><strong>Registro:</strong> <span id="gsReg">—</span></div>
-        </div>
+      <div class="table-wrap">
+        <table class="table" id="tabChamados"><thead><tr><th>Número</th><th>Título</th><th>Status</th><th>Solucionador</th><th>Data</th></tr></thead><tbody></tbody></table>
       </div>
+      <small class="muted">Numeração reinicia em 01/01 (formato ANO-000…).</small>
     </div></div>
-
-    <div id="gsPane" style="display:none">
-      <div class="grid cols-4" style="margin-top:10px">
-        <div class="card metric"><div class="body"><div class="title">Horas totais</div><div class="value" id="gsHoras">0h</div></div></div>
-        <div class="card metric"><div class="body"><div class="title">Créditos</div><div class="value" id="gsCreditos">0</div></div></div>
-        <div class="card metric"><div class="body"><div class="title">Cursos ativos</div><div class="value" id="gsCursos">0</div></div></div>
-        <div class="card metric"><div class="body"><div class="title">Provas feitas</div><div class="value" id="gsProvas">0</div></div></div>
-      </div>
-
-      <div class="card" style="margin-top:10px"><div class="body">
-        <h4 style="margin:0 0 8px">Ajuste de horas (somente gestor)</h4>
-        <div class="grid" style="grid-template-columns:1fr 1fr 1fr">
-          <label>Quantidade (minutos)<input type="number" id="gsMin" min="1" value="60"/></label>
-          <label>Motivo<input id="gsMotivo" placeholder="Correção de contabilização"/></label>
-          <div style="display:flex;align-items:end;gap:8px">
-            <button class="btn" id="btnAddHoras">Adicionar</button>
-            <button class="btn danger" id="btnSubHoras">Remover</button>
-          </div>
-        </div>
-        <small class="muted">Registro de auditoria é gravado com data/hora e nome do gestor.</small>
-      </div></div>
-
-      <div class="card" style="margin-top:10px"><div class="body">
-        <h4 style="margin:0 0 6px">Auditoria de ajustes</h4>
-        <div class="table-wrap">
-          <table class="table" id="gsAudit"><thead><tr><th>Data</th><th>Gestor</th><th>Δ Horas</th><th>Motivo</th></tr></thead><tbody></tbody></table>
-        </div>
-      </div></div>
-    </div>
   </section>
 </main>
 
-<footer style="text-align:center;color:var(--muted);padding:18px 0">© <span id="yr"></span> Portal do Aluno • Todos os direitos reservados</footer>
+<footer>© <span id="yr"></span> Portal do Aluno • Todos os direitos reservados</footer>
 
+<!-- MODAL LOGIN -->
+<div id="login">
+  <div class="box">
+    <h3>Entrar no Portal do Aluno</h3>
+    <p class="muted">Use e‑mail e senha do Supabase Auth.</p>
+    <label>Email<input id="lgEmail" type="email" placeholder="voce@exemplo.com"/></label>
+    <label>Senha<input id="lgPass" type="password" placeholder="********"/></label>
+    <div style="display:flex;gap:8px;margin-top:10px">
+      <button class="btn" id="btnCriarConta">Criar conta</button>
+      <button class="btn primary" id="btnFazerLogin">Entrar</button>
+    </div>
+    <div id="loginErro" class="alert-red" style="display:none;margin-top:10px">Não foi possível entrar. Tente novamente.</div>
+  </div>
+</div>
+
+<!-- Toast -->
 <div class="toast" id="toast"><div class="inner" id="toastMsg">ok</div></div>
-
-
 </body>
 </html>

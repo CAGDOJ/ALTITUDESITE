@@ -388,7 +388,7 @@ text-align: center;
 */
 .eye-toggle{
   position: absolute;
-  inset: 55% -10px 0px auto; /* top:0; right:10px; bottom:0; left:auto */
+  inset: 55% -15px 0px auto; /* top:0; right:10px; bottom:0; left:auto */
   display: grid;
   /* centraliza vertical e horizontal */
   width: 32px;          /* área de clique confortável */

@@ -1,17 +1,27 @@
+// Projeto/4-java/cadastro.js
 import { supabase } from "./supabaseClient.js";
 
-// pega o form
-const form   = document.querySelector(".registration-form");
-const nameEl = document.querySelector("#name");
-const mailEl = document.querySelector("#email");
-const passEl = document.querySelector("#password");
-const telEl  = document.querySelector("#phone");
-const objEl  = document.querySelector("#objective");
+// ====== CONFIG ======
+const PORTAL_URL = "/Projeto/1-html/portaldoaluno.html"; // ajuste se necessário
 
-// alvo para msg do e-mail
+// ====== ELEMENTOS ======
+const form    = document.querySelector(".registration-form");
+const nameEl  = document.getElementById("name");
+const mailEl  = document.getElementById("email");
+const passEl  = document.getElementById("password");
+const pass2El = document.getElementById("password2");
+const telEl   = document.getElementById("phone");
+const objEl   = document.getElementById("objective");
+const cpfEl   = document.getElementById("cpf");
+
+// alvos de mensagens
 const emailMsg = document.getElementById("email-msg");
+const eCpf     = document.getElementById("err-cpf");
+const ePass    = document.getElementById("err-password");
+const ePass2   = document.getElementById("err-password2");
+const matchOk  = document.getElementById("match-ok");
 
-// helpers de UI
+// ====== HELPERS UI ======
 function setFieldState(el, ok, message = "") {
   if (!el) return;
   el.classList.remove("input-erro", "input-ok");
@@ -32,193 +42,205 @@ function msgGeral(texto, ok = false) {
   el.textContent = texto;
 }
 
-// -------- E-MAIL --------
-function emailBasicoValido(email){
-  const regex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-  return regex.test(email) 
-    ? { ok:true }
-    : { ok:false, reason:"Formato de e-mail inválido" };
+function changeButton(state, text) {
+  const btn = form?.querySelector(".btn.submit") || form?.querySelector('button[type="submit"]');
+  if (!btn) return;
+  btn.classList.remove("loading","success","error");
+  if (state) btn.classList.add(state);
+  if (text)  btn.textContent = text;
+  btn.disabled = state === "loading";
 }
 
+// ====== VALIDAÇÕES DE ENTRADA ======
+function emailBasicoValido(email){
+  const re = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+  return re.test(email) ? {ok:true} : {ok:false, reason:'Formato de e-mail inválido'};
+}
 
-
-
-
-
-// limpando estados enquanto digita
-mailEl?.addEventListener("input", () => setFieldState(mailEl, null, ""));
-
-form.addEventListener("submit", async (e) => {
-  e.preventDefault();
-  msgGeral("");
-  setFieldState(mailEl, null, "");
-
-  const btn = form.querySelector(".btn.submit") || form.querySelector('button[type="submit"]');
-  if (btn) { btn.disabled = true; btn.textContent = "Enviando..."; }
-
-  const nome     = nameEl.value.trim();
-  const email    = mailEl.value.trim();
-  const senha    = passEl.value;
-  const telefone = telEl.value.trim();
-  const objetivo = objEl.value.trim();
-
-  try {
-    // 1) cria conta no Auth (senha fica só no Auth)
-    const { data: su, error: e1 } = await supabase.auth.signUp({
-      email,
-      password: senha,
-      options: { data: { nome } },
-    });
-
-    if (e1) {
-      // trata e-mail já cadastrado com feedback visual no campo
-      const already =
-        e1?.code === "auth/email_already_in_use" ||
-        /already.*use|exist/i.test(e1?.message || "");
-
-      if (already) {
-        setFieldState(mailEl, false, "Este usuário já existe ❌");
-        msgGeral(""); // sem alerta global, só o inline
-        return;
-      }
-
-      throw e1; // outros erros seguem o fluxo normal
-    }
-
-    // 2) garanta que há sessão (se confirmação de e‑mail estiver ON, signUp.session pode ser null)
-    let uid = su.user?.id;
-    if (!su.session) {
-      const { data: login, error: eLogin } =
-        await supabase.auth.signInWithPassword({ email, password: senha });
-      if (eLogin) {
-        // se usar TRIGGER no banco, o perfil já foi criado; sem sessão, não conseguimos gravar mais campos
-        msgGeral("Cadastro criado! Confirme o e‑mail e depois faça login.", true);
-        return;
-      }
-      uid = login.user.id;
-    }
-
-    // 3) grava/atualiza perfil em public.alunos (1:1 com user_id)
-    //    Se você usa TRIGGER no banco, prefira UPDATE para evitar conflito/duplicidade.
-    const USE_TRIGGER = false; // <-- troque para true se você ativou a trigger no banco
-
-    let e2;
-    if (USE_TRIGGER) {
-      ({ error: e2 } = await supabase
-        .from("alunos")
-        .update({ nome, email, telefone, objetivo })
-        .eq("user_id", uid));
-    } else {
-      ({ error: e2 } = await supabase
-        .from("alunos")
-        .upsert({ user_id: uid, nome, email, telefone, objetivo }, { onConflict: "user_id" }));
-    }
-    if (e2) throw e2;
-
-    setFieldState(mailEl, true, "");
-    msgGeral("Cadastro concluído! Redirecionando…", true);
-
-    setTimeout(() => {
-      // ajuste a rota desejada:
-      // location.href = "/area-aluno/index.html";
-      form.reset();
-    }, 900);
-
-  } catch (err) {
-    console.error(err);
-    const texto = err?.message || err?.error_description || "Erro ao cadastrar. Tente novamente.";
-    msgGeral(texto);
-  } finally {
-    if (btn) { btn.disabled = false; btn.textContent = "Enviar"; }
-  }
-
-  
-// ===== CPF máscara e validação =====
-const cpfEl   = document.getElementById('cpf');
-const eCpf    = document.getElementById('err-cpf');
-
+// CPF máscara + validação
 function cpfMask(v){
   v = v.replace(/\D/g,'').slice(0,11);
-  if (v.length > 9)  v = v.replace(/(\d{3})(\d{3})(\d{3})(\d{0,2})/, '$1.$2.$3-$4');
-  else if (v.length > 6) v = v.replace(/(\d{3})(\d{3})(\d{0,3})/, '$1.$2.$3');
-  else if (v.length > 3) v = v.replace(/(\d{3})(\d{0,3})/, '$1.$2');
+  if (v.length > 9)       v = v.replace(/(\d{3})(\d{3})(\d{3})(\d{0,2})/, '$1.$2.$3-$4');
+  else if (v.length > 6)  v = v.replace(/(\d{3})(\d{3})(\d{0,3})/,         '$1.$2.$3');
+  else if (v.length > 3)  v = v.replace(/(\d{3})(\d{0,3})/,                 '$1.$2');
   return v;
 }
 function cpfValido(cpf){
   cpf = (cpf||'').replace(/\D/g,'');
   if (cpf.length !== 11) return false;
-  if (/^(\d)\1{10}$/.test(cpf)) return false; // todos iguais
-  const dv = (b)=> {
-    let s=0; for(let i=0;i<b;i++) s += +cpf[i]*(b+1-i);
-    const d = 11-(s%11); return d>9?0:d;
-  };
+  if (/^(\d)\1{10}$/.test(cpf)) return false;
+  const dv = (b)=>{ let s=0; for(let i=0;i<b;i++) s += +cpf[i]*(b+1-i); const d=11-(s%11); return d>9?0:d; };
   return dv(9)===+cpf[9] && dv(10)===+cpf[10];
 }
 
+// Senhas iguais (✔️/❌)
+function checkPasswords(){
+  if (ePass)  ePass.textContent  = '';
+  if (ePass2) ePass2.textContent = '';
+  if (matchOk) matchOk.textContent = '';
+  if (!passEl?.value || !pass2El?.value) return;
+  if (passEl.value.length < 8) {
+    if (ePass) ePass.textContent = 'Mínimo 8 caracteres.';
+    return;
+  }
+  if (passEl.value !== pass2El.value) {
+    if (ePass2) ePass2.textContent = 'As senhas não conferem.';
+  } else {
+    if (matchOk) matchOk.textContent = '✔️';
+  }
+}
+
+// ====== LISTENERS DE INPUT ======
+mailEl?.addEventListener("input", () => setFieldState(mailEl, null, ""));
+passEl?.addEventListener('input',  checkPasswords);
+pass2El?.addEventListener('input', checkPasswords);
+
 cpfEl?.addEventListener('input', ()=>{
   cpfEl.value = cpfMask(cpfEl.value);
-  eCpf.textContent = '';
+  if (eCpf) eCpf.textContent = '';
 });
 cpfEl?.addEventListener('blur', ()=>{
   const cheio = cpfEl.value.replace(/\D/g,'').length === 11;
-  if (!cheio) { eCpf.textContent = 'CPF incompleto.'; return; }
-  if (!cpfValido(cpfEl.value)) eCpf.textContent = 'CPF inválido.';
+  if (!cheio) { if (eCpf) eCpf.textContent = 'CPF incompleto.'; return; }
+  if (!cpfValido(cpfEl.value)) { if (eCpf) eCpf.textContent = 'CPF inválido.'; }
 });
 
-// Toggle olho/ocultar
+// Toggle olho (mostrar/ocultar senha)
 function bindEyeToggle(){
   document.querySelectorAll('.eye-toggle').forEach(btn=>{
     const targetId = btn.dataset.target;
     const input = document.getElementById(targetId);
+    if (!input) return;
     btn.addEventListener('click', ()=>{
       const showing = btn.getAttribute('aria-pressed') === 'true';
-      if (showing){
-        // passar para oculto
-        input.type = 'password';
-        btn.setAttribute('aria-pressed','false');
-        btn.setAttribute('aria-label','Mostrar senha');
-      }else{
-        // passar para visível
-        input.type = 'text';
-        btn.setAttribute('aria-pressed','true');
-        btn.setAttribute('aria-label','Ocultar senha');
-      }
+      input.type = showing ? 'password' : 'text';
+      btn.setAttribute('aria-pressed', showing ? 'false' : 'true');
+      btn.setAttribute('aria-label', showing ? 'Mostrar senha' : 'Ocultar senha');
     });
   });
 }
 bindEyeToggle();
 
+// ====== SUBMIT ======
+form?.addEventListener("submit", async (e) => {
+  e.preventDefault();
+  console.clear();
+  msgGeral("");
+  setFieldState(mailEl, null, "");
+  changeButton("loading", "Cadastrando…");
 
-// ===== Senhas iguais/diferentes em tempo real =====
-const passEl  = document.getElementById('password');
-const pass2El = document.getElementById('password2');
-const ePass   = document.getElementById('err-password');
-const ePass2  = document.getElementById('err-password2');
-const matchOk = document.getElementById('match-ok');
+  // pega valores
+  const nome     = nameEl?.value.trim();
+  const email    = mailEl?.value.trim().toLowerCase();
+  const senha    = passEl?.value || "";
+  const senha2   = pass2El?.value || "";
+  const telefone = telEl?.value.trim() || "";
+  const objetivo = objEl?.value || "";
+  const cpfRaw   = (cpfEl?.value || "").replace(/\D/g,'');
 
-function checkPasswords(){
-  ePass.textContent = '';
-  ePass2.textContent = '';
-  matchOk.textContent = '';
-  if (!passEl.value || !pass2El.value) return;
-  if (passEl.value.length < 8) {
-    ePass.textContent = 'Mínimo 8 caracteres.';
+  // validações rápidas
+  if (!nome || !email || !senha) {
+    changeButton("error","Preencha os campos");
+    msgGeral("Campos obrigatórios faltando.");
     return;
   }
-  if (passEl.value !== pass2El.value) {
-    ePass2.textContent = 'As senhas não conferem.';
-  } else {
-    matchOk.textContent = '✔️';
+  if (!emailBasicoValido(email).ok){
+    setFieldState(mailEl, false, "E-mail inválido");
+    changeButton("error","Corrija o e-mail");
+    return;
   }
-}
-passEl?.addEventListener('input',  checkPasswords);
-pass2El?.addEventListener('input', checkPasswords);
+  if (senha.length < 8) {
+    changeButton("error","Senha curta");
+    msgGeral("Senha precisa de 8+ caracteres");
+    return;
+  }
+  if (senha !== senha2) {
+    changeButton("error","Senhas não conferem");
+    msgGeral("As senhas não conferem");
+    return;
+  }
+  if (cpfEl) {
+    if (cpfRaw.length !== 11) {
+      changeButton("error","CPF incompleto");
+      msgGeral("Informe os 11 dígitos do CPF.");
+      return;
+    }
+    if (!cpfValido(cpfEl.value)) {
+      changeButton("error","CPF inválido");
+      msgGeral("CPF inválido.");
+      return;
+    }
+  }
 
-// ===== E-mail: aceitar qualquer domínio válido =====
-function emailBasicoValido(email){
-  const re = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-  return re.test(email) ? {ok:true} : {ok:false, reason:'Formato de e-mail inválido'};
-}
-// (se você já tinha essa função, pode substituir por essa)
+  try {
+    // 1) Auth
+    const { data: su, error: e1 } = await supabase.auth.signUp({
+      email,
+      password: senha,
+      options: {
+        data: { nome, cpf: cpfRaw },
+        emailRedirectTo: "https://www.portalaltitude.com.br/Projeto/1-html/4-login%20e%20cadastro.html"
+      }
+    });
 
+    if (e1) {
+      const already =
+        e1?.code === "auth/email_already_in_use" ||
+        /already.*use|exist/i.test(e1?.message || "");
+      if (already) {
+        setFieldState(mailEl, false, "Este usuário já existe ❌");
+        changeButton("error","E-mail já cadastrado");
+        msgGeral(""); // só inline
+        return;
+      }
+      throw e1;
+    }
+
+    // 2) Sessão (se confirmação por e-mail estiver ON, pode não haver session)
+    let uid = su.user?.id;
+    if (!su.session) {
+      const { data: login, error: eLogin } =
+        await supabase.auth.signInWithPassword({ email, password: senha });
+      if (eLogin) {
+        changeButton("success","Cadastro criado!");
+        msgGeral("Cadastro criado! Confirme o e‑mail e depois faça login.", true);
+        setTimeout(()=> {
+          form.reset();
+          changeButton(null,"Enviar");
+        }, 1200);
+        return;
+      }
+      uid = login.user.id;
+    }
+
+    // 3) Banco (confirma gravação com .select().single())
+    const { data: saved, error: e2 } = await supabase
+      .from("alunos")
+      .upsert(
+        { user_id: uid, nome, email, telefone, objetivo, cpf: cpfRaw },
+        { onConflict: "user_id" }
+      )
+      .select("user_id")
+      .single();
+
+    if (e2) throw e2;
+    if (!saved?.user_id) throw new Error("Não foi possível confirmar o cadastro no banco.");
+
+    // 4) Sucesso + redirecionamento
+    setFieldState(mailEl, true, "");
+    changeButton("success","Bem‑vindo à Altitude!");
+    msgGeral("Cadastro concluído. Redirecionando…", true);
+
+    setTimeout(() => {
+      window.location.href = PORTAL_URL;
+    }, 1000);
+
+  } catch (err) {
+    console.error("ERRO NO CADASTRO:", err);
+    changeButton("error","Tente novamente");
+    msgGeral(err?.message || err?.error_description || "Erro ao cadastrar. Tente novamente.");
+  } finally {
+    // se quiser reabilitar o botão apenas em erro, comente a linha abaixo:
+    // changeButton(null,"Enviar");
+  }
 });

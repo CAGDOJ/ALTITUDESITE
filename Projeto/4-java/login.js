@@ -1,14 +1,14 @@
-/* ===== Login Supabase (sem módulos / usando UMD global) ===== */
+/* ===== Login Supabase (UMD, sem modules) ===== */
 
-/** 1) DADOS DO SEU PROJETO SUPABASE **/
-const SUPABASE_URL = 'https://mxnvrxqwokvelulzdvmn.supabase.co';   // <<< URL correta
+/** PREENCHA COM O SEU PROJETO (estes são os seus dados do print/keys) **/
+const SUPABASE_URL = 'https://mxnvrxqwokvelulzdvmn.supabase.co'; // <- URL do seu projeto
 const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im14bnZyeHF3b2t2ZWx1bHpkdm1uIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTQ4NTQ4MjAsImV4cCI6MjA3MDQzMDgyMH0.DBntQQc91IWYAvMxHknJxjxxFAl5kiWOkc1LUXe_vKE';
-/** ============================================================ **/
+/** ================================================================== **/
 
-// cria client a partir do UMD global
+// usa o UMD global já incluído no HTML
 const sb = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
-// helper: cria/pega área de erro abaixo do form
+// cria a caixinha de erro se não existir
 function ensureErrorBox(form) {
   let box = document.getElementById('loginErro');
   if (!box) {
@@ -23,44 +23,47 @@ function ensureErrorBox(form) {
 }
 
 window.addEventListener('DOMContentLoaded', () => {
-  // seu HTML usa .registration-form, #email e #password
-  const form   = document.querySelector('form.registration-form');
-  const email  = document.getElementById('email');
-  const pass   = document.getElementById('password');
-  if (!form || !email || !pass) {
+  // seu HTML tem <form class="registration-form">, #email e #password
+  const form = document.querySelector('form.registration-form');
+  const emailEl = document.getElementById('email');
+  const passEl  = document.getElementById('password');
+
+  if (!form || !emailEl || !passEl) {
     console.error('Login: elementos não encontrados no DOM.');
     return;
   }
-  const msg = ensureErrorBox(form);
+
+  const msgEl = ensureErrorBox(form);
 
   form.addEventListener('submit', async (e) => {
     e.preventDefault();
-    msg.style.display = 'none';
-    msg.textContent = '';
+    msgEl.style.display = 'none';
+    msgEl.textContent = '';
 
-    const emailVal = (email.value || '').trim().toLowerCase();
-    const passVal  = pass.value || '';
-    if (!emailVal || !passVal) {
-      msg.textContent = 'Informe e‑mail e senha.';
-      msg.style.display = 'block';
+    const email = (emailEl.value || '').trim().toLowerCase();
+    const password = passEl.value || '';
+
+    if (!email || !password) {
+      msgEl.textContent = 'Informe e-mail e senha.';
+      msgEl.style.display = 'block';
       return;
     }
 
     try {
-      const { data, error } = await sb.auth.signInWithPassword({ email: emailVal, password: passVal });
+      const { data, error } = await sb.auth.signInWithPassword({ email, password });
       if (error || !data?.session) {
-        msg.textContent = 'Não foi possível entrar. Verifique os dados e tente novamente.';
-        msg.style.display = 'block';
+        msgEl.textContent = 'Não foi possível entrar. Verifique os dados e tente novamente.';
+        msgEl.style.display = 'block';
         return;
       }
 
-      // redireciona para o portal (ajuste o caminho se precisar)
-      window.location.href = '../1-html/portaldoaluno.html';
+      // ✅ redireciona para o portal (ajuste o caminho conforme sua pasta)
+      window.location.href = './portaldoaluno.html';
 
     } catch (err) {
       console.error(err);
-      msg.textContent = 'Erro ao tentar entrar. Tente novamente.';
-      msg.style.display = 'block';
+      msgEl.textContent = 'Erro ao tentar entrar. Tente novamente.';
+      msgEl.style.display = 'block';
     }
   });
 });

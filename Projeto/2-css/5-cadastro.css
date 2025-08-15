@@ -410,8 +410,6 @@ text-align: center;
   margin: auto;
     width: 24px;
     height: 24px;
-
-  transform: translateY(-50%);
   background: none;
   border: none;
   cursor: pointer;

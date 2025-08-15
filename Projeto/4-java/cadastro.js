@@ -40,33 +40,9 @@ function emailBasicoValido(email){
     : { ok:false, reason:"Formato de e-mail inválido" };
 }
 
-// -------- Mostrar/Ocultar Senhas --------
-document.querySelectorAll(".toggle-pass").forEach(btn=>{
-  btn.addEventListener("click", ()=>{
-    const targetId = btn.getAttribute("data-target");
-    const input = document.getElementById(targetId);
-    if (input.type === "password") {
-      input.type = "text";
-      btn.textContent = "🙈";
-    } else {
-      input.type = "password";
-      btn.textContent = "👁️";
-    }
-  });
-});
 
-// -------- Verifica senhas em tempo real --------
-const passEl = document.getElementById("password");
-const pass2El = document.getElementById("password2");
-const ePass2 = document.getElementById("err-password2");
 
-pass2El.addEventListener("input", ()=>{
-  if (pass2El.value && passEl.value !== pass2El.value) {
-    ePass2.textContent = "As senhas não conferem.";
-  } else {
-    ePass2.textContent = "";
-  }
-});
+
 
 
 // limpando estados enquanto digita

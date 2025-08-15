@@ -404,8 +404,7 @@ text-align: center;
 
 .eye-toggle {
   position: absolute;
-  right: 60px;
-  top: 50%;
+ 
   bottom: 0%;
   margin: auto;
     width: 30px;
@@ -416,7 +415,7 @@ text-align: center;
   display: flex;
   align-items: center;
   justify-content: center;
-  transform: translateY(-40px);
+  transform: translateY(0%);
 }
 
 .eye-toggle img,

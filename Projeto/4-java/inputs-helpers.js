@@ -20,15 +20,20 @@ document.addEventListener('DOMContentLoaded', () => {
 
   // ===== Mostrar/Ocultar Senha (olho) =====
   document.querySelectorAll('.eye-toggle').forEach(btn => {
-    const input = document.getElementById(btn.dataset.target);
-    if (!input) return;
-    btn.addEventListener('click', () => {
-      const showing = btn.getAttribute('aria-pressed') === 'true';
-      input.type = showing ? 'password' : 'text';
-      btn.setAttribute('aria-pressed', showing ? 'false' : 'true');
-      btn.setAttribute('aria-label', showing ? 'Mostrar senha' : 'Ocultar senha');
-    });
+  const input = document.getElementById(btn.dataset.target);
+  if (!input) return;
+
+  // começa como "senha oculta"
+  btn.setAttribute('aria-pressed', 'false');
+
+  btn.addEventListener('click', () => {
+    const showing = btn.getAttribute('aria-pressed') === 'true';
+    input.type = showing ? 'password' : 'text';
+    btn.setAttribute('aria-pressed', showing ? 'false' : 'true');
+    btn.setAttribute('aria-label', showing ? 'Mostrar senha' : 'Ocultar senha');
   });
+});
+
 
   // ===== Senhas iguais (✔️/❌) =====
   const pass1 = document.getElementById('password');

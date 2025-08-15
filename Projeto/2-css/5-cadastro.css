@@ -416,7 +416,7 @@ text-align: center;
 .eye-toggle {
   position: absolute;
   right: 10px;
-  top: 50%;
+  top: 70%;
   transform: translateY(-50%);
   background: none;
   border: none;

@@ -73,52 +73,97 @@
 
     <!-- Seção de Matrícula -->
     <main>
-        <section class="form-section">
-            <h1>Comece agora gratuitamente</h1>
-            <form class="registration-form">
-                <div class="form-group">
-                    <label for="name">Nome completo:</label>
-                    <input type="text" id="name" placeholder="Digite seu nome..." required>
-                </div>
-                <div class="form-group">
-                    <label for="email">E-mail:</label>
-                    <input type="email" id="email" placeholder="Digite seu e-mail..." required>
-                    <span class="msg-erro" id="email-msg"></span> <!-- mensagem aparece aqui -->
-                </div>
-                <div class="form-group">
-                    <label for="password">Senha:</label>
-                    <input type="password" id="password" placeholder="Máximo 8 caracteres" required>
-                </div>
-                <div class="form-group">
-                    <label for="phone">Telefone:</label>
-                    <input type="text" id="phone" placeholder="Digite seu telefone ou WhatsApp..." required>
-                </div>
-                <div class="form-group">
-                    <label for="objective">Qual seu objetivo?</label>
-                    <input type="text" id="objective" placeholder="Digite seu objetivo..." required>
-                </div>
-                <button type="submit" class="btn submit">Enviar</button>
-            </form>
+            <section class="form-section">
+             <h1>Comece agora gratuitamente</h1>
 
-            <!-- reCAPTCHA -->
-            <div class="recaptcha">
-                <div class="g-recaptcha" data-sitekey="sua-chave-sitekey"></div>
-            </div>
+        <form class="registration-form" novalidate>
+        <!-- NOME -->
+        <div class="form-group">
+        <label for="name">Nome completo</label>
+        <input type="text" id="name" placeholder="Digite seu nome completo" required>
+        <small class="field-error" id="err-name"></small>
+        </div>
 
-            <!-- Checkbox de Termos -->
-            <div class="form-group">
-                <input type="checkbox" id="terms" required>
-                <label for="terms">
-                    Li e concordo com os <a href="#">Termos de Contrato</a> e com o <a href="#">Termo de Invalidez</a>
-                </label>
-            </div>
+        <!-- CPF -->
+        <div class="form-group">
+        <label for="cpf">CPF</label>
+        <input type="text" id="cpf" inputmode="numeric" placeholder="000.000.000-00" required>
+        <small class="field-error" id="err-cpf"></small>
+        </div>
 
-        
+        <!-- EMAIL -->
+        <div class="form-group">
+        <label for="email">E-mail</label>
+        <input type="email" id="email" placeholder="seunome@gmail.com" required>
+        <small class="field-hint">Aceitamos: gmail.com, hotmail.com</small>
+        <small class="field-error" id="err-email"></small>
+        </div>
 
-            <p class="account-link"> <a href="..//1-html/4-login e cadastro.html">Já tenho uma conta</a></p>
-            </form>
+        <!-- SENHAS -->
+        <div class="form-group">
+        <label for="password">Senha</label>
+        <input type="password" id="password" placeholder="Mínimo 8 caracteres" minlength="8" required>
+        <small class="field-error" id="err-password"></small>
+        </div>
 
-        </section>
+        <div class="form-group">
+        <label for="password2">Confirme a senha</label>
+        <input type="password" id="password2" placeholder="Repita a senha" minlength="8" required>
+        <small class="field-error" id="err-password2"></small>
+        </div>
+
+        <label class="show-pass">
+        <input type="checkbox" id="toggle-pass"> Mostrar senhas
+        </label>
+
+        <!-- TELEFONE -->
+        <div class="form-group">
+        <label for="phone">Telefone (WhatsApp) — com DDD</label>
+        <input type="text" id="phone" placeholder="(00) 00000-0000" required>
+        <small class="field-error" id="err-phone"></small>
+        </div>
+
+        <!-- OBJETIVO -->
+        <div class="form-group">
+        <label for="objective">Qual seu objetivo?</label>
+        <select id="objective" required>
+            <option value="" selected disabled>Selecione um objetivo</option>
+            <option>Conseguir emprego</option>
+            <option>Primeiro emprego</option>
+            <option>Promoção / subir na empresa</option>
+            <option>Transição de carreira</option>
+            <option>Trabalhar como freelancer</option>
+            <option>Empreender / abrir negócio</option>
+            <option>Atualização profissional</option>
+            <option>Concurso público</option>
+            <option>Faculdade / vestibular</option>
+            <option>Renda extra</option>
+            <option>Hobby / interesse pessoal</option>
+            <option>Exigência da empresa</option>
+            <option>Certificado para horas complementares</option>
+        </select>
+        <small class="field-error" id="err-objective"></small>
+        </div>
+
+        <!-- TERMOS (bem visível) -->
+        <label class="terms">
+        <input type="checkbox" id="agree" required>
+        <span>Eu li e concordo com os <a href="/Projeto/1-html/contrato.html" target="_blank">Termos de Contrato</a> e a
+        <a href="/Projeto/1-html/politicadeprivacidade.html" target="_blank">Política de Privacidade</a>.</span>
+        </label>
+        <small class="field-error" id="err-agree"></small>
+
+        <!-- BOTÃO -->
+        <button type="submit" class="btn submit" id="submit-btn">Enviar</button>
+        <p id="form-msg" style="margin-top:10px;"></p>
+
+        <p class="already">
+        Já tenho uma conta —
+        <a href="/Projeto/1-html/4-login%20e%20cadastro.html">Fazer login</a>
+        </p>
+        </form>
+            </section>
+
     </main>
 
     <!-- Rodapé -->

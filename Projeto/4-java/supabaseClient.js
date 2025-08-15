@@ -1,3 +1,5 @@
+// Projeto/4-java/supabaseClient.js
+import { createClient } from "https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/+esm";
 
 // (API)
 const SUPABASE_URL  = "https://mxnvrxqwokvelulzdvmn.supabase.co";

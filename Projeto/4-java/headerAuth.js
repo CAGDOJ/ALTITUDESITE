@@ -1,42 +1,34 @@
-import { supabase } from './supabaseClient.js';
+// Projeto/4-java/headerAuth.js
+import { supabase } from "./supabaseClient.js";
 
-async function carregarCabecalhoPosLogin() {
-  const { data: { user } } = await supabase.auth.getUser();
+// Elementos do cabeçalho (se não existirem, não faz nada)
+const actions  = document.getElementById('auth-actions'); // bloco com "Acessar / Cadastrar"
+const menuUser = document.getElementById('user-menu');    // bloco com "Olá Nome / Sair"
+const slotName = document.getElementById('user-name');
+const btnOut   = document.getElementById('logout-btn');
 
-  const authActions = document.getElementById('auth-actions');
-  const userMenu = document.getElementById('user-menu');
-  const userName = document.getElementById('user-name');
-  const logoutBtn = document.getElementById('logout-btn');
+if (actions && menuUser && slotName) {
+  // carrega sessão e ajusta cabeçalho
+  carregaCabecalhoPosLogin().catch(console.error);
 
-  if (user) {
-    // Busca o nome do aluno na tabela "alunos"
-    const { data, error } = await supabase
-      .from('alunos')
-      .select('nome_completo')
-      .eq('user_id', user.id)
-      .single();
-
-    if (!error && data) {
-      userName.textContent = `Olá, ${data.nome_completo}`;
-    } else {
-      userName.textContent = 'Olá!';
+  async function carregaCabecalhoPosLogin() {
+    const { data: { session } } = await supabase.auth.getSession();
+    if (!session?.user) {
+      actions.style.display  = 'flex';
+      menuUser.style.display = 'none';
+      return;
     }
-
-    // Mostra cabeçalho logado
-    authActions.style.display = 'none';
-    userMenu.style.display = 'flex';
-  } else {
-    // Mostra cabeçalho visitante
-    authActions.style.display = 'flex';
-    userMenu.style.display = 'none';
+    const nome = session.user.user_metadata?.nome || session.user.email || "Aluno";
+    slotName.textContent = `Olá ${nome}`;
+    actions.style.display  = 'none';
+    menuUser.style.display = 'flex';
   }
 
-  // Botão sair
-  logoutBtn?.addEventListener('click', async () => {
+  btnOut?.addEventListener('click', async () => {
     await supabase.auth.signOut();
-    window.location.href = '/Projeto/1-html/index.html';
+    actions.style.display  = 'flex';
+    menuUser.style.display = 'none';
+    // opcional: redireciona para a home
+    // location.href = "/Projeto/1-html/index.html";
   });
 }
-
-// Executa assim que a página carregar
-document.addEventListener('DOMContentLoaded', carregarCabecalhoPosLogin);

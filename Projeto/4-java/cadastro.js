@@ -1,4 +1,3 @@
-// Projeto/4-java/cadastro.js
 import { supabase } from "./supabaseClient.js";
 
 /* ===========================

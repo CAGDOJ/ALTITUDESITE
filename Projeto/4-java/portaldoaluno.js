@@ -1,8 +1,8 @@
 
 /* ================== CONFIG SUPABASE ================== */
 // PREENCHA com os dados do seu projeto:
-const SUPA_URL = 'https://YOUR-PROJECT.supabase.co';
-const SUPA_ANON_KEY = 'YOUR-PUBLIC-ANON-KEY';
+const SUPA_URL = 'https://mxnvrxqwokvelulzdvmn.supabase.co';
+const SUPA_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im14bnZyeHF3b2t2ZWx1bHpkdm1uIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTQ4NTQ4MjAsImV4cCI6MjA3MDQzMDgyMH0.DBntQQc91IWYAvMxHknJxjxxFAl5kiWOkc1LUXe_vKE';
 const supa = supabase.createClient(SUPA_URL, SUPA_ANON_KEY);
 
 /* ================== ESTADO / HELPERS ================== */

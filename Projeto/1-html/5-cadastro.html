@@ -1,106 +1,151 @@
 <!DOCTYPE html>
 <html lang="pt-BR">
 <head>
+  <!-- Metadados padrão para charset e viewport responsiva -->
   <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Cadastro</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
 
-  <!-- Font Awesome (para ícones como o olho da senha) -->
-  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css" />
+  <title>Instituto Altitude — Cadastro</title>
 
-  <!-- CSS específico do cadastro -->
-  <link rel="stylesheet" href="../2-css/5-cadastro.css" />
+  <!-- CSS desta página: mantemos separado para organização -->
+  <link rel="stylesheet" href="../2-css/5-cadastro.css">
+<!--
+    JS da página:
+    - IMPORTANTE: somete o cadastro.js aqui.
+    - Ele importará o supabaseClient.js por ES Modules (import ... from "./supabaseClient.js").
+    - Isso evita criar mais de uma instância do Supabase.
+  -->
+  <script type="module" src="../4-java/cadastro.js"></script>
+  
 </head>
-<body>
 
-  <!-- Cabeçalho simplificado (pode manter padrão do site) -->
-  <header class="site-header">
-    <div class="logo">
-      <img src="../3-img/LOGO.png" alt="Logo Altitude">
+<body>
+  <!--
+    Layout geral da página:
+    - Usamos <header> simplificado (pode trocar pelo seu cabeçalho oficial).
+    - <main> com a seção do formulário.
+    - <footer> fixo ao final sem criar espaço em branco.
+  -->
+
+  <!-- ===== Cabeçalho simples (troque pelo seu se quiser) ===== -->
+  <header class="site-header" aria-label="Cabeçalho do site">
+    <div class="wrap">
+      <!-- Marca/Logo: use sua imagem se quiser -->
+      <a class="brand" href="./index.html" aria-label="Página inicial">ALTITUDE</a>
+
+      <!-- Navegação (exemplo; ajuste rotas se quiser) -->
+      <nav class="nav" aria-label="Navegação principal">
+        <a href="./index.html">Início</a>
+        <a href="./2-cursos-profissional.html">Cursos</a>
+        <a href="./8-certificados.html">Certificados</a>
+        <a href="./6-sobrenos.html">Sobre Nós</a>
+        <a href="./7-ajuda.html">Ajuda</a>
+      </nav>
     </div>
   </header>
 
-  <!-- Conteúdo principal -->
-  <main>
-    <section class="form-section">
-      <h1>Crie sua conta</h1>
+  <!-- ===== Conteúdo principal ===== -->
+  <main class="page" id="conteudo-principal">
+    <!-- Cartão que contém o formulário -->
+    <section class="form-card" aria-labelledby="titulo-cadastro">
+      <h1 id="titulo-cadastro">Comece agora gratuitamente</h1>
 
-      <!-- Formulário de cadastro -->
-      <form class="registration-form">
-
-        <!-- Campo: Nome completo -->
-        <label for="name">Nome completo</label>
-        <input type="text" id="name" placeholder="Digite seu nome" required>
-
-        <!-- Campo: CPF -->
-        <label for="cpf">CPF</label>
-        <input type="text" id="cpf" placeholder="000.000.000-00" required>
-        <small id="cpf-hint" class="hint"></small>
-
-        <!-- Campo: E-mail -->
-        <label for="email">E-mail</label>
-        <input type="email" id="email" placeholder="exemplo@dominio.com" required>
-        <small id="email-msg" class="hint"></small>
-
-        <!-- Campo: Telefone -->
-        <label for="phone">Telefone</label>
-        <input type="tel" id="phone" placeholder="(DDD) 90000-0000" required>
-        <small id="phone-hint" class="hint"></small>
-
-        <!-- Campo: Senha -->
-        <label for="password">Senha</label>
-        <div class="password-wrapper">
-          <!-- Input de senha -->
-          <input type="password" id="password" placeholder="Mínimo 8 caracteres" required>
-          <!-- Botão olho para mostrar/ocultar -->
-          <button type="button" class="eye-toggle" data-target="password" aria-pressed="false" aria-label="Mostrar senha">
-            <i class="fa-solid fa-eye"></i>
-          </button>
+      <!--
+        Formulário de cadastro:
+        - Cada campo tem <label>, <input> e um <small.hint> para mensagens.
+        - IDs dos inputs são referenciados no JS para validação e máscaras.
+      -->
+      <form class="registration-form" novalidate>
+        <!-- Nome -->
+        <div class="form-group">
+          <label for="name">Nome completo</label>
+          <input id="name" name="name" type="text" placeholder="Digite seu nome completo" required>
         </div>
-        <small id="pass-hint" class="hint"></small>
 
-        <!-- Campo: Confirmar senha -->
-        <label for="password2">Confirmar senha</label>
-        <div class="password-wrapper">
-          <input type="password" id="password2" placeholder="Repita a senha" required>
-          <button type="button" class="eye-toggle" data-target="password2" aria-pressed="false" aria-label="Mostrar senha">
-            <i class="fa-solid fa-eye"></i>
-          </button>
+        <!-- CPF: máscara e validação no JS; mensagens em #cpf-hint -->
+        <div class="form-group">
+          <label for="cpf">CPF</label>
+          <input id="cpf" name="cpf" type="text" inputmode="numeric" placeholder="000.000.000-00" required>
+          <small id="cpf-hint" class="hint" aria-live="polite"></small>
         </div>
-        <small id="pass2-hint" class="hint"></small>
 
-        <!-- Campo: Objetivo -->
-        <label for="objective">Qual seu objetivo?</label>
-        <select id="objective" required>
-          <option value="">Selecione...</option>
-          <option value="novo-emprego">Conseguir um novo emprego</option>
-          <option value="promocao">Buscar promoção na carreira</option>
-          <option value="negocio">Abrir um negócio próprio</option>
-          <option value="aprendizado-geral">Aprender algo novo</option>
-        </select>
+        <!-- E-mail: validação de formato; mensagens em #email-msg -->
+        <div class="form-group">
+          <label for="email">E-mail</label>
+          <input id="email" name="email" type="email" placeholder="nome@dominio.com" required>
+          <small id="email-msg" class="hint" aria-live="polite"></small>
+        </div>
 
-        <!-- Checkbox: Aceitar termos -->
-        <label class="terms-label">
-          <input type="checkbox" id="terms">
-          Li e concordo com os <a href="../1-html/contrato.html" target="_blank">Termos de Uso</a>
-        </label>
-        <small id="terms-hint" class="hint"></small>
+        <!-- Senha com botão “olho”: ícone é CSS (sem <i>), mensagens em #pass-hint -->
+        <div class="form-group is-password">
+          <label for="password">Senha</label>
+          <div class="input-wrap">
+            <!-- Input com padding-right maior para acomodar o olho -->
+            <input id="password" name="password" type="password" placeholder="Mínimo 8 caracteres" required>
+            <!-- Botão do olho: data-target aponta para o id do input -->
+            <button type="button" class="eye-toggle" data-target="password"
+                    aria-label="Mostrar senha" aria-pressed="false"></button>
+          </div>
+          <small id="pass-hint" class="hint" aria-live="polite"></small>
+        </div>
 
-        <!-- Botão de enviar -->
-        <button type="submit" class="btn submit">Enviar</button>
+        <!-- Confirmação de Senha: mensagens em #pass2-hint -->
+        <div class="form-group is-password">
+          <label for="password2">Confirme a senha</label>
+          <div class="input-wrap">
+            <input id="password2" name="password2" type="password" placeholder="Repita a senha" required>
+            <button type="button" class="eye-toggle" data-target="password2"
+                    aria-label="Mostrar senha" aria-pressed="false"></button>
+          </div>
+          <small id="pass2-hint" class="hint" aria-live="polite"></small>
+        </div>
 
-        <!-- Mensagem geral de sucesso ou erro -->
-        <p id="msg"></p>
+        <!-- Telefone com DDD: máscara no JS; mensagens em #phone-hint -->
+        <div class="form-group">
+          <label for="phone">Telefone (WhatsApp) — com DDD</label>
+          <input id="phone" name="phone" type="tel" inputmode="tel" placeholder="(00) 00000-0000" required>
+          <small id="phone-hint" class="hint" aria-live="polite"></small>
+        </div>
+
+        <!-- Objetivo: opções mais comuns (pode adicionar/editar) -->
+        <div class="form-group">
+          <label for="objective">Qual seu objetivo?</label>
+          <select id="objective" name="objective" required>
+            <option value="">Selecione…</option>
+            <option value="Conseguir emprego">Conseguir emprego</option>
+            <option value="Promoção / Aumento">Promoção / Aumento</option>
+            <option value="Iniciar na área">Iniciar na área</option>
+            <option value="Aprimorar currículo">Aprimorar currículo</option>
+            <option value="Negócio próprio">Negócio próprio</option>
+          </select>
+        </div>
+
+        <!-- Termos obrigatórios: sem aceitar, o envio é bloqueado -->
+        <div class="form-check">
+          <input type="checkbox" id="terms" required>
+          <label for="terms">
+            Li e concordo com os <a href="./9-contrato.html" target="_blank" rel="noopener">Termos de Contrato</a> e com a
+            <a href="./politicadeprivacidade.html" target="_blank" rel="noopener">Política de Privacidade</a>.
+          </label>
+          <small id="terms-hint" class="hint" aria-live="polite"></small>
+        </div>
+
+        <!-- Botão principal: o JS troca o texto/cores conforme estado -->
+        <button class="btn submit" type="submit">Enviar</button>
+
+        <!-- Mensagem geral (sucesso/erro) controlada pelo JS -->
+        <p id="msg" class="msg" aria-live="polite"></p>
       </form>
     </section>
   </main>
 
-  <!-- Rodapé -->
-  <footer class="site-footer">
-    <p>&copy; 2025 - Instituto Altitude</p>
+  <!-- ===== Rodapé (sem “vazios” no canto) ===== -->
+  <footer class="site-footer" aria-label="Rodapé do site">
+    <div class="wrap">
+      <p>&copy; 2025 — Instituto de Educação e Tecnologia Altitude</p>
+    </div>
   </footer>
 
-  <!-- Script do cadastro -->
-  <script type="module" src="../4-java/cadastro.js"></script>
+  
 </body>
 </html>

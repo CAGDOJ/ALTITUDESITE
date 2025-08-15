@@ -4,8 +4,10 @@
    - Mostra erro amigável
    - Redireciona para o portal ao logar
    ============================================================ */
+const SUPABASE_URL  = "https://mxnvrxqwokvelulzdvmn.supabase.co";
+const SUPABASE_ANON = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im14bnZyeHF3b2t2ZWx1bHpkdm1uIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTQ4NTQ4MjAsImV4cCI6MjA3MDQzMDgyMH0.DBntQQc91IWYAvMxHknJxjxxFAl5kiWOkc1LUXe_vKE";
 
-const sb = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+   const sb = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
 function ensureErrorBox(form) {
   let box = document.getElementById('loginErro');

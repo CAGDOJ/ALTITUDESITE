@@ -403,9 +403,8 @@ text-align: center;
 }
 
 .eye-toggle {
-  position: absolute;
- right: 60px;
-  top: 50%;
+  position: relative;
+ 
   bottom: 0%;
   margin: auto;
     width: 30px;

@@ -165,22 +165,29 @@ cpfEl?.addEventListener('blur', ()=>{
   if (!cpfValido(cpfEl.value)) eCpf.textContent = 'CPF inválido.';
 });
 
-// ===== Mostrar senha (pressionar e segurar) =====
-function bindPeekButtons(){
-  document.querySelectorAll('.peek').forEach(btn=>{
-    const id = btn.dataset.target;
-    const input = document.getElementById(id);
-    // Pressiona = mostra; Solta = oculta
-    const show = ()=>{ input.type='text';  btn.textContent='Ocultando…'; };
-    const hide = ()=>{ input.type='password'; btn.textContent='Mostrar';  };
-    btn.addEventListener('mousedown', show);
-    btn.addEventListener('touchstart', show, {passive:true});
-    ['mouseup','mouseleave','touchend','touchcancel','blur'].forEach(evt=>{
-      btn.addEventListener(evt, hide);
+// Toggle olho/ocultar
+function bindEyeToggle(){
+  document.querySelectorAll('.eye-toggle').forEach(btn=>{
+    const targetId = btn.dataset.target;
+    const input = document.getElementById(targetId);
+    btn.addEventListener('click', ()=>{
+      const showing = btn.getAttribute('aria-pressed') === 'true';
+      if (showing){
+        // passar para oculto
+        input.type = 'password';
+        btn.setAttribute('aria-pressed','false');
+        btn.setAttribute('aria-label','Mostrar senha');
+      }else{
+        // passar para visível
+        input.type = 'text';
+        btn.setAttribute('aria-pressed','true');
+        btn.setAttribute('aria-label','Ocultar senha');
+      }
     });
   });
 }
-bindPeekButtons();
+bindEyeToggle();
+
 
 // ===== Senhas iguais/diferentes em tempo real =====
 const passEl  = document.getElementById('password');

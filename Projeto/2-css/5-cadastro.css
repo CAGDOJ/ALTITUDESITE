@@ -381,6 +381,27 @@ text-align: center;
 }
 
 
+/* Mensagens sob os campos */
+.hint{
+  display:block;
+  margin-top:6px;
+  font-size:13px;
+  line-height:1.2;
+  color:#6b7280; /* cinza */
+}
+.hint.ok{ color:#10b981; }   /* verde */
+.hint.err{ color:#ef4444; }  /* vermelho */
+
+.input-ok { border-color:#10b981; }
+.input-erro { border-color:#ef4444; }
+.hint { display:block; margin-top:6px; font-size:13px; color:#6b7280; }
+.hint.ok { color:#10b981; }
+.hint.err { color:#ef4444; }
+.btn-ok { background:#10b981 !important; }
+.btn-erro { background:#ef4444 !important; }
+
+
+
 /* ===== BOTÃO/ÍCONE DO OLHO =====
    - Fica dentro da caixa de senha, alinhado à direita.
    - Usa 'inset' para ocupar a mesma altura do input e 'place-items:center' para centralizar o SVG.

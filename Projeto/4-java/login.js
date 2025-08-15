@@ -5,11 +5,6 @@
    - Em caso de falha, mostra mensagem no #loginErro
    ============================================================ */
 
-/** 1) PREENCHA com os dados do seu projeto Supabase **/
-const SUPABASE_URL = 'https://www.portalaltitude.com.br/Projeto//1-html/index.html';
-const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im14bnZyeHF3b2t2ZWx1bHpkdm1uIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTQ4NTQ4MjAsImV4cCI6MjA3MDQzMDgyMH0.DBntQQc91IWYAvMxHknJxjxxFAl5kiWOkc1LUXe_vKE';
-/** ========================================================== **/
-
 // Cria o cliente Supabase (global "supabase" vem do script UMD no HTML)
 const sb = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
@@ -50,7 +45,7 @@ window.addEventListener('DOMContentLoaded', () => {
 
       // OK: redireciona para o portal
       // Se o seu arquivo estiver em outra pasta, ajuste o caminho
-      window.location.href = './portaldoaluno.html';
+      window.location.href = 'ALTITUDESITE/Projeto/1-html/portaldoaluno.html';
 
     } catch (err) {
       console.error(err);

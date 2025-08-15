@@ -343,6 +343,41 @@ text-align: center;
 
 .already { margin-top:14px; font-weight:600; }
 .already a { text-decoration: underline; }
+.form-group {
+  position: relative;
+  margin-bottom: 10px;
+}
+
+.form-group input, 
+.form-group select {
+  width: 100%;
+  padding: 8px 36px 8px 8px; /* espaço pro botão olho */
+  font-size: 14px;
+}
+
+.pass-wrapper {
+  position: relative;
+}
+
+.toggle-pass {
+  position: absolute;
+  right: 8px;
+  top: 50%;
+  transform: translateY(-50%);
+  background: transparent;
+  border: none;
+  cursor: pointer;
+  font-size: 16px;
+  padding: 0;
+}
+.toggle-pass:hover {
+  color: var(--brand-600);
+}
+
+.field-error {
+  font-size: 12px;
+  margin-top: 2px;
+}
 
 
 /*==============================*/

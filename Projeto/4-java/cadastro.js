@@ -1,187 +1,161 @@
 import { supabase } from "./supabaseClient.js";
 
-const form     = document.querySelector(".registration-form");
-const msgEl    = document.getElementById("form-msg");
-const btn      = document.getElementById("submit-btn");
+// pega o form
+const form   = document.querySelector(".registration-form");
+const nameEl = document.querySelector("#name");
+const mailEl = document.querySelector("#email");
+const passEl = document.querySelector("#password");
+const telEl  = document.querySelector("#phone");
+const objEl  = document.querySelector("#objective");
 
-const nameEl   = document.getElementById("name");
-const cpfEl    = document.getElementById("cpf");
-const emailEl  = document.getElementById("email");
-const passEl   = document.getElementById("password");
-const pass2El  = document.getElementById("password2");
-const phoneEl  = document.getElementById("phone");
-const objEl    = document.getElementById("objective");
-const agreeEl  = document.getElementById("agree");
-const toggle   = document.getElementById("toggle-pass");
+// alvo para msg do e-mail
+const emailMsg = document.getElementById("email-msg");
 
-// erros
-const eName  = document.getElementById("err-name");
-const eCpf   = document.getElementById("err-cpf");
-const eEmail = document.getElementById("err-email");
-const ePass  = document.getElementById("err-password");
-const ePass2 = document.getElementById("err-password2");
-const ePhone = document.getElementById("err-phone");
-const eObj   = document.getElementById("err-objective");
-const eAgree = document.getElementById("err-agree");
-
-const setErr = (el, t="") => { if(el){ el.textContent = t; } };
-const clearAll = () => [eName,eCpf,eEmail,ePass,ePass2,ePhone,eObj,eAgree].forEach(x=>setErr(x,""));
-
-/* ====== Máscaras ====== */
-cpfEl?.addEventListener("input", () => {
-  let v = cpfEl.value.replace(/\D/g,"").slice(0,11);
-  if (v.length > 9)  v = v.replace(/(\d{3})(\d{3})(\d{3})(\d{0,2})/, "$1.$2.$3-$4");
-  else if (v.length > 6) v = v.replace(/(\d{3})(\d{3})(\d{0,3})/, "$1.$2.$3");
-  else if (v.length > 3) v = v.replace(/(\d{3})(\d{0,3})/, "$1.$2");
-  cpfEl.value = v;
-});
-
-phoneEl?.addEventListener("input", () => {
-  let v = phoneEl.value.replace(/\D/g,"").slice(0,11);
-  if (v.length > 6)  v = v.replace(/(\d{2})(\d{5})(\d{0,4})/, "($1) $2-$3");
-  else if (v.length > 2) v = v.replace(/(\d{2})(\d{0,5})/, "($1) $2");
-  phoneEl.value = v;
-});
-
-/* ====== Validadores ====== */
-function cpfValido(cpf){
-  cpf = (cpf||"").replace(/\D/g,"");
-  if (cpf.length !== 11) return false;
-  if (/^(\d)\1+$/.test(cpf)) return false;
-  const calc = (base) => {
-    let sum = 0;
-    for (let i=0;i<base;i++) sum += parseInt(cpf[i]) * (base+1-i);
-    let d = 11 - (sum % 11);
-    return d > 9 ? 0 : d;
-  };
-  const d1 = calc(9), d2 = calc(10);
-  return d1 === +cpf[9] && d2 === +cpf[10];
+// helpers de UI
+function setFieldState(el, ok, message = "") {
+  if (!el) return;
+  el.classList.remove("input-erro", "input-ok");
+  if (ok === true)  el.classList.add("input-ok");
+  if (ok === false) el.classList.add("input-erro");
+  if (emailMsg && el === mailEl) emailMsg.textContent = message || "";
 }
 
-const ALLOWED_DOMAINS = ["gmail.com","hotmail.com"]; // adicione: "outlook.com","yahoo.com"...
+function msgGeral(texto, ok = false) {
+  let el = document.getElementById("msg");
+  if (!el) {
+    el = document.createElement("p");
+    el.id = "msg";
+    el.style.marginTop = "10px";
+    form.appendChild(el);
+  }
+  el.style.color = ok ? "seagreen" : "crimson";
+  el.textContent = texto;
+}
+
+// -------- E-MAIL --------
 function emailBasicoValido(email){
-  const m = email.match(/^[^\s@]+@([^\s@]+\.[^\s@]+)$/i);
-  if (!m) return { ok:false, reason:"Formato inválido" };
-  const domain = m[1].toLowerCase();
-  if (!ALLOWED_DOMAINS.includes(domain)) return { ok:false, reason:`Use um e-mail ${ALLOWED_DOMAINS.join(" / ")}` };
-  return { ok:true, domain };
+  const regex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+  return regex.test(email) 
+    ? { ok:true }
+    : { ok:false, reason:"Formato de e-mail inválido" };
 }
 
-function telefoneValido(tel){
-  const d = (tel||"").replace(/\D/g,"");
-  return d.length === 11; // 2 DDD + 9 número
-}
-
-/* ====== Mostrar/ocultar senhas ====== */
-toggle?.addEventListener("change", ()=>{
-  const type = toggle.checked ? "text" : "password";
-  passEl.type  = type;
-  pass2El.type = type;
+// -------- Mostrar/Ocultar Senhas --------
+document.querySelectorAll(".toggle-pass").forEach(btn=>{
+  btn.addEventListener("click", ()=>{
+    const targetId = btn.getAttribute("data-target");
+    const input = document.getElementById(targetId);
+    if (input.type === "password") {
+      input.type = "text";
+      btn.textContent = "🙈";
+    } else {
+      input.type = "password";
+      btn.textContent = "👁️";
+    }
+  });
 });
 
-/* ====== Checagem de e-mail em tempo real ====== */
-let emailTimer = null;
-emailEl?.addEventListener("input", () => {
-  setErr(eEmail,"");
-  clearTimeout(emailTimer);
-  const email = emailEl.value.trim();
-  const basic = emailBasicoValido(email);
-  if (!basic.ok){ setErr(eEmail, basic.reason); return; }
+// -------- Verifica senhas em tempo real --------
+const passEl = document.getElementById("password");
+const pass2El = document.getElementById("password2");
+const ePass2 = document.getElementById("err-password2");
 
-  emailTimer = setTimeout(async ()=>{
-    try{
-      const { data, error } = await supabase.rpc("email_exists", { p_email: email });
-      if (!error && data === true){
-        setErr(eEmail, "E-mail já cadastrado.");
-      }
-    }catch(_){}
-  }, 500);
+pass2El.addEventListener("input", ()=>{
+  if (pass2El.value && passEl.value !== pass2El.value) {
+    ePass2.textContent = "As senhas não conferem.";
+  } else {
+    ePass2.textContent = "";
+  }
 });
 
-/* ====== Submit ====== */
-form?.addEventListener("submit", async (e) => {
+
+// limpando estados enquanto digita
+mailEl?.addEventListener("input", () => setFieldState(mailEl, null, ""));
+
+form.addEventListener("submit", async (e) => {
   e.preventDefault();
-  clearAll();
+  msgGeral("");
+  setFieldState(mailEl, null, "");
+
+  const btn = form.querySelector(".btn.submit") || form.querySelector('button[type="submit"]');
+  if (btn) { btn.disabled = true; btn.textContent = "Enviando..."; }
 
   const nome     = nameEl.value.trim();
-  const cpf      = cpfEl.value.trim();
-  const email    = emailEl.value.trim();
+  const email    = mailEl.value.trim();
   const senha    = passEl.value;
-  const senha2   = pass2El.value;
-  const telefone = phoneEl.value.trim();
-  const objetivo = objEl.value;
-  const aceite   = agreeEl.checked;
+  const telefone = telEl.value.trim();
+  const objetivo = objEl.value.trim();
 
-  let ok = true;
-
-  if (!nome){ setErr(eName,"Informe seu nome completo."); ok=false; }
-  if (!cpfValido(cpf)){ setErr(eCpf,"CPF inválido."); ok=false; }
-
-  const eb = emailBasicoValido(email);
-  if (!eb.ok){ setErr(eEmail, eb.reason); ok=false; }
-
-  if (!senha || senha.length < 8){ setErr(ePass,"Mínimo 8 caracteres."); ok=false; }
-  if (senha !== senha2){ setErr(ePass2,"As senhas não conferem."); ok=false; }
-
-  if (!telefoneValido(telefone)){ setErr(ePhone,"Informe telefone com DDD (ex.: (11) 90000-0000)."); ok=false; }
-  if (!objetivo){ setErr(eObj,"Selecione um objetivo."); ok=false; }
-  if (!aceite){ setErr(eAgree,"Você precisa aceitar os termos para continuar."); ok=false; }
-
-  if (!ok) {
-    changeButton("error","Algo deu errado. Cadastre novamente");
-    return;
-  }
-
-  try{
-    changeButton("loading","Carregando…");
-
-    // tentativa rápida: se email_exists já acusou, dá erro
-    const { data: exists } = await supabase.rpc("email_exists", { p_email: email });
-    if (exists === true){
-      setErr(eEmail, "E-mail já cadastrado.");
-      throw new Error("E-mail existente");
-    }
-
-    // 1) cria conta no Auth
+  try {
+    // 1) cria conta no Auth (senha fica só no Auth)
     const { data: su, error: e1 } = await supabase.auth.signUp({
       email,
       password: senha,
-      options: {
-        data: { nome, cpf: cpf.replace(/\D/g,"") },
-        emailRedirectTo: "https://www.portalaltitude.com.br/Projeto/1-html/4-login%20e%20cadastro.html"
-      }
+      options: { data: { nome } },
     });
-    if (e1) throw e1;
 
-    const uid = su.user?.id;
-    if (!uid) throw new Error("Não foi possível criar o usuário.");
+    if (e1) {
+      // trata e-mail já cadastrado com feedback visual no campo
+      const already =
+        e1?.code === "auth/email_already_in_use" ||
+        /already.*use|exist/i.test(e1?.message || "");
 
-    // 2) grava perfil
-    const { error: e2 } = await supabase.from("alunos").upsert({
-      user_id: uid,
-      nome,
-      cpf: cpf.replace(/\D/g,""),
-      email,
-      telefone,
-      objetivo
-    }, { onConflict: "user_id" });
+      if (already) {
+        setFieldState(mailEl, false, "Este usuário já existe ❌");
+        msgGeral(""); // sem alerta global, só o inline
+        return;
+      }
+
+      throw e1; // outros erros seguem o fluxo normal
+    }
+
+    // 2) garanta que há sessão (se confirmação de e‑mail estiver ON, signUp.session pode ser null)
+    let uid = su.user?.id;
+    if (!su.session) {
+      const { data: login, error: eLogin } =
+        await supabase.auth.signInWithPassword({ email, password: senha });
+      if (eLogin) {
+        // se usar TRIGGER no banco, o perfil já foi criado; sem sessão, não conseguimos gravar mais campos
+        msgGeral("Cadastro criado! Confirme o e‑mail e depois faça login.", true);
+        return;
+      }
+      uid = login.user.id;
+    }
+
+    // 3) grava/atualiza perfil em public.alunos (1:1 com user_id)
+    //    Se você usa TRIGGER no banco, prefira UPDATE para evitar conflito/duplicidade.
+    const USE_TRIGGER = false; // <-- troque para true se você ativou a trigger no banco
+
+    let e2;
+    if (USE_TRIGGER) {
+      ({ error: e2 } = await supabase
+        .from("alunos")
+        .update({ nome, email, telefone, objetivo })
+        .eq("user_id", uid));
+    } else {
+      ({ error: e2 } = await supabase
+        .from("alunos")
+        .upsert({ user_id: uid, nome, email, telefone, objetivo }, { onConflict: "user_id" }));
+    }
     if (e2) throw e2;
 
-    changeButton("success","Sucesso! Bem-vindo");
-    // redireciona logo após sucesso
-    setTimeout(()=>location.href="/Projeto/1-html/4-login%20e%20cadastro.html", 900);
+    setFieldState(mailEl, true, "");
+    msgGeral("Cadastro concluído! Redirecionando…", true);
 
-  }catch(err){
+    setTimeout(() => {
+      // ajuste a rota desejada:
+      // location.href = "/area-aluno/index.html";
+      form.reset();
+    }, 900);
+
+  } catch (err) {
     console.error(err);
-    changeButton("error","Algo deu errado. Cadastre novamente");
-    if (msgEl){ msgEl.style.color="crimson"; msgEl.textContent = err?.message || "Erro ao cadastrar."; }
+    const texto = err?.message || err?.error_description || "Erro ao cadastrar. Tente novamente.";
+    msgGeral(texto);
+  } finally {
+    if (btn) { btn.disabled = false; btn.textContent = "Enviar"; }
   }
-});
 
-function changeButton(state, text){
-  if(!btn) return;
-  btn.classList.remove("loading","success","error");
-  if (state) btn.classList.add(state);
-  btn.textContent = text || "Enviar";
-  btn.disabled = state === "loading";
-}
+  
+
+});

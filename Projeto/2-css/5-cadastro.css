@@ -1,3 +1,5 @@
+
+
 /*==============================*/
 /* Paleta de Cores              */
 /*==============================*/
@@ -359,6 +361,7 @@ text-align: center;
   position: relative;
 }
 
+/* [REMOVIDO] toggle-pass legado desabilitado para evitar conflito com .eye-toggle
 .toggle-pass {
   position: absolute;
   right: 8px;
@@ -374,6 +377,7 @@ text-align: center;
   color: var(--brand-600);
 }
 
+*/
 .field-error {
   font-size: 12px;
   margin-top: 2px;
@@ -402,27 +406,34 @@ text-align: center;
 
 }
 
-.eye-toggle {
+
+/* ===== BOTÃO/ÍCONE DO OLHO =====
+   - Fica dentro da caixa de senha, alinhado à direita.
+   - Usa 'inset' para ocupar a mesma altura do input e 'place-items:center' para centralizar o SVG.
+   - Sem borda/fundo: somente o ícone fica visível.
+*/
+.eye-toggle{
   position: absolute;
-  right: 10px;
-  top: 50%;
-  bottom: 0%;
-  margin: auto;
-    width: 30px;
-    height: 30px;
-  background: none;
-  border: none;
+  inset: 0 10px 0 auto; /* top:0; right:10px; bottom:0; left:auto */
+  display: grid;
+  place-items: center;  /* centraliza vertical e horizontal */
+  width: 32px;          /* área de clique confortável */
+  background: transparent;
+  border: 0;
   cursor: pointer;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  transform: translateY(-40px);
+  z-index: 2;           /* acima do input */
 }
+/* Acessibilidade: foco visível ao navegar por teclado */
+.eye-toggle:focus-visible{
+  outline: 2px solid #52C0D9;
+  outline-offset: 2px;
+}
+
 
 .eye-toggle img,
 .eye-toggle svg {
-  width: 30px;
-  height: 30px;
+  width: 20px;
+  height: 20px;
 }
 
 
@@ -650,5 +661,3 @@ text-align: center;
         display: flex;
     }
 }
-
-

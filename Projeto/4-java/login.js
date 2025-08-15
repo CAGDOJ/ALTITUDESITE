@@ -5,7 +5,7 @@
    ============================================================ */
 
 /** 1) PREENCHA com os dados do seu projeto Supabase **/
-const SUPABASE_URL = 'file:///C:/Users/Carlo/Desktop/ALTITUDESITE/Projeto/1-html/portaldoaluno.html';
+const SUPABASE_URL = 'https://www.portalaltitude.com.br';
 const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im14bnZyeHF3b2t2ZWx1bHpkdm1uIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTQ4NTQ4MjAsImV4cCI6MjA3MDQzMDgyMH0.DBntQQc91IWYAvMxHknJxjxxFAl5kiWOkc1LUXe_vKE';
 /** ========================================================== **/
 

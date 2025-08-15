@@ -361,21 +361,7 @@ text-align: center;
   position: relative;
 }
 
-/* [REMOVIDO] toggle-pass legado desabilitado para evitar conflito com .eye-toggle
-.toggle-pass {
-  position: absolute;
-  right: 8px;
-  top: 50%;
-  transform: translateY(-50%);
-  background: transparent;
-  border: none;
-  cursor: pointer;
-  font-size: 16px;
-  padding: 0;
-}
-.toggle-pass:hover {
-  color: var(--brand-600);
-}
+
 
 */
 .field-error {
@@ -421,7 +407,7 @@ text-align: center;
   background: transparent;
   border: 0;
   cursor: pointer;
-  z-index: 2;           /* acima do input */
+  z-index: 0;           /* acima do input */
 }
 /* Acessibilidade: foco visível ao navegar por teclado */
 .eye-toggle:focus-visible{

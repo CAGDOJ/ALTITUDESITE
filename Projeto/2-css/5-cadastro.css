@@ -402,32 +402,37 @@ text-align: center;
 .eye-toggle[aria-pressed="true"] .icon-eye{ display: none; }
 .eye-toggle[aria-pressed="true"] .icon-eye-off{ display: block; }
 /* Wrapper para posicionar o ícone dentro do input */
-.pass-wrapper { position: relative; }
-
-/* dá espaço para o ícone à direita */
-.pass-wrapper input {
-  padding-right: 44px;
+.password-wrapper {
   position: relative;
-  z-index: 1; /* input abaixo do botão */
+  display: flex;
+  align-items: center;
 }
 
-/* botão do olho dentro do input */
-.eye-toggle{
+.password-wrapper input {
+  width: 100%;
+  padding-right: 40px; /* espaço pro ícone */
+}
+
+.eye-toggle {
   position: absolute;
-  right: 12px;
+  right: 10px;
   top: 50%;
   transform: translateY(-50%);
-  width: 28px;
-  height: 28px;
-  display: grid;
-  place-items: center;
-  border: none;              /* remove a “caixinha” */
-  background: transparent;   /* só o ícone */
+  background: none;
+  border: none;
   cursor: pointer;
-  color: #0A3D62;
-  z-index: 2;                /* acima do input para ser clicável */
   padding: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
 }
+
+.eye-toggle img,
+.eye-toggle svg {
+  width: 20px;
+  height: 20px;
+}
+
 
 /* foco acessível sem caixa permanente */
 .eye-toggle:focus-visible{

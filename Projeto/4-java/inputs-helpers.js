@@ -44,10 +44,10 @@ document.addEventListener('DOMContentLoaded', () => {
     if (!pass1 || !pass2 || !matchIcon) return;
     if (pass1.value && pass2.value) {
       if (pass1.value === pass2.value) {
-        matchIcon.textContent = '✔️';
+        matchIcon.textContent = 'Senha Válida ✔️';
         matchIcon.style.color = '#2ecc71';
       } else {
-        matchIcon.textContent = '❌';
+        matchIcon.textContent = 'Senhas não são iguais❌';
         matchIcon.style.color = 'crimson';
       }
     } else {

@@ -401,6 +401,53 @@ text-align: center;
 /* quando aria-pressed="true" (mostrando senha), troca o ícone */
 .eye-toggle[aria-pressed="true"] .icon-eye{ display: none; }
 .eye-toggle[aria-pressed="true"] .icon-eye-off{ display: block; }
+.pass-wrapper {
+  position: relative;
+}
+
+.pass-wrapper input {
+  padding-right: 48px;
+}
+
+.eye-toggle {
+  position: absolute;
+  right: 8px;
+  top: 50%;
+  transform: translateY(-50%);
+  width: 36px;
+  height: 32px;
+  display: grid;
+  place-items: center;
+  border-radius: 6px;
+  cursor: pointer;
+  border: 1px solid #d0d7de;
+  background: #fff;
+  color: #0A3D62;
+  padding: 0;
+}
+
+.eye-toggle .icon-eye {
+  display: none;
+}
+
+.eye-toggle .icon-eye-off {
+  display: block;
+}
+
+.eye-toggle[aria-pressed="true"] .icon-eye {
+  display: block;
+}
+
+.eye-toggle[aria-pressed="true"] .icon-eye-off {
+  display: none;
+}
+
+.match-ok {
+  color: #2ecc71;
+  font-weight: 700;
+  margin-left: 6px;
+}
+
 
 
 /*==============================*/

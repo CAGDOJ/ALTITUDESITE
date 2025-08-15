@@ -232,19 +232,7 @@ h2 {
     margin: 0;
 }
 
-/* Ajuste do espaçamento dos botões em telas pequenas */
-@media screen and (max-width: 768px) {
-    .header-buttons .btn-outline,
-    .header-buttons .btn-primary {
-        padding: 5px 10px; /* Reduz o padding ainda mais em telas pequenas */
-        font-size: 13px;   /* Ajusta o tamanho da fonte para caber melhor */
-        white-space: nowrap;
-    }
 
-    .old-header, .new-header {
-        padding: 10px 15px; /* Reduz o padding do cabeçalho */
-    }
-}
 
 
 /* Seção de Matrícula */
@@ -400,7 +388,7 @@ text-align: center;
 */
 .eye-toggle{
   position: absolute;
-  inset: 50% 30px 0 auto; /* top:0; right:10px; bottom:0; left:auto */
+  inset: 50% 30px 0 20px; /* top:0; right:10px; bottom:0; left:auto */
   display: grid;
   place-items: center;  /* centraliza vertical e horizontal */
   width: 32px;          /* área de clique confortável */
@@ -645,5 +633,19 @@ text-align: center;
     }
     .old-header {
         display: flex;
+    }
+}
+
+/* Ajuste do espaçamento dos botões em telas pequenas */
+@media screen and (max-width: 768px) {
+    .header-buttons .btn-outline,
+    .header-buttons .btn-primary {
+        padding: 5px 10px; /* Reduz o padding ainda mais em telas pequenas */
+        font-size: 13px;   /* Ajusta o tamanho da fonte para caber melhor */
+        white-space: nowrap;
+    }
+
+    .old-header, .new-header {
+        padding: 10px 15px; /* Reduz o padding do cabeçalho */
     }
 }

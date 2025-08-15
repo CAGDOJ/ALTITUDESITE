@@ -157,5 +157,85 @@ form.addEventListener("submit", async (e) => {
   }
 
   
+// ===== CPF máscara e validação =====
+const cpfEl   = document.getElementById('cpf');
+const eCpf    = document.getElementById('err-cpf');
+
+function cpfMask(v){
+  v = v.replace(/\D/g,'').slice(0,11);
+  if (v.length > 9)  v = v.replace(/(\d{3})(\d{3})(\d{3})(\d{0,2})/, '$1.$2.$3-$4');
+  else if (v.length > 6) v = v.replace(/(\d{3})(\d{3})(\d{0,3})/, '$1.$2.$3');
+  else if (v.length > 3) v = v.replace(/(\d{3})(\d{0,3})/, '$1.$2');
+  return v;
+}
+function cpfValido(cpf){
+  cpf = (cpf||'').replace(/\D/g,'');
+  if (cpf.length !== 11) return false;
+  if (/^(\d)\1{10}$/.test(cpf)) return false; // todos iguais
+  const dv = (b)=> {
+    let s=0; for(let i=0;i<b;i++) s += +cpf[i]*(b+1-i);
+    const d = 11-(s%11); return d>9?0:d;
+  };
+  return dv(9)===+cpf[9] && dv(10)===+cpf[10];
+}
+
+cpfEl?.addEventListener('input', ()=>{
+  cpfEl.value = cpfMask(cpfEl.value);
+  eCpf.textContent = '';
+});
+cpfEl?.addEventListener('blur', ()=>{
+  const cheio = cpfEl.value.replace(/\D/g,'').length === 11;
+  if (!cheio) { eCpf.textContent = 'CPF incompleto.'; return; }
+  if (!cpfValido(cpfEl.value)) eCpf.textContent = 'CPF inválido.';
+});
+
+// ===== Mostrar senha (pressionar e segurar) =====
+function bindPeekButtons(){
+  document.querySelectorAll('.peek').forEach(btn=>{
+    const id = btn.dataset.target;
+    const input = document.getElementById(id);
+    // Pressiona = mostra; Solta = oculta
+    const show = ()=>{ input.type='text';  btn.textContent='Ocultando…'; };
+    const hide = ()=>{ input.type='password'; btn.textContent='Mostrar';  };
+    btn.addEventListener('mousedown', show);
+    btn.addEventListener('touchstart', show, {passive:true});
+    ['mouseup','mouseleave','touchend','touchcancel','blur'].forEach(evt=>{
+      btn.addEventListener(evt, hide);
+    });
+  });
+}
+bindPeekButtons();
+
+// ===== Senhas iguais/diferentes em tempo real =====
+const passEl  = document.getElementById('password');
+const pass2El = document.getElementById('password2');
+const ePass   = document.getElementById('err-password');
+const ePass2  = document.getElementById('err-password2');
+const matchOk = document.getElementById('match-ok');
+
+function checkPasswords(){
+  ePass.textContent = '';
+  ePass2.textContent = '';
+  matchOk.textContent = '';
+  if (!passEl.value || !pass2El.value) return;
+  if (passEl.value.length < 8) {
+    ePass.textContent = 'Mínimo 8 caracteres.';
+    return;
+  }
+  if (passEl.value !== pass2El.value) {
+    ePass2.textContent = 'As senhas não conferem.';
+  } else {
+    matchOk.textContent = '✔️';
+  }
+}
+passEl?.addEventListener('input',  checkPasswords);
+pass2El?.addEventListener('input', checkPasswords);
+
+// ===== E-mail: aceitar qualquer domínio válido =====
+function emailBasicoValido(email){
+  const re = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+  return re.test(email) ? {ok:true} : {ok:false, reason:'Formato de e-mail inválido'};
+}
+// (se você já tinha essa função, pode substituir por essa)
 
 });

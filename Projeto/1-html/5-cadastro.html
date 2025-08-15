@@ -99,22 +99,19 @@
         <small class="field-error" id="err-email"></small>
         </div>
 
-        <!-- SENHAS -->
+
+        <!-- SENHA -->
         <div class="form-group pass-wrapper">
         <label for="password">Senha</label>
         <input type="password" id="password" placeholder="Mínimo 8 caracteres" minlength="8" required>
-        <button type="button" class="toggle-pass" data-target="password" title="Mostrar/ocultar senha">
-            👁️
-        </button>
+        <button type="button" class="peek" data-target="password" aria-label="Mostrar senha">Mostrar</button>
         <small class="field-error" id="err-password"></small>
         </div>
 
         <div class="form-group pass-wrapper">
-        <label for="password2">Confirme a senha</label>
+        <label for="password2">Confirme a senha <span id="match-ok" class="match-ok" aria-hidden="true"></span></label>
         <input type="password" id="password2" placeholder="Repita a senha" minlength="8" required>
-        <button type="button" class="toggle-pass" data-target="password2" title="Mostrar/ocultar senha">
-            👁️
-        </button>
+        <button type="button" class="peek" data-target="password2" aria-label="Mostrar senha">Mostrar</button>
         <small class="field-error" id="err-password2"></small>
         </div>
 

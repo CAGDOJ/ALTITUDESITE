@@ -21,6 +21,8 @@ body {
     padding: 0; /* Remove preenchimento padrão */
     background-color: var(--branco); /* Define o fundo branco */
     line-height: 1.6; /* Define a altura da linha para melhor legibilidade */
+    overflow-x: hidden;
+
 }
 
 

@@ -1,196 +1,203 @@
-import { supabase } from "../4-java/supabaseClient.js";
+// /Projeto/4-java/cadastro-page.js
+import { supabase } from "../4-java/supabaseClient";
 
-document.addEventListener("DOMContentLoaded", () => {
-  const form    = document.querySelector(".registration-form");
-  if (!form) return;
+/* ---------- Seletores ---------- */
+const form   = document.getElementById('cadastroForm');
+const nameEl = document.getElementById('name');
+const cpfEl  = document.getElementById('cpf');
+const mailEl = document.getElementById('email');
+const p1El   = document.getElementById('password');
+const p2El   = document.getElementById('password2');
+const telEl  = document.getElementById('phone');
+const objEl  = document.getElementById('objective');
+const termsEl= document.getElementById('terms');
+const btn    = document.getElementById('submitBtn');
+const msg    = document.getElementById('msg');
 
-  // Campos
-  const nameEl  = document.getElementById("name");
-  const mailEl  = document.getElementById("email");
-  const passEl  = document.getElementById("password");
-  const pass2El = document.getElementById("password2");
-  const telEl   = document.getElementById("phone");
-  const objEl   = document.getElementById("objective");
-  const cpfEl   = document.getElementById("cpf");
-  const termsEl = document.getElementById("accept-terms");
+const fb = {
+  name:  document.getElementById('name_fb'),
+  cpf:   document.getElementById('cpf_fb'),
+  email: document.getElementById('email_fb'),
+  p1:    document.getElementById('pass1_fb'),
+  p2:    document.getElementById('pass2_fb'),
+  phone: document.getElementById('phone_fb'),
+  obj:   document.getElementById('obj_fb'),
+  terms: document.getElementById('terms_fb'),
+};
 
-  // Mensagens/elementos auxiliares
-  const emailMsg = document.getElementById("email-msg");
-  const btnSubmit= form.querySelector(".btn.submit");
-  const errPass  = document.getElementById("err-password");
-  const errPass2 = document.getElementById("err-password2");
-  const matchOk  = document.getElementById("match-ok");
-  const errCpf   = document.getElementById("err-cpf");
-  const errPhone = document.getElementById("err-phone");
-  const errTerms = document.getElementById("err-terms");
+/* ---------- Helpers UI ---------- */
+const setOk   = (i,el,t="Válido") => { i?.classList.remove('is-err'); i?.classList.add('is-ok'); if(el){el.textContent=t; el.className='feedback ok';} toggleSubmit(); };
+const setErr  = (i,el,t)           => { i?.classList.remove('is-ok');  i?.classList.add('is-err'); if(el){el.textContent=t; el.className='feedback err';} toggleSubmit(); };
+const setWarn = (i,el,t)           => { i?.classList.remove('is-ok','is-err'); if(el){el.textContent=t; el.className='feedback warn';} toggleSubmit(); };
+const clearFB = (i,el)             => { i?.classList.remove('is-ok','is-err'); if(el){el.textContent=''; el.className='feedback';} toggleSubmit(); };
 
-  // ========== Helpers UI ==========
-  function setFieldState(el, ok, message = "") {
-    if (!el) return;
-    el.classList.remove("input-erro", "input-ok");
-    if (ok === true)  el.classList.add("input-ok");
-    if (ok === false) el.classList.add("input-erro");
-    if (emailMsg && el === mailEl) emailMsg.textContent = message || "";
-  }
-  function msgGeral(texto, ok = false) {
-    let el = document.getElementById("msg");
-    if (!el) { el = document.createElement("p"); el.id = "msg"; form.appendChild(el); }
-    el.style.color = ok ? "seagreen" : "crimson";
-    el.textContent = texto;
-  }
+function toggleSubmit(){
+  const obrigOk =
+    nameEl.classList.contains('is-ok') &&
+    cpfEl.classList.contains('is-ok') &&
+    mailEl.classList.contains('is-ok') &&
+    p1El.classList.contains('is-ok') &&
+    p2El.classList.contains('is-ok') &&
+    telEl.classList.contains('is-ok') &&
+    objEl.value !== '' &&
+    termsEl.checked;
+  btn.disabled = !obrigOk;
+}
 
-  // ========== Validações ==========
-  const reEmail = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-  const emailValido = (v)=> reEmail.test((v||"").trim());
+/* ---------- Máscaras ---------- */
+const onlyDigits = v => (v||'').replace(/\D/g,'');
+const normCPF    = v => onlyDigits(v).slice(0,11);
+const normPhone  = v => onlyDigits(v).slice(0,11);
 
-  // CPF
-  function cpfMask(v){
-    v = v.replace(/\D/g,'').slice(0,11);
-    if (v.length > 9)  v = v.replace(/(\d{3})(\d{3})(\d{3})(\d{0,2})/, '$1.$2.$3-$4');
-    else if (v.length > 6) v = v.replace(/(\d{3})(\d{3})(\d{0,3})/, '$1.$2.$3');
-    else if (v.length > 3) v = v.replace(/(\d{3})(\d{0,3})/, '$1.$2');
-    return v;
-  }
-  function cpfValido(cpf){
-    cpf = (cpf||'').replace(/\D/g,'');
-    if (cpf.length !== 11) return false;
-    if (/^(\d)\1{10}$/.test(cpf)) return false;
-    const dv = (b)=>{ let s=0; for(let i=0;i<b;i++) s += +cpf[i]*(b+1-i); const d=11-(s%11); return d>9?0:d; };
-    return dv(9)===+cpf[9] && dv(10)===+cpf[10];
-  }
-  cpfEl?.addEventListener("input", ()=>{ cpfEl.value = cpfMask(cpfEl.value); errCpf.textContent = ""; });
-  cpfEl?.addEventListener("blur", ()=>{ if (!cpfValido(cpfEl.value)) errCpf.textContent = "CPF inválido."; });
+function maskCPF(v){
+  v = normCPF(v);
+  if(v.length>9)  return v.replace(/(\d{3})(\d{3})(\d{3})(\d{0,2})/,'$1.$2.$3-$4');
+  if(v.length>6)  return v.replace(/(\d{3})(\d{3})(\d{0,3})/,'$1.$2.$3');
+  if(v.length>3)  return v.replace(/(\d{3})(\d{0,3})/,'$1.$2');
+  return v;
+}
+function maskPhone(v){
+  v = normPhone(v);
+  if(v.length>6)  return v.replace(/(\d{2})(\d{5})(\d{0,4})/,'($1) $2-$3');
+  if(v.length>2)  return v.replace(/(\d{2})(\d{0,5})/,'($1) $2');
+  return v;
+}
 
-  // Telefone (BR — (00) 00000-0000) com DDD
-  function phoneMask(v){
-    v = v.replace(/\D/g,'').slice(0,11);
-    if (v.length > 6)  v = v.replace(/(\d{2})(\d{5})(\d{0,4})/, '($1) $2-$3');
-    else if (v.length > 2) v = v.replace(/(\d{2})(\d{0,5})/, '($1) $2');
-    else if (v.length > 0) v = v.replace(/(\d{0,2})/, '($1');
-    return v;
-  }
-  function phoneValido(v){
-    const n = (v||'').replace(/\D/g,'');
-    return n.length === 11; // 2 DDD + 9 dígitos
-  }
-  telEl?.addEventListener("input", ()=>{ telEl.value = phoneMask(telEl.value); errPhone.textContent = ""; });
-  telEl?.addEventListener("blur", ()=>{ if (!phoneValido(telEl.value)) errPhone.textContent = "Telefone inválido (use DDD + 9 dígitos)."; });
+/* ---------- Validações rígidas ---------- */
+function cpfValido(cpf){
+  cpf = normCPF(cpf);
+  if(cpf.length !== 11) return false;
+  if(/^(\d)\1{10}$/.test(cpf)) return false; // 000..., 111..., etc
+  // dígitos verificadores
+  const dv = b => { let s=0; for(let i=0;i<b;i++) s += +cpf[i]*(b+1-i); const d = 11-(s%11); return d>9?0:d; };
+  return dv(9)===+cpf[9] && dv(10)===+cpf[10];
+}
 
-  // Senhas (feedback ✔️)
-  function checkPasswords(){
-    errPass.textContent = "";
-    errPass2.textContent = "";
-    matchOk.textContent = "";
-    if (!passEl.value && !pass2El.value) return;
-    if (passEl.value && passEl.value.length < 8){
-      errPass.textContent = "Mínimo 8 caracteres.";
-      return;
-    }
-    if (pass2El.value && passEl.value !== pass2El.value){
-      errPass2.textContent = "As senhas não conferem.";
-      return;
-    }
-    if (passEl.value && pass2El.value && passEl.value === pass2El.value){
-      matchOk.textContent = "Senha Válida ✔️";
-      matchOk.classList.add("ok");
-    }
-  }
-  passEl?.addEventListener("input", checkPasswords);
-  pass2El?.addEventListener("input", checkPasswords);
+const reEmail = /^[^\s@]+@[^\s@]+\.[^\s@]+$/i;
 
-  // Mostrar/ocultar senha (olho)
-  document.querySelectorAll(".eye-toggle").forEach((btn)=>{
-    const input = document.getElementById(btn.dataset.target);
-    btn.addEventListener("click", ()=>{
-      const pressed = btn.getAttribute("aria-pressed")==="true";
-      if (pressed){
-        input.type = "password";
-        btn.setAttribute("aria-pressed","false");
-        btn.setAttribute("aria-label","Mostrar senha");
-      }else{
-        input.type = "text";
-        btn.setAttribute("aria-pressed","true");
-        btn.setAttribute("aria-label","Ocultar senha");
-      }
-    });
+function validarNome(){ if(!nameEl.value.trim()){ setErr(nameEl, fb.name, 'Informe seu nome completo.'); return false; } setOk(nameEl, fb.name, 'Ok'); return true; }
+
+function validarCPF(){
+  cpfEl.value = maskCPF(cpfEl.value);
+  const d = normCPF(cpfEl.value);
+  if(d.length<11){ setErr(cpfEl, fb.cpf, 'CPF incompleto.'); return false; }
+  if(!cpfValido(d)){ setErr(cpfEl, fb.cpf, 'CPF inválido.'); return false; }
+  setOk(cpfEl, fb.cpf, 'CPF válido'); return true;
+}
+
+function validarEmail(){
+  const v = mailEl.value.trim();
+  if(!reEmail.test(v)){ setErr(mailEl, fb.email, 'E-mail inválido.'); return false; }
+  setOk(mailEl, fb.email, 'E-mail válido'); return true;
+}
+
+function validarSenha1(){ if(p1El.value.length<8){ setErr(p1El, fb.p1, 'Mínimo 8 caracteres.'); return false; } setOk(p1El, fb.p1, 'Senha válida'); return true; }
+
+function validarSenha2(){ if(p2El.value!==p1El.value || !p2El.value){ setErr(p2El, fb.p2, 'As senhas não conferem.'); return false; } setOk(p2El, fb.p2, 'As senhas coincidem'); return true; }
+
+function validarPhone(){
+  telEl.value = maskPhone(telEl.value);
+  const d = normPhone(telEl.value);
+  if(d.length!==11){ setErr(telEl, fb.phone, 'Informe DDD + número (11 dígitos).'); return false; }
+  if(/^(\d)\1{10}$/.test(d)){ setErr(telEl, fb.phone, 'Telefone inválido.'); return false; } // 000..., 111..., etc
+  setOk(telEl, fb.phone, 'Telefone válido'); return true;
+}
+
+function validarObj(){ if(!objEl.value){ setErr(objEl, fb.obj, 'Selecione um objetivo.'); return false; } setOk(objEl, fb.obj, 'Ok'); return true; }
+function validarTerms(){ if(!termsEl.checked){ setErr(termsEl, fb.terms, 'Você precisa aceitar os termos.'); return false; } setOk(termsEl, fb.terms, 'Obrigado por aceitar.'); return true; }
+
+/* ---------- Eventos em tempo real ---------- */
+nameEl.addEventListener('input', validarNome);
+
+let cpfTimer=null;
+cpfEl.addEventListener('input', ()=>{
+  cpfEl.value = maskCPF(cpfEl.value);
+  clearFB(cpfEl, fb.cpf);
+  if(cpfTimer) clearTimeout(cpfTimer);
+  cpfTimer = setTimeout(async ()=>{
+    if(!validarCPF()) return;
+    // checa duplicidade no banco (se RLS bloquear, o índice único segura no insert)
+    const { data, error } = await supabase.from('alunos').select('user_id').eq('cpf', normCPF(cpfEl.value)).limit(1);
+    if(!error && Array.isArray(data) && data.length>0){ setErr(cpfEl, fb.cpf, 'CPF já cadastrado.'); }
+  }, 300);
+});
+
+mailEl.addEventListener('input', validarEmail);
+p1El.addEventListener('input', ()=>{ validarSenha1(); if(p2El.value) validarSenha2(); });
+p2El.addEventListener('input', validarSenha2);
+telEl.addEventListener('input', validarPhone);
+objEl.addEventListener('change', validarObj);
+termsEl.addEventListener('change', validarTerms);
+
+/* olho mostrar/ocultar senha */
+document.querySelectorAll('.eye').forEach(b=>{
+  b.addEventListener('click', ()=>{
+    const t=document.getElementById(b.dataset.target);
+    t.type = (t.type==='password') ? 'text' : 'password';
   });
+});
 
-  // ========== Submit ==========
-  form.addEventListener("submit", async (e)=>{
-    e.preventDefault();
-    msgGeral(""); setFieldState(mailEl,null,""); errTerms.textContent="";
+/* ---------- Submit: salva e REDIRECIONA ---------- */
+form.addEventListener('submit', async (e)=>{
+  e.preventDefault();
+  msg.textContent=''; btn.disabled=true; btn.textContent='Enviando…';
 
-    if (!termsEl?.checked){
-      errTerms.textContent = "Você deve aceitar os termos.";
-      return;
-    }
-    btnSubmit.disabled = true;
-    btnSubmit.textContent = "Cadastrando…";
+  // revalida rápido
+  if(!validarNome()|!validarCPF()|!validarEmail()|!validarSenha1()|!validarSenha2()|!validarPhone()|!validarObj()|!validarTerms()){
+    btn.disabled=false; btn.textContent='Enviar'; return;
+  }
 
-    const nome     = nameEl.value.trim();
-    const email    = mailEl.value.trim();
-    const senha    = passEl.value;
-    const telefone = telEl.value.trim();
-    const objetivo = objEl.value.trim();
-    const cpf      = cpfEl.value.trim();
+  const nome = nameEl.value.trim();
+  const email= mailEl.value.trim();
+  const senha= p1El.value;
+  const cpf  = normCPF(cpfEl.value);        // SALVA SEM máscara
+  const tel  = normPhone(telEl.value);      // SALVA SEM máscara
+  const objetivo = objEl.value || null;
 
-    // checagens finais
-    if (!emailValido(email)){ setFieldState(mailEl,false,"Formato de e-mail inválido"); resetBtn(); return; }
-    if (senha.length < 8){ msgGeral("A senha precisa ter pelo menos 8 caracteres."); resetBtn(); return; }
-    if (pass2El.value !== senha){ msgGeral("As senhas não conferem."); resetBtn(); return; }
-    if (!cpfValido(cpf)){ msgGeral("CPF inválido."); resetBtn(); return; }
-    if (!phoneValido(telefone)){ msgGeral("Telefone inválido (use DDD + 9 dígitos)."); resetBtn(); return; }
+  try{
+    // 1) AUTH
+    const { data: su, error: e1 } = await supabase.auth.signUp({ email, password: senha, options:{ data:{ nome } }});
+    if(e1) throw e1;
 
-    try{
-      // 1) cria no Auth
-      const { data: su, error: e1 } = await supabase.auth.signUp({
-        email,
-        password: senha,
-        options: { data: { nome } },
-      });
-      if (e1){
-        const exists = e1?.code==="auth/email_already_in_use" || /already.*use|exist/i.test(e1?.message||"");
-        if (exists){ setFieldState(mailEl,false,"Este usuário já existe ❌"); resetBtn(); return; }
-        throw e1;
+    // 2) sessão (se confirmation ON, pode vir sem sessão)
+    let uid = su.user?.id;
+    if(!su.session){
+      const { data: login, error: eLogin } = await supabase.auth.signInWithPassword({ email, password: senha });
+      if(eLogin){ 
+        // sem sessão: já criamos a conta e enviamos e-mail; peça login após confirmar
+        btn.classList.add('btn-ok'); btn.textContent='Cadastro criado! Verifique o e-mail.';
+        msg.style.color='#2e8b57'; msg.textContent='Confirme o e-mail e depois faça login.';
+        btn.disabled=false;
+        return;
       }
-
-      // 2) garante sessão (se confirmação por e-mail estiver ativa)
-      let uid = su.user?.id;
-      if (!su.session){
-        const { data: login, error: eLogin } = await supabase.auth.signInWithPassword({ email, password: senha });
-        if (eLogin){
-          msgGeral("Cadastro criado! Confirme o e-mail e depois faça login.", true);
-          btnSubmit.classList.add("btn-ok"); btnSubmit.textContent="Verifique seu e-mail"; btnSubmit.disabled=false;
-          return;
-        }
-        uid = login.user.id;
-      }
-
-      // 3) grava/atualiza perfil
-      const { error: e2 } = await supabase
-        .from("alunos")
-        .upsert({ user_id: uid, nome, email, telefone, objetivo, cpf }, { onConflict: "user_id" });
-      if (e2) throw e2;
-
-      // sucesso
-      setFieldState(mailEl,true,"");
-      msgGeral("Bem-vindo à Altitude!", true);
-      btnSubmit.classList.add("btn-ok");
-      btnSubmit.textContent = "Bem-vindo à Altitude!";
-
-      setTimeout(()=>{ window.location.href = "/Projeto/1-html/portaldoaluno.html"; }, 1200);
-
-    }catch(err){
-      console.error(err);
-      msgGeral("Erro ao cadastrar. Tente novamente.");
-      btnSubmit.classList.add("btn-erro");
-      btnSubmit.textContent = "Cadastro não realizado";
-      btnSubmit.disabled = false;
+      uid = login.user.id;
     }
 
-    function resetBtn(){
-      btnSubmit.disabled = false;
-      btnSubmit.textContent = "Enviar";
+    // 3) PERFIL (banco) — se UNIQUE estourar, capturamos erro
+    const { error: e2 } = await supabase.from('alunos').upsert(
+      { user_id: uid, nome, email, telefone: tel, objetivo, cpf },
+      { onConflict: 'user_id' }
+    );
+    if(e2){
+      if(e2.code==='23505'){ setErr(cpfEl, fb.cpf, 'CPF já cadastrado.'); throw e2; }
+      throw e2;
     }
-  });
+
+    // 4) OK visual + REDIRECT
+    btn.classList.remove('btn-erro'); btn.classList.add('btn-ok');
+    btn.textContent='Bem-vindo à Altitude!';
+    msg.style.color='#2e8b57';
+    msg.textContent='Cadastro concluído. Redirecionando…';
+
+    setTimeout(()=>{
+      // AJUSTE O CAMINHO ABAIXO PARA SUA PÁGINA DE DESTINO:
+      window.location.href = "/Projeto/1-html/portaldoaluno.html";
+    }, 1100);
+
+  }catch(err){
+    console.error(err);
+    btn.disabled=false; btn.textContent='Enviar'; btn.classList.add('btn-erro');
+    msg.style.color='#cc1f1f';
+    msg.textContent = err?.message || err?.error_description || 'Erro ao cadastrar.';
+  }
 });

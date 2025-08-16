@@ -62,7 +62,7 @@ h2 {
   background: #fff;
   border: 1px solid #dcdcdc;
   border-radius: 6px;
-  box-shadow: 0 4px 12px rgba(0,0,0,0.08);
+  box-shadow: 0 4px 12px var(--cinza-escuro);
   text-align: center;
 }
 
@@ -77,35 +77,37 @@ h2 {
 
 /* Inputs */
 .form-group {
-    
   text-align: left;
-  margin-bottom: 5px;
+  margin-bottom: 20px;
+  margin-top: 30px;
 }
 
 .form-group label {
     
   font-size: 0.9rem;
-  font-weight: 500;
+  font-weight: 40;
   color: #444;
   margin-bottom: 6px;
-  display: flex;
+  display: block;
 
 }
 
 
 .form-group input {
 
+
   width: 100%;
-  padding: 12px;
+  padding: 10px;
   border: 1px solid #ccc;
-  border-radius: 4px;
+  border-radius: 6px;
   font-size: 0.95rem;
   transition: all 0.3s ease;
+  box-sizing: border-box;
 }
 
 .form-group input:focus {
     
-  border-color: var(--azul-claro);
+  border-color: var(--azul-escuro);
   box-shadow: 0 0 6px rgba(28,195,187,0.3);
   outline: none;
 }
@@ -114,7 +116,7 @@ h2 {
 .btn-login {
   width: 100%;
   padding: 12px;
-  background: var(--azul-escuro);
+  background: var(--azul-claro);
   color: #fff;
   font-size: 1rem;
   font-weight: 600;
@@ -125,7 +127,7 @@ h2 {
 }
 
 .btn-login:hover {
-  background: var(--azul-claro);
+  background: var(--azul-escuro);
 }
 
 /* Opções abaixo */

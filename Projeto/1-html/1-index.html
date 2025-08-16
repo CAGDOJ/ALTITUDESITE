@@ -4,19 +4,30 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Página Inicial</title>
+    
+    
+    <!-- faveicon-->
+    <link rel="apple-touch-icon" sizes="180x180" href="/Projeto/3-img/apple-touch-icon.png">
+    <link rel="icon" type="image/png" sizes="32x32" href="/Projeto/3-img/favicon-32x32.png">
+    <link rel="icon" type="image/png" sizes="16x16" href="/Projeto/3-img/favicon-16x16.png">
+    <link rel="manifest" href="/Projeto/3-img/site.webmanifest">
+
+    <!--Links para outros arquivos-->
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
-    <link rel="stylesheet" href="../1-html/1-index.html"> <!-- Link para o CSS atualizado -->
-    <script type="module" src="../4-java/supabaseClient.js"></script>
-    <script type="module" src="..//4-java/headerAuth.js"></script>
-    <script src="../2-css/1-index.css"></script>
+    <link rel="stylesheet" href="/1-index.css"> <!-- Link para o CSS atualizado -->
+    <script type="module" src="/Projeto/4-java/supabaseClient.js"></script><!-- Link para o Spbase -->
+    <script type="module" src="/Projeto/4-java/headerAuth.js"></script><!-- lik para identificação de login de user-->
+
+
+    
+
 
 </head>
-<body>
-    
-     <!-- Cabeçalho para dispositivos móveis -->
+
+    <!-- Cabeçalho para moibile-->
     <header class="new-header">
         <div class="logo">
-            <a href="/Projeto/1-html/1-index.html">
+            <a href="./Projeto/1-html/1-index.html">
                 <img src="../3-img/LOGO.png" alt="logo Altitude">
             </a>
         </div>
@@ -26,11 +37,11 @@
             <!-- Dropdown do menu hambúrguer -->
             <div class="dropdown-menu" id="dropdown-menu">
                 <ul>
-                    <li><a href="/Projeto/1-html/1-index.html">Início</a></li>
-                    <li><a href="/Projeto/1-html/2-profissional.html">Cursos Profissionais</a></li>
-                    <li><a href="/Projeto/1-html/8-certificados.html">Certificados</a></li>
-                    <li><a href="/Projeto/1-html/6-sobrenos.html">Sobre Nós</a></li>
-                    <li><a href="/Projeto/1-html/7-ajuda.html">Ajuda</a></li>
+                    <li><a href="/index.html">Início</a></li>
+                    <li><a href="./Projeto/1-html/2-profissional.html">Cursos Profissionais</a></li>
+                    <li><a href="./Projeto/1-html/8-certificados.html">Certificados</a></li>
+                    <li><a href=".Projeto/1-html/6-sobrenos.html">Sobre Nós</a></li>
+                    <li><a href="./Projeto/1-html/7-ajuda.html">Ajuda</a></li>
                 </ul>
             </div>
         </div>
@@ -41,13 +52,13 @@
     <header class=old-header>
         <div class="top-bar">
             <div class="institution-logo">
-                <a href="/Projeto/1-html/1-index.html">
-                    <img src="../3-img/LOGO.png" alt="Emblema Altitude" class="logo">
+                <a href="/index.html">
+                    <img src="./Projeto/3-img/LOGO.png" alt="Emblema Altitude" class="logo">
                 </a>
             </div>
             <nav class="navbar">
                 <ul>
-                    <li><a href="/Projeto/1-html/1-index.html">Início</a></li>
+                    <li><a href="/index.html">Início</a></li>
                     <li class="dropdown">
                         <a href="" class="dropbtn">Cursos</a>
                         <div class="dropdown-content">

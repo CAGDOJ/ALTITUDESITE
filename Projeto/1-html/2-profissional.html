@@ -5,9 +5,10 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Página Inicial</title>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
-    <link rel="stylesheet" href="/Projeto/2-css/2-profissinal.css"> <!-- Link para o CSS atualizado -->
+    <link rel="stylesheet" href="/Projeto/2-css/2-profissinal.css">
     <script type="module" src="/Projeto/4-java/supabaseClient.js"></script>
     <script type="module" src="/Projeto/4-java/headerAuth.js"></script>
+    <script src="/Projeto/4-java/index.js"></script>
 
 </head>
 
@@ -16,7 +17,7 @@
 
     <header class="new-header">
         <div class="logo">
-            <a href="./index.html">
+            <a href="/Projeto/1-html/1-index.html">
                 <img src="../3-img/LOGO.png" alt="logo Altitude">
             </a>
         </div>
@@ -26,11 +27,11 @@
             <!-- Dropdown do menu hambúrguer -->
             <div class="dropdown-menu" id="dropdown-menu">
                 <ul>
-                    <li><a href="./index.html">Início</a></li>
-                    <li><a href="../1-html/2-cursos-profissional.html">Cursos Profissionais</a></li>
-                    <li><a href="../1-html/8-certificados.html">Certificados</a></li>
-                    <li><a href="../1-html/6-sobrenos.html">Sobre Nós</a></li>
-                    <li><a href="../1-html/7-ajuda.html">Ajuda</a></li>
+                    <li><a href="/Projeto/1-html/1-index.html">Início</a></li>
+                    <li><a href="/Projeto/1-html/2-profissional.html">Cursos Profissionais</a></li>
+                    <li><a href="/Projeto/1-html/8-certificados.html">Certificados</a></li>
+                    <li><a href="/Projeto/1-html/6-sobrenos.html">Sobre Nós</a></li>
+                    <li><a href="/Projeto/1-html/7-ajuda.html">Ajuda</a></li>
                 </ul>
             </div>
         </div>
@@ -42,17 +43,17 @@
     <header class=old-header>
         <div class="top-bar">
             <div class="institution-logo">
-                <a href="./index.html">
+                <a href="/Projeto/1-html/">
                     <img src="../3-img/LOGO.png" alt="Emblema Altitude" class="logo">
                 </a>
             </div>
             <nav class="navbar">
                 <ul>
-                    <li><a href="./index.html">Início</a></li>
+                    <li><a href="/Projeto/1-html/1-index.html">Início</a></li>
                     <li class="dropdown">
                         <a href="" class="dropbtn">Cursos</a>
                         <div class="dropdown-content">
-                            <a href="../1-html/2-cursos-profissional.html">Profissional</a>
+                            <a href="/Projeto/1-html/2-profissional.html">Profissional</a>
                             <!-- <a href="..//1-html/3-cursos-tecnico.html">Técnico</a>-->
                         </div>
                     </li>
@@ -62,8 +63,8 @@
                 </ul>
             </nav>
             <div class="header-buttons">
-                <a href="../1-html/4-login e cadastro.html" class="btn-outline">Acessar</a> 
-                <a href="..//1-html/5-cadastro.html" class="btn-primary">Cadastrar</a>   
+                <a href="/Projeto/1-html/4-login.html" class="btn-outline">Acessar</a> 
+                <a href="/Projeto/1-html/5-cadastro.html" class="btn-primary">Cadastrar</a>   
             </div>
         </div>
     </header>
@@ -153,9 +154,9 @@
       <label>
         <input id="accept-terms" type="checkbox" required />
         Li e concordo com os
-        <a href="../1-html/contrato.html" target="_blank" rel="noopener">Termos de Contrato</a>
+        <a href="/Projeto/1-html/9-contrato.html" target="_blank" rel="noopener">Termos de Contrato</a>
         e a
-        <a href="../1-html/politicadeprivacidade.html" target="_blank" rel="noopener">Política de Privacidade</a>.
+        <a href="/Projeto/1-html/10-politicadeprivacidade.html" target="_blank" rel="noopener">Política de Privacidade</a>.
       </label>
       <small id="err-terms" class="msg"></small>
     </div>
@@ -164,7 +165,7 @@
     <button type="submit" class="btn submit">Enviar</button>
     <p id="msg" class="global-msg" aria-live="polite"></p>
 
-    <p class="alt">Já tenho uma conta <a href="./4-login e cadastro.html">Fazer login</a></p>
+    <p class="alt">Já tenho uma conta <a href="/Projeto/1-html/4-login.html">Fazer login</a></p>
       </form>
     </section>
 
@@ -203,9 +204,9 @@
                 <h3>Links Rápidos</h3>
                 <ul>
                     <li><a href="https://www.reclameaqui.com.br/reclamar/">Reclame Aqui</a></li>
-                    <li><a href="../1-html/validarcertificado.html">Validar Certificado</a></li>
-                    <li><a href="../1-html/contrato.html">Termos de Contrato</a></li>
-                    <li><a href="..//1-html/politicadeprivacidade.html">Política de Privacidade</a></li>
+                    <li><a href="/Projeto/1-html/8-certificados.html">Validar Certificado</a></li>
+                    <li><a href="/Projeto/1-html/9-contrato.html">Termos de Contrato</a></li>
+                    <li><a href="/Projeto/1-html/10-politicadeprivacidade.html">Política de Privacidade</a></li>
                     <li><a href="#"> Registro Mec</a></li>
                 </ul>
             </div>
@@ -221,7 +222,7 @@
             <p>&copy;  2025 - Instituto de Educação e Tecnologia - Altitude</p>
         </div>
     </footer>
-    <script src="../4-java/index.js"></script>
+    
 
 </body>
    

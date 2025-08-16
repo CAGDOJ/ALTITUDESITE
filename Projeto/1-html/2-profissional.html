@@ -74,102 +74,22 @@
     <!------------------------------>
     <!-- Conteúdo Principal -->
     <!------------------------------>
-    <section class="form-section">
-  <h1>Faça seu cadastro</h1>
-
-  <form class="registration-form" novalidate>
-    <!-- Nome -->
-    <div class="form-group">
-      <label for="name">Nome completo</label>
-      <input id="name" type="text" placeholder="Digite seu nome completo" required />
-    </div>
-
-    <!-- CPF -->
-    <div class="form-group">
-      <label for="cpf">CPF</label>
-      <input id="cpf" type="text" inputmode="numeric" placeholder="000.000.000-00" />
-      <small id="err-cpf" class="msg"></small>
-    </div>
-
-    <!-- Email -->
-    <div class="form-group">
-      <label for="email">E-mail</label>
-      <input id="email" type="email" placeholder="Digite seu e-mail" required />
-      <small id="email-msg" class="msg"></small>
-    </div>
-
-    <!-- Senha -->
-    <div class="form-group has-eye">
-      <label for="password">Senha</label>
-      <input id="password" type="password" placeholder="Mínimo 8 caracteres" required />
-      <button
-        type="button"
-        class="eye-toggle"
-        aria-pressed="false"
-        aria-label="Mostrar senha"
-        data-target="password"
-      ></button>
-      <small id="err-password" class="msg"></small>
-    </div>
-
-    <!-- Confirmar senha (feedback em baixo) -->
-    <div class="form-group has-eye">
-      <label for="password2">Confirme a senha</label>
-      <input id="password2" type="password" placeholder="Repita a senha" required />
-      <button
-        type="button"
-        class="eye-toggle"
-        aria-pressed="false"
-        aria-label="Mostrar senha"
-        data-target="password2"
-      ></button>
-
-      <div class="inline-feedback">
-        <small id="err-password2" class="msg"></small>
-        <small id="match-ok" class="msg ok"></small> <!-- “Senha Válida ✔️” aparece aqui -->
-      </div>
-    </div>
-
-    <!-- Telefone -->
-    <div class="form-group">
-      <label for="phone">Telefone (WhatsApp) — com DDD</label>
-      <input id="phone" type="tel" placeholder="(00) 00000-0000" />
-      <small id="err-phone" class="msg"></small>
-    </div>
-
-    <!-- Objetivo -->
-    <div class="form-group">
-      <label for="objective">Qual seu objetivo?</label>
-      <select id="objective">
-        <option value="">Selecione</option>
-        <option>Primeiro emprego</option>
-        <option>Recolocação</option>
-        <option>Promoção</option>
-        <option>Empreender</option>
-        <option>Atualização profissional</option>
-      </select>
-    </div>
-
-    <!-- Termos -->
-    <div class="terms">
-      <label>
-        <input id="accept-terms" type="checkbox" required />
-        Li e concordo com os
-        <a href="/Projeto/1-html/9-contrato.html" target="_blank" rel="noopener">Termos de Contrato</a>
-        e a
-        <a href="/Projeto/1-html/10-politicadeprivacidade.html" target="_blank" rel="noopener">Política de Privacidade</a>.
-      </label>
-      <small id="err-terms" class="msg"></small>
-    </div>
-
-    <!-- Botão + mensagem -->
-    <button type="submit" class="btn submit">Enviar</button>
-    <p id="msg" class="global-msg" aria-live="polite"></p>
-
-    <p class="alt">Já tenho uma conta <a href="/Projeto/1-html/4-login.html">Fazer login</a></p>
-      </form>
-    </section>
-
+     <main>
+        <section id="cursos-tecnico">
+            <h2>Cursos Técnicos</h2>
+            <div class="cursos-container">
+                
+                <div class="curso-card">
+                    <h3>Laboratorista de Solos</h3>
+                    <img src="../3-img/Cursos/prof/laboratorista de solo.jpg" alt="Laboratorista de solos" width="250" height="auto"> 
+                    <p><strong>Carga horária:</strong> de 08 a 280 horas</p>
+                    <h4>Comece Agora Gratuitamente</h4>
+                </div>
+                
+                <!-- Continuar adicionando cards -->
+            </div>
+        </section>
+    </main>
 
 
     <!------------------------------>

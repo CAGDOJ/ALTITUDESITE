@@ -73,7 +73,15 @@ h2 {
 }
 .form-alert[hidden]{ display:none; }
 
-.form-group input {box-sizing: border-box;}
+.form-group input {
+  width: 100%;
+  padding: 10px;
+  border: 1px solid #ccc;
+  border-radius: 6px;
+  font-size: 0.95rem;
+  transition: all 0.3s ease;
+  box-sizing: border-box;
+}
 
 form{ text-align:left; }
 .form-group{ margin-bottom:14px; position:relative; }

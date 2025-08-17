@@ -88,6 +88,7 @@
 
   <section class="login-container">
   <h2 class="login-title">Informe seu Login</h2>
+  <div id="loginBlock">
 
   <form class="login-form">
     <div class="form-group">
@@ -124,6 +125,9 @@
       <div class="form-group">
         <label for="cpfRecovery">CPF</label>
         <input id="cpfRecovery" type="text" placeholder="000.000.000-00">
+      </div>
+      <div class="forgot-actions">
+      <button type="button" id="backToLogin" class="link-back">Voltar ao login</button>
       </div>
       <button type="button" id="btnResetByCpf" class="btn-login" style="margin-top:8px;">Enviar link de redefinição</button>
       <small id="cpfResult" class="msg"></small>
@@ -214,8 +218,43 @@ document.querySelectorAll('.tab-btn').forEach(btn=>{
     document.getElementById('tab-'+btn.dataset.tab).hidden=false;
     document.querySelectorAll('.tab-btn').forEach(b=>b.classList.remove('active'));
     btn.classList.add('active');
-  });
+  <script>
+    
+/* ... (mantém o código acima) ... */
+
+// Toggle do painel "Esqueci minha senha" (substitui o login)
+const forgotLink  = document.querySelector('.forgot');
+const forgotPane  = document.getElementById('forgotPane');
+const loginBlock  = document.getElementById('loginBlock');
+
+function activateTab(tab){ // 'cpf' ou 'ra'
+  document.querySelectorAll('.tab').forEach(t => t.hidden = true);
+  document.getElementById('tab-' + tab).hidden = false;
+  document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+  document.querySelector(`.tab-btn[data-tab="${tab}"]`)?.classList.add('active');
+}
+
+function showForgot(defaultTab = 'cpf'){
+  if (forgotPane) forgotPane.hidden = false;
+  if (loginBlock) loginBlock.hidden = true;
+  activateTab(defaultTab);
+}
+
+function backToLogin(){
+  if (forgotPane) forgotPane.hidden = true;
+  if (loginBlock) loginBlock.hidden = false;
+}
+
+forgotLink?.addEventListener('click', (e) => {
+  e.preventDefault();
+  showForgot('cpf'); // abre já na aba "Redefinir por CPF"
 });
+
+// botão "Voltar ao login"
+document.getElementById('backToLogin')?.addEventListener('click', backToLogin);
+
+/* ... (mantém a seção "Abas", máscara CPF e o restante do script abaixo) ... */
+</script>
 
 // Máscara CPF
 document.getElementById('cpfRecovery')?.addEventListener('input', e=> e.target.value = maskCPF(e.target.value));

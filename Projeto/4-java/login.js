@@ -58,7 +58,7 @@ window.addEventListener('DOMContentLoaded', () => {
       }
 
       // ✅ redireciona para o portal (ajuste o caminho conforme sua pasta)
-      window.location.href = './portaldoaluno.html';
+      window.location.href = './Projeto/1-html/11-portaldoaluno.html';
 
     } catch (err) {
       console.error(err);

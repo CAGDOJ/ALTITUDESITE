@@ -31,6 +31,7 @@
       activateTab(defaultTab);
     }
     function backToLogin() {
+      updateFooterLink();
       if (forgotPane) forgotPane.hidden = true;
       coreEls.forEach(el => (el.hidden = false));
     }
@@ -126,7 +127,26 @@
     const cpfEl = document.getElementById('cpfReset');
     const dobEl = document.getElementById('dobReset');
 
-    const overlay = document.getElementById('resetOverlay');
+    
+    // --- Helper: alterna o link de rodapé entre 'Esqueci minha senha' e 'Voltar ao login'
+    function setFooterAsBack() {
+      if (!linkForgot) return;
+      linkForgot.textContent = 'Voltar ao login';
+      linkForgot.onclick = (ev) => { ev.preventDefault(); backToLogin(); };
+    }
+    function setFooterAsForgot() {
+      if (!linkForgot) return;
+      linkForgot.textContent = 'Esqueci minha senha';
+      linkForgot.onclick = (ev) => { ev.preventDefault(); showStep1(); };
+    }
+    function updateFooterLink() {
+      const forgotPane = document.getElementById('forgotPane');
+      const step1Visible = step1 && !step1.hidden;
+      const forgotVisible = forgotPane && !forgotPane.hidden;
+      if (step1Visible || forgotVisible) setFooterAsBack();
+      else setFooterAsForgot();
+    }
+const overlay = document.getElementById('resetOverlay');
     const helloName = document.getElementById('helloName');
     const newPass = document.getElementById('newPass');
     const newPass2 = document.getElementById('newPass2');
@@ -134,6 +154,7 @@
     const finalMsg = document.getElementById('resetFinalMsg');
 
     function showStep1() {
+      updateFooterLink();
       // esconde bloco de login e mostra step1
       if (title) title.textContent = 'Insira suas informações para redefinir';
       if (loginBlock) loginBlock.hidden = true;
@@ -142,6 +163,7 @@
       step1Msg.textContent = '';
     }
     function backToLogin() {
+      updateFooterLink();
       if (title) title.textContent = 'Informe seu Login';
       if (loginBlock) loginBlock.hidden = false;
       if (step1){ step1.hidden = true; step1.style.display = ''; }
@@ -163,6 +185,16 @@
       overlay.hidden = true;
     }
 
+    
+    // Observa alterações no forgotPane para manter o link como 'Voltar ao login'
+    const forgotPane = document.getElementById('forgotPane');
+    if (forgotPane) {
+      const mo = new MutationObserver(updateFooterLink);
+      mo.observe(forgotPane, { attributes: true, attributeFilter: ['hidden', 'style', 'class'] });
+    }
+    // define o estado inicial do link do rodapé
+    updateFooterLink();
+    
     if (linkForgot) linkForgot.addEventListener('click', (e) => {
       e.preventDefault();
       showStep1();

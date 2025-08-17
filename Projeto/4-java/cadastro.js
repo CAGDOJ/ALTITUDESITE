@@ -217,4 +217,132 @@ window.addEventListener('DOMContentLoaded', () => {
 
   // estado inicial
   toggleSubmit();
+
+  // === PATCH DISCRETO: validação visual + máscara tel + olho ===
+if (!window._cadastroEnhancerApplied) {
+  window._cadastroEnhancerApplied = true;
+
+  const cpfEl   = document.getElementById('cpf');
+  const mailEl  = document.getElementById('email');
+  const passEl  = document.getElementById('password');
+  const pass2El = document.getElementById('password2');
+  const telEl   = document.getElementById('phone');
+  const objEl   = document.getElementById('objective');
+  const termsEl = document.getElementById('terms');
+
+  const fb = (id) => document.getElementById(id);
+
+  // helpers de UI
+  function setOk(el, fbEl, msg='✔️ Ok'){
+    el?.classList.remove('is-err'); el?.classList.add('is-ok');
+    if (fbEl){ fbEl.textContent = msg; fbEl.classList.remove('err','warn'); fbEl.classList.add('ok'); }
+  }
+  function setErr(el, fbEl, msg){
+    el?.classList.remove('is-ok'); el?.classList.add('is-err');
+    if (fbEl){ fbEl.textContent = msg; fbEl.classList.remove('ok','warn'); fbEl.classList.add('err'); }
+  }
+  function clearFB(el, fbEl){
+    el?.classList.remove('is-ok','is-err');
+    if (fbEl){ fbEl.textContent = ''; fbEl.classList.remove('ok','err','warn'); }
+  }
+
+  // ====== Telefone: máscara + validação ======
+  const onlyD = (s) => (s||'').replace(/\D/g,'');
+  function maskPhone(v){
+    v = onlyD(v).slice(0,11);
+    if (v.length > 6)  return v.replace(/(\d{2})(\d{5})(\d{0,4})/,'($1) $2-$3');
+    if (v.length > 2)  return v.replace(/(\d{2})(\d{0,5})/,'($1) $2');
+    if (v.length > 0)  return v.replace(/(\d{0,2})/,'($1');
+    return v;
+  }
+  function phoneValido(v){
+    const d = onlyD(v);
+    if (d.length !== 11) return false;
+    if (/^(\d)\1{10}$/.test(d)) return false; // bloqueia 00000000000, etc.
+    return true;
+  }
+
+  if (telEl) {
+    const fbPhone = fb('fb-phone');
+    telEl.addEventListener('input', () => {
+      telEl.value = maskPhone(telEl.value);
+      const d = onlyD(telEl.value);
+      if (!d) { clearFB(telEl, fbPhone); return; }
+      if (!phoneValido(telEl.value)) setErr(telEl, fbPhone, 'Informe DDD + número (11 dígitos).');
+      else setOk(telEl, fbPhone, 'Telefone válido ✓');
+    });
+    telEl.addEventListener('blur', () => {
+      const d = onlyD(telEl.value);
+      if (!phoneValido(telEl.value)) setErr(telEl, fb('fb-phone'), 'Telefone inválido.');
+    });
+  }
+
+  // ====== Senha e confirmação: feedback abaixo ======
+  function senhaForte(s){ return (s||'').length >= 8; }
+
+  if (passEl) {
+    const fbPass = fb('fb-password');
+    passEl.addEventListener('input', () => {
+      if (!passEl.value){ clearFB(passEl, fbPass); return; }
+      senhaForte(passEl.value) ? setOk(passEl, fbPass, 'Senha válida ✓')
+                               : setErr(passEl, fbPass, 'Mínimo 8 caracteres.');
+      if (pass2El && pass2El.value) pass2El.dispatchEvent(new Event('input'));
+    });
+  }
+
+  if (pass2El) {
+    const fbPass2 = fb('fb-password2');
+    pass2El.addEventListener('input', () => {
+      if (!pass2El.value){ clearFB(pass2El, fbPass2); return; }
+      (pass2El.value === passEl.value) ? setOk(pass2El, fbPass2, 'Senhas coincidem ✓')
+                                       : setErr(pass2El, fbPass2, 'Senhas não são iguais ✗');
+    });
+  }
+
+  // ====== E-mail: formato básico (não mexe no seu backend) ======
+  if (mailEl) {
+    const reEmail = /^[^\s@]+@[^\s@]+\.[^\s@]+$/i;
+    const fbEmail = fb('fb-email');
+    mailEl.addEventListener('input', () => {
+      if (!mailEl.value.trim()){ clearFB(mailEl, fbEmail); return; }
+      reEmail.test(mailEl.value.trim())
+        ? setOk(mailEl, fbEmail, 'E-mail válido ✓')
+        : setErr(mailEl, fbEmail, 'E-mail inválido. Ex.: nome@dominio.com');
+    });
+  }
+
+  // ====== Objetivo / Termos (só feedback UI) ======
+  objEl?.addEventListener('change', () => {
+    const el = fb('fb-objective');
+    objEl.value ? (el.textContent = ' ', el.classList.remove('err'))
+                : (el.textContent = 'Selecione um objetivo.', el.classList.add('err'));
+  });
+
+  termsEl?.addEventListener('change', () => {
+    const el = fb('fb-terms');
+    termsEl.checked ? (el.textContent = '', el.classList.remove('err'))
+                    : (el.textContent = 'Obrigatório aceitar.', el.classList.add('err'));
+  });
+
+  // ====== Botão “olho” (mostrar/ocultar senha) ======
+  document.querySelectorAll('.eye').forEach((btn) => {
+    btn.addEventListener('click', () => {
+      const target = document.getElementById(btn.dataset.target);
+      if (!target) return;
+      const icon = btn.querySelector('i');
+      if (target.type === 'password') {
+        target.type = 'text';
+        icon?.classList.remove('fa-eye-slash');
+        icon?.classList.add('fa-eye');
+        btn.setAttribute('aria-label','Ocultar senha');
+      } else {
+        target.type = 'password';
+        icon?.classList.remove('fa-eye');
+        icon?.classList.add('fa-eye-slash');
+        btn.setAttribute('aria-label','Mostrar senha');
+      }
+    });
+  });
+}
+
 });

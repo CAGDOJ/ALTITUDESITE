@@ -251,29 +251,6 @@ select:focus {
 .feedback.warn { color:#8a6d3b; }
 
 
-/* === Feedbacks abaixo dos inputs (não altera seu layout) === */
-small.feedback{
-  display:block;
-  margin-top:6px;
-  font-size:.88rem;
-  min-height:1em;      /* evita “pular” o layout quando mostrar/ocultar */
-}
-small.feedback.ok{ color:#2e8b57; }   /* verde */
-small.feedback.err{ color:#cc1f1f; }  /* vermelho */
-small.feedback.warn{ color:#8a6d3b; } /* âmbar opcional */
-
-/* realce leve do input quando validar */
-input.is-ok, select.is-ok { border-color:#2e8b57; box-shadow:0 0 0 2px #2e8b5722; }
-input.is-err, select.is-err { border-color:#cc1f1f; box-shadow:0 0 0 2px #cc1f1f22; }
-
-/* botão “olho” dentro do campo de senha (se você usa) */
-.input-wrap{ position:relative; }
-.input-wrap > input{ padding-right:42px; }
-.eye{
-  position:absolute; right:8px; top:50%; transform:translateY(-50%);
-  border:0; background:transparent; padding:6px; cursor:pointer; color:#7a8fa0;
-}
-.eye:hover{ color:#0A3D62; }
 
 
 

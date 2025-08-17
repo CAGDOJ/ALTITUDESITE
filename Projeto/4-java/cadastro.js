@@ -218,7 +218,10 @@ window.addEventListener('DOMContentLoaded', () => {
   // estado inicial
   toggleSubmit();
 
-  // === PATCH DISCRETO: validação visual + máscara tel + olho ===
+  
+});
+
+// === PATCH DISCRETO: validação visual + máscara tel + olho ===
 if (!window._cadastroEnhancerApplied) {
   window._cadastroEnhancerApplied = true;
 
@@ -344,5 +347,3 @@ if (!window._cadastroEnhancerApplied) {
     });
   });
 }
-
-});

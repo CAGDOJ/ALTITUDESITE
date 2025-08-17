@@ -58,8 +58,8 @@ h2 {
 
 .login-container{
   max-width:400px; margin:48px auto; padding:24px;
-  background:#fff; border:6px solid var(--cinza-claro); border-radius:8px;
-   box-shadow: 0 4px 12px var(--cinza-escuro); text-align:center;
+  background:#fff; border:1px solid var(--cinza-claro); border-radius:8px;
+  box-shadow:0 4px 12px rgba(0,0,0,.06); text-align:center;
 }
 
 .login-title{

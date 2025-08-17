@@ -15,6 +15,7 @@
     <link rel="stylesheet" href="/Projeto/2-css/4-login.css"> <!-- Link para o CSS atualizado -->
     <script type="module" src="/Projeto/4-java/supabaseClient.js"></script><!-- Link para o Spbase -->
     <script type="module" src="/Projeto/4-java/headerAuth.js"></script><!-- lik para identificação de login de user-->
+    <script src="/Projeto/4-java/login.js"></script>
 
 
 <!--CORPO DO SITE -->    
@@ -190,23 +191,7 @@
             <p>&copy;  2025 - Instituto de Educação e Tecnologia - Altitude</p>
         </div>
     </footer>
-   <script>
-  // Toggle do olho: funciona para qualquer botão .toggle-pass (usa o data-target)
-  document.addEventListener('click', function (ev) {
-    const btn = ev.target.closest('.toggle-pass');
-    if (!btn) return;
-    const input = document.getElementById(btn.getAttribute('data-target'));
-    if (!input) return;
-
-    input.type = input.type === 'password' ? 'text' : 'password';
-    const icon = btn.querySelector('i');
-    if (icon) {
-      icon.className = (input.type === 'password')
-        ? 'fa-regular fa-eye'
-        : 'fa-regular fa-eye-slash';
-    }
-  });
-</script>
+   
 <script>
 // Utilitários
 const onlyDigits = v => (v||'').replace(/\D+/g,'');

@@ -1,69 +1,107 @@
-/* ===== Login Supabase (UMD, sem modules) ===== */
+/* ===== Login Altitude (RA/CPF/E-mail + senha) ===== */
+(function () {
+  // usa o cliente já criado no supabaseClient.js
+  const sb = window.supabase;
 
-/** PREENCHA COM O SEU PROJETO (estes são os seus dados do print/keys) **/
-const SUPABASE_URL = 'https://mxnvrxqwokvelulzdvmn.supabase.co'; // <- URL do seu projeto
-const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im14bnZyeHF3b2t2ZWx1bHpkdm1uIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTQ4NTQ4MjAsImV4cCI6MjA3MDQzMDgyMH0.DBntQQc91IWYAvMxHknJxjxxFAl5kiWOkc1LUXe_vKE';
-/** ================================================================== **/
-
-// usa o UMD global já incluído no HTML
-const sb = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
-
-// cria a caixinha de erro se não existir
-function ensureErrorBox(form) {
-  let box = document.getElementById('loginErro');
-  if (!box) {
-    box = document.createElement('div');
-    box.id = 'loginErro';
-    box.style.display = 'none';
-    box.style.color = '#b91c1c';
-    box.style.margin = '8px 0';
-    form.appendChild(box);
-  }
-  return box;
-}
-
-window.addEventListener('DOMContentLoaded', () => {
-  // seu HTML tem <form class="registration-form">, #email e #password
-  const form = document.querySelector('form.registration-form');
-  const emailEl = document.getElementById('email');
-  const passEl  = document.getElementById('password');
-
-  if (!form || !emailEl || !passEl) {
-    console.error('Login: elementos não encontrados no DOM.');
-    return;
+  function ensureErrorBox(form) {
+    let box = document.getElementById('loginErro');
+    if (!box) {
+      box = document.createElement('div');
+      box.id = 'loginErro';
+      box.style.display = 'none';
+      box.style.color = '#b91c1c';
+      box.style.margin = '8px 0';
+      box.style.fontSize = '14px';
+      form.appendChild(box);
+    }
+    return box;
   }
 
-  const msgEl = ensureErrorBox(form);
+  function traduz(err) {
+    const m = (err?.message || '').toLowerCase();
+    const s = err?.status || err?.cause?.status;
+    if (m.includes('invalid login credentials')) return 'Usuário ou senha inválidos.';
+    if (m.includes('email not confirmed')) return 'E-mail não confirmado. Verifique sua caixa de entrada.';
+    if (s === 429 || m.includes('rate limit')) return 'Muitas tentativas. Aguarde e tente novamente.';
+    if (s >= 500) return 'Serviço indisponível no momento. Tente novamente.';
+    return 'Não foi possível entrar. Verifique os dados e tente novamente.';
+  }
 
-  form.addEventListener('submit', async (e) => {
-    e.preventDefault();
-    msgEl.style.display = 'none';
-    msgEl.textContent = '';
+  // identifica se é email, cpf ou ra
+  function parseIdent(v) {
+    const raw = (v || '').trim();
+    if (!raw) return null;
+    if (raw.includes('@')) return { type: 'email', value: raw.toLowerCase() };
+    const digits = raw.replace(/\D/g, '');
+    if (digits.length === 11) return { type: 'cpf', value: digits };
+    return { type: 'ra', value: raw.toUpperCase() };
+  }
 
-    const email = (emailEl.value || '').trim().toLowerCase();
-    const password = passEl.value || '';
+  // para RA/CPF, buscar o email na tabela alunos
+  async function resolveEmail(ident) {
+    if (ident.type === 'email') return ident.value;
+    const { data, error } = await sb
+      .from('alunos')
+      .select('email')
+      .eq(ident.type, ident.value)
+      .single();
+    if (error || !data?.email) {
+      const label = ident.type.toUpperCase();
+      throw new Error(`${label} não encontrado.`);
+    }
+    return String(data.email).toLowerCase();
+  }
 
-    if (!email || !password) {
-      msgEl.textContent = 'Informe e-mail e senha.';
-      msgEl.style.display = 'block';
+  document.addEventListener('DOMContentLoaded', () => {
+    const form = document.querySelector('form.login-form'); // <- seu HTML
+    const userEl = document.getElementById('ra');           // RA/CPF/E-mail
+    const passEl = document.getElementById('senha');        // Senha
+    const btn    = document.querySelector('.btn-login');
+
+    if (!form || !userEl || !passEl) {
+      console.error('Login: elementos não encontrados no DOM.');
+      return;
+    }
+    if (!sb || !sb.auth) {
+      const box = ensureErrorBox(form);
+      box.textContent = 'Conexão com o servidor indisponível.';
+      box.style.display = 'block';
       return;
     }
 
-    try {
-      const { data, error } = await sb.auth.signInWithPassword({ email, password });
-      if (error || !data?.session) {
-        msgEl.textContent = 'Não foi possível entrar. Verifique os dados e tente novamente.';
+    const msgEl = ensureErrorBox(form);
+
+    form.addEventListener('submit', async (e) => {
+      e.preventDefault();
+      msgEl.style.display = 'none';
+      msgEl.textContent = '';
+
+      const ident = parseIdent(userEl.value);
+      const password = passEl.value || '';
+
+      if (!ident || !password) {
+        msgEl.textContent = 'Informe o usuário (RA/CPF/E-mail) e a senha.';
         msgEl.style.display = 'block';
         return;
       }
 
-      // ✅ redireciona para o portal (ajuste o caminho conforme sua pasta)
-      window.location.href = './Projeto/1-html/11-portaldoaluno.html';
+      btn.disabled = true;
+      btn.textContent = 'Entrando...';
 
-    } catch (err) {
-      console.error(err);
-      msgEl.textContent = 'Erro ao tentar entrar. Tente novamente.';
-      msgEl.style.display = 'block';
-    }
+      try {
+        const email = await resolveEmail(ident);
+        const { data, error } = await sb.auth.signInWithPassword({ email, password });
+        if (error || !data?.session) throw error || new Error('Credenciais inválidas.');
+        // redireciona após sucesso
+        window.location.href = '/Projeto/1-html/11-portaldoaluno.html';
+      } catch (err) {
+        console.error(err);
+        msgEl.textContent = traduz(err);
+        msgEl.style.display = 'block';
+      } finally {
+        btn.disabled = false;
+        btn.textContent = 'ENTRAR';
+      }
+    });
   });
-});
+})();

@@ -103,6 +103,31 @@
     </div>
 
     <button type="submit" class="btn-login">ENTRAR</button>
+  <!-- Painel de recuperação dentro da mesma caixa -->
+  <section id="forgotPane" class="forgot-pane" hidden>
+    <div class="tabs">
+      <button type="button" data-tab="ra" class="tab-btn active">Descobrir RA</button>
+      <button type="button" data-tab="cpf" class="tab-btn">Redefinir por CPF</button>
+    </div>
+
+    <div id="tab-ra" class="tab">
+      <div class="form-group">
+        <label for="fullNameRecovery">Nome completo</label>
+        <input id="fullNameRecovery" type="text" placeholder="Digite seu nome completo">
+      </div>
+      <button type="button" id="btnFindRA" class="btn-login" style="margin-top:8px;">Buscar RA</button>
+      <small id="raResult" class="msg"></small>
+    </div>
+
+    <div id="tab-cpf" class="tab" hidden>
+      <div class="form-group">
+        <label for="cpfRecovery">CPF</label>
+        <input id="cpfRecovery" type="text" placeholder="000.000.000-00">
+      </div>
+      <button type="button" id="btnResetByCpf" class="btn-login" style="margin-top:8px;">Enviar link de redefinição</button>
+      <small id="cpfResult" class="msg"></small>
+    </div>
+  </section>
 
     <div class="login-options">
       <a href="#" class="forgot">Esqueci minha senha</a>
@@ -181,6 +206,81 @@
         : 'fa-regular fa-eye-slash';
     }
   });
+</script>
+<script>
+// Utilitários
+const onlyDigits = v => (v||'').replace(/\D+/g,'');
+const maskCPF = v => {
+  let s = onlyDigits(v).slice(0,11);
+  return s.replace(/(\d{3})(\d)/,'$1.$2')
+          .replace(/(\d{3})(\d)/,'$1.$2')
+          .replace(/(\d{3})(\d{1,2})$/,'$1-$2');
+};
+
+// Toggle do painel "Esqueci minha senha"
+const forgotLink = document.querySelector('.forgot');
+const forgotPane = document.getElementById('forgotPane');
+forgotLink?.addEventListener('click', (e)=>{ e.preventDefault(); if(forgotPane) forgotPane.hidden = !forgotPane.hidden; });
+
+// Abas
+document.querySelectorAll('.tab-btn').forEach(btn=>{
+  btn.addEventListener('click', ()=>{
+    document.querySelectorAll('.tab').forEach(t=>t.hidden=true);
+    document.getElementById('tab-'+btn.dataset.tab).hidden=false;
+    document.querySelectorAll('.tab-btn').forEach(b=>b.classList.remove('active'));
+    btn.classList.add('active');
+  });
+});
+
+// Máscara CPF
+document.getElementById('cpfRecovery')?.addEventListener('input', e=> e.target.value = maskCPF(e.target.value));
+
+// Buscar RA por nome
+document.getElementById('btnFindRA')?.addEventListener('click', async ()=>{
+  const name = (document.getElementById('fullNameRecovery')?.value || '').trim();
+  const hint = document.getElementById('raResult');
+  if(!name){ hint.textContent='Informe o nome completo.'; hint.className='msg err'; return; }
+  hint.textContent = 'Procurando...'; hint.className='msg';
+  try{
+    if(!window.supabase) throw new Error('Conexão indisponível.');
+    const { data, error } = await supabase.from('alunos').select('ra').ilike('nome', name).limit(1);
+    if(error || !data?.length){ hint.textContent='Nome não encontrado.'; hint.className='msg err'; return; }
+    hint.textContent = 'Seu RA é: ' + (data[0].ra || '(não cadastrado)'); hint.className='msg ok';
+  }catch(e){
+    console.error(e); hint.textContent='Não foi possível buscar o RA.'; hint.className='msg err';
+  }
+});
+
+// Redefinição por CPF -> manda e-mail do Auth
+document.getElementById('btnResetByCpf')?.addEventListener('click', async ()=>{
+  const cpf = onlyDigits(document.getElementById('cpfRecovery')?.value);
+  const hint = document.getElementById('cpfResult');
+  if(!cpf || cpf.length !== 11){ hint.textContent='CPF inválido.'; hint.className='msg err'; return; }
+  hint.textContent = 'Validando CPF...'; hint.className='msg';
+  try{
+    if(!window.supabase) throw new Error('Conexão indisponível.');
+    const { data, error } = await supabase.from('alunos').select('email').eq('cpf', cpf).single();
+    if(error || !data?.email){ hint.textContent='CPF não encontrado.'; hint.className='msg err'; return; }
+    const redirect = location.origin + '/Projeto/1-html/nova-senha.html';
+    const { error:resetErr } = await supabase.auth.resetPasswordForEmail(data.email, { redirectTo: redirect });
+    if(resetErr) throw resetErr;
+    hint.textContent = 'Enviamos o link de redefinição para ' + data.email + '.'; hint.className='msg ok';
+  }catch(e){
+    console.error(e);
+    const m = (e?.message || '').toLowerCase();
+    hint.textContent = m.includes('rate limit') ? 'Muitas tentativas. Aguarde e tente novamente.' : 'Não foi possível enviar o link.';
+    hint.className='msg err';
+  }
+});
+
+// (opcional) olho do campo senha, caso você ainda não tenha adicionado
+document.addEventListener('click', function (ev) {
+  const btn = ev.target.closest('.toggle-pass'); if (!btn) return;
+  const input = document.getElementById(btn.getAttribute('data-target')); if (!input) return;
+  input.type = input.type === 'password' ? 'text' : 'password';
+  const icon = btn.querySelector('i');
+  if (icon) icon.className = (input.type === 'password') ? 'fa-regular fa-eye' : 'fa-regular fa-eye-slash';
+});
 </script>
 
 </body>

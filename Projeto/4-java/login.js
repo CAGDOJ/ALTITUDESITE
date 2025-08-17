@@ -57,7 +57,7 @@ document.addEventListener('DOMContentLoaded', () => {
   const passEl = document.getElementById('senha');  // Senha
   const btn    = document.querySelector('.btn-login');
 
-  if (!form || !userEl || !passEl) {
+  if (!form || !emailEl || !passEl) {
     console.error('Login: elementos não encontrados no DOM.');
     return;
   }

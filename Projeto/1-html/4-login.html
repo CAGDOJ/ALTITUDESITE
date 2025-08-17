@@ -13,7 +13,11 @@
     <!--Links para outros arquivos-->
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
     <link rel="stylesheet" href="/Projeto/2-css/4-login.css"> <!-- Link para o CSS atualizado -->
-    
+    <!-- Supabase UMD + seus scripts (todos com defer) -->
+    <script src="https://unpkg.com/@supabase/supabase-js@2" defer></script>
+    <script src="/Projeto/4-java/supabase-init.js" defer></script>
+    <script src="/Projeto/4-java/login-ui.js" defer></script>
+    <script src="/Projeto/4-java/login.js" defer></script>
     <script type="module" src="/Projeto/4-java/headerAuth.js"></script><!-- lik para identificação de login de user-->
    
 
@@ -196,119 +200,6 @@
         </div>
     </footer>
    
-<script>
-// Utilitários
-const onlyDigits = v => (v||'').replace(/\D+/g,'');
-const maskCPF = v => {
-  let s = onlyDigits(v).slice(0,11);
-  return s.replace(/(\d{3})(\d)/,'$1.$2')
-          .replace(/(\d{3})(\d)/,'$1.$2')
-          .replace(/(\d{3})(\d{1,2})$/,'$1-$2');
-};
-
-// Toggle do painel "Esqueci minha senha"
-const forgotLink = document.querySelector('.forgot');
-const forgotPane = document.getElementById('forgotPane');
-forgotLink?.addEventListener('click', (e)=>{ e.preventDefault(); if(forgotPane) forgotPane.hidden = !forgotPane.hidden; });
-
-// Abas
-document.querySelectorAll('.tab-btn').forEach(btn=>{
-  btn.addEventListener('click', ()=>{
-    document.querySelectorAll('.tab').forEach(t=>t.hidden=true);
-    document.getElementById('tab-'+btn.dataset.tab).hidden=false;
-    document.querySelectorAll('.tab-btn').forEach(b=>b.classList.remove('active'));
-    btn.classList.add('active');
- 
-
-/* ... (mantém o código acima) ... */
-
-// Toggle do painel "Esqueci minha senha" (substitui o login)
-const forgotLink  = document.querySelector('.forgot');
-const forgotPane  = document.getElementById('forgotPane');
-const loginBlock  = document.getElementById('loginBlock');
-
-function activateTab(tab){ // 'cpf' ou 'ra'
-  document.querySelectorAll('.tab').forEach(t => t.hidden = true);
-  document.getElementById('tab-' + tab).hidden = false;
-  document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
-  document.querySelector(`.tab-btn[data-tab="${tab}"]`)?.classList.add('active');
-}
-
-function showForgot(defaultTab = 'cpf'){
-  if (forgotPane) forgotPane.hidden = false;
-  if (loginBlock) loginBlock.hidden = true;
-  activateTab(defaultTab);
-}
-
-function backToLogin(){
-  if (forgotPane) forgotPane.hidden = true;
-  if (loginBlock) loginBlock.hidden = false;
-}
-
-forgotLink?.addEventListener('click', (e) => {
-  e.preventDefault();
-  showForgot('cpf'); // abre já na aba "Redefinir por CPF"
-});
-
-// botão "Voltar ao login"
-document.getElementById('backToLogin')?.addEventListener('click', backToLogin);
-
-/* ... (mantém a seção "Abas", máscara CPF e o restante do script abaixo) ... */
-</script>
-
-// Máscara CPF
-document.getElementById('cpfRecovery')?.addEventListener('input', e=> e.target.value = maskCPF(e.target.value));
-
-// Buscar RA por nome
-document.getElementById('btnFindRA')?.addEventListener('click', async ()=>{
-  const name = (document.getElementById('fullNameRecovery')?.value || '').trim();
-  const hint = document.getElementById('raResult');
-  if(!name){ hint.textContent='Informe o nome completo.'; hint.className='msg err'; return; }
-  hint.textContent = 'Procurando...'; hint.className='msg';
-  try{
-    if(!window.supabase) throw new Error('Conexão indisponível.');
-    const { data, error } = await supabase.from('alunos').select('ra').ilike('nome', name).limit(1);
-    if(error || !data?.length){ hint.textContent='Nome não encontrado.'; hint.className='msg err'; return; }
-    hint.textContent = 'Seu RA é: ' + (data[0].ra || '(não cadastrado)'); hint.className='msg ok';
-  }catch(e){
-    console.error(e); hint.textContent='Não foi possível buscar o RA.'; hint.className='msg err';
-  }
-});
-
-// Redefinição por CPF -> manda e-mail do Auth
-document.getElementById('btnResetByCpf')?.addEventListener('click', async ()=>{
-  const cpf = onlyDigits(document.getElementById('cpfRecovery')?.value);
-  const hint = document.getElementById('cpfResult');
-  if(!cpf || cpf.length !== 11){ hint.textContent='CPF inválido.'; hint.className='msg err'; return; }
-  hint.textContent = 'Validando CPF...'; hint.className='msg';
-  try{
-    if(!window.supabase) throw new Error('Conexão indisponível.');
-    const { data, error } = await supabase.from('alunos').select('email').eq('cpf', cpf).single();
-    if(error || !data?.email){ hint.textContent='CPF não encontrado.'; hint.className='msg err'; return; }
-    const redirect = location.origin + '/Projeto/1-html/nova-senha.html';
-    const { error:resetErr } = await supabase.auth.resetPasswordForEmail(data.email, { redirectTo: redirect });
-    if(resetErr) throw resetErr;
-    hint.textContent = 'Enviamos o link de redefinição para ' + data.email + '.'; hint.className='msg ok';
-  }catch(e){
-    console.error(e);
-    const m = (e?.message || '').toLowerCase();
-    hint.textContent = m.includes('rate limit') ? 'Muitas tentativas. Aguarde e tente novamente.' : 'Não foi possível enviar o link.';
-    hint.className='msg err';
-  }
-});
-
-// (opcional) olho do campo senha, caso você ainda não tenha adicionado
-document.addEventListener('click', function (ev) {
-  const btn = ev.target.closest('.toggle-pass'); if (!btn) return;
-  const input = document.getElementById(btn.getAttribute('data-target')); if (!input) return;
-  input.type = input.type === 'password' ? 'text' : 'password';
-  const icon = btn.querySelector('i');
-  if (icon) icon.className = (input.type === 'password') ? 'fa-regular fa-eye' : 'fa-regular fa-eye-slash';
-});
-</script>
-
-<script src="https://unpkg.com/@supabase/supabase-js@2"></script>
-<script src="/Projeto/4-java/login.js"></script>
 
 </body>
 </html>

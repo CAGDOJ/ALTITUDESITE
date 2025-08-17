@@ -232,3 +232,6 @@ activateTab(tab) {
     if (closeBtn) closeBtn.addEventListener('click', () => (overlay.hidden = true));
   });
 })();
+
+    // Estado inicial do rodapé
+    try { updateFooterLink(); } catch(e){}

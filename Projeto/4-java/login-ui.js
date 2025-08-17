@@ -38,7 +38,7 @@ activateTab(tab) {
       // Volta para a aba de RA (e garante que nosso step1 suma)
       if (step1) { step1.hidden = true; step1.style.display = ''; }
       if (forgotPane) forgotPane.hidden = false;
-      if (title) title.textContent = 'Informe seu Login';
+      if (title) title.textContent = 'Descobrir RA';
 
       document.querySelectorAll('.tab').forEach(t => (t.hidden = true));
       const tgt = document.getElementById('tab-' + tab); if (tgt) tgt.hidden = false;
@@ -301,7 +301,7 @@ activateTab(tab) {
     const _origShowForgotRA = window.showForgotRA;
     window.showForgotRA = function(){
       try {
-        if (title) title.textContent = 'Informe seu Login';
+        if (title) title.textContent = 'Descobrir RA';
         if (step1) { step1.hidden = true; step1.style.display = ''; }
         if (loginBlock) loginBlock.hidden = true;         // quando em esquecer-senha, login fica escondido
         if (forgotPane) forgotPane.hidden = false;
@@ -329,7 +329,22 @@ activateTab(tab) {
     });
 
     // Observa mudanças para manter o texto do rodapé correto
-    const mo = new MutationObserver(updateFooterLink);
+    
+    // Força o comportamento do 'Voltar ao login' para retornar ao formulário padrão
+    const _origBackToLogin = window.backToLogin;
+    window.backToLogin = function(){
+      try {
+        if (title) title.textContent = 'Informe seu Login';
+        if (forgotPane) forgotPane.hidden = true;
+        const s1 = document.getElementById('resetStep1'); if (s1){ s1.hidden = true; s1.style.display = ''; }
+        const ov = document.getElementById('resetOverlay'); if (ov) ov.hidden = true;
+        if (loginBlock) loginBlock.hidden = false;
+      } catch(e){}
+      setFooterAsForgot();
+      updateFooterLink();
+      if (typeof _origBackToLogin === 'function') { try { _origBackToLogin(); } catch(e){} }
+    };
+const mo = new MutationObserver(updateFooterLink);
     mo.observe(document.body, { subtree:true, attributes:true, attributeFilter:['hidden','style','class'] });
     updateFooterLink();
   });

@@ -1,5 +1,4 @@
 
-
 window.addEventListener('DOMContentLoaded', () => {
   /* ---------- Seletores ---------- */
   const form   = document.getElementById('cadastroForm');

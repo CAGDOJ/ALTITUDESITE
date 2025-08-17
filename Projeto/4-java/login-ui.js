@@ -93,3 +93,237 @@
     });
   });
 })();
+
+
+// ===== 3-ETAPAS: confirmação (CPF+Nasc), nova senha, redirecionamento =====
+(function () {
+  const onlyDigits = v => (v || '').replace(/\D+/g, '');
+  const maskCPF = v => {
+    let s = onlyDigits(v).slice(0, 11);
+    return s.replace(/(\d{3})(\d)/, '$1.$2')
+            .replace(/(\d{3})(\d)/, '$1.$2')
+            .replace(/(\d{3})(\d{1,2})$/, '$1-$2');
+  };
+  const toYMD = (v) => {
+    // aceita "YYYY-MM-DD" do input date e também "DD/MM/YYYY"
+    if (!v) return '';
+    if (/^\d{4}-\d{2}-\d{2}$/.test(v)) return v;
+    const m = v.match(/^(\d{2})\/(\d{2})\/(\d{4})$/);
+    if (m) return `${m[3]}-${m[2]}-${m[1]}`;
+    return v;
+  };
+
+  // estado temporário
+  let foundUser = null; // { nome, email }
+
+  document.addEventListener('DOMContentLoaded', () => {
+    const sb = window.sb;
+    const title = document.getElementById('boxTitle');
+    const loginBlock = document.getElementById('loginBlock');
+    const step1 = document.getElementById('resetStep1');
+    const step1Msg = document.getElementById('resetStep1Msg');
+    const linkForgot = document.getElementById('linkForgot');
+    const cpfEl = document.getElementById('cpfReset');
+    const dobEl = document.getElementById('dobReset');
+
+    const overlay = document.getElementById('resetOverlay');
+    const helloName = document.getElementById('helloName');
+    const newPass = document.getElementById('newPass');
+    const newPass2 = document.getElementById('newPass2');
+    const btnDoReset = document.getElementById('btnDoReset');
+    const finalMsg = document.getElementById('resetFinalMsg');
+
+    function showStep1() {
+      // esconde bloco de login e mostra step1
+      if (title) title.textContent = 'Insira suas informações para redefinir';
+      if (loginBlock) loginBlock.hidden = true;
+      if (document.getElementById('forgotPane')) document.getElementById('forgotPane').hidden = true;
+      if (step1) step1.hidden = false;
+      step1Msg.textContent = '';
+    }
+    function backToLogin() {
+      if (title) title.textContent = 'Informe seu Login';
+      if (loginBlock) loginBlock.hidden = false;
+      if (step1) step1.hidden = true;
+      if (overlay) overlay.hidden = true;
+    }
+    function openOverlay(name) {
+      helloName.textContent = `Olá ${name}`;
+      overlay.hidden = false;
+      finalMsg.textContent = '';
+      newPass.value = '';
+      newPass2.value = '';
+      // armazena para retorno via e-mail recovery
+      try {
+        localStorage.setItem('pendingResetName', name);
+        localStorage.setItem('pendingResetEmail', foundUser?.email || '');
+      } catch(e) {}
+    }
+    function closeOverlay() {
+      overlay.hidden = true;
+    }
+
+    if (linkForgot) linkForgot.addEventListener('click', (e) => {
+      e.preventDefault();
+      showStep1();
+    });
+    const cancelBtn = document.getElementById('btnResetCancel');
+    if (cancelBtn) cancelBtn.addEventListener('click', backToLogin);
+    const closeBtn = document.getElementById('resetClose');
+    if (closeBtn) closeBtn.addEventListener('click', closeOverlay);
+
+    if (cpfEl) cpfEl.addEventListener('input', e => e.target.value = maskCPF(e.target.value));
+
+    // Etapa 1: confirmar por CPF + nascimento
+    const btnConfirm = document.getElementById('btnResetConfirm');
+    if (btnConfirm) btnConfirm.addEventListener('click', async () => {
+      step1Msg.textContent = '';
+      const cpfDigits = onlyDigits(cpfEl?.value || '');
+      const birthYMD = toYMD(dobEl?.value || '');
+
+      if (!cpfDigits || cpfDigits.length !== 11) {
+        step1Msg.textContent = 'Informe um CPF válido.';
+        step1Msg.className = 'msg err';
+        return;
+      }
+      if (!birthYMD) {
+        step1Msg.textContent = 'Informe a data de nascimento.';
+        step1Msg.className = 'msg err';
+        return;
+      }
+      if (!window.sb) {
+        step1Msg.textContent = 'Conexão indisponível.';
+        step1Msg.className = 'msg err';
+        return;
+      }
+      btnConfirm.disabled = true; btnConfirm.textContent = 'Validando...';
+      try {
+        // Tenta checar por duas colunas possíveis: "nascimento" OU "data_nascimento"
+        let resp = await sb.from('alunos').select('nome,email,nascimento,data_nascimento')
+          .eq('cpf', cpfDigits).limit(1);
+        if (resp.error) throw resp.error;
+        let row = (resp.data && resp.data[0]) || null;
+
+        if (!row) {
+          step1Msg.textContent = 'CPF não encontrado.';
+          step1Msg.className = 'msg err';
+          return;
+        }
+        // normaliza possíveis formatos
+        const stored = row.nascimento || row.data_nascimento || '';
+        const storedYMD = toYMD(String(stored));
+        if (!storedYMD || storedYMD !== birthYMD) {
+          step1Msg.textContent = 'Data de nascimento não confere.';
+          step1Msg.className = 'msg err';
+          return;
+        }
+        foundUser = { nome: row.nome || 'aluno(a)', email: String(row.email||'').toLowerCase() };
+        // Abre a sobreposição com "Olá Fulano"
+        openOverlay(foundUser.nome);
+      } catch (e) {
+        console.error(e);
+        step1Msg.textContent = 'Não foi possível validar os dados.';
+        step1Msg.className = 'msg err';
+      } finally {
+        btnConfirm.disabled = false; btnConfirm.textContent = 'Confirmar';
+      }
+    });
+
+    // Validação simples de senha igual
+    function checkMatch() {
+      const msg = document.getElementById('match-ok');
+      if (!msg) return;
+      if (newPass.value && newPass2.value) {
+        if (newPass.value === newPass2.value && newPass.value.length >= 6) {
+          msg.textContent = 'Senha Válida ✔️';
+          msg.className = 'msg ok';
+        } else {
+          msg.textContent = 'As senhas não coincidem (mínimo 6 caracteres).';
+          msg.className = 'msg err';
+        }
+      } else {
+        msg.textContent = '';
+      }
+    }
+    if (newPass) newPass.addEventListener('input', checkMatch);
+    if (newPass2) newPass2.addEventListener('input', checkMatch);
+
+    // Utilitário: detecta se já temos sessão de recuperação
+    async function hasRecoverySession() {
+      try {
+        // quando o usuário volta do e-mail, a URL traz type=recovery e há uma sessão temporária
+        const hash = location.hash || '';
+        if (hash.includes('type=recovery')) return true;
+        const { data } = await sb.auth.getSession();
+        // na recuperação, costuma haver uma session temporária também
+        return !!data?.session;
+      } catch (e) { return false; }
+    }
+
+    // Etapa 2: salvar nova senha
+    if (btnDoReset) btnDoReset.addEventListener('click', async () => {
+      finalMsg.textContent = '';
+      const p1 = newPass.value.trim();
+      const p2 = newPass2.value.trim();
+      if (!p1 || p1.length < 6) {
+        finalMsg.textContent = 'A senha deve ter pelo menos 6 caracteres.';
+        finalMsg.className = 'msg err';
+        return;
+      }
+      if (p1 !== p2) {
+        finalMsg.textContent = 'As senhas não coincidem.';
+        finalMsg.className = 'msg err';
+        return;
+      }
+      if (!foundUser?.email) {
+        finalMsg.textContent = 'Não foi possível identificar o aluno.';
+        finalMsg.className = 'msg err';
+        return;
+      }
+
+      btnDoReset.disabled = true; btnDoReset.textContent = 'Salvando...';
+      try {
+        if (await hasRecoverySession()) {
+          // Já temos sessão de recuperação ativa -> podemos atualizar direto
+          const { error } = await sb.auth.updateUser({ password: p1 });
+          if (error) throw error;
+          finalMsg.textContent = 'Senha alterada com sucesso! Redirecionando...';
+          finalMsg.className = 'msg ok';
+          setTimeout(() => {
+            window.location.href = '/Projeto/1-html/11-portaldoaluno.html';
+          }, 800);
+        } else {
+          // Sem sessão de recuperação: enviamos o e-mail automático e explicamos
+          const redirect = location.origin + location.pathname + '#type=recovery';
+          const { error } = await sb.auth.resetPasswordForEmail(foundUser.email, { redirectTo: redirect });
+          if (error) throw error;
+          finalMsg.innerHTML = 'Enviamos um link para <b>' + foundUser.email +
+            '</b>. Abra-o e você voltará para esta tela; então clique novamente em "Salvar nova senha".';
+          finalMsg.className = 'msg ok';
+        }
+      } catch (e) {
+        console.error(e);
+        const m = (e?.message || '').toLowerCase();
+        finalMsg.textContent = m.includes('rate limit') ? 'Muitas tentativas. Aguarde alguns minutos.' : 'Não foi possível alterar a senha.';
+        finalMsg.className = 'msg err';
+      } finally {
+        btnDoReset.disabled = false; btnDoReset.textContent = 'Salvar nova senha';
+      }
+    });
+
+    // Caso o usuário tenha voltado de um link de recuperação, reabrimos o modal
+    (async function resumeIfRecovery() {
+      try {
+        const fromRecovery = (location.hash || '').includes('type=recovery');
+        if (!fromRecovery) return;
+        // recarrega as infos armazenadas
+        const name = localStorage.getItem('pendingResetName') || 'aluno(a)';
+        if (title) title.textContent = 'Insira suas informações para redefinir';
+        if (loginBlock) loginBlock.hidden = true;
+        if (step1) step1.hidden = false;
+        // pula direto para a sobreposição para o usuário só digitar a senha
+        openOverlay(name);
+      } catch(e){}
+    })();
+  });
+})();

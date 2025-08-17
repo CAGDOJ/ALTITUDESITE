@@ -9,6 +9,7 @@
   };
 
   document.addEventListener('DOMContentLoaded', () => {
+    function hardBackToLogin(){ try{ location.hash=''; }catch(e){} location.reload(); }
     const form       = document.querySelector('form.login-form');
     const loginBlock = document.getElementById('loginBlock');   // bloco com RA, senha e ENTRAR
     const forgotPane = document.getElementById('forgotPane');   // painel de recuperação
@@ -127,6 +128,7 @@ activateTab(tab) {
     return v;
   };
   document.addEventListener('DOMContentLoaded', () => {
+    function hardBackToLogin(){ try{ location.hash=''; }catch(e){} location.reload(); }
     const sb = window.sb;
     const cpfEl = document.getElementById('cpfReset');
     const dobEl = document.getElementById('dobReset');
@@ -240,6 +242,7 @@ activateTab(tab) {
 // ===== FINAL OVERRIDE (robusto) =====
 (function(){
   document.addEventListener('DOMContentLoaded', () => {
+    function hardBackToLogin(){ try{ location.hash=''; }catch(e){} location.reload(); }
     const forgotLinks = Array.from(document.querySelectorAll('.forgot, .login-options .forgot'));
     const title = document.getElementById('boxTitle') || document.querySelector('.login-title');
     const loginBlock = document.getElementById('loginBlock') || document.querySelector('.login-form')?.closest('div');
@@ -249,7 +252,7 @@ activateTab(tab) {
     function setFooterAsBack(){
       (forgotLinks||[]).forEach(fl => { if (!fl) return;
         fl.textContent = 'Voltar ao login';
-        fl.onclick = ev => { ev.preventDefault(); backToLogin(); };
+        fl.onclick = ev => { ev.preventDefault(); hardBackToLogin(); };
       });
     }
     function setFooterAsForgot(){
@@ -316,6 +319,7 @@ activateTab(tab) {
       } catch(e){}
       setFooterAsBack();
       if (typeof _origShowForgotRA === 'function') { try { _origShowForgotRA(); } catch(e){} }
+      try { if (title) title.textContent = 'Descobrir RA'; } catch(e){}
     };
 
     // Botão "Esqueci minha senha" abre RA e já configura o rodapé
@@ -333,6 +337,7 @@ activateTab(tab) {
     // Força o comportamento do 'Voltar ao login' para retornar ao formulário padrão
     const _origBackToLogin = window.backToLogin;
     window.backToLogin = function(){
+      if (!document.getElementById('loginBlock')) { return hardBackToLogin(); }
       try {
         if (title) title.textContent = 'Informe seu Login';
         if (forgotPane) forgotPane.hidden = true;

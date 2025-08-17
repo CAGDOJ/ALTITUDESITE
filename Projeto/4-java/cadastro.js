@@ -89,6 +89,33 @@ function showFormMsg(type, text){
   formMsg.hidden = false;
   formMsg.textContent = text;
 }
+// ===== Tradução de erros do Supabase (Auth) =====
+function traduzErroAuth(err){
+  try{
+    const m = (err?.message || '').toLowerCase();
+    const s = err?.status || err?.cause?.status;
+
+    if (m.includes('user already registered') || s === 409 || s === 422)
+      return 'E-mail já cadastrado. Faça login ou use “Esqueci minha senha”.';
+
+    if (m.includes('invalid email'))
+      return 'E-mail inválido. Verifique o endereço.';
+
+    if (m.includes('password') && (m.includes('weak') || m.includes('short')))
+      return 'Senha inválida. Use pelo menos 8 caracteres.';
+
+    if (m.includes('rate limit') || s === 429)
+      return 'Muitas tentativas. Aguarde e tente novamente.';
+
+    if (s >= 500)
+      return 'Serviço indisponível no momento. Tente novamente em instantes.';
+
+    return 'Não foi possível concluir o cadastro. Tente novamente.';
+  }catch(_){
+    return 'Não foi possível concluir o cadastro. Tente novamente.';
+  }
+}
+
 
 // ===== Consulta Supabase (duplicidade) =====
 async function checkCPFExists(rawDigits){
@@ -174,12 +201,24 @@ form.addEventListener("submit", async (e)=>{
   if(emailUsed){ setErr(emailEl,fb.email,"E-mail já cadastrado."); }
   if(cpfUsed || emailUsed){ showFormMsg("error","Existem campos com erro. Corrija-os para continuar."); toggleSubmit(); return; }
 
-  // salva no Supabase
-  try{
-    if(!window.supabase) throw new Error("Conexão com o banco não encontrada.");
+  } catch (err) {
+  console.error(err);
 
-    btnEnviar.textContent = "Enviando…";
-    btnEnviar.disabled = true;
+  // Se o Auth acusar usuário já registrado, destacar o campo de e-mail
+  if ((err?.message || '').toLowerCase().includes('user already registered')
+      || err?.status === 409 || err?.status === 422) {
+    setErr(emailEl, fb.email, 'E-mail já cadastrado.');
+  }
+
+  // Mensagem amigável em PT-BR na faixa
+  const msgPT = traduzErroAuth(err);
+  showFormMsg('error', 'Erro no envio: ' + msgPT);
+
+  // Restaurar botão/estado do form
+  btnEnviar.textContent = 'Enviar';
+  btnEnviar.disabled = false;
+  toggleSubmit();
+}
 
     // 1) cria usuário de autenticação
     const { data:auth, error:authError } = await supabase.auth.signUp({
@@ -205,6 +244,7 @@ form.addEventListener("submit", async (e)=>{
     console.error(err);
     const msg = (err && err.message) ? err.message : "Não foi possível concluir o cadastro.";
     showFormMsg("error", "Erro no envio: " + msg);
+    
     btnEnviar.textContent = "Enviar";
     btnEnviar.disabled = false;
     toggleSubmit();

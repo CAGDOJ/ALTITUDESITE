@@ -46,6 +46,16 @@
       document.head.appendChild(style);
     })();
 
+    // Esconde qualquer 'Voltar ao login' DENTRO do Step1 (mantém só o do rodapé)
+    (function hideBackInsideStep1(){
+      try {
+        const style = document.createElement('style');
+        style.textContent = '#resetStep1 #backToLogin, #resetStep1 .link-back, #resetStep1 a.forgot{display:none!important}';
+        document.head.appendChild(style);
+      } catch(e){}
+    })();
+
+
     // Nome (Descobrir RA) -> CAIXA ALTA sem acentos
     (function bindNameUpper(){
       const nameEl = document.getElementById('fullNameRecovery');
@@ -88,6 +98,26 @@
         <small id="resetStep1Msg" class="msg"></small>
       `;
       (forgotPane?.parentNode || document.body).insertBefore(sec, (forgotPane ? forgotPane.nextSibling : null));
+    
+    // Garante que as abas "Descobrir RA | Redefinir por CPF" existam acima do CPF
+    function ensureStep1Tabs(){
+      const step = document.getElementById('resetStep1'); if (!step) return;
+      let tabs = step.querySelector('.tabs');
+      if (!tabs) {
+        tabs = document.createElement('div');
+        tabs.className = 'tabs';
+        tabs.style.marginBottom = '8px';
+        tabs.innerHTML = '<button class="tab-btn" data-tab="ra" id="goRA2">Descobrir RA</button>\
+                          <button class="tab-btn active" data-tab="cpf" id="goCPF2">Redefinir por CPF</button>';
+        step.insertBefore(tabs, step.firstChild);
+      }
+      const goRA2  = document.getElementById('goRA2');
+      const goCPF2 = document.getElementById('goCPF2');
+      if (goRA2 && !goRA2._wired){ goRA2._wired = true; goRA2.addEventListener('click', e => { e.preventDefault(); showForgotRA(); }); }
+      if (goCPF2 && !goCPF2._wired){ goCPF2._wired = true; goCPF2.addEventListener('click', e => { e.preventDefault(); showStep1(); }); }
+      // marca a aba ativa (CPF quando estamos no Step1)
+      try { goRA2?.classList.remove('active'); goCPF2?.classList.add('active'); } catch(e){}
+    }
     }
     function ensureOverlay(){
       if (document.getElementById('resetOverlay')) return;
@@ -123,6 +153,7 @@
       document.body.appendChild(wrap);
     }
     ensureStep1();
+    try{ ensureStep1Tabs(); }catch(e){}
     ensureOverlay();
 
     const step1        = document.getElementById('resetStep1');
@@ -162,6 +193,7 @@
 
     // ---------- Navegação ----------
     function showStep1(){
+      try{ ensureStep1Tabs(); }catch(e){}
       if (title) title.textContent = 'Insira suas informações para redefinir';
       if (loginBlock) loginBlock.hidden = true;
       if (forgotPane) forgotPane.hidden = true;

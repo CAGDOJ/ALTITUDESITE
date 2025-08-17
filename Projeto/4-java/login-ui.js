@@ -44,7 +44,7 @@
       const style = document.createElement('style');
       style.textContent = '#forgotPane #backToLogin, #forgotPane .link-back{display:none!important}';
       document.head.appendChild(style);
-    })();
+    )();
 
     // Nome (Descobrir RA) -> CAIXA ALTA sem acentos
     (function bindNameUpper(){
@@ -60,7 +60,7 @@
         }
       });
       nameEl.addEventListener('blur',  () => { nameEl.value = sanitizeNameUpper(nameEl.value).trim(); });
-    })();
+    )();
 
     // ---------- Step1 (CPF + Data) & Modal (Nova Senha) ----------
     function ensureStep1(){
@@ -141,13 +141,15 @@
 
     // ---------- Rodapé ----------
     function setFooterAsBack(){
-      forgotLinks.forEach(fl => { if (!fl) return;
+      const links = Array.from(document.querySelectorAll('.forgot, .login-options .forgot'));
+      links.forEach(fl => { if (!fl) return;
         fl.textContent = 'Voltar ao login';
         fl.onclick = ev => { ev.preventDefault(); backToLogin(); };
       });
     }
     function setFooterAsForgot(){
-      forgotLinks.forEach(fl => { if (!fl) return;
+      const links = Array.from(document.querySelectorAll('.forgot, .login-options .forgot'));
+      links.forEach(fl => { if (!fl) return;
         fl.textContent = 'Esqueci minha senha';
         fl.onclick = ev => { ev.preventDefault(); showForgotRA(); };
       });
@@ -170,6 +172,7 @@
       if (goRA2 && !goRA2._wired){ goRA2._wired = true; goRA2.addEventListener('click', e => { e.preventDefault(); showForgotRA(); }); }
       if (goCPF2 && !goCPF2._wired){ goCPF2._wired = true; goCPF2.addEventListener('click', e => { e.preventDefault(); showStep1(); }); }
       updateFooterLink();
+      rebindForgotLinks();
     }
     function showForgotRA(){
       if (title) title.textContent = 'Descobrir RA';
@@ -183,6 +186,7 @@
         document.querySelector('.tab-btn[data-tab="ra"]')?.classList.add('active');
       } catch(e){}
       updateFooterLink();
+      rebindForgotLinks();
     }
     function backToLogin(){
       if (title) title.textContent = 'Informe seu Login';
@@ -191,10 +195,11 @@
       if (overlay) overlay.hidden = true;
       if (loginBlock) loginBlock.hidden = false;
       updateFooterLink();
+      rebindForgotLinks();
     }
 
     // Footer: abre RA quando está no login; volta ao login quando está no RA/CPF
-    (function rebindForgotLinks() {
+    function rebindForgotLinks() {
       forgotLinks.forEach(link => {
         const clone = link.cloneNode(true);
         clone.removeAttribute('onclick');
@@ -207,7 +212,7 @@
           setTimeout(() => { try { updateFooterLink(); } catch(e){} }, 0);
         });
       });
-    })();
+    )();
 
     // Clicar na aba "Redefinir por CPF" SEMPRE abre o Step1
     document.addEventListener('click', function(e){
@@ -308,6 +313,6 @@
           overlay.hidden = false;
         }
       } catch(e){}
-    })();
+    )();
   });
-})();
+)();

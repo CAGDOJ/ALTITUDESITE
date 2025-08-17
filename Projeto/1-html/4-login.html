@@ -13,7 +13,7 @@
     <!--Links para outros arquivos-->
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
     <link rel="stylesheet" href="/Projeto/2-css/4-login.css"> <!-- Link para o CSS atualizado -->
-    <script type="module" src="/Projeto/4-java/supabaseClient.js"></script><!-- Link para o Spbase -->
+    
     <script type="module" src="/Projeto/4-java/headerAuth.js"></script><!-- lik para identificação de login de user-->
     <script src="/Projeto/4-java/login.js"></script>
 
@@ -219,7 +219,7 @@ document.querySelectorAll('.tab-btn').forEach(btn=>{
     document.querySelectorAll('.tab-btn').forEach(b=>b.classList.remove('active'));
     btn.classList.add('active');
   <script>
-    
+
 /* ... (mantém o código acima) ... */
 
 // Toggle do painel "Esqueci minha senha" (substitui o login)
@@ -307,6 +307,8 @@ document.addEventListener('click', function (ev) {
 });
 </script>
 
+<script src="https://unpkg.com/@supabase/supabase-js@2"></script>
+<script src="/Projeto/4-java/login.js"></script>
+
 </body>
-   
 </html>

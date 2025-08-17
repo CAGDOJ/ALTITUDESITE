@@ -54,8 +54,8 @@
 
   document.addEventListener('DOMContentLoaded', () => {
     const form = document.querySelector('form.login-form'); // <- seu HTML
-    const userEl = document.getElementById('ra');           // RA/CPF/E-mail
-    const passEl = document.getElementById('senha');        // Senha
+    const emailEl = document.getElementById('ra'); // aqui vai RA/CPF/E-mail           // RA/CPF/E-mail
+    const passEl  = document.getElementById('senha');        // Senha
     const btn    = document.querySelector('.btn-login');
 
     if (!form || !userEl || !passEl) {

@@ -242,6 +242,24 @@ activateTab(tab) {
 // ===== FINAL OVERRIDE (robusto) =====
 (function(){
   document.addEventListener('DOMContentLoaded', () => {
+    // Remove antigos listeners do link '.forgot' clonando o elemento e adiciona apenas o handler seguro
+    function rebindForgotLinks() {
+      const links = Array.from(document.querySelectorAll('.forgot, .login-options .forgot'));
+      links.forEach(link => {
+        const clone = link.cloneNode(true);
+        clone.removeAttribute('onclick');
+        link.parentNode.replaceChild(clone, link);
+        clone.addEventListener('click', ev => {
+          ev.preventDefault();
+          ev.stopImmediatePropagation();
+          showForgotRA();
+          // Deixa o rodapé como 'Voltar ao login' só no próximo tick
+          setTimeout(() => { try { updateFooterLink();
+    rebindForgotLinks(); } catch(e){} }, 0);
+        }, { capture: false });
+      });
+    }
+
     function hardBackToLogin(){ try{ location.hash=''; }catch(e){} location.reload(); }
     const forgotLinks = Array.from(document.querySelectorAll('.forgot, .login-options .forgot'));
     const title = document.getElementById('boxTitle') || document.querySelector('.login-title');

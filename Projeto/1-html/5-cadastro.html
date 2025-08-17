@@ -81,83 +81,90 @@
     <!-- Conteúdo Principal -->
     <!------------------------------>
 
-      <form id="cadastroForm">
-        <!-- Nome -->
-        <label for="name">Nome completo</label>
-        <input id="name" type="text" autocomplete="name">
-        <small class="hint">Digite seu nome completo.</small>
-        <small id="name_fb" class="feedback"></small>
+      
+  <main class="login-container" id="register-card">
+    <h1 class="login-title">Comece agora gratuitamente</h1>
 
-        <!-- CPF -->
+    <!-- Mensagem geral (erros de servidor etc.) -->
+    <div id="form-msg" class="form-alert" aria-live="polite" hidden></div>
+
+    <form id="form-cadastro" novalidate>
+      <div class="form-group">
+        <label for="nome">Nome completo</label>
+        <input id="nome" name="name" type="text" autocomplete="name" placeholder="Digite seu nome completo" required />
+        <small class="feedback" id="fb-nome" aria-live="polite"></small>
+      </div>
+
+      <div class="form-group">
         <label for="cpf">CPF</label>
-        <input id="cpf" type="text" inputmode="numeric" placeholder="000.000.000-00">
-        <small class="hint">CPF no formato 000.000.000-00.</small>
-        <small id="cpf_fb" class="feedback"></small>
+        <input id="cpf" name="cpf" inputmode="numeric" autocomplete="off" placeholder="000.000.000-00" required />
+        <small class="feedback" id="fb-cpf" aria-live="polite"></small>
+      </div>
 
-        <!-- E-mail -->
+      <div class="form-group">
         <label for="email">E-mail</label>
-        <input id="email" type="email" autocomplete="email">
-        <small class="hint">Aceitamos qualquer domínio válido. Ex.: nome@dominio.com</small>
-        <small id="email_fb" class="feedback"></small>
+        <input id="email" name="email" type="email" autocomplete="email" placeholder="seunome@gmail.com" required />
+        <small class="feedback" id="fb-email" aria-live="polite"></small>
+      </div>
 
-        <!-- Senha -->
-        <label for="password">Senha</label>
-        <div class="input-wrap">
-            <input id="password" type="password" minlength="8" autocomplete="new-password">
-            <button class="eye" type="button" aria-label="Mostrar senha" data-target="password"></button>
-        </div>
-        <small class="hint">Mínimo de 8 caracteres.</small>
-        <small id="pass1_fb" class="feedback"></small>
+      <div class="form-group has-icon">
+        <label for="senha">Senha</label>
+        <input id="senha" name="password" type="password" autocomplete="new-password" placeholder="Mínimo 8 caracteres" minlength="8" required />
+        <button type="button" class="toggle-pass" data-target="senha" aria-label="Mostrar/ocultar senha">
+          <i class="fa-regular fa-eye"></i>
+        </button>
+        <small class="feedback" id="fb-senha" aria-live="polite"></small>
+      </div>
 
-        <!-- Confirmar Senha -->
-        <label for="password2">Confirme a senha</label>
-        <div class="input-wrap">
-            <input id="password2" type="password" minlength="8" autocomplete="new-password">
-            <button class="eye" type="button" aria-label="Mostrar senha" data-target="password2"></button>
-        </div>
-        <small class="hint">Repita a senha exatamente igual.</small>
-        <small id="pass2_fb" class="feedback"></small>
+      <div class="form-group has-icon">
+        <label for="confirma">Confirme a senha</label>
+        <input id="confirma" name="confirm" type="password" autocomplete="new-password" placeholder="Repita a senha" minlength="8" required />
+        <button type="button" class="toggle-pass" data-target="confirma" aria-label="Mostrar/ocultar senha">
+          <i class="fa-regular fa-eye"></i>
+        </button>
+        <small class="feedback" id="fb-confirma" aria-live="polite"></small>
+      </div>
 
-        <!-- Telefone -->
-        <label for="phone">Telefone (WhatsApp) — com DDD</label>
-        <input id="phone" type="tel" inputmode="numeric" placeholder="(00) 00000-0000">
-        <small class="hint">Informe DDD + número (11 dígitos).</small>
-        <small id="phone_fb" class="feedback"></small>
+      <div class="form-group">
+        <label for="telefone">Telefone (WhatsApp) — com DDD</label>
+        <input id="telefone" name="tel" inputmode="tel" autocomplete="tel-national" placeholder="(00) 00000-0000" required />
+        <small class="feedback" id="fb-telefone" aria-live="polite"></small>
+      </div>
 
-        <!-- Objetivo -->
-        <label for="objetivo">Objetivo</label>
-        <select id="objetivo" required>
-        <option value="">Selecione seu objetivo</option>
-        <option value="primeiro-emprego">Conseguir meu primeiro emprego</option>
-        <option value="recolocacao">Recolocação no mercado de trabalho</option>
-        <option value="promocao">Crescimento profissional / Promoção</option>
-        <option value="concursos">Estudar para concursos</option>
-        <option value="atualizacao">Atualização de conhecimentos</option>
-        <option value="mudanca-carreira">Mudança de área / carreira</option>
-        <option value="universidade">Preparação para universidade</option>
-        <option value="empreender">Abrir ou melhorar meu próprio negócio</option>
-        <option value="tecnologia">Aprender novas tecnologias</option>
-        <option value="idiomas">Aprender idiomas</option>
-        <option value="certificacao">Conquistar certificações profissionais</option>
-        <option value="outro">Outro</option>
+      <div class="form-group">
+        <label for="objetivo">Qual seu objetivo?</label>
+        <select id="objetivo" name="objetivo" required>
+          <option value="" selected disabled>Selecione…</option>
+          <option>Certificado para horas complementares</option>
+          <option>Aprender um novo tema</option>
+          <option>Reciclagem profissional</option>
         </select>
-        <small id="objetivo-msg"></small>
+        <small class="feedback" id="fb-objetivo" aria-live="polite"></small>
+      </div>
 
-        <!-- Termos -->
-        <label class="chk">
-            <input id="terms" type="checkbox">
-            Li e concordo com os <a href="/Projeto/1-html/contrato.html" target="_blank">Termos</a> e a
-            <a href="/Projeto/1-html/politicadeprivacidade.html" target="_blank">Política de Privacidade</a>.
+      <div class="terms">
+        <label class="check">
+          <input id="termos" type="checkbox" checked />
+          <span>Eu li e concordo com os <a href="/termos" target="_blank">Termos de Contrato</a> e a
+            <a href="/privacidade" target="_blank">Política de Privacidade</a>.</span>
         </label>
-        <small id="terms_fb" class="feedback"></small>
+      </div>
 
-        <small id="msg" class="feedback geral"></small>
-        <button id="submitBtn" class="btn" disabled>Cadastrar</button>
-        </form>
+      <button id="btn-enviar" class="btn-login" type="submit" disabled>Enviar</button>
+
+      <div class="login-options">
+        <span>Já tenho uma conta — <a href="/Projeto/1-html/4-login.html">Fazer login</a></span>
+      </div>
+    </form>
+  </main>
+
+  <script type="module" src="/Projeto/4-java/cadastro.js"></script>
+</body>
 
 
-            <p id="feedback"></p>
-        </div>
+        
+
+        
 
 
 

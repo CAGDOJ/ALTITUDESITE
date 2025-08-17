@@ -9,6 +9,35 @@
   };
 
   document.addEventListener('DOMContentLoaded', () => {
+
+    function ensureStep1(){
+      if (document.getElementById('resetStep1')) return;
+      const fp = document.getElementById('forgotPane');
+      const sec = document.createElement('section');
+      sec.id = 'resetStep1';
+      sec.className = 'forgot-pane';
+      sec.hidden = true;
+      sec.innerHTML = `
+        <div class="tabs" style="margin-bottom:8px;">
+          <button class="tab-btn" data-tab="ra" id="goRA2">Descobrir RA</button>
+          <button class="tab-btn active" data-tab="cpf" id="goCPF2">Redefinir por CPF</button>
+        </div>
+        <div class="form-group">
+          <label for="cpfReset">CPF</label>
+          <input id="cpfReset" type="text" placeholder="000.000.000-00" inputmode="numeric" autocomplete="off">
+        </div>
+        <div class="form-group">
+          <label for="dobReset">Data de nascimento</label>
+          <input id="dobReset" type="date" placeholder="dd/mm/aaaa">
+        </div>
+        <div class="forgot-actions" style="justify-content:center;">
+          <button type="button" id="btnResetConfirm" class="btn-login">Confirmar</button>
+        </div>
+        <small id="resetStep1Msg" class="msg"></small>
+      `;
+      (fp?.parentNode || document.body).insertBefore(sec, (fp ? fp.nextSibling : null));
+    }
+    
     const form       = document.querySelector('form.login-form');
     const loginBlock = document.getElementById('loginBlock');   // bloco com RA, senha e ENTRAR
     const forgotPane = document.getElementById('forgotPane');   // painel de recuperação
@@ -33,9 +62,19 @@
       document.querySelectorAll('.tab').forEach(t => (t.hidden = true));
       const tgt = document.getElementById('tab-' + tab); if (tgt) tgt.hidden = false;
       document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+    // intercept cpf tab to showStep1
+    document.querySelectorAll('.tab-btn[data-tab="cpf"]').forEach(btn => {
+      btn.addEventListener('click', (e) => {
+        e.preventDefault();
+        e.stopImmediatePropagation();
+        try { showStep1(); } catch(err){}
+      }, true); // capture to beat default handlers
+    });
+    
       const b = document.querySelector('.tab-btn[data-tab="' + tab + '"]'); if (b) b.classList.add('active');
     }
     function showForgot(defaultTab = 'cpf') {
+      try { const t = document.getElementById('boxTitle') || document.querySelector('.login-title'); if (t && defaultTab==='ra') t.textContent = 'Descobrir RA'; } catch(e){}
       // Ajusta título conforme a aba
       try {
         const t = document.getElementById('boxTitle') || document.querySelector('.login-title');
@@ -124,4 +163,32 @@
         e.preventDefault(); backToLogin(); return;
       }
     }, true);
+    
+
+    // hide inline back inside forgotPane (keep only footer link)
+    (function hideInlineBack(){
+      const fp = document.getElementById('forgotPane');
+      if (!fp) return;
+      fp.querySelectorAll('#backToLogin, .link-back').forEach(el => { el.style.display = 'none'; el.setAttribute('aria-hidden','true'); });
+      const mo = new MutationObserver(() => {
+        fp.querySelectorAll('#backToLogin, .link-back').forEach(el => { el.style.display = 'none'; el.setAttribute('aria-hidden','true'); });
+      });
+      mo.observe(fp, { subtree:true, childList:true, attributes:true });
+    })();
+    
+
+    function showStep1(){
+      ensureStep1();
+      const title = document.getElementById('boxTitle') || document.querySelector('.login-title');
+      const loginBlock = document.getElementById('loginBlock') || document.querySelector('.login-form')?.closest('div');
+      const forgotPane = document.getElementById('forgotPane');
+      const step1 = document.getElementById('resetStep1');
+      if (title) title.textContent = 'Insira suas informações para redefinir';
+      if (loginBlock) loginBlock.hidden = true;
+      if (forgotPane) forgotPane.hidden = true;
+      if (step1) { step1.hidden = false; step1.style.display = 'block'; }
+      const goRA2 = document.getElementById('goRA2'); const goCPF2 = document.getElementById('goCPF2');
+      if (goRA2 && !goRA2._wired) { goRA2._wired = true; goRA2.addEventListener('click', e => { e.preventDefault(); showForgot('ra'); }, true); }
+      if (goCPF2 && !goCPF2._wired) { goCPF2._wired = true; goCPF2.addEventListener('click', e => { e.preventDefault(); showStep1(); }, true); }
+    }
     

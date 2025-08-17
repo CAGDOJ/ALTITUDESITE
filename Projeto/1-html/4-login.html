@@ -94,9 +94,12 @@
       <input type="text" id="ra" placeholder="Digite seu RA, CPF ou e-mail">
     </div>
 
-    <div class="form-group">
+    <div class="form-group has-icon">
       <label for="senha">Senha</label>
-      <input type="password" id="senha" placeholder="Digite sua senha">
+      <input type="password" id="senha" placeholder="Digite sua senha" autocomplete="current-password">
+      <button type="button" class="toggle-pass" data-target="senha" aria-label="Mostrar/ocultar senha">
+        <i class="fa-regular fa-eye"></i>
+      </button>
     </div>
 
     <button type="submit" class="btn-login">ENTRAR</button>
@@ -162,7 +165,23 @@
             <p>&copy;  2025 - Instituto de Educação e Tecnologia - Altitude</p>
         </div>
     </footer>
-   
+   <script>
+  // Toggle do olho: funciona para qualquer botão .toggle-pass (usa o data-target)
+  document.addEventListener('click', function (ev) {
+    const btn = ev.target.closest('.toggle-pass');
+    if (!btn) return;
+    const input = document.getElementById(btn.getAttribute('data-target'));
+    if (!input) return;
+
+    input.type = input.type === 'password' ? 'text' : 'password';
+    const icon = btn.querySelector('i');
+    if (icon) {
+      icon.className = (input.type === 'password')
+        ? 'fa-regular fa-eye'
+        : 'fa-regular fa-eye-slash';
+    }
+  });
+</script>
 
 </body>
    

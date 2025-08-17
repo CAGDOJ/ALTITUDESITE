@@ -235,3 +235,102 @@ activateTab(tab) {
 
     // Estado inicial do rodapé
     try { updateFooterLink(); } catch(e){}
+
+
+// ===== FINAL OVERRIDE (robusto) =====
+(function(){
+  document.addEventListener('DOMContentLoaded', () => {
+    const forgotLinks = Array.from(document.querySelectorAll('.forgot, .login-options .forgot'));
+    const title = document.getElementById('boxTitle') || document.querySelector('.login-title');
+    const loginBlock = document.getElementById('loginBlock') || document.querySelector('.login-form')?.closest('div');
+    const forgotPane = document.getElementById('forgotPane');
+    const step1 = document.getElementById('resetStep1');
+
+    function setFooterAsBack(){
+      (forgotLinks||[]).forEach(fl => { if (!fl) return;
+        fl.textContent = 'Voltar ao login';
+        fl.onclick = ev => { ev.preventDefault(); backToLogin(); };
+      });
+    }
+    function setFooterAsForgot(){
+      (forgotLinks||[]).forEach(fl => { if (!fl) return;
+        fl.textContent = 'Esqueci minha senha';
+        fl.onclick = ev => { ev.preventDefault(); showForgotRA(); };
+      });
+    }
+    function updateFooterLink(){
+      const s1 = !!(document.getElementById('resetStep1') && !document.getElementById('resetStep1').hidden);
+      const fp = !!(document.getElementById('forgotPane') && !document.getElementById('forgotPane').hidden);
+      (s1 || fp) ? setFooterAsBack() : setFooterAsForgot();
+    }
+
+    // Garante abas no topo do step1
+    function ensureStep1Tabs(){
+      const step = document.getElementById('resetStep1'); if (!step) return;
+      let tabs = step.querySelector('.tabs');
+      if (!tabs) {
+        tabs = document.createElement('div');
+        tabs.className = 'tabs';
+        tabs.style.marginBottom = '8px';
+        tabs.innerHTML = '<button class="tab-btn" data-tab="ra" id="goRA2">Descobrir RA</button>\
+                          <button class="tab-btn active" data-tab="cpf" id="goCPF2">Redefinir por CPF</button>';
+        step.insertBefore(tabs, step.firstChild);
+      }
+      const goRA2 = document.getElementById('goRA2');
+      const goCPF2 = document.getElementById('goCPF2');
+      if (goRA2 && !goRA2._wired) { goRA2._wired = true; goRA2.addEventListener('click', e => { e.preventDefault(); showForgotRA(); }); }
+      if (goCPF2 && !goCPF2._wired) { goCPF2._wired = true; goCPF2.addEventListener('click', e => { e.preventDefault(); showStep1(); }); }
+    }
+
+    // Reimplementa showStep1/showForgotRA se existirem no escopo global
+    const _origShowStep1 = window.showStep1;
+    window.showStep1 = function(){
+      try {
+        if (title) title.textContent = 'Insira suas informações para redefinir';
+        if (loginBlock) loginBlock.hidden = true;
+        if (forgotPane) forgotPane.hidden = true;
+        if (step1) { step1.hidden = false; step1.style.display = 'block'; }
+        ensureStep1Tabs();
+        document.getElementById('goRA2')?.classList.remove('active');
+        document.getElementById('goCPF2')?.classList.add('active');
+      } catch(e){}
+      setFooterAsBack();
+      if (typeof _origShowStep1 === 'function') { try { _origShowStep1(); } catch(e){} }
+    };
+
+    const _origShowForgotRA = window.showForgotRA;
+    window.showForgotRA = function(){
+      try {
+        if (title) title.textContent = 'Informe seu Login';
+        if (step1) { step1.hidden = true; step1.style.display = ''; }
+        if (loginBlock) loginBlock.hidden = true;         // quando em esquecer-senha, login fica escondido
+        if (forgotPane) forgotPane.hidden = false;
+        // ativa RA nas abas do painel principal
+        document.querySelectorAll('.tab').forEach(t => (t.hidden = true));
+        document.getElementById('tab-ra')?.removeAttribute('hidden');
+        document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+        document.querySelector('.tab-btn[data-tab="ra"]')?.classList.add('active');
+        // ativa RA nas abas do step1 (se existirem)
+        document.getElementById('goRA2')?.classList.add('active');
+        document.getElementById('goCPF2')?.classList.remove('active');
+      } catch(e){}
+      setFooterAsBack();
+      if (typeof _origShowForgotRA === 'function') { try { _origShowForgotRA(); } catch(e){} }
+    };
+
+    // Botão "Esqueci minha senha" abre RA e já configura o rodapé
+    (forgotLinks||[]).forEach(fl => {
+      fl.addEventListener('click', ev => { ev.preventDefault(); showForgotRA(); setFooterAsBack(); }, { capture:true });
+    });
+
+    // Se usuário clicar na aba "Redefinir por CPF" do painel principal, forçamos showStep1
+    document.querySelectorAll('.tab-btn[data-tab="cpf"]').forEach(btn => {
+      btn.addEventListener('click', (e) => { e.preventDefault(); showStep1(); }, { capture:true });
+    });
+
+    // Observa mudanças para manter o texto do rodapé correto
+    const mo = new MutationObserver(updateFooterLink);
+    mo.observe(document.body, { subtree:true, attributes:true, attributeFilter:['hidden','style','class'] });
+    updateFooterLink();
+  });
+})();

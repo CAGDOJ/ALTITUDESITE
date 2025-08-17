@@ -21,7 +21,7 @@ body {
     padding: 0; /* Remove preenchimento padrão */
     background-color: var(--branco); /* Define o fundo branco */
     line-height: 1.6; /* Define a altura da linha para melhor legibilidade */
-    overflow-x: hidden;
+    overflow-x: hidden; 
 }
 
 
@@ -53,12 +53,30 @@ h2 {
     color: var(--azul-escuro); /* Subtítulos em azul escuro */
 }
 
-/*---------------------/*
-/* FORMULARIO */
-/*--------------------- */
-/* Container centralizado 
 
-Inputs 
+/* FORMULARIO */
+/* Container centralizado */
+.login-container {
+  max-width: 400px;
+  margin: 50px auto;
+  padding: 25px;
+  background: #fff;
+  border: 1px solid #dcdcdc;
+  border-radius: 6px;
+  box-shadow: 0 4px 12px var(--cinza-escuro);
+  text-align: center;
+}
+
+/* Título do formulário */
+.login-title {
+  font-family: 'Segoe UI', sans-serif; /* mesma fonte do cabeçalho */
+  font-size: 1.4rem;
+  font-weight: 600;
+  color: var(--azul-claro); /* azul padrão Altitude */
+  margin-bottom: 20px;
+}
+
+/* Inputs */
 .form-group {
   text-align: left;
   margin-bottom: 20px;
@@ -95,7 +113,7 @@ Inputs
   outline: none;
 }
 
-
+/* Botão Login */
 .btn-login {
   width: 100%;
   padding: 12px;
@@ -113,7 +131,7 @@ Inputs
   background: var(--azul-escuro);
 }
 
-
+/* Opções abaixo */
 .login-options {
   margin-top: 14px;
 }
@@ -126,130 +144,7 @@ Inputs
 
 .login-options a:hover {
   text-decoration: underline;
-}*/
-
-.cadastro-container { /*quadrado do form*/
-  max-width: 400px;
-  margin: 50px auto;
-  padding: 25px;
-  background: #fff;
-  border: 1px solid #dcdcdc;
-  border-radius: 6px;
-  box-shadow: 0 4px 12px var(--cinza-escuro);
-  text-align: left;
 }
-
-.cadastro-container h2 { /*cabeçalho do form*/
-  font-family: 'Segoe UI', sans-serif; 
-  font-size: 1.4rem;
-  font-weight: 600;
-  color: var(--azul-claro); 
-  margin-bottom: 20px;
-}
-
-label {
-  font-size: 1.0 rem;
-  font-weight: 40;
-  color: #444;
-  margin-bottom: 6px;
-  display: block;
-}
-
-input, textarea {
-  width: 100%;
-  padding: 10px;
-  margin-top: px;
-  border: 1px solid #ccc;
-  border-radius: 5px;
-  font-size: 14px;
-  box-sizing: border-box;
-}
-
-textarea {
-  resize: none;
-}
-
-.senha-wrapper {
-  position: relative;
-}
-
-.senha-wrapper .toggle-senha {
-  position: absolute;
-  right: 10px;
-  top: 50%;
-  transform: translateY(-50%);
-  cursor: pointer;
-  font-size: 14px;
-  color: #666;
-}
-
-.termos {
-  margin-top: 15px;
-}
-
-button {
-    width: 100%;
-  padding: 12px;
-  background: var(--azul-claro);
-  color: #fff;
-  font-size: 1rem;
-  font-weight: 600;
-  border: none;
-  border-radius: 4px;
-  cursor: pointer;
-  transition: background 0.3s;
-}
-
-button:hover {
-  background: var(--azul-escuro);
-}
-
-small {
-  font-size: 12px;
-  display: block;
-  margin-top: 3px;
-}
-
-small.ok {
-  color: var(--verde);
-}
-
-small.error {
-  color: var(--vermelho);
-}
-
-#feedback {
-  text-align: center;
-  margin-top: 15px;
-  font-weight: bold;
-}
-
-
-/* stilo do selec obj*/
-input, textarea, select {
-  width: 100%;
-  padding: 10px;
-  margin-top: 5px;
-  border: 1px solid #ccc;
-  border-radius: 5px;
-  font-size: 14px;
-  background: #fff;
-  transition: border-color 0.3s, box-shadow 0.3s;
-}
-
-select:focus {
-  border-color: var(--brand);
-  box-shadow: 0 0 5px rgba(28, 195, 187, 0.5);
-}
-
-/* errros */
-.is-ok  { border-color: #2e8b57 !important; }
-.is-err { border-color: #cc1f1f !important; }
-.feedback.ok   { color:#2e8b57; }
-.feedback.err  { color:#cc1f1f; }
-.feedback.warn { color:#8a6d3b; }
-
-
 
 
 

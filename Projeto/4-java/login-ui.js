@@ -138,13 +138,13 @@
       if (title) title.textContent = 'Insira suas informações para redefinir';
       if (loginBlock) loginBlock.hidden = true;
       if (document.getElementById('forgotPane')) document.getElementById('forgotPane').hidden = true;
-      if (step1) step1.hidden = false;
+      if (step1){ step1.hidden = false; step1.style.display = 'block'; }
       step1Msg.textContent = '';
     }
     function backToLogin() {
       if (title) title.textContent = 'Informe seu Login';
       if (loginBlock) loginBlock.hidden = false;
-      if (step1) step1.hidden = true;
+      if (step1){ step1.hidden = true; step1.style.display = ''; }
       if (overlay) overlay.hidden = true;
     }
     function openOverlay(name) {
@@ -320,7 +320,7 @@
         const name = localStorage.getItem('pendingResetName') || 'aluno(a)';
         if (title) title.textContent = 'Insira suas informações para redefinir';
         if (loginBlock) loginBlock.hidden = true;
-        if (step1) step1.hidden = false;
+        if (step1){ step1.hidden = false; step1.style.display = 'block'; }
         // pula direto para a sobreposição para o usuário só digitar a senha
         openOverlay(name);
       } catch(e){}

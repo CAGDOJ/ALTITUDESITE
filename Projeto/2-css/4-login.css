@@ -630,3 +630,52 @@ h2 {
         padding: 10px 15px; /* Reduz o padding do cabeçalho */
     }
 }
+
+/* ===== Modal overlay para redefinição de senha ===== */
+.modal-overlay[hidden]{ display:none !important; }
+.modal-overlay{
+  position: fixed;
+  inset: 0;
+  background: rgba(0,0,0,.45);
+  display: grid;
+  place-items: center;
+  z-index: 2000;
+}
+.modal-box{
+  width: min(480px, 94vw);
+  background: #fff;
+  border-radius: 10px;
+  border: 1px solid #e6eef5;
+  box-shadow: 0 18px 50px rgba(10,61,98,.2);
+  padding: 20px 18px 18px;
+}
+.modal-title{
+  margin: 0 0 4px 0;
+  color: var(--azul-escuro);
+  font-size: 1.25rem;
+}
+.modal-sub{
+  margin: 0 0 10px 0;
+  color: #334155;
+  font-size: .95rem;
+}
+.modal-close{
+  position: absolute;
+  right: 12px;
+  top: 8px;
+  border: 0;
+  background: transparent;
+  font-size: 26px;
+  line-height: 1;
+  cursor: pointer;
+  color: #6b7280;
+}
+#resetFinalMsg{ display:block; margin-top:8px; }
+
+/* Ajustes do bloco de reset step1 */
+#resetStep1 .form-group{ margin-top: 10px; }
+#resetStep1 .btn-login{ min-width: 140px; }
+
+
+/* Ensure sections with .forgot-pane are visible when not [hidden] */
+.forgot-pane:not([hidden]){ display:block !important; }

@@ -73,6 +73,8 @@ h2 {
 }
 .form-alert[hidden]{ display:none; }
 
+.form-group input {box-sizing: border-box;}
+
 form{ text-align:left; }
 .form-group{ margin-bottom:14px; position:relative; }
 .form-group label{ display:block; font-size:.92rem; color:#364254; margin-bottom:6px; }

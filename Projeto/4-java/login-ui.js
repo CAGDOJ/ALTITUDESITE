@@ -44,7 +44,7 @@
       const style = document.createElement('style');
       style.textContent = '#forgotPane #backToLogin, #forgotPane .link-back{display:none!important}';
       document.head.appendChild(style);
-    )();
+    })();
 
     // Nome (Descobrir RA) -> CAIXA ALTA sem acentos
     (function bindNameUpper(){
@@ -60,7 +60,7 @@
         }
       });
       nameEl.addEventListener('blur',  () => { nameEl.value = sanitizeNameUpper(nameEl.value).trim(); });
-    )();
+    })();
 
     // ---------- Step1 (CPF + Data) & Modal (Nova Senha) ----------
     function ensureStep1(){
@@ -162,7 +162,7 @@
 
     // ---------- Navegação ----------
     function showStep1(){
-      if (title) title.textContent = 'Insira suas informações para redefinir a senha';
+      if (title) title.textContent = 'Insira suas informações para redefinir';
       if (loginBlock) loginBlock.hidden = true;
       if (forgotPane) forgotPane.hidden = true;
       if (step1) { step1.hidden = false; step1.style.display = 'block'; }
@@ -172,7 +172,6 @@
       if (goRA2 && !goRA2._wired){ goRA2._wired = true; goRA2.addEventListener('click', e => { e.preventDefault(); showForgotRA(); }); }
       if (goCPF2 && !goCPF2._wired){ goCPF2._wired = true; goCPF2.addEventListener('click', e => { e.preventDefault(); showStep1(); }); }
       updateFooterLink();
-      rebindForgotLinks();
     }
     function showForgotRA(){
       if (title) title.textContent = 'Descobrir RA';
@@ -186,7 +185,6 @@
         document.querySelector('.tab-btn[data-tab="ra"]')?.classList.add('active');
       } catch(e){}
       updateFooterLink();
-      rebindForgotLinks();
     }
     function backToLogin(){
       if (title) title.textContent = 'Informe seu Login';
@@ -195,12 +193,12 @@
       if (overlay) overlay.hidden = true;
       if (loginBlock) loginBlock.hidden = false;
       updateFooterLink();
-      rebindForgotLinks();
     }
 
     // Footer: abre RA quando está no login; volta ao login quando está no RA/CPF
     function rebindForgotLinks() {
-      forgotLinks.forEach(link => {
+      const links = Array.from(document.querySelectorAll('.forgot, .login-options .forgot'));
+      links.forEach(link => {
         const clone = link.cloneNode(true);
         clone.removeAttribute('onclick');
         link.parentNode.replaceChild(clone, link);
@@ -212,7 +210,8 @@
           setTimeout(() => { try { updateFooterLink(); } catch(e){} }, 0);
         });
       });
-    )();
+    }
+    rebindForgotLinks();
 
     // Clicar na aba "Redefinir por CPF" SEMPRE abre o Step1
     document.addEventListener('click', function(e){
@@ -313,6 +312,45 @@
           overlay.hidden = false;
         }
       } catch(e){}
-    )();
+    })();
+
+    // ===== HOTFIX: captura clique no link do rodapé e roteia corretamente =====
+    (function(){
+      function setFooter(text){
+        document.querySelectorAll('.forgot, .login-options .forgot')
+          .forEach(a => { if (a) a.textContent = text; });
+      }
+      function openForgotRA(){
+        if (title) title.textContent = 'Descobrir RA';
+        if (loginBlock) loginBlock.hidden = true;
+        if (step1) { step1.hidden = true; step1.style.display = ''; }
+        if (forgotPane) forgotPane.hidden = false;
+        try {
+          document.querySelectorAll('.tab').forEach(t => (t.hidden = true));
+          document.getElementById('tab-ra')?.removeAttribute('hidden');
+          document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+          document.querySelector('.tab-btn[data-tab=\"ra\"]')?.classList.add('active');
+        } catch(e){}
+        setFooter('Voltar ao login');
+      }
+      function backToLoginHotfix(){
+        if (title) title.textContent = 'Informe seu Login';
+        if (forgotPane) forgotPane.hidden = true;
+        if (step1) { step1.hidden = true; step1.style.display = ''; }
+        if (overlay) overlay.hidden = true;
+        if (loginBlock) loginBlock.hidden = false;
+        setFooter('Esqueci minha senha');
+      }
+      document.addEventListener('click', function(e){
+        const a = e.target.closest('.forgot, .login-options .forgot');
+        if (!a) return;
+        e.preventDefault();
+        e.stopImmediatePropagation();
+        const fp  = document.getElementById('forgotPane');
+        const s1  = document.getElementById('resetStep1');
+        const onForgot = (fp && !fp.hidden) || (s1 && !s1.hidden);
+        onForgot ? backToLoginHotfix() : openForgotRA();
+      }, true);
+    })();
   });
-)();
+})();

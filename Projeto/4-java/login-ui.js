@@ -167,13 +167,12 @@
 
     // hide inline back inside forgotPane (keep only footer link)
     (function hideInlineBack(){
-      const fp = document.getElementById('forgotPane');
-      if (!fp) return;
-      fp.querySelectorAll('#backToLogin, .link-back').forEach(el => { el.style.display = 'none'; el.setAttribute('aria-hidden','true'); });
-      const mo = new MutationObserver(() => {
-        fp.querySelectorAll('#backToLogin, .link-back').forEach(el => { el.style.display = 'none'; el.setAttribute('aria-hidden','true'); });
-      });
-      mo.observe(fp, { subtree:true, childList:true, attributes:true });
+      // CSS kill-switch: esconde qualquer 'voltar ao login' interno do forgotPane
+      try {
+        const style = document.createElement('style');
+        style.textContent = '#forgotPane #backToLogin, #forgotPane .link-back{display:none!important}';
+        document.head.appendChild(style);
+      } catch(e){}
     })();
     
 

@@ -162,7 +162,7 @@
 
     // ---------- Navegação ----------
     function showStep1(){
-      if (title) title.textContent = 'Insira suas informações para redefinir';
+      if (title) title.textContent = 'Insira suas informações para redefinir a senha';
       if (loginBlock) loginBlock.hidden = true;
       if (forgotPane) forgotPane.hidden = true;
       if (step1) { step1.hidden = false; step1.style.display = 'block'; }

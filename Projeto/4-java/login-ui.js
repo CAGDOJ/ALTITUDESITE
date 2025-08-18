@@ -37,24 +37,15 @@
     const title      = document.getElementById('boxTitle') || document.querySelector('.login-title');
     const loginBlock = document.getElementById('loginBlock') || document.querySelector('.login-form')?.closest('div');
     const forgotPane = document.getElementById('forgotPane');
-    const forgotLinks = Array.from(document.querySelectorAll('.forgot, .login-options .forgot'));
+    // NÃO guardar referência fixa; sempre buscar os links ao atualizar o rodapé
+    const getForgotLinks = () => Array.from(document.querySelectorAll('.forgot, .login-options .forgot'));
 
     // Esconde "voltar" interno do painel (mantém só o rodapé)
     (function hideInlineBack(){
       const style = document.createElement('style');
-      style.textContent = '#forgotPane #backToLogin, #forgotPane .link-back{display:none!important}';
+      style.textContent = '#forgotPane #backToLogin, #forgotPane .link-back, #resetStep1 #backToLogin, #resetStep1 .link-back, #resetStep1 a.forgot{display:none!important}';
       document.head.appendChild(style);
     })();
-
-    // Esconde qualquer 'Voltar ao login' DENTRO do Step1 (mantém só o do rodapé)
-    (function hideBackInsideStep1(){
-      try {
-        const style = document.createElement('style');
-        style.textContent = '#resetStep1 #backToLogin, #resetStep1 .link-back, #resetStep1 a.forgot{display:none!important}';
-        document.head.appendChild(style);
-      } catch(e){}
-    })();
-
 
     // Nome (Descobrir RA) -> CAIXA ALTA sem acentos
     (function bindNameUpper(){
@@ -98,26 +89,30 @@
         <small id="resetStep1Msg" class="msg"></small>
       `;
       (forgotPane?.parentNode || document.body).insertBefore(sec, (forgotPane ? forgotPane.nextSibling : null));
-    
-    // Garante que as abas "Descobrir RA | Redefinir por CPF" existam acima do CPF
+    }
     function ensureStep1Tabs(){
-      const step = document.getElementById('resetStep1'); if (!step) return;
+      const step = document.getElementById('resetStep1'); 
+      if (!step) return;
       let tabs = step.querySelector('.tabs');
       if (!tabs) {
         tabs = document.createElement('div');
         tabs.className = 'tabs';
         tabs.style.marginBottom = '8px';
-        tabs.innerHTML = '<button class="tab-btn" data-tab="ra" id="goRA2">Descobrir RA</button>\
-                          <button class="tab-btn active" data-tab="cpf" id="goCPF2">Redefinir por CPF</button>';
-        step.insertBefore(tabs, step.firstChild);
+        tabs.innerHTML = '<button class="tab-btn" data-tab="ra" id="goRA2">Descobrir RA</button>' +
+                         '<button class="tab-btn active" data-tab="cpf" id="goCPF2">Redefinir por CPF</button>';
+        // alvo: inserir logo acima do CPF
+        let target = step.querySelector('.form-group, form, input, label');
+        if (target && target.parentNode) {
+          target.parentNode.insertBefore(tabs, target);
+        } else {
+          step.insertBefore(tabs, step.firstChild);
+        }
       }
       const goRA2  = document.getElementById('goRA2');
       const goCPF2 = document.getElementById('goCPF2');
       if (goRA2 && !goRA2._wired){ goRA2._wired = true; goRA2.addEventListener('click', e => { e.preventDefault(); showForgotRA(); }); }
       if (goCPF2 && !goCPF2._wired){ goCPF2._wired = true; goCPF2.addEventListener('click', e => { e.preventDefault(); showStep1(); }); }
-      // marca a aba ativa (CPF quando estamos no Step1)
       try { goRA2?.classList.remove('active'); goCPF2?.classList.add('active'); } catch(e){}
-    }
     }
     function ensureOverlay(){
       if (document.getElementById('resetOverlay')) return;
@@ -153,7 +148,7 @@
       document.body.appendChild(wrap);
     }
     ensureStep1();
-    try{ ensureStep1Tabs(); }catch(e){}
+    ensureStep1Tabs();
     ensureOverlay();
 
     const step1        = document.getElementById('resetStep1');
@@ -172,15 +167,13 @@
 
     // ---------- Rodapé ----------
     function setFooterAsBack(){
-      const links = Array.from(document.querySelectorAll('.forgot, .login-options .forgot'));
-      links.forEach(fl => { if (!fl) return;
+      getForgotLinks().forEach(fl => { if (!fl) return;
         fl.textContent = 'Voltar ao login';
         fl.onclick = ev => { ev.preventDefault(); backToLogin(); };
       });
     }
     function setFooterAsForgot(){
-      const links = Array.from(document.querySelectorAll('.forgot, .login-options .forgot'));
-      links.forEach(fl => { if (!fl) return;
+      getForgotLinks().forEach(fl => { if (!fl) return;
         fl.textContent = 'Esqueci minha senha';
         fl.onclick = ev => { ev.preventDefault(); showForgotRA(); };
       });
@@ -193,16 +186,11 @@
 
     // ---------- Navegação ----------
     function showStep1(){
-      try{ ensureStep1Tabs(); }catch(e){}
       if (title) title.textContent = 'Insira suas informações para redefinir';
       if (loginBlock) loginBlock.hidden = true;
       if (forgotPane) forgotPane.hidden = true;
       if (step1) { step1.hidden = false; step1.style.display = 'block'; }
-      const goRA2  = document.getElementById('goRA2');
-      const goCPF2 = document.getElementById('goCPF2');
-      goRA2?.classList.remove('active'); goCPF2?.classList.add('active');
-      if (goRA2 && !goRA2._wired){ goRA2._wired = true; goRA2.addEventListener('click', e => { e.preventDefault(); showForgotRA(); }); }
-      if (goCPF2 && !goCPF2._wired){ goCPF2._wired = true; goCPF2.addEventListener('click', e => { e.preventDefault(); showStep1(); }); }
+      ensureStep1Tabs();
       updateFooterLink();
     }
     function showForgotRA(){
@@ -229,8 +217,7 @@
 
     // Footer: abre RA quando está no login; volta ao login quando está no RA/CPF
     function rebindForgotLinks() {
-      const links = Array.from(document.querySelectorAll('.forgot, .login-options .forgot'));
-      links.forEach(link => {
+      getForgotLinks().forEach(link => {
         const clone = link.cloneNode(true);
         clone.removeAttribute('onclick');
         link.parentNode.replaceChild(clone, link);
@@ -340,49 +327,11 @@
         const email = localStorage.getItem('pendingResetEmail') || '';
         if (email) {
           showStep1();
+          ensureStep1Tabs();
           helloName.textContent = 'Olá ' + name;
           overlay.hidden = false;
         }
       } catch(e){}
-    })();
-
-    // ===== HOTFIX: captura clique no link do rodapé e roteia corretamente =====
-    (function(){
-      function setFooter(text){
-        document.querySelectorAll('.forgot, .login-options .forgot')
-          .forEach(a => { if (a) a.textContent = text; });
-      }
-      function openForgotRA(){
-        if (title) title.textContent = 'Descobrir RA';
-        if (loginBlock) loginBlock.hidden = true;
-        if (step1) { step1.hidden = true; step1.style.display = ''; }
-        if (forgotPane) forgotPane.hidden = false;
-        try {
-          document.querySelectorAll('.tab').forEach(t => (t.hidden = true));
-          document.getElementById('tab-ra')?.removeAttribute('hidden');
-          document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
-          document.querySelector('.tab-btn[data-tab=\"ra\"]')?.classList.add('active');
-        } catch(e){}
-        setFooter('Voltar ao login');
-      }
-      function backToLoginHotfix(){
-        if (title) title.textContent = 'Informe seu Login';
-        if (forgotPane) forgotPane.hidden = true;
-        if (step1) { step1.hidden = true; step1.style.display = ''; }
-        if (overlay) overlay.hidden = true;
-        if (loginBlock) loginBlock.hidden = false;
-        setFooter('Esqueci minha senha');
-      }
-      document.addEventListener('click', function(e){
-        const a = e.target.closest('.forgot, .login-options .forgot');
-        if (!a) return;
-        e.preventDefault();
-        e.stopImmediatePropagation();
-        const fp  = document.getElementById('forgotPane');
-        const s1  = document.getElementById('resetStep1');
-        const onForgot = (fp && !fp.hidden) || (s1 && !s1.hidden);
-        onForgot ? backToLoginHotfix() : openForgotRA();
-      }, true);
     })();
   });
 })();

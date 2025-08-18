@@ -53,25 +53,56 @@ async function fetchMeSupabase(){
 
     state.auth.id = user.id;
 
-    // tenta pegar o perfil; se não existir, cria (gera RA)
-    let { data: me, error } = await supa.rpc('get_me');
-    if(error) throw error;
 
-    if(!me){ // primeiro acesso: cria no banco e retorna já com RA
-      const payload = { p_name: state.perfil.nome || null, p_phone: state.perfil.telefone || null };
-      const { data: created, error: e2 } = await supa.rpc('register_current_user', payload);
-      if(e2) throw e2;
+    // BUSCA/CRIA PERFIL NA TABELA 'alunos' (sem RPC)
+    // 1) tenta por user_id
+    let { data: me, error } = await supa
+      .from('alunos')
+      .select('id, user_id, email, ra, nome, telefone, criado_em')
+      .eq('user_id', user.id)
+      .maybeSingle();
+    if (error) throw error;
+
+    // 2) se não achou por user_id, tenta por e-mail e adota
+    if (!me) {
+      const { data: byEmail, error: eEmail } = await supa
+        .from('alunos')
+        .select('id, user_id, email, ra, nome, telefone, criado_em')
+        .eq('email', user.email)
+        .maybeSingle();
+      if (eEmail) throw eEmail;
+      if (byEmail) {
+        const { error: eUpd } = await supa
+          .from('alunos')
+          .update({ user_id: user.id })
+          .eq('id', byEmail.id);
+        if (eUpd) throw eUpd;
+        me = { ...byEmail, user_id: user.id };
+      }
+    }
+
+    // 3) se ainda não existir, cria (trigger gera RA no insert)
+    if (!me) {
+      const ins = { user_id: user.id, email: user.email, nome: state.perfil.nome || null, telefone: state.perfil.telefone || null };
+      const { data: created, error: e2 } = await supa
+        .from('alunos')
+        .insert(ins)
+        .select('id, user_id, email, ra, nome, telefone, criado_em')
+        .single();
+      if (e2) throw e2;
       me = created;
     }
 
     // sincroniza estado
-    state.auth.email = me.email;
-    state.auth.ra = me.ra;
-    state.auth.registeredAt = me.registered_at;
-    state.perfil.nome = me.name || state.perfil.nome;
-    state.perfil.telefone = me.phone || state.perfil.telefone;
-    state.perfil.foto = me.photo || state.perfil.foto;
+
+    state.auth.email        = me.email;
+    state.auth.ra           = me.ra || '—';
+    state.auth.registeredAt = me.criado_em || me.registered_at || null;
+    state.perfil.nome       = me.nome      || state.perfil.nome;
+    state.perfil.telefone   = me.telefone  || state.perfil.telefone;
+    state.perfil.foto       = state.perfil.foto; // foto ainda só local
     save();
+
   }catch(e){
     console.error(e);
     if(DEMO){
@@ -464,9 +495,9 @@ document.getElementById('btnSalvarPerfil').addEventListener('click',async ()=>{
 
   // opcional: persistir nome/telefone/foto no Supabase:
   try{
-    const { error } = await supa.from('students')
+    const { error } = await supa.from('alunos')
       .update({ name: state.perfil.nome || null, phone: state.perfil.telefone || null, photo: state.perfil.foto || null })
-      .eq('id', state.auth.id);
+      .eq('user_id', state.auth.id);
     if(error) throw error;
   }catch(e){ console.warn('Falha ao salvar no supabase (ok em demo).'); }
 });

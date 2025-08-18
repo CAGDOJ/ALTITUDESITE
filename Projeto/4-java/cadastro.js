@@ -4,19 +4,34 @@ const onlyDigits = (v) => (v || "").replace(/\D+/g, "");
 const setOK = (el, msgEl, msg="") => { el.classList.add("is-valid"); el.classList.remove("is-invalid"); msgEl.textContent = msg; msgEl.classList.add("ok"); };
 const setErr = (el, msgEl, msg) => { el.classList.add("is-invalid"); el.classList.remove("is-valid"); msgEl.textContent = msg || ""; msgEl.classList.remove("ok"); };
 const debounce = (fn, t=400) => { let id; return (...a)=>{ clearTimeout(id); id=setTimeout(()=>fn(...a),t); }; };
+const sanitizeUpperASCII = (s = "") =>
+  s.normalize("NFD")
+   .replace(/[\u0300-\u036f]/g, "")
+   .replace(/ç/gi, "c")
+   .replace(/[^a-zA-Z\s'-]/g, " ")
+   .replace(/\s+/g, " ")
+   .trim()
+   .toUpperCase();
+
+document.addEventListener("DOMContentLoaded", () => {
+  if (nascEl) nascEl.max = new Date().toISOString().split("T")[0];
+});
 
 // ===== DOM =====
 const form      = $("#form-cadastro");
+const nascEl    = $("#nascimento");
 const formMsg   = $("#form-msg");
 const nomeEl    = $("#nome");
-const cpfEl     = $("#cpf");
-const emailEl   = $("#email");
-const senhaEl   = $("#senha");
-const confEl    = $("#confirma");
-const telEl     = $("#telefone");
-const objetivo  = $("#objetivo");
-const termosEl  = $("#termos");
-const btnEnviar = $("#btn-enviar");
+const fb = {
+  nome: $("#fb-nome"),
+  cpf: $("#fb-cpf"),
+  email: $("#fb-email"),
+  senha: $("#fb-senha"),
+  confirma: $("#fb-confirma"),
+  tel: $("#fb-telefone"),
+  objetivo: $("#fb-objetivo"),
+  nascimento: $("#fb-nascimento"),
+};
 
 const fb = {
   nome: $("#fb-nome"),
@@ -64,8 +79,24 @@ function telValido(v){
   if(/^0+$/.test(d)) return false;
   return true;
 }
+function validarNasc(){
+  if (!nascEl || !nascEl.value) { setErr(nascEl, fb.nascimento, "Informe sua data de nascimento."); return false; }
+  const ok = validarNome() && validarCPF() && validarEmail() &&
+           validarSenha() && validarConf() && validarTel() &&
+           validarObj() && validarNasc() &&
+           termosEl.checked && !formMsg.textContent;
 
-function validarNome(){ if((nomeEl.value||"").trim().length<3){ setErr(nomeEl,fb.nome,"Informe seu nome completo."); return false; } setOK(nomeEl,fb.nome,""); return true; }
+}
+
+
+function validarNome(){
+  const v = sanitizeUpperASCII((nomeEl.value || ""));
+  nomeEl.value = v; // mantém o campo já normalizado
+  if (v.length < 3) { setErr(nomeEl, fb.nome, "Informe o nome completo."); return false; }
+  setOK(nomeEl, fb.nome, "");
+  return true;
+}
+
 function validarCPF (){
   if(!cpfValido(cpfEl.value)){ setErr(cpfEl,fb.cpf,"CPF inválido."); return false; }
   setOK(cpfEl,fb.cpf,"CPF válido."); return true;
@@ -118,6 +149,7 @@ const debouncedCPFCheck   = debounce(async ()=>{
 });
 const debouncedEmailCheck = debounce(async ()=>{
   if(!validarEmail()) { toggleSubmit(); return; }
+  nascEl?.addEventListener("change", ()=>{ validarNasc(); toggleSubmit(); });
   const exists = await checkEmailExists(emailEl.value);
   if(exists===true){ setErr(emailEl,fb.email,"E-mail já cadastrado."); }
   else if(exists===false){ setOK(emailEl,fb.email,"E-mail disponível."); }
@@ -157,12 +189,15 @@ document.querySelectorAll(".toggle-pass").forEach(btn=>{
   });
 });
 
-// ===== Envio (com Supabase) =====
-form.addEventListener("submit", async (e)=>{
-  e.preventDefault();
-  showFormMsg("", "");                      // limpa faixa de erro
-  toggleSubmit();
-  if(btnEnviar.disabled) return;
+const payload = {
+  nome: sanitizeUpperASCII((nomeEl.value||"").trim()),
+  cpf: cpfRaw,                                  // 11 dígitos
+  data_nascimento: (nascEl && nascEl.value) ? nascEl.value : null, // YYYY-MM-DD
+  email: emailEl.value.trim().toLowerCase(),
+  telefone: onlyDigits(telEl.value),
+  objetivo: objetivo.value
+};
+
 
   // checagem final de duplicidade
   const cpfRaw = onlyDigits(cpfEl.value);

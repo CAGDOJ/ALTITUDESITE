@@ -3,149 +3,118 @@
 <head>
   <meta charset="utf-8"/>
   <meta name="viewport" content="width=device-width, initial-scale=1"/>
-  <title>Portal do Aluno</title>
+  <title>ALTITUDE • Portal do Aluno</title>
   <link rel="stylesheet" href="./Projeto/2-css/11-portaldoaluno.css"/>
   <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js" defer></script>
+  <script src="./Projeto/4-java/portaldoaluno.js" defer></script>
 </head>
 <body>
-  <header class="topbar">
-    <div class="brand">
-      <div class="avatar" aria-hidden="true">PA</div>
-      <div class="brand-info">
-        <strong class="brand-title">Portal do Aluno</strong>
-        <div class="brand-sub">RA: <span id="brandRA">—</span></div>
+  <div class="shell">
+    <aside class="sidebar">
+      <div class="brand">
+        <span class="dot"></span>
+        <span class="brand-name">ALTITUDE</span>
       </div>
-    </div>
-    <div class="user-info">
-      <span id="brandEmail">—</span>
-    </div>
-  </header>
-
-  <nav class="tabs" role="tablist" aria-label="Seções do portal">
-    <button class="tab" data-target="sec-carteirinha" role="tab">Carteirinha</button>
-    <button class="tab" data-target="sec-creditos" role="tab">Créditos & Certificados</button>
-    <button class="tab" data-target="sec-desempenho" role="tab">Desempenho</button>
-    <button class="tab" data-target="sec-forum" role="tab">Fórum</button>
-    <button class="tab active" data-target="sec-inicio" role="tab" aria-selected="true">Início</button>
-    <button class="tab" data-target="sec-inscricoes" role="tab">Inscrições</button>
-    <button class="tab" data-target="sec-meuscursos" role="tab">Meus Cursos</button>
-  </nav>
-
-  <main class="layout">
-    <!-- Coluna principal -->
-    <section class="main">
-      <!-- INÍCIO -->
-      <section id="sec-inicio" class="view active" aria-labelledby="tab-inicio">
-        <div class="cards">
-          <div class="card">
-            <h3>Cursos ativos</h3>
-            <div class="kpi"><span id="kpiCursos">0</span></div>
-            <small>Em andamento</small>
-          </div>
-          <div class="card">
-            <h3>Horas estudadas</h3>
-            <div class="kpi"><span id="kpiHoras">0h</span></div>
-            <small>Acumuladas</small>
-          </div>
-          <div class="card">
-            <h3>Certificados</h3>
-            <div class="kpi"><span id="kpiCerts">0</span></div>
-            <small>Disponíveis</small>
-          </div>
-        </div>
-
-        <div class="panels">
-          <div class="panel">
-            <h3>Progresso por curso</h3>
-            <div class="placeholder">Sem dados ainda.</div>
-          </div>
-          <div class="panel">
-            <h3>Áreas de conhecimento estudadas</h3>
-            <canvas id="radarAreas" width="420" height="320" aria-label="Gráfico de áreas estudadas" role="img"></canvas>
-          </div>
-        </div>
-      </section>
-
-      <!-- MEUS CURSOS -->
-      <section id="sec-meuscursos" class="view" hidden>
-        <h2>Meus Cursos</h2>
-        <div class="placeholder">Você ainda não está matriculado em nenhum curso.</div>
-      </section>
-
-      <!-- DESEMPENHO -->
-      <section id="sec-desempenho" class="view" hidden>
-        <h2>Desempenho</h2>
-        <div class="placeholder">Relatórios de desempenho ficarão aqui.</div>
-      </section>
-
-      <!-- INSCRIÇÕES -->
-      <section id="sec-inscricoes" class="view" hidden>
-        <h2>Inscrições</h2>
-        <div class="placeholder">Suas inscrições aparecerão aqui.</div>
-      </section>
-
-      <!-- CRÉDITOS & CERTIFICADOS -->
-      <section id="sec-creditos" class="view" hidden>
-        <h2>Créditos & Certificados</h2>
-        <div class="placeholder">Gerencie seus créditos e baixe certificados.</div>
-      </section>
-
-      <!-- CARTEIRINHA -->
-      <section id="sec-carteirinha" class="view" hidden>
-        <h2>Carteirinha</h2>
-        <div class="idcard">
-          <div class="id-left">
-            <div class="avatar xl" aria-hidden="true">PA</div>
-          </div>
-          <div class="id-right">
-            <p><strong>Nome:</strong> <span id="cardNome">—</span></p>
-            <p><strong>RA:</strong> <span id="cardRA">—</span></p>
-            <p><strong>E-mail:</strong> <span id="cardEmail">—</span></p>
-          </div>
-        </div>
-      </section>
-
-      <!-- FÓRUM -->
-      <section id="sec-forum" class="view" hidden>
-        <h2>Fórum</h2>
-        <div class="placeholder">Em breve.</div>
-      </section>
-    </section>
-
-    <!-- Coluna lateral (Perfil) -->
-    <aside class="aside perfil">
-      <div class="card">
-        <h3>Perfil</h3>
-        <div class="perfil-box">
-          <div class="avatar xl" aria-hidden="true" id="pfAvatar">PA</div>
-          <div class="perfil-form">
-            <label>Nome
-              <input id="pfNome" type="text" placeholder="Seu nome"/>
-            </label>
-            <label>Telefone
-              <input id="pfTel" type="text" placeholder="(00) 00000-0000"/>
-            </label>
-            <label>E-mail (login)
-              <input id="pfEmail" type="email" disabled/>
-            </label>
-            <label>RA
-              <input id="pfRA" type="text" disabled/>
-            </label>
-            <div class="actions">
-              <button id="btnSalvarPerfil">Salvar</button>
-            </div>
-            <div id="perfilMsg" class="msg" hidden></div>
-          </div>
-        </div>
-      </div>
+      <nav class="nav">
+        <button class="nav-item active"><span class="ico user"></span>Perfil</button>
+        <button class="nav-item"><span class="ico book"></span>Cursos</button>
+        <button class="nav-item"><span class="ico help"></span>Atendimento</button>
+      </nav>
+      <button class="nav-item ghost exit"><span class="ico exit"></span>Sair</button>
     </aside>
-  </main>
 
-  <!-- Supabase client deve existir como window.supa -->
-  
-  <script src="https://unpkg.com/@supabase/supabase-js@2"></script>
-  <script>window.supa = supabase.createClient('https://mxnvrxqwokvelulzdvmn.supabase.co','eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im14bnZyeHF3b2t2ZWx1bHpkdm1uIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTQ4NTQ4MjAsImV4cCI6MjA3MDQzMDgyMH0.DBntQQc91IWYAvMxHknJxjxxFAl5kiWOkc1LUXe_vKE');</script>
-  
-  <script src="./Projeto/4-java/portaldoaluno.js" defer></script>
+    <main class="main">
+      <header class="topbar">
+        <div class="search">
+          <span class="ico search"></span>
+          <input id="q" type="search" placeholder="Pesquisar" aria-label="Pesquisar"/>
+        </div>
+        <div class="top-user">
+          <img id="topAvatar" class="avatar" alt="" src="https://i.pravatar.cc/64?img=15"/>
+          <div class="who">
+            <strong id="topName">Carlos Júnior</strong>
+            <small id="topRA">RA: —</small>
+          </div>
+          <button class="chev" aria-label="abrir menu">▾</button>
+        </div>
+      </header>
+
+      <section class="content">
+        <h1 id="hero">Bem-vindo, Carlos!</h1>
+
+        <div class="grid">
+          <div class="card span-6">
+            <div class="card-title">Continuar estudo</div>
+            <button class="cta" id="btnEstudo">Iniciar Estudo</button>
+          </div>
+
+          <div class="card span-3">
+            <div class="card-title">Progresso geral</div>
+            <div class="donut-wrap">
+              <canvas id="donut" width="160" height="160" aria-label="Progresso geral"></canvas>
+              <div class="donut-center"><span id="donutVal">0%</span></div>
+            </div>
+          </div>
+
+          <div class="card span-3">
+            <div class="card-title">Nível</div>
+            <div class="level">
+              <div class="medal">🏅</div>
+              <div class="level-info">
+                <strong id="levelName">Bronze</strong>
+              </div>
+            </div>
+          </div>
+
+          <div class="card span-6">
+            <div class="card-title">Últimas atividades</div>
+            <div class="placeholder" id="ultAtividades">Nenhuma atividade recente</div>
+          </div>
+
+          <div class="card span-3">
+            <div class="card-title">Calendário</div>
+            <div class="calendar" id="miniCal"></div>
+          </div>
+
+          <div class="card span-3">
+            <div class="card-title">Informações pessoais</div>
+            <ul class="info">
+              <li><span>RA:</span><b id="infoRA">—</b></li>
+              <li><span>CPF:</span><b id="infoCPF">—</b></li>
+              <li><span>E-mail:</span><b id="infoEmail">—</b></li>
+              <li><span>Celular:</span><b id="infoPhone">—</b></li>
+            </ul>
+          </div>
+
+          <div class="card span-6">
+            <div class="card-title">Últimas mensagens do atendimento</div>
+            <ul class="msgs" id="msgs">
+              <li>
+                <img src="https://i.pravatar.cc/64?img=47" alt="" />
+                <div>
+                  <strong>Ana Gestora</strong>
+                  <small class="ok">Respondido • 1m</small>
+                </div>
+              </li>
+              <li>
+                <img src="https://i.pravatar.cc/64?img=47" alt="" />
+                <div>
+                  <strong>Ana Gestora</strong>
+                  <small>Aguardando • 2d</small>
+                </div>
+              </li>
+              <li>
+                <img src="https://i.pravatar.cc/64?img=47" alt="" />
+                <div>
+                  <strong>Ana Gestora</strong>
+                  <small>5d</small>
+                </div>
+              </li>
+            </ul>
+          </div>
+        </div>
+      </section>
+    </main>
+  </div>
 </body>
 </html>

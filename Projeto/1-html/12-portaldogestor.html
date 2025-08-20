@@ -1,0 +1,167 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <title>Portal Instituição Altitude</title>
+  <link rel="stylesheet" href="/Projeto/2-css/12-portaldogestor.css">
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
+</head>
+<body>
+  <div class="container">
+    <!-- Sidebar -->
+    <aside class="sidebar">
+      <h1 class="logo">Instituição Altitude</h1>
+      <nav>
+ 
+        <button onclick="abrirAba('dashboard')">Dashboard</button>
+        <button onclick="abrirAba('relatorios')">Relatórios</button>
+        <button onclick="abrirAba('alunos')">Gestão de Alunos</button>
+        <button onclick="abrirAba('cursos')">Gestão de Cursos</button>
+        <button onclick="abrirAba('usuarios')">Gestão de Usuários</button>
+        <button onclick="abrirAba('chamados')">Chamados</button>
+      </nav>
+    </aside>
+
+    <!-- Conteúdo -->
+    <main class="conteudo">
+      <section id="dashboard" class="aba ativa">
+  <h2>Dashboard de Indicadores</h2>
+
+  <div class="cards">
+    <!-- Indicadores já existentes -->
+    <div class="card"> 
+      <span class="icone">👥</span>
+      <h3>1.247</h3>
+      <p>Total de Alunos</p>
+    </div>
+    <div class="card"> 
+      <span class="icone">📚</span>
+      <h3>892</h3>
+      <p>Matrículas Ativas</p>
+    </div>
+    <div class="card"> 
+      <span class="icone">😴</span>
+      <h3>43</h3>
+      <p>Usuários Inativos</p>
+    </div>
+    <div class="card"> 
+      <span class="icone">💰</span>
+      <h3>R$ 284.560</h3>
+      <p>Valores Pagos</p>
+    </div>
+
+    <!-- 👇 Novos cards -->
+    <div class="card">
+      <span class="icone">✅</span>
+      <h3>320</h3>
+      <p>Certificados Emitidos</p>
+    </div>
+    <div class="card">
+      <span class="icone">🕒</span>
+      <h3>27</h3>
+      <p>Certificados Pendentes</p>
+    </div>
+    <div class="card">
+      <span class="icone">📈</span>
+      <h3>87%</h3>
+      <p>Taxa de Conclusão</p>
+    </div>
+    <div class="card qualidade">
+  <span class="icone">⭐</span>
+  <h3>-- / 5</h3>
+  <p>Qualidade Média</p>
+</div>
+
+<div class="card chamados">
+  <span class="icone">📨</span>
+  <h3>--</h3>
+  <div class="detalhes-chamados"></div>
+</div>
+
+
+  <!-- Gráficos -->
+  <div class="graficos">
+    <div class="grafico">
+      <h3>Matrículas por Mês</h3>
+      <canvas id="graficoMatriculas"></canvas>
+    </div>
+    <div class="grafico">
+      <h3>Receita x Despesa</h3>
+      <canvas id="graficoFinanceiro"></canvas>
+    </div>
+    <div class="grafico">
+      <h3>Cursos Mais Procurados</h3>
+      <canvas id="graficoCursos"></canvas>
+    </div>
+  </div>
+</section>
+
+
+      <section id="relatorios" class="aba">
+  <h2>💰 Relatórios Financeiros</h2>
+
+  <!-- 🔹 Cards Resumo -->
+  <div class="relatorios-cards">
+    <div class="card saldo">
+      <span class="icone">💰</span>
+      <h3>R$ --</h3>
+      <p>Saldo Financeiro</p>
+    </div>
+ 
+    <div class="card inadimplencia">
+      <span class="icone">⚠️</span>
+      <h3>--%</h3>
+      <p>Inadimplência</p>
+    </div>
+    
+  </div>
+
+  <!-- 🔹 Gráficos -->
+  <div class="graficos-relatorios">
+    <div class="grafico" id="grafico-receita-despesa"></div>
+    <div class="grafico" id="grafico-qualidade"></div>
+    <div class="grafico" id="grafico-conclusao"></div>
+  </div>
+
+  <!-- 🔹 Cadastro de Despesas -->
+  <form onsubmit="registrarDespesa(event)">
+    <input type="text" id="descDespesa" placeholder="Descrição" required>
+    <input type="number" id="valorDespesa" placeholder="Valor (R$)" required>
+    <button type="submit">Adicionar Despesa</button>
+  </form>
+  <ul id="listaDespesas"></ul>
+</section>
+
+
+      <section id="alunos" class="aba">
+        <h2>👨‍🎓 Gestão de Alunos</h2>
+        <table>
+          <thead>
+            <tr><th>RA</th><th>Nome</th><th>Status</th></tr>
+          </thead>
+          <tbody id="tabelaAlunos"></tbody>
+        </table>
+      </section>
+
+      <section id="cursos" class="aba">
+        <h2>📚 Gestão de Cursos</h2>
+        <p>Aqui o gestor/professor poderá cadastrar cursos, subir PDFs, vídeos e provas.</p>
+      </section>
+
+      <section id="usuarios" class="aba">
+        <h2>👥 Gestão de Usuários</h2>
+        <p>Criar/editar gestores, professores e colaboradores.</p>
+      </section>
+
+      <section id="chamados" class="aba">
+        <h2>📨 Chamados</h2>
+        <ul id="listaChamados"></ul>
+      </section>
+    </main>
+  </div>
+
+  <script src="/Projeto/4-java/12-portaldogestor.js"></script>
+</body>
+</html>

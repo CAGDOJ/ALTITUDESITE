@@ -58,6 +58,7 @@ window.onload = () => {
   carregarAlunos();
   carregarGrafico();
 };
+
 // Matrículas por Mês
 new Chart(document.getElementById('graficoMatriculas'), {
   type: 'line',
@@ -73,6 +74,7 @@ new Chart(document.getElementById('graficoMatriculas'), {
   }
 });
 
+
 // Receita x Despesa
 new Chart(document.getElementById('graficoFinanceiro'), {
   type: 'bar',
@@ -86,6 +88,7 @@ new Chart(document.getElementById('graficoFinanceiro'), {
   options: { responsive: true }
 });
 
+
 // Cursos Mais Procurados
 new Chart(document.getElementById('graficoCursos'), {
   type: 'pie',
@@ -97,12 +100,14 @@ new Chart(document.getElementById('graficoCursos'), {
     }]
   }
 });
+
 // -------------------- INDICADOR DE QUALIDADE --------------------
 const avaliacoes = [5, 4, 5, 3, 4, 5, 5, 4]; // notas de exemplo
 const media = (avaliacoes.reduce((a, b) => a + b, 0) / avaliacoes.length).toFixed(1);
 
 document.querySelector('.card.qualidade h3').textContent = `${media} / 5`;
 document.querySelector('.card.qualidade p').textContent = "Qualidade Média";
+
 
 // -------------------- INDICADOR DE CHAMADOS --------------------
 const chamados = {

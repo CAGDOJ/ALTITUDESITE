@@ -73,4 +73,80 @@ body { display: flex; min-height: 100vh; background: #f5f6fa; }
   padding: 20px;
   box-shadow: 0 2px 6px rgba(0,0,0,0.1);
 }
+/* ===== Relatórios Financeiros ===== */
+.inline input,.inline select,.inline button{padding:8px 10px;border:1px solid #dbe1ea;border-radius:8px}
+.toolbar select,.toolbar button{padding:8px 10px;border:1px solid #dbe1ea;border-radius:8px;background:#fff;cursor:pointer}
+
+.kpis{display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin-bottom:14px}
+.kpi{background:#fff;border:1px solid #e8edf5;border-radius:12px;padding:12px 14px;box-shadow:0 2px 6px rgba(0,0,0,.06)}
+.kpi .lbl{display:block;color:#6b7280;font-size:12px;margin-bottom:6px}
+.kpi strong{font-size:18px}
+
+.grid-2{display:grid;grid-template-columns:2fr 1fr;gap:14px;margin-bottom:14px}
+.card.graf h3{margin-bottom:8px}
+
+.tabela{width:100%;border-collapse:collapse}
+.tabela th,.tabela td{border-bottom:1px solid #eef2f7;padding:8px 10px;text-align:left}
+
+.inline{display:flex;gap:8px;flex-wrap:wrap;margin-top:10px}
+/* ===== Gestão de Alunos ===== */
+.toolbar{display:flex;align-items:center;gap:10px;margin:10px 0 14px}
+.toolbar input,.toolbar select,.toolbar button{padding:8px 10px;border:1px solid #dbe1ea;border-radius:8px;background:#fff}
+
+.tabela{width:100%;border-collapse:collapse}
+.tabela th,.tabela td{border-bottom:1px solid #eef2f7;padding:8px 10px;text-align:left}
+.badge{display:inline-block;padding:4px 8px;border-radius:999px;font-size:12px}
+.badge.ativo{background:#e7f8ef;color:#166534}
+.badge.inativo{background:#fdecec;color:#991b1b}
+
+.paginacao{display:flex;gap:10px;align-items:center;justify-content:center;margin-top:12px}
+.paginacao button{padding:6px 10px;border:1px solid #dbe1ea;border-radius:8px;background:#fff}
+
+.modal{position:fixed;inset:0;background:rgba(0,0,0,.28);display:none;align-items:flex-end;justify-content:center}
+.modal[aria-hidden="false"]{display:flex}
+.modal__sheet{width:min(680px,92vw);background:#fff;border-radius:16px 16px 0 0;padding:16px;border:1px solid #e8edf5;box-shadow:0 10px 24px rgba(0,0,0,.12)}
+.modal h3{margin:0 0 10px 0}
+.modal label{display:block;margin:8px 0}
+.modal input,.modal select{width:100%;padding:10px;border:1px solid #dbe1ea;border-radius:8px}
+.modal .grid2{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.modal .actions{display:flex;gap:10px;justify-content:flex-end;margin-top:10px}
+.modal .actions .ghost{background:#fff;border:1px solid #dbe1ea;color:#0f172a}
+.modal .actions button{padding:10px 14px;border-radius:8px;border:1px solid #dbe1ea;background:#0ea5a3;color:#fff}
+
+/* ===== Gestão de Cursos ===== */
+.sub{color:#6b7280;margin:4px 0 8px}
+.hidden{display:none}
+
+.toolbar{display:flex;flex-wrap:wrap;gap:10px;margin:10px 0 14px}
+.toolbar label{display:flex;align-items:center;gap:6px}
+.toolbar select,.toolbar button{padding:8px 10px;border:1px solid #dbe1ea;border-radius:8px;background:#fff;cursor:pointer}
+
+.card{background:#fff;border:1px solid #e8edf5;border-radius:12px;padding:12px 14px;box-shadow:0 2px 6px rgba(0,0,0,.06);margin-bottom:12px}
+
+.tabela{width:100%;border-collapse:collapse}
+.tabela th,.tabela td{border-bottom:1px solid #eef2f7;padding:8px 10px;text-align:left}
+
+.badge{display:inline-block;padding:4px 8px;border-radius:999px;font-size:12px}
+.badge.pub{background:#e7f8ef;color:#166534}
+.badge.nop{background:#fdecec;color:#991b1b}
+
+/* Modais */
+.modal{position:fixed;inset:0;background:rgba(0,0,0,.28);display:none;align-items:flex-end;justify-content:center;z-index:50}
+.modal[aria-hidden="false"]{display:flex}
+.modal__sheet{width:min(860px,95vw);background:#fff;border:1px solid #e8edf5;border-radius:16px 16px 0 0;padding:16px;box-shadow:0 10px 24px rgba(0,0,0,.12)}
+.modal h3{margin:0 0 10px}
+.modal label{display:block;margin:8px 0}
+.modal input,.modal select{width:100%;padding:10px;border:1px solid #dbe1ea;border-radius:8px}
+.modal .actions{display:flex;gap:10px;justify-content:flex-end;margin-top:10px}
+.modal .actions .ghost{background:#fff;border:1px solid #dbe1ea;color:#0f172a}
+.modal .actions button{padding:10px 14px;border-radius:8px;border:1px solid #dbe1ea;background:#0ea5a3;color:#fff}
+
+/* Grids */
+.grid1{display:grid;gap:10px}
+.grid2{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.grid3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:10px}
+@media (max-width: 860px){
+  .grid2{grid-template-columns:1fr}
+  .grid3{grid-template-columns:1fr}
+}
 

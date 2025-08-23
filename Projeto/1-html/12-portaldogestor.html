@@ -5,7 +5,6 @@
   <title>Portal Instituição Altitude</title>
   <link rel="stylesheet" href="/Projeto/2-css/12-portaldogestor.css">
   <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 
 </head>
 <body>
@@ -99,56 +98,364 @@
 </section>
 
 
-      <section id="relatorios" class="aba">
+
+<section id="relatorios" class="aba">
   <h2>💰 Relatórios Financeiros</h2>
 
-  <!-- 🔹 Cards Resumo -->
-  <div class="relatorios-cards">
-    <div class="card saldo">
-      <span class="icone">💰</span>
-      <h3>R$ --</h3>
-      <p>Saldo Financeiro</p>
-    </div>
- 
-    <div class="card inadimplencia">
-      <span class="icone">⚠️</span>
-      <h3>--%</h3>
-      <p>Inadimplência</p>
-    </div>
-    
+  <!-- Filtros / Ações -->
+  <div class="toolbar">
+    <label>Período:
+      <select id="filtroPeriodo">
+        <option value="30">Últimos 30 dias</option>
+        <option value="90">Últimos 90 dias</option>
+        <option value="365">Últimos 12 meses</option>
+      </select>
+    </label>
+    <button id="btnExportar">Exportar CSV</button>
   </div>
 
-  <!-- 🔹 Gráficos -->
-  <div class="graficos-relatorios">
-    <div class="grafico" id="grafico-receita-despesa"></div>
-    <div class="grafico" id="grafico-qualidade"></div>
-    <div class="grafico" id="grafico-conclusao"></div>
+  <!-- KPIs -->
+  <div class="kpis">
+    <div class="kpi"><span class="lbl">Saldo Financeiro</span><strong id="kSaldo">R$ 0,00</strong></div>
+    <div class="kpi"><span class="lbl">Inadimplência</span><strong id="kInad">0%</strong></div>
+    <div class="kpi"><span class="lbl">Receita do mês</span><strong id="kReceitaMes">R$ 0,00</strong></div>
+    <div class="kpi"><span class="lbl">Ticket médio</span><strong id="kTicket">R$ 0,00</strong></div>
   </div>
 
-  <!-- 🔹 Cadastro de Despesas -->
-  <form onsubmit="registrarDespesa(event)">
+  <!-- Gráficos -->
+  <div class="grid-2">
+    <div class="card graf">
+      <h3>Fluxo de Caixa</h3>
+      <canvas id="chartFluxo" height="140"></canvas>
+    </div>
+    <div class="card graf">
+      <h3>Receitas por Origem</h3>
+      <canvas id="chartReceita" height="140"></canvas>
+    </div>
+  </div>
+
+  <!-- Movimentações -->
+  <div class="card">
+    <h3>Movimentações</h3>
+    <table class="tabela" id="tabMov">
+      <thead>
+        <tr><th>Data</th><th>Tipo</th><th>Descrição</th><th>Valor (R$)</th></tr>
+      </thead>
+      <tbody></tbody>
+    </table>
+  </div>
+
+    <!-- Nova despesa -->
+  <form class="inline" id="formDespesa">
+    <input type="date" id="dtDespesa" required>
     <input type="text" id="descDespesa" placeholder="Descrição" required>
-    <input type="number" id="valorDespesa" placeholder="Valor (R$)" required>
+    <input type="number" step="0.01" id="valorDespesa" placeholder="Valor (R$)" required>
     <button type="submit">Adicionar Despesa</button>
   </form>
-  <ul id="listaDespesas"></ul>
+
+  <!-- Nova receita -->
+  <form class="inline" id="formReceita">
+    <input type="date" id="dtReceita" required>
+    <input type="text" id="descReceita" placeholder="Descrição" required>
+    <input type="number" step="0.01" id="valorReceita" placeholder="Valor (R$)" required>
+    <select id="origemReceita" aria-label="Origem da receita">
+      <option value="Mensalidades">Mensalidades</option>
+      <option value="Matrículas">Matrículas</option>
+      <option value="Material">Material</option>
+      <option value="Outros">Outros</option>
+    </select>
+    <button type="submit">Adicionar Receita</button>
+  </form>
 </section>
 
+</form>
 
-      <section id="alunos" class="aba">
-        <h2>👨‍🎓 Gestão de Alunos</h2>
-        <table>
-          <thead>
-            <tr><th>RA</th><th>Nome</th><th>Status</th></tr>
-          </thead>
-          <tbody id="tabelaAlunos"></tbody>
-        </table>
-      </section>
+
+
+<section id="alunos" class="aba">
+  <h2>👨‍🎓 Gestão de Alunos</h2>
+
+  <div class="toolbar">
+    <input id="alnBusca" type="search" placeholder="Buscar por nome ou RA…">
+    <select id="alnStatus">
+      <option value="TODOS">Todos</option>
+      <option value="ATIVO">Ativo</option>
+      <option value="INATIVO">Inativo</option>
+    </select>
+    <select id="alnOrdenar">
+      <option value="ra-asc">RA (↑)</option>
+      <option value="ra-desc">RA (↓)</option>
+      <option value="nome-asc">Nome (A→Z)</option>
+      <option value="nome-desc">Nome (Z→A)</option>
+    </select>
+    <button id="alnNovo">Adicionar aluno</button>
+    <button id="alnExportar">Exportar CSV</button>
+  </div>
+
+  <div class="card">
+    <table class="tabela" id="tabAlunos">
+      <thead>
+        <tr>
+          <th style="width:110px">RA</th>
+          <th>Nome</th>
+          <th style="width:200px">E-mail</th>
+          <th style="width:140px">Telefone</th>
+          <th style="width:90px">Status</th>
+          <th style="width:160px">Ações</th>
+        </tr>
+      </thead>
+      <tbody></tbody>
+    </table>
+
+    <div class="paginacao">
+      <button id="pgPrev">◀</button>
+      <span id="pgInfo">1 / 1</span>
+      <button id="pgNext">▶</button>
+    </div>
+  </div>
+</section>
+
+<!-- Modal Add/Editar -->
+<div class="modal" id="modalAluno" aria-hidden="true">
+  <div class="modal__sheet">
+    <h3 id="modalTitulo">Novo aluno</h3>
+    <form id="formAluno">
+      <div class="grid2">
+        <label>RA
+          <input id="fRa" type="text" placeholder="gerado automaticamente" disabled>
+        </label>
+        <label>Status
+          <select id="fStatus">
+            <option value="ATIVO">Ativo</option>
+            <option value="INATIVO">Inativo</option>
+          </select>
+        </label>
+      </div>
+      <label>Nome
+        <input id="fNome" type="text" required>
+      </label>
+      <label>E-mail
+        <input id="fEmail" type="email" required>
+      </label>
+      <label>Telefone
+        <input id="fTel" type="text" placeholder="(00) 00000-0000">
+      </label>
+      <div class="actions">
+        <button type="button" class="ghost" id="btnCancelar">Cancelar</button>
+        <button type="submit" id="btnSalvarAluno">Salvar</button>
+      </div>
+    </form>
+  </div>
+</div>
+
 
       <section id="cursos" class="aba">
-        <h2>📚 Gestão de Cursos</h2>
-        <p>Aqui o gestor/professor poderá cadastrar cursos, subir PDFs, vídeos e provas.</p>
-      </section>
+  <h2>📚 Gestão de Cursos</h2>
+  <p class="sub">Cadastre cursos por área, suba materiais (PDF, vídeo, áudio, imagem) por módulo e crie avaliações com 10 perguntas.</p>
+
+  <!-- Filtros / ações -->
+  <div class="toolbar">
+    <label>Área:
+      <select id="curFiltroArea"></select>
+    </label>
+    <button id="btnNovaArea">+ Nova área</button>
+    <button id="btnNovoCurso">+ Novo curso</button>
+    <button id="btnExportCursos">Exportar CSV</button>
+  </div>
+
+  <!-- Lista de cursos -->
+  <div class="card">
+    <table class="tabela" id="tabCursos">
+      <thead>
+        <tr>
+          <th style="width:110px">Código</th>
+          <th>Curso</th>
+          <th style="width:180px">Área</th>
+          <th style="width:100px">Módulos</th>
+          <th style="width:100px">Publicado</th>
+          <th style="width:260px">Ações</th>
+        </tr>
+      </thead>
+      <tbody></tbody>
+    </table>
+  </div>
+</section>
+
+<!-- ========== MODAL: NOVA ÁREA ========== -->
+<div class="modal" id="modalArea" aria-hidden="true">
+  <div class="modal__sheet">
+    <h3>Nova área</h3>
+    <form id="formArea">
+      <label>Nome da área
+        <input id="fAreaNome" type="text" required>
+      </label>
+      <div class="actions">
+        <button type="button" class="ghost" id="fecharArea">Voltar</button>
+        <button type="submit">Salvar</button>
+      </div>
+    </form>
+  </div>
+</div>
+
+<!-- ========== MODAL: CURSO (dados gerais) ========== -->
+<div class="modal" id="modalCurso" aria-hidden="true">
+  <div class="modal__sheet">
+    <h3 id="tituloCurso">Novo curso</h3>
+    <form id="formCurso">
+      <div class="grid2">
+        <label>Área
+          <select id="fCursoArea" required></select>
+        </label>
+        <label>Publicado
+          <select id="fCursoPub">
+            <option value="SIM">SIM</option>
+            <option value="NAO" selected>NAO</option>
+          </select>
+        </label>
+      </div>
+      <label>Nome do curso
+        <input id="fCursoNome" type="text" required>
+      </label>
+      <label>Descrição breve
+        <input id="fCursoDesc" type="text" maxlength="160" placeholder="Até 160 caracteres">
+      </label>
+      <label>Foto de capa
+        <input id="fCursoCapa" type="file" accept="image/*">
+      </label>
+
+      <div class="actions">
+        <button type="button" class="ghost" id="fecharCurso">Voltar</button>
+        <button type="submit" id="salvarCurso">Salvar</button>
+      </div>
+    </form>
+  </div>
+</div>
+
+<!-- ========== MODAL: MÓDULOS do curso ========== -->
+<div class="modal" id="modalModulos" aria-hidden="true">
+  <div class="modal__sheet">
+    <h3>Gerenciar módulos — <span id="mmCursoNome"></span></h3>
+
+    <!-- Adicionar módulo -->
+    <form id="formModulo" class="inline">
+      <input id="fModuloTitulo" type="text" placeholder="Título do módulo" required>
+      <button type="submit">+ Adicionar módulo</button>
+    </form>
+
+    <!-- Lista de módulos -->
+    <div class="card">
+      <table class="tabela" id="tabModulos">
+        <thead>
+          <tr>
+            <th style="width:50px">#</th>
+            <th>Título</th>
+            <th style="width:120px">Materiais</th>
+            <th style="width:120px">Questões</th>
+            <th style="width:300px">Ações</th>
+          </tr>
+        </thead>
+        <tbody></tbody>
+      </table>
+    </div>
+
+    <div class="actions">
+      <button type="button" class="ghost" id="fecharModulos">Voltar</button>
+    </div>
+  </div>
+</div>
+
+<!-- ========== MODAL: MATERIAIS do módulo ========== -->
+<div class="modal" id="modalMateriais" aria-hidden="true">
+  <div class="modal__sheet">
+    <h3>Materiais — <span id="matModuloTitulo"></span></h3>
+
+    <form id="formMaterial" class="grid3">
+      <label>Tipo
+        <select id="fMatTipo">
+          <option value="PDF">PDF</option>
+          <option value="VIDEO">Vídeo (URL)</option>
+          <option value="AUDIO">Áudio</option>
+          <option value="IMAGEM">Imagem</option>
+        </select>
+      </label>
+      <label>Nome / Título
+        <input id="fMatNome" type="text" required>
+      </label>
+      <label id="wrapArquivo">Arquivo
+        <input id="fMatArquivo" type="file" accept=".pdf,video/*,audio/*,image/*">
+      </label>
+      <label id="wrapUrl" class="hidden">URL do vídeo
+        <input id="fMatUrl" type="url" placeholder="https://...">
+      </label>
+      <button type="submit">+ Adicionar material</button>
+    </form>
+
+    <div class="card">
+      <table class="tabela" id="tabMateriais">
+        <thead>
+          <tr><th>Tipo</th><th>Nome</th><th>Origem</th><th style="width:120px">Ações</th></tr>
+        </thead>
+        <tbody></tbody>
+      </table>
+    </div>
+
+    <div class="actions">
+      <button type="button" class="ghost" id="fecharMateriais">Voltar</button>
+    </div>
+  </div>
+</div>
+
+<!-- ========== MODAL: AVALIAÇÃO (10 questões) ========== -->
+<div class="modal" id="modalQuestoes" aria-hidden="true">
+  <div class="modal__sheet">
+    <h3>Avaliação — <span id="qModuloTitulo"></span> <small>(máx. 10 perguntas)</small></h3>
+
+    <form id="formQuestao" class="grid1">
+      <label>Pergunta
+        <input id="fPergunta" type="text" required>
+      </label>
+      <div class="grid2">
+        <label>Alternativa A
+          <input id="fA" type="text" required>
+        </label>
+        <label>Alternativa B
+          <input id="fB" type="text" required>
+        </label>
+      </div>
+      <div class="grid2">
+        <label>Alternativa C
+          <input id="fC" type="text" required>
+        </label>
+        <label>Alternativa D
+          <input id="fD" type="text" required>
+        </label>
+      </div>
+      <label>Correta
+        <select id="fCorreta">
+          <option value="A">A</option><option value="B">B</option>
+          <option value="C">C</option><option value="D">D</option>
+        </select>
+      </label>
+      <div class="actions">
+        <button type="submit">+ Adicionar pergunta</button>
+      </div>
+    </form>
+
+    <div class="card">
+      <table class="tabela" id="tabQuestoes">
+        <thead>
+          <tr><th>#</th><th>Pergunta</th><th>Correta</th><th style="width:120px">Ações</th></tr>
+        </thead>
+        <tbody></tbody>
+      </table>
+    </div>
+
+    <div class="actions">
+      <button type="button" class="ghost" id="fecharQuestoes">Voltar</button>
+    </div>
+  </div>
+</div>
+
 
       <section id="usuarios" class="aba">
         <h2>👥 Gestão de Usuários</h2>

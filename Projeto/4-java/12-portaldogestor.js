@@ -359,11 +359,12 @@ document.addEventListener('DOMContentLoaded', ()=>{
   // primeira renderização se a aba existir
   if (document.getElementById('chartFluxo')) atualizarRelatorios(30);
 });
+
 /* ======================= GESTÃO DE CURSOS (GC_) ======================= */
 (function(){
   // Estado simples em memória
   let GC_areas = ['Tecnologia', 'Humanas', 'Saúde'];
-  let GC_cursos = []; // {id,nome,area,desc,publicado,capa,modulos:[{titulo,materiais:[],questoes:[]}]} 
+  let GC_cursos = []; // {id,nome,area,horas,desc,publicado,capa,modulos:[{titulo,materiais:[],questoes:[]}]} 
   let GC_idxCurso = -1;
   let GC_idxModulo = -1;
 
@@ -516,6 +517,8 @@ document.addEventListener('DOMContentLoaded', ()=>{
       GC_idxCurso = -1;
       $q('#tituloCurso').textContent = 'Novo curso';
       $q('#fCursoNome').value = '';
+      // horas (se existir no HTML)
+      const horasEl = $q('#fCursoHoras'); if(horasEl) horasEl.value = '';
       $q('#fCursoDesc').value = '';
       $q('#fCursoPub').value  = 'NAO';
       $q('#fCursoCapa').value = '';
@@ -530,6 +533,7 @@ document.addEventListener('DOMContentLoaded', ()=>{
         id: GC_idxCurso>=0 ? GC_cursos[GC_idxCurso].id : GC_genId(),
         nome: GC_up($q('#fCursoNome').value),
         area: $q('#fCursoArea').value,
+        horas: parseInt($q('#fCursoHoras')?.value, 10) || 0, // << HORAS
         desc: $q('#fCursoDesc').value.trim(),
         publicado: $q('#fCursoPub').value,
         capa: $q('#fCursoCapa').files[0]?.name || null,
@@ -558,6 +562,8 @@ document.addEventListener('DOMContentLoaded', ()=>{
         $q('#fCursoArea').value = curso.area;
         $q('#fCursoPub').value  = curso.publicado;
         $q('#fCursoNome').value = curso.nome;
+        // horas (se existir no HTML)
+        const horasEl = $q('#fCursoHoras'); if(horasEl) horasEl.value = curso.horas || '';
         $q('#fCursoDesc').value = curso.desc || '';
         $q('#fCursoCapa').value = '';
         $q('#modalCurso').setAttribute('aria-hidden','false');

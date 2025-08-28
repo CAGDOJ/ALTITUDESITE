@@ -459,14 +459,119 @@
     </div>
   </div>
 </div>
+<section id="usuarios" class="aba">
+  <h2>👥 Gestão de Usuários</h2>
+  <p class="sub">Criar/editar gestores, coordenadores, professores e colaboradores. Defina nível de acesso (1–4) e libere o portal.</p>
 
+  <div class="toolbar">
+    <input id="guBusca" type="search" placeholder="Buscar por nome ou e-mail…">
+    <select id="guFiltroCargo" aria-label="Filtrar por cargo">
+      <option value="TODOS">Todos</option>
+      <option value="COLABORADOR">Colaborador</option>
+      <option value="PROFESSOR">Professor</option>
+      <option value="COORDENADOR">Coordenador</option>
+      <option value="GESTOR">Gestor</option>
+    </select>
+    <select id="guFiltroStatus" aria-label="Filtrar por status">
+      <option value="TODOS">Todos</option>
+      <option value="ATIVO">Ativo</option>
+      <option value="INATIVO">Inativo</option>
+    </select>
+    <button id="guNovo">+ Novo usuário</button>
+    <button id="guExport">Exportar CSV</button>
+  </div>
 
+  <div class="card">
+    <table class="tabela" id="tabUsuarios">
+      <thead>
+        <tr>
+          <th style="width:60px">ID</th>
+          <th>Nome</th>
+          <th style="width:230px">E-mail</th>
+          <th style="width:140px">Cargo</th>
+          <th style="width:80px">Nível</th>
+          <th style="width:90px">Status</th>
+          <th style="width:260px">Ações</th>
+        </tr>
+      </thead>
+      <tbody></tbody>
+    </table>
+  </div>
+</section>
 
+<!-- MODAL: Usuário -->
+<div class="modal" id="modalUsuario" aria-hidden="true">
+  <div class="modal__sheet">
+    <h3 id="guTitulo">Novo usuário</h3>
+    <form id="formUsuario">
+      <div class="grid2">
+        <label>Nome
+          <input id="guNome" type="text" required>
+        </label>
+        <label>E-mail
+          <input id="guEmail" type="email" required>
+        </label>
+      </div>
+      <div class="grid2">
+        <label>Telefone
+          <input id="guTel" type="text" placeholder="(00) 00000-0000">
+        </label>
+        <label>Status
+          <select id="guStatus">
+            <option value="ATIVO">Ativo</option>
+            <option value="INATIVO">Inativo</option>
+          </select>
+        </label>
+      </div>
+      <div class="grid3">
+        <label>Cargo
+          <select id="guCargo" required>
+            <option value="COLABORADOR">Colaborador</option>
+            <option value="PROFESSOR">Professor</option>
+            <option value="COORDENADOR">Coordenador</option>
+            <option value="GESTOR">Gestor</option>
+          </select>
+        </label>
+        <label>Nível de acesso
+          <select id="guNivel" required>
+            <option value="1">1 — Colaborador</option>
+            <option value="2">2 — Professor</option>
+            <option value="3">3 — Coordenador</option>
+            <option value="4">4 — Gestor</option>
+          </select>
+        </label>
+        <label>UID (opcional)
+          <input id="guId" type="text" placeholder="id do auth/sistema">
+        </label>
+      </div>
 
-      <section id="usuarios" class="aba">
-        <h2>👥 Gestão de Usuários</h2>
-        <p>Criar/editar gestores, professores e colaboradores.</p>
-      </section>
+      <!-- Liberação de portais -->
+      <div class="card" style="margin-top:8px">
+        <strong>Portais liberados</strong>
+        <div class="grid3" style="margin-top:6px">
+          <label><input type="checkbox" id="acColab"> Colaborador</label>
+          <label><input type="checkbox" id="acProf"> Professor</label>
+          <label><input type="checkbox" id="acCoord"> Coordenador</label>
+        </div>
+        <div style="margin-top:6px">
+          <label><input type="checkbox" id="acGestor"> Gestor</label>
+        </div>
+      </div>
+
+      <div class="card" style="margin-top:8px">
+        <strong>Permissões deste nível</strong>
+        <ul id="guPermissoes" class="perm-list"></ul>
+      </div>
+
+      <div class="actions">
+        <button type="button" class="ghost" id="guCancelar">Voltar</button>
+        <button type="submit" id="guSalvar">Salvar</button>
+      </div>
+    </form>
+  </div>
+</div>
+
+      
 
       <section id="chamados" class="aba">
         <h2>📨 Chamados</h2>

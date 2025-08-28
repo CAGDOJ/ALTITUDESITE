@@ -649,3 +649,140 @@ document.addEventListener('DOMContentLoaded', ()=>{
 
   }); // DOMContentLoaded
 })(); // IIFE GC_
+/* ======================= GESTÃO DE USUÁRIOS (GU_) ======================= */
+(function(){
+  // Mock em memória; depois plugar no banco
+  let GU_usuarios = [
+    { id:'U001', nome:'ADMIN GERAL', email:'admin@altitude.com', telefone:'', cargo:'GESTOR', nivel:4, status:'ATIVO',
+      acessos:{ colab:true, prof:true, coord:true, gestor:true } }
+  ];
+  let GU_editIdx = -1;
+
+  const $q = s => document.querySelector(s);
+  const GU_up = t => (t||'').normalize('NFD').replace(/[\u0300-\u036f]/g,'').replace(/ç/gi,'c').replace(/[^a-zA-Z\s]/g,' ').replace(/\s+/g,' ').trim().toUpperCase();
+  const GU_maskPhone = v => { const d=(v||'').replace(/\D/g,'').slice(0,11); const h=d.length>10; const ddd=d.slice(0,2), p1=h?d.slice(2,7):d.slice(2,6), p2=h?d.slice(7,11):d.slice(6,10); return (ddd?`(${ddd}) `:'')+p1+(p2?`-${p2}`:''); };
+
+  const GU_cargoNivel = { COLABORADOR:1, PROFESSOR:2, COORDENADOR:3, GESTOR:4 };
+  const GU_permissoesNivel = {
+    1:['Matrículas: realizar novas','Matrículas: gerenciar as próprias'],
+    2:['Tudo do nível 1','Cursos: criar/editar','Materiais e avaliações'],
+    3:['Tudo do nível 2','Chamados: gerenciar','Solicitações: certificados/históricos/liberações'],
+    4:['Tudo do nível 3','Administração global de todos os módulos']
+  };
+  function GU_getPermissoes(nv){ const n=Math.max(1,Math.min(4,parseInt(nv,10)||1)); const out=[]; for(let i=1;i<=n;i++) GU_permissoesNivel[i].forEach(p=>out.push(p)); return out; }
+  function GU_renderPermissoes(nv){ const ul=$q('#guPermissoes'); if(!ul) return; ul.innerHTML = GU_getPermissoes(nv).map(p=>`<li>• ${p}</li>`).join(''); }
+
+  function GU_renderUsuarios(){
+    const tbody = $q('#tabUsuarios tbody'); if(!tbody) return;
+    const q = ($q('#guBusca')?.value||'').trim().toUpperCase();
+    const cargo = $q('#guFiltroCargo')?.value || 'TODOS';
+    const status = $q('#guFiltroStatus')?.value || 'TODOS';
+    const lista = GU_usuarios.filter(u=>{
+      const okBusca = u.nome.includes(q) || u.email.toUpperCase().includes(q);
+      const okCargo = cargo==='TODOS' || u.cargo===cargo;
+      const okStatus = status==='TODOS' || u.status===status;
+      return okBusca && okCargo && okStatus;
+    });
+    tbody.innerHTML = lista.map((u,i)=>`
+      <tr>
+        <td>${u.id||'-'}</td>
+        <td>${u.nome}</td>
+        <td>${u.email}</td>
+        <td><span class="role-badge ${u.cargo}">${u.cargo}</span></td>
+        <td><span class="nivel-badge">${u.nivel}</span></td>
+        <td><span class="badge ${u.status==='ATIVO'?'ativo':'inativo'}">${u.status}</span></td>
+        <td>
+          <button class="btn-mini" data-gu="edit" data-i="${i}">Editar</button>
+          <button class="btn-mini" data-gu="toggle" data-i="${i}">${u.status==='ATIVO'?'Inativar':'Ativar'}</button>
+          <button class="btn-mini" data-gu="reset" data-i="${i}">Reset senha</button>
+          <button class="btn-mini" data-gu="del" data-i="${i}">Excluir</button>
+        </td>
+      </tr>`).join('');
+  }
+
+  function GU_openModal(idx=-1){
+    GU_editIdx = idx;
+    $q('#guTitulo').textContent = idx>=0 ? 'Editar usuário' : 'Novo usuário';
+    const u = idx>=0 ? GU_usuarios[idx] : { id:'', nome:'', email:'', telefone:'', cargo:'COLABORADOR', nivel:1, status:'ATIVO', acessos:{colab:false,prof:false,coord:false,gestor:false} };
+    $q('#guId').value    = u.id || '';
+    $q('#guNome').value  = u.nome || '';
+    $q('#guEmail').value = u.email || '';
+    $q('#guTel').value   = GU_maskPhone(u.telefone || '');
+    $q('#guCargo').value = u.cargo || 'COLABORADOR';
+    $q('#guNivel').value = u.nivel || GU_cargoNivel[$q('#guCargo').value] || 1;
+    $q('#guStatus').value= u.status || 'ATIVO';
+    $q('#acColab').checked = !!u.acessos.colab;
+    $q('#acProf').checked  = !!u.acessos.prof;
+    $q('#acCoord').checked = !!u.acessos.coord;
+    $q('#acGestor').checked= !!u.acessos.gestor;
+    GU_renderPermissoes($q('#guNivel').value);
+    $q('#modalUsuario').setAttribute('aria-hidden','false');
+  }
+  function GU_closeModal(){ $q('#modalUsuario').setAttribute('aria-hidden','true'); }
+
+  function GU_exportCSV(){
+    const rows = [['ID','NOME','EMAIL','TELEFONE','CARGO','NIVEL','STATUS','COLAB','PROF','COORD','GESTOR']];
+    GU_usuarios.forEach(u=> rows.push([u.id,u.nome,u.email,u.telefone,u.cargo,u.nivel,u.status, u.acessos.colab?'1':'0',u.acessos.prof?'1':'0',u.acessos.coord?'1':'0',u.acessos.gestor?'1':'0']));
+    const csv = rows.map(r=>r.join(';')).join('\n');
+    const blob = new Blob([csv],{type:'text/csv;charset=utf-8;'});
+    const a = document.createElement('a'); a.href=URL.createObjectURL(blob); a.download='usuarios.csv'; a.click();
+  }
+
+  document.addEventListener('DOMContentLoaded', ()=>{
+    if(!$q('#usuarios')) return;
+
+    $q('#guBusca')?.addEventListener('input', GU_renderUsuarios);
+    $q('#guFiltroCargo')?.addEventListener('change', GU_renderUsuarios);
+    $q('#guFiltroStatus')?.addEventListener('change', GU_renderUsuarios);
+    $q('#guExport')?.addEventListener('click', GU_exportCSV);
+    $q('#guNovo')?.addEventListener('click', ()=>GU_openModal(-1));
+    $q('#guCancelar')?.addEventListener('click', GU_closeModal);
+
+    $q('#tabUsuarios')?.addEventListener('click', ev=>{
+      const b = ev.target.closest('button'); if(!b) return;
+      const i = parseInt(b.dataset.i,10), act=b.dataset.gu;
+      if(Number.isNaN(i)) return;
+      if(act==='edit'){ GU_openModal(i); }
+      if(act==='toggle'){ GU_usuarios[i].status = GU_usuarios[i].status==='ATIVO'?'INATIVO':'ATIVO'; GU_renderUsuarios(); }
+      if(act==='reset'){ alert('Link de redefinição enviado para: ' + GU_usuarios[i].email); }
+      if(act==='del'){ if(confirm('Excluir usuário?')){ GU_usuarios.splice(i,1); GU_renderUsuarios(); } }
+    });
+
+    // Cargo → nível e sugestão de liberação
+    $q('#guCargo')?.addEventListener('change', ()=>{
+      const cargo = $q('#guCargo').value;
+      $q('#guNivel').value = {COLABORADOR:1,PROFESSOR:2,COORDENADOR:3,GESTOR:4}[cargo] || 1;
+      GU_renderPermissoes($q('#guNivel').value);
+      $q('#acColab').checked = true;
+      $q('#acProf').checked  = (cargo==='PROFESSOR'||cargo==='COORDENADOR'||cargo==='GESTOR');
+      $q('#acCoord').checked = (cargo==='COORDENADOR'||cargo==='GESTOR');
+      $q('#acGestor').checked= (cargo==='GESTOR');
+    });
+    $q('#guNivel')?.addEventListener('change', ()=> GU_renderPermissoes($q('#guNivel').value));
+    $q('#guTel')?.addEventListener('input', e=> e.target.value = GU_maskPhone(e.target.value));
+
+    $q('#formUsuario')?.addEventListener('submit', e=>{
+      e.preventDefault();
+      const payload = {
+        id: ($q('#guId').value || `U${String(GU_usuarios.length+1).padStart(3,'0')}`).toUpperCase(),
+        nome: GU_up($q('#guNome').value),
+        email: ($q('#guEmail').value||'').trim().toLowerCase(),
+        telefone: ($q('#guTel').value||'').replace(/\D/g,''),
+        cargo: $q('#guCargo').value,
+        nivel: parseInt($q('#guNivel').value,10)||1,
+        status: $q('#guStatus').value,
+        acessos: {
+          colab: $q('#acColab').checked,
+          prof:  $q('#acProf').checked,
+          coord: $q('#acCoord').checked,
+          gestor:$q('#acGestor').checked
+        }
+      };
+      if(GU_editIdx>=0) GU_usuarios[GU_editIdx] = payload; else GU_usuarios.push(payload);
+      GU_closeModal(); GU_renderUsuarios();
+    });
+
+    GU_renderPermissoes(4);
+    GU_renderUsuarios();
+  });
+})();

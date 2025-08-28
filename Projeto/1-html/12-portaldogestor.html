@@ -574,11 +574,112 @@
       
 
       <section id="chamados" class="aba">
-        <h2>📨 Chamados</h2>
-        <ul id="listaChamados"></ul>
-      </section>
-    </main>
+  <h2>📨 Chamados</h2>
+
+  <!-- KPIs -->
+  <div class="kpis-ch">
+    <div class="kpi-ch">
+      <span class="label">Pendentes</span>
+      <span class="value" id="chPendentes">0</span>
+      <span class="muted">Abertos + Em andamento</span>
+    </div>
+    <div class="kpi-ch">
+      <span class="label">Resolvidos</span>
+      <span class="value" id="chResolvidos">0</span>
+      <span class="muted">Período filtrado</span>
+    </div>
+    <div class="kpi-ch alerta">
+      <span class="label">Atrasados</span>
+      <span class="value" id="chAtrasados">0</span>
+      <span class="muted">Venceram o prazo</span>
+    </div>
   </div>
+
+  <!-- Filtros -->
+  <div class="toolbar">
+    <input id="chBusca" type="search" placeholder="Buscar por protocolo, aluno ou assunto…">
+    <select id="chFiltroStatus" aria-label="Status">
+      <option value="TODOS">Todos</option>
+      <option value="ABERTO">Aberto</option>
+      <option value="EM_ANDAMENTO">Em andamento</option>
+      <option value="RESOLVIDO">Resolvido</option>
+    </select>
+    <select id="chFiltroPrioridade" aria-label="Prioridade">
+      <option value="TODAS">Todas</option>
+      <option value="URGENTE">Urgente</option>
+      <option value="ALTA">Alta</option>
+      <option value="MEDIA">Média</option>
+      <option value="BAIXA">Baixa</option>
+    </select>
+    <select id="chPeriodo" aria-label="Período">
+      <option value="7">Últimos 7 dias</option>
+      <option value="15" selected>Últimos 15 dias</option>
+      <option value="30">Últimos 30 dias</option>
+      <option value="90">Últimos 90 dias</option>
+      <option value="365">Últimos 12 meses</option>
+    </select>
+  </div>
+
+  <!-- Tabela -->
+  <div class="card">
+    <table class="tabela" id="tabChamados">
+      <thead>
+        <tr>
+          <th style="width:120px">Protocolo</th>
+          <th>Aluno</th>
+          <th>Assunto</th>
+          <th style="width:110px">Prioridade</th>
+          <th style="width:100px">Criado</th>
+          <th style="width:110px">Prazo</th>
+          <th style="width:120px">Status</th>
+          <th style="width:120px">SLA</th>
+          <th style="width:160px">Ações</th>
+        </tr>
+      </thead>
+      <tbody></tbody>
+    </table>
+  </div>
+</section>
+
+<!-- MODAL: Chamado -->
+<div class="modal" id="modalChamado" aria-hidden="true">
+  <div class="modal__sheet modal-chamado">
+    <h3 id="chModalTitulo">Chamado</h3>
+    <div class="grid2">
+      <div class="card">
+        <div class="meta">
+          <p><b>Protocolo:</b> <span id="chProto"></span></p>
+          <p><b>Aluno:</b> <span id="chAluno"></span> — <span id="chEmail"></span></p>
+          <p><b>Assunto:</b> <span id="chAssunto"></span></p>
+          <p><b>Categoria:</b> <span id="chCategoria"></span></p>
+          <p><b>Prioridade:</b> <span id="chPrioridade" class="badge"></span></p>
+          <p><b>Status:</b> <span id="chStatus" class="badge"></span></p>
+          <p><b>Criado em:</b> <span id="chCriado"></span></p>
+          <p><b>Prazo:</b> <span id="chPrazo"></span> <span id="chSLAChip" class="sla-chip"></span></p>
+        </div>
+        <div class="descricao" id="chDescricao"></div>
+      </div>
+
+      <div class="card">
+        <strong>Histórico</strong>
+        <div id="chHistorico" class="historico"></div>
+        <form id="formResposta" class="mt8">
+          <textarea id="chResposta" rows="4" placeholder="Escreva a resposta ao aluno…"></textarea>
+          <div class="actions">
+            <select id="chAcaoRapida">
+              <option value="RESPONDER">Responder</option>
+              <option value="RESP_E_ANDAMENTO">Responder e marcar Em andamento</option>
+              <option value="RESP_RESOLVER">Responder e marcar Resolvido</option>
+            </select>
+            <button type="submit">Enviar</button>
+            <button type="button" class="ghost" id="chFecharModal">Fechar</button>
+          </div>
+        </form>
+      </div>
+    </div>
+  </div>
+</div>
+
 
   <script src="/Projeto/4-java/12-portaldogestor.js"></script>
 </body>

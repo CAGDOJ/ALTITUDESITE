@@ -786,3 +786,189 @@ document.addEventListener('DOMContentLoaded', ()=>{
     GU_renderUsuarios();
   });
 })();
+/* ======================= CHAMADOS (CH_) ======================= */
+(function(){
+  // SLA por prioridade (horas)
+  const CH_SLA_H = { URGENTE:4, ALTA:24, MEDIA:48, BAIXA:72 };
+
+  // Mock inicial — depois plugamos no banco/portais dos alunos
+  let CH_chamados = [
+    novoChamado('TCK-2025-001','JOAO SILVA','joao@exemplo.com','Dificuldade para acessar o Portal','Acesso/Plataforma','Não consigo entrar no portal do aluno desde ontem.', 'ALTA', diasAtras(1)),
+    novoChamado('TCK-2025-002','MARIA SOUZA','maria@exemplo.com','Boleto em duplicidade','Financeiro','Meu boleto deste mês veio em duplicidade.', 'MEDIA', diasAtras(3)),
+    novoChamado('TCK-2025-003','CARLOS JUNIOR','carlos@exemplo.com','Correção de nome no histórico','Acadêmico','Meu nome saiu errado no histórico, como corrigir?', 'BAIXA', diasAtras(6)),
+    // Um já resolvido
+    (()=>{ const c=novoChamado('TCK-2025-004','ANA LIMA','ana@exemplo.com','Certificado não liberado','Documentos','Concluí o curso e não liberou certificado.', 'ALTA', diasAtras(10)); c.status='RESOLVIDO'; c.resolvidoEm=new Date(); c.mensagens.push(msg('ATENDENTE','Chamado resolvido e certificado liberado.')); return c; })()
+  ];
+
+  function diasAtras(n){ const d=new Date(); d.setDate(d.getDate()-n); return d; }
+  function addHours(dt, h){ return new Date(dt.getTime()+h*3600*1000); }
+  function fmtData(d){ return new Date(d).toLocaleDateString('pt-BR'); }
+  function diffHoras(a,b){ return Math.round((a.getTime()-b.getTime())/3600000); }
+
+  function novoChamado(protocolo, alunoNome, alunoEmail, assunto, categoria, descricao, prioridade, criadoEm=new Date()){
+    const slaH = CH_SLA_H[prioridade] || CH_SLA_H.MEDIA;
+    return {
+      protocolo,
+      aluno:{nome: alunoNome, email: alunoEmail},
+      assunto, categoria, descricao,
+      prioridade, // URGENTE | ALTA | MEDIA | BAIXA
+      status:'ABERTO', // ABERTO | EM_ANDAMENTO | RESOLVIDO
+      criadoEm, prazo: addHours(criadoEm, slaH),
+      mensagens: [ msg('ALUNO', descricao) ],
+      resolvidoEm: null
+    };
+  }
+  function msg(by, texto){ return { by, data: new Date(), texto }; }
+  function isAtrasado(ch){ return ch.status!=='RESOLVIDO' && new Date() > ch.prazo; }
+
+  // ------ Renderização
+  const $q = s => document.querySelector(s);
+
+  function badgeStatus(st){ return `<span class="badge status-${st}">${st.replace('_',' ')}</span>`; }
+  function badgePri(p){ return `<span class="badge pri-${p}">${p}</span>`; }
+
+  function slaChip(ch){
+    if(ch.status==='RESOLVIDO') return `<span class="sla-chip sla-ok">Concluído</span>`;
+    const horas = diffHoras(ch.prazo, new Date()); // horas restantes (negativo = vencido)
+    if(horas < 0) return `<span class="sla-chip sla-vencida">${Math.abs(horas)}h vencido</span>`;
+    if(horas <= 6) return `<span class="sla-chip sla-alerta">${horas}h restante</span>`;
+    return `<span class="sla-chip sla-ok">${horas}h restante</span>`;
+  }
+
+  function filtrosAtuais(){
+    const q = ($q('#chBusca')?.value || '').trim().toUpperCase();
+    const st = $q('#chFiltroStatus')?.value || 'TODOS';
+    const pr = $q('#chFiltroPrioridade')?.value || 'TODAS';
+    const pd = parseInt($q('#chPeriodo')?.value || '15', 10);
+    const dtMin = new Date(); dtMin.setDate(dtMin.getDate()-pd);
+    return { q, st, pr, dtMin };
+  }
+
+  function aplicaFiltros(lista){
+    const { q, st, pr, dtMin } = filtrosAtuais();
+    return lista.filter(ch=>{
+      const hit = ch.protocolo.includes(q) || ch.aluno.nome.includes(q) || ch.assunto.toUpperCase().includes(q);
+      const okSt = (st==='TODOS') || (ch.status===st);
+      const okPr = (pr==='TODAS') || (ch.prioridade===pr);
+      const okDt = ch.criadoEm >= dtMin;
+      return hit && okSt && okPr && okDt;
+    });
+  }
+
+  function renderKPIs(){
+    const lista = aplicaFiltros(CH_chamados);
+    const pendentes = lista.filter(ch => ch.status!=='RESOLVIDO').length;
+    const resolvidos = lista.filter(ch => ch.status==='RESOLVIDO').length;
+    const atrasados = lista.filter(ch => isAtrasado(ch)).length;
+    $q('#chPendentes').textContent = pendentes;
+    $q('#chResolvidos').textContent = resolvidos;
+    $q('#chAtrasados').textContent = atrasados;
+  }
+
+  function renderTabela(){
+    const tb = $q('#tabChamados tbody'); if(!tb) return;
+    const lista = aplicaFiltros(CH_chamados)
+      .sort((a,b)=> {
+        // ordenar por urgência: atrasados primeiro, depois mais próximos do prazo
+        const aA = isAtrasado(a), bA = isAtrasado(b);
+        if(aA!==bA) return aA? -1 : 1;
+        return a.prazo - b.prazo;
+      });
+
+    tb.innerHTML = lista.map((ch,i)=>`
+      <tr>
+        <td>${ch.protocolo}</td>
+        <td>${ch.aluno.nome}</td>
+        <td>${ch.assunto}</td>
+        <td>${badgePri(ch.prioridade)}</td>
+        <td>${fmtData(ch.criadoEm)}</td>
+        <td>${fmtData(ch.prazo)}</td>
+        <td>${badgeStatus(ch.status)}</td>
+        <td>${slaChip(ch)}</td>
+        <td>
+          <button class="btn-mini" data-ch="ver" data-i="${i}">Ver</button>
+          ${ch.status!=='RESOLVIDO' ? `<button class="btn-mini" data-ch="resolver" data-i="${i}">Resolver</button>` : `<button class="btn-mini" data-ch="reabrir" data-i="${i}">Reabrir</button>`}
+        </td>
+      </tr>
+    `).join('');
+  }
+
+  function abrirModal(idx){
+    const lista = aplicaFiltros(CH_chamados);
+    const ch = lista[idx]; if(!ch) return;
+    $q('#chModalTitulo').textContent = `${ch.protocolo} — ${ch.assunto}`;
+    $q('#chProto').textContent = ch.protocolo;
+    $q('#chAluno').textContent = ch.aluno.nome;
+    $q('#chEmail').textContent = ch.aluno.email;
+    $q('#chAssunto').textContent = ch.assunto;
+    $q('#chCategoria').textContent = ch.category || ch.categoria || '-';
+    $q('#chPrioridade').className = 'badge pri-'+ch.prioridade; $q('#chPrioridade').textContent = ch.prioridade;
+    $q('#chStatus').className = 'badge status-'+ch.status; $q('#chStatus').textContent = ch.status.replace('_',' ');
+    $q('#chCriado').textContent = fmtData(ch.criadoEm);
+    $q('#chPrazo').textContent = fmtData(ch.prazo);
+    $q('#chSLAChip').outerHTML = slaChip(ch); // substitui chip
+    $q('#chDescricao').textContent = ch.descricao;
+
+    const hist = $q('#chHistorico');
+    hist.innerHTML = ch.mensagens.map(m=>`
+      <div class="msg">
+        <div class="by">${m.by} — ${new Date(m.data).toLocaleString('pt-BR')}</div>
+        <div class="tx">${m.texto}</div>
+      </div>
+    `).join('');
+
+    // guardar o protocolo visível no modal
+    $q('#modalChamado').dataset.protocolo = ch.protocolo;
+    $q('#modalChamado').setAttribute('aria-hidden','false');
+  }
+
+  function fecharModal(){ $q('#modalChamado').setAttribute('aria-hidden','true'); }
+
+  function getChamadoByProto(proto){ return CH_chamados.find(c=>c.protocolo===proto); }
+
+  function setStatus(ch, novo){
+    ch.status = novo;
+    if(novo==='RESOLVIDO') ch.resolvidoEm = new Date();
+    renderKPIs(); renderTabela();
+  }
+
+  document.addEventListener('DOMContentLoaded', ()=>{
+    if(!$q('#chamados')) return;
+
+    // filtros
+    $q('#chBusca')?.addEventListener('input', ()=>{ renderKPIs(); renderTabela(); });
+    $q('#chFiltroStatus')?.addEventListener('change', ()=>{ renderKPIs(); renderTabela(); });
+    $q('#chFiltroPrioridade')?.addEventListener('change', ()=>{ renderKPIs(); renderTabela(); });
+    $q('#chPeriodo')?.addEventListener('change', ()=>{ renderKPIs(); renderTabela(); });
+
+    // tabela ações
+    $q('#tabChamados')?.addEventListener('click', (ev)=>{
+      const b = ev.target.closest('button'); if(!b) return;
+      const i = parseInt(b.dataset.i,10); const act=b.dataset.ch;
+      const lista = aplicaFiltros(CH_chamados);
+      const ch = lista[i]; if(!ch) return;
+
+      if(act==='ver'){ abrirModal(i); }
+      if(act==='resolver'){ setStatus(ch, 'RESOLVIDO'); }
+      if(act==='reabrir'){  setStatus(ch, 'EM_ANDAMENTO'); }
+    });
+
+    // modal ações
+    $q('#chFecharModal')?.addEventListener('click', fecharModal);
+    $q('#formResposta')?.addEventListener('submit', (e)=>{
+      e.preventDefault();
+      const proto = $q('#modalChamado').dataset.protocolo;
+      const ch = getChamadoByProto(proto); if(!ch) return;
+      const texto = ($q('#chResposta').value||'').trim();
+      if(texto){ ch.mensagens.push(msg('ATENDENTE', texto)); }
+      const acao = $q('#chAcaoRapida').value;
+      if(acao==='RESP_E_ANDAMENTO') setStatus(ch,'EM_ANDAMENTO');
+      if(acao==='RESP_RESOLVER')   setStatus(ch,'RESOLVIDO');
+      $q('#chResposta').value='';
+      abrirModal(aplicaFiltros(CH_chamados).findIndex(c=>c.protocolo===proto)); // re-render modal
+    });
+
+    // primeira renderização
+    renderKPIs(); renderTabela();
+  });
+})();

@@ -161,3 +161,32 @@ body { display: flex; min-height: 100vh; background: #f5f6fa; }
 
 .perm-list{margin:6px 0 0 14px;padding:0}
 .perm-list li{margin:2px 0}
+/* ===== Chamados ===== */
+.kpis-ch{display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:12px;margin:8px 0 14px}
+.kpi-ch{background:#fff;border:1px solid #e5e7eb;border-radius:10px;padding:12px 14px}
+.kpi-ch .label{font-size:12px;color:#6b7280}
+.kpi-ch .value{font-size:28px;font-weight:700;line-height:1;margin-top:2px}
+.kpi-ch .muted{font-size:12px;color:#94a3b8}
+.kpi-ch.alerta{border-color:#fecaca;background:#fff7f7}
+
+.badge{display:inline-block;padding:4px 8px;border-radius:999px;font-size:12px;border:1px solid #e5e7eb;background:#fff}
+.badge.status-ABERTO{background:#f0f9ff;border-color:#bae6fd;color:#0369a1}
+.badge.status-EM_ANDAMENTO{background:#fef9c3;border-color:#fde68a;color:#854d0e}
+.badge.status-RESOLVIDO{background:#dcfce7;border-color:#86efac;color:#166534}
+
+.badge.pri-URGENTE{background:#fee2e2;border-color:#fecaca;color:#991b1b}
+.badge.pri-ALTA{background:#fff1e6;border-color:#ffddb0;color:#9a3412}
+.badge.pri-MEDIA{background:#fef9c3;border-color:#fde68a;color:#854d0e}
+.badge.pri-BAIXA{background:#e0f2fe;border-color:#bae6fd;color:#075985}
+
+.sla-chip{display:inline-block;margin-left:6px;padding:2px 8px;border-radius:999px;font-size:12px;border:1px solid #e5e7eb}
+.sla-ok{background:#dcfce7;border-color:#86efac;color:#166534}
+.sla-alerta{background:#fef9c3;border-color:#fde68a;color:#854d0e}
+.sla-vencida{background:#fee2e2;border-color:#fecaca;color:#991b1b}
+
+.modal-chamado .meta p{margin:4px 0}
+.historico{max-height:240px;overflow:auto;border:1px dashed #e5e7eb;border-radius:8px;padding:8px;margin-top:6px;background:#fbfdff}
+.msg{padding:6px 8px;border-radius:8px;border:1px solid #e5e7eb;background:#fff;margin:6px 0}
+.msg .by{font-size:12px;color:#64748b}
+.msg .tx{margin-top:4px;white-space:pre-wrap}
+.mt8{margin-top:8px}

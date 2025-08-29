@@ -1,5 +1,7 @@
 {
     "liveServer.settings.NoBrowser": false,
     "liveServer.settings.host": "127.0.0.1",
-    "liveServer.settings.CustomBrowser": "chrome"
+    "liveServer.settings.CustomBrowser": "chrome",
+    "editor.suggest.showStatusBar": false,
+    "workbench.sideBar.location": "left"
 }

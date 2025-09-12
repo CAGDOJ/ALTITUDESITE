@@ -972,3 +972,47 @@ document.addEventListener('DOMContentLoaded', ()=>{
     renderKPIs(); renderTabela();
   });
 })();
+
+/* ====================== DASHBOARD • Supabase Realtime ====================== */
+// 1) Conexão
+const SUPABASE_URL      = 'https://SEU-PROJETO.supabase.co';   // <-- troque
+const SUPABASE_ANON_KEY = 'eyJ...';                             // <-- troque
+const sb = window.supabase?.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+
+// 2) Helpers
+function setTxt(id, val){ const el = document.getElementById(id); if(el) el.textContent = val; }
+function moeda(n){ return (Number(n)||0).toLocaleString('pt-BR',{style:'currency',currency:'BRL'}); }
+
+// 3) Busca a view v_dashboard_kpis (uma linha só)
+async function carregarKPIsDashboard(){
+  if(!sb) return;
+  const { data, error } = await sb.from('v_dashboard_kpis').select('*').single();
+  if(error){ console.warn('KPIs:', error.message); return; }
+  setTxt('kpiTotalAlunos',      data.total_alunos ?? '--');
+  setTxt('kpiMatriculasAtivas', data.matriculas_ativas ?? '--');
+  setTxt('kpiUsuariosInativos', data.usuarios_inativos ?? '--');
+  setTxt('kpiValoresPagos',     moeda(data.valores_pagos_mes));
+  setTxt('kpiCertificados',     data.certificados_emitidos ?? '--');
+  setTxt('kpiCertPendentes',    data.certificados_pendentes ?? '--');
+  setTxt('kpiTaxaConclusao',   ((data.taxa_conclusao ?? 0).toFixed ? data.taxa_conclusao.toFixed(1) : data.taxa_conclusao) + '%');
+}
+
+// 4) Realtime: qualquer mudança nas tabelas abaixo reconsulta a view
+function assinarRealtimeKPIs(){
+  if(!sb) return;
+  sb.channel('realtime-kpis')
+    .on('postgres_changes', { event: '*', schema: 'public', table: 'alunos' },                 carregarKPIsDashboard)
+    .on('postgres_changes', { event: '*', schema: 'public', table: 'matriculas' },             carregarKPIsDashboard)
+    .on('postgres_changes', { event: '*', schema: 'public', table: 'financeiro_lancamentos' }, carregarKPIsDashboard)
+    .on('postgres_changes', { event: '*', schema: 'public', table: 'certificados' },           carregarKPIsDashboard)
+    .on('postgres_changes', { event: '*', schema: 'public', table: 'chamados' },               carregarKPIsDashboard)
+    .subscribe((status)=>{ if(status==='SUBSCRIBED') carregarKPIsDashboard(); });
+}
+
+// 5) Boot
+document.addEventListener('DOMContentLoaded', ()=>{
+  if(document.getElementById('kpiTotalAlunos')){  // estamos no dashboard
+    carregarKPIsDashboard();
+    assinarRealtimeKPIs();
+  }
+});

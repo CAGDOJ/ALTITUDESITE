@@ -5,6 +5,8 @@
   <title>Portal Instituição Altitude</title>
   <link rel="stylesheet" href="/Projeto/2-css/12-portaldogestor.css">
   <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+
 
 </head>
 <body>
@@ -32,39 +34,39 @@
     <!-- Indicadores já existentes -->
     <div class="card"> 
       <span class="icone">👥</span>
-      <h3>1.247</h3>
+      <h3 id="kpiTotalAlunos">--</h3>
       <p>Total de Alunos</p>
     </div>
     <div class="card"> 
       <span class="icone">📚</span>
-      <h3>892</h3>
+      <h3 id="kpiMatriculasAtivas">--</h3>
       <p>Matrículas Ativas</p>
     </div>
     <div class="card"> 
       <span class="icone">😴</span>
-      <h3>43</h3>
+      <h3 id="kpiUsuariosInativos">--</h3>
       <p>Usuários Inativos</p>
     </div>
     <div class="card"> 
       <span class="icone">💰</span>
-      <h3>R$ 284.560</h3>
+      <h3 id="kpiValoresPagos">R$ --</h3>
       <p>Valores Pagos</p>
     </div>
 
     <!-- 👇 Novos cards -->
     <div class="card">
       <span class="icone">✅</span>
-      <h3>320</h3>
+      <h3 id="kpiCertificados">--</h3>
       <p>Certificados Emitidos</p>
     </div>
     <div class="card">
       <span class="icone">🕒</span>
-      <h3>27</h3>
+      <h3 id="kpiCertPendentes">--</h3>
       <p>Certificados Pendentes</p>
     </div>
     <div class="card">
       <span class="icone">📈</span>
-      <h3>87%</h3>
+      <h3 id="kpiTaxaConclusao">--%</h3>
       <p>Taxa de Conclusão</p>
     </div>
     <div class="card qualidade">

@@ -527,22 +527,74 @@ document.addEventListener('DOMContentLoaded', ()=>{
     $q('#fecharCurso')?.addEventListener('click', ()=> $q('#modalCurso').setAttribute('aria-hidden','true'));
 
     // Salvar curso
-    $q('#formCurso')?.addEventListener('submit', e=>{
+    $q('#formCurso')?.addEventListener('submit', async (e) => {
       e.preventDefault();
+    
+      const nome = $q('#fCursoNome')?.value?.trim();
+      const area = $q('#fCursoArea')?.value || 'profissional';
+      const horas = parseInt($q('#fCursoHoras')?.value, 10) || 0;
+      const descricao = $q('#fCursoDesc')?.value?.trim() || '';
+      const publicado = $q('#fCursoPub')?.value === 'SIM';
+      const capa = $q('#fCursoCapa')?.files[0]?.name || null;
+    
+      if (!nome) {
+        alert('Informe o nome do curso.');
+        return;
+      }
+    
       const payload = {
-        id: GC_idxCurso>=0 ? GC_cursos[GC_idxCurso].id : GC_genId(),
-        nome: GC_up($q('#fCursoNome').value),
-        area: $q('#fCursoArea').value,
-        horas: parseInt($q('#fCursoHoras')?.value, 10) || 0, // << HORAS
-        desc: $q('#fCursoDesc').value.trim(),
-        publicado: $q('#fCursoPub').value,
-        capa: $q('#fCursoCapa').files[0]?.name || null,
-        modulos: GC_idxCurso>=0 ? GC_cursos[GC_idxCurso].modulos : []
+        titulo: nome,
+        descricao,
+        categoria: area,
+        carga_horaria: horas,
+        capa_url: capa,
+        publicado
       };
-      if(GC_idxCurso>=0) GC_cursos[GC_idxCurso] = payload; else GC_cursos.push(payload);
-      $q('#modalCurso').setAttribute('aria-hidden','true');
-      GC_renderCursos();
+    
+      try {
+        const { data, error } = await sb.from('cursos').insert(payload).select().single();
+        if (error) throw error;
+    
+        alert(`Curso "${data.titulo}" criado com sucesso!`);
+        $q('#modalCurso').setAttribute('aria-hidden', 'true');
+        GC_loadFromDB(); // recarrega a lista
+      } catch (err) {
+        console.error('Erro ao salvar curso:', err);
+        alert('Erro ao salvar curso: ' + err.message);
+      }
     });
+    
+    // === CARREGAR CURSOS DO BANCO ===
+async function GC_loadFromDB() {
+  try {
+    const { data, error } = await sb
+      .from('cursos')
+      .select('*')
+      .order('id', { ascending: false });
+
+    if (error) throw error;
+
+    GC_cursos = data.map(c => ({
+      id: c.id,
+      nome: c.titulo,
+      area: c.categoria,
+      horas: c.carga_horaria,
+      desc: c.descricao,
+      publicado: c.publicado ? 'SIM' : 'NÃO',
+      capa: c.capa_url,
+      modulos: []
+    }));
+
+    GC_renderCursos();
+  } catch (e) {
+    console.error('Erro ao carregar cursos:', e);
+  }
+}
+
+document.addEventListener('DOMContentLoaded', () => {
+  GC_loadFromDB();
+});
+
 
     // Tabela cursos – ações
     $q('#tabCursos')?.addEventListener('click', ev=>{
@@ -1016,3 +1068,4 @@ document.addEventListener('DOMContentLoaded', ()=>{
     assinarRealtimeKPIs();
   }
 });
+

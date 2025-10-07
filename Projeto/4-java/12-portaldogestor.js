@@ -1001,18 +1001,28 @@ function setTxt(id, val){ const el = document.getElementById(id); if(el) el.text
 function moeda(n){ return (Number(n)||0).toLocaleString('pt-BR',{style:'currency',currency:'BRL'}); }
 
 // 3) Busca a view v_dashboard_kpis (uma linha só)
-async function carregarKPIsDashboard(){
-  if(!sb) return;
+async function carregarKPIsDashboard() {
+  if (!sb) return;
+
   const { data, error } = await sb.from('v_dashboard_kpis').select('*').single();
-  if(error){ console.warn('KPIs:', error.message); return; }
-  setTxt('kpiTotalAlunos',      data.total_alunos ?? '--');
-  setTxt('kpiMatriculasAtivas', data.matriculas_ativas ?? '--');
-  setTxt('kpiUsuariosInativos', data.usuarios_inativos ?? '--');
-  setTxt('kpiValoresPagos',     moeda(data.valores_pagos_mes));
-  setTxt('kpiCertificados',     data.certificados_emitidos ?? '--');
-  setTxt('kpiCertPendentes',    data.certificados_pendentes ?? '--');
-  setTxt('kpiTaxaConclusao',   ((data.taxa_conclusao ?? 0).toFixed ? data.taxa_conclusao.toFixed(1) : data.taxa_conclusao) + '%');
+  if (error) {
+    console.warn('KPIs:', error.message);
+    return;
+  }
+
+  // função auxiliar pra evitar erro de undefined
+  const safe = (v) => (v ?? '--');
+  const safeNum = (v) => (typeof v === 'number' ? v.toFixed(1) : '0.0');
+
+  setTxt('kpiTotalAlunos', safe(data.total_alunos));
+  setTxt('kpiMatriculasAtivas', safe(data.matriculas_ativas));
+  setTxt('kpiUsuariosInativos', safe(data.usuarios_inativos));
+  setTxt('kpiValoresPagos', moeda(data.valores_pagos_mes || 0));
+  setTxt('kpiCertificados', safe(data.certificados_emitidos));
+  setTxt('kpiCertPendentes', safe(data.certificados_pendentes));
+  setTxt('kpiTaxaConclusao', safeNum(data.taxa_conclusao) + '%');
 }
+
 
 // 4) Realtime: qualquer mudança nas tabelas abaixo reconsulta a view
 function assinarRealtimeKPIs(){

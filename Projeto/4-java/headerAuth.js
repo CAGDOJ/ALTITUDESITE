@@ -1,5 +1,5 @@
 // Projeto/4-java/headerAuth.js
-import { supabase } from "./supabaseClient.js";
+import { supabase } from "./supabase-init.js";
 
 // Elementos do cabeçalho (se não existirem, não faz nada)
 const actions  = document.getElementById('auth-actions'); // bloco com "Acessar / Cadastrar"

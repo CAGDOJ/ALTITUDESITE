@@ -1025,11 +1025,6 @@ document.addEventListener('DOMContentLoaded', () => {
   });
 })();
 
-/* ====================== DASHBOARD • Supabase Realtime ====================== */
-// 1) Conexão
-const SUPABASE_URL      = 'https://SEU-PROJETO.supabase.co';   // <-- troque
-const SUPABASE_ANON_KEY = 'eyJ...';                             // <-- troque
-const sb = window.supabase?.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
 // 2) Helpers
 function setTxt(id, val){ const el = document.getElementById(id); if(el) el.textContent = val; }
@@ -1068,4 +1063,8 @@ document.addEventListener('DOMContentLoaded', ()=>{
     assinarRealtimeKPIs();
   }
 });
-
+    ''
+// === CARREGAR CURSOS DO BANCO NA INICIALIZAÇÃO ===
+document.addEventListener('DOMContentLoaded', () => {
+  GC_loadFromDB();
+});

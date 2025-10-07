@@ -551,17 +551,35 @@ document.addEventListener('DOMContentLoaded', ()=>{
         publicado
       };
     
-      try {
-        const { data, error } = await sb.from('cursos').insert(payload).select().single();
-        if (error) throw error;
-    
-        alert(`Curso "${data.titulo}" criado com sucesso!`);
-        $q('#modalCurso').setAttribute('aria-hidden', 'true');
-       
-      } catch (err) {
-        console.error('Erro ao salvar curso:', err);
-        alert('Erro ao salvar curso: ' + err.message);
-      }
+      document.querySelector('#formNovoCurso').addEventListener('submit', async (e) => {
+        e.preventDefault();
+      
+        // Monta o payload com os dados do formulário
+        const payload = {
+          titulo: document.querySelector('#nomeCurso').value.trim(),
+          categoria: document.querySelector('#areaCurso').value.trim().toUpperCase(),
+          carga_horaria: parseInt(document.querySelector('#cargaHoraria').value) || 0,
+          descricao: document.querySelector('#descricaoCurso').value.trim(),
+          publicado: document.querySelector('#publicadoCurso').value === 'SIM',
+          criado_em: new Date().toISOString()
+        };
+      
+        try {
+          const { data, error } = await sb.from('cursos').insert(payload).select().single();
+          if (error) throw error;
+      
+          alert(`✅ Curso "${data.titulo}" criado com sucesso!`);
+          document.querySelector('#modalCurso').setAttribute('aria-hidden', 'true');
+      
+          if (typeof carregarCursosGestor === 'function') {
+            carregarCursosGestor(); // Atualiza a tabela
+          }
+        } catch (err) {
+          console.error('Erro ao salvar curso:', err);
+          alert('Erro ao salvar curso: ' + err.message);
+        }
+      });
+      
     });
 
     // Tabela cursos – ações

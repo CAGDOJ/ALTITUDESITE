@@ -557,44 +557,12 @@ document.addEventListener('DOMContentLoaded', ()=>{
     
         alert(`Curso "${data.titulo}" criado com sucesso!`);
         $q('#modalCurso').setAttribute('aria-hidden', 'true');
-        GC_loadFromDB(); // recarrega a lista
+       
       } catch (err) {
         console.error('Erro ao salvar curso:', err);
         alert('Erro ao salvar curso: ' + err.message);
       }
     });
-    
-    // === CARREGAR CURSOS DO BANCO ===
-async function GC_loadFromDB() {
-  try {
-    const { data, error } = await sb
-      .from('cursos')
-      .select('*')
-      .order('id', { ascending: false });
-
-    if (error) throw error;
-
-    GC_cursos = data.map(c => ({
-      id: c.id,
-      nome: c.titulo,
-      area: c.categoria,
-      horas: c.carga_horaria,
-      desc: c.descricao,
-      publicado: c.publicado ? 'SIM' : 'NÃO',
-      capa: c.capa_url,
-      modulos: []
-    }));
-
-    GC_renderCursos();
-  } catch (e) {
-    console.error('Erro ao carregar cursos:', e);
-  }
-}
-
-document.addEventListener('DOMContentLoaded', () => {
-  GC_loadFromDB();
-});
-
 
     // Tabela cursos – ações
     $q('#tabCursos')?.addEventListener('click', ev=>{
@@ -701,6 +669,8 @@ document.addEventListener('DOMContentLoaded', () => {
 
   }); // DOMContentLoaded
 })(); // IIFE GC_
+
+
 /* ======================= GESTÃO DE USUÁRIOS (GU_) ======================= */
 (function(){
   // Mock em memória; depois plugar no banco
@@ -1064,7 +1034,4 @@ document.addEventListener('DOMContentLoaded', ()=>{
   }
 });
     ''
-// === CARREGAR CURSOS DO BANCO NA INICIALIZAÇÃO ===
-document.addEventListener('DOMContentLoaded', () => {
-  GC_loadFromDB();
-});
+

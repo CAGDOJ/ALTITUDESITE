@@ -1,6 +1,3 @@
-
-
-
 // === Inicialização global do Supabase ===
 (function () {
   const SUPABASE_URL = "https://mxnvrxqwokvelulzdvmn.supabase.co"; 

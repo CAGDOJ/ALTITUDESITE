@@ -1,4 +1,3 @@
-
 const state = {
   user: { name:'Carlos Júnior', email:'carlos@example.com', ra:'—', cpf:'—', phone:'(00) 12345-5769' },
   progress: 0

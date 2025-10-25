@@ -362,331 +362,860 @@ document.addEventListener('DOMContentLoaded', ()=>{
 
 /* ======================= GESTÃO DE CURSOS (GC_) ======================= */
 (function(){
-  // Estado simples em memória
-  let GC_areas = ['Tecnologia', 'Humanas', 'Saúde'];
-  let GC_cursos = []; // {id,nome,area,horas,desc,publicado,capa,modulos:[{titulo,materiais:[],questoes:[]}]} 
-  let GC_idxCurso = -1;
-  let GC_idxModulo = -1;
-
+  // --------- Config ---------
   const $q = (s)=>document.querySelector(s);
+  const $$ = (s)=>Array.from(document.querySelectorAll(s));
+  const BUCKET_CAPAS = 'capas_cursos'; // bucket já criado
+  const AREAS_FIXAS  = ['TECNOLOGIA','HUMANAS','SAÚDE','ADMINISTRAÇÃO','ENGENHARIA'];
 
-  const GC_up = t => (t||'').normalize('NFD').replace(/[\u0300-\u036f]/g,'').replace(/ç/gi,'c').replace(/[^\w\s]/g,' ').replace(/\s+/g,' ').trim().toUpperCase();
-  const GC_genId = ()=>{
-    const ano = new Date().getFullYear().toString();
-    const seq = String(GC_cursos.filter(c=>c.id?.startsWith('CUR'+ano)).length + 1).padStart(4,'0');
-    return `CUR${ano}${seq}`;
-  };
+  // Estado em memória
+  let GC_cursos = [];        // lista com stats
+  let GC_editId = null;      // id que está sendo editado (null = novo)
 
-  function GC_renderAreas(){
+  // Utils
+  const toUp   = (t)=> (t||'').trim().toUpperCase();
+  const fmtBool= (b)=> b ? 'SIM' : 'NÃO';
+  const byId   = (id)=> GC_cursos.find(c=>c.id===id);
+
+  // ---------- Upload da capa ----------
+  async function uploadCapa(arquivo){
+    if(!arquivo) return null;
+    const nomeArquivo = `${Date.now()}-${arquivo.name}`.replace(/\s+/g,'_');
+    const up = await sb.storage.from(BUCKET_CAPAS).upload(nomeArquivo, arquivo, { upsert:true });
+    if(up.error) throw up.error;
+    const { data } = sb.storage.from(BUCKET_CAPAS).getPublicUrl(nomeArquivo);
+    return data.publicUrl; // url pública
+  }
+
+  // ---------- Leitura + stats ----------
+  async function fetchCursosComStats(filtroArea='TODAS'){
+    // 1) Cursos
+    let q = sb.from('cursos').select('*').order('id',{ascending:false});
+    if(filtroArea && filtroArea!=='TODAS') q = q.eq('categoria', filtroArea);
+    const { data:cursos, error } = await q;
+    if(error) throw error;
+
+    // 2) Materiais e Provas (somente os IDs/curso_id para contar no cliente)
+    const ids = cursos.map(c=>c.id);
+    let mats = [], provas = [];
+    if(ids.length){
+      const m = await sb.from('materiais').select('id,curso_id').in('curso_id', ids);
+      if(!m.error) mats = m.data;
+      const p = await sb.from('provas').select('id,curso_id').in('curso_id', ids);
+      if(!p.error) provas = p.data;
+    }
+
+    // 3) Monta os stats locais
+    const countBy = (arr)=>arr.reduce((acc,x)=>{ acc[x.curso_id]=(acc[x.curso_id]||0)+1; return acc; },{});
+    const matsCount  = countBy(mats);
+    const provasCount= countBy(provas);
+
+    return cursos.map(c=>({
+      ...c,
+      total_materiais: matsCount[c.id]  || 0,
+      total_provas:    provasCount[c.id]|| 0
+    }));
+  }
+
+  // ---------- Renderização ----------
+  function renderAreasSelects(){
+    // filtro no topo
     const filtro = $q('#curFiltroArea');
-    const formSel = $q('#fCursoArea');
-    if(!filtro && !formSel) return;
-    const opts = GC_areas.map(a=>`<option value="${a}">${a}</option>`).join('');
-    if(formSel) formSel.innerHTML = opts;
     if(filtro){
-      filtro.innerHTML = `<option value="TODAS">Todas</option>` + opts;
-      filtro.value = filtro.value || 'TODAS';
+      const atual = filtro.value || 'TODAS';
+      const opts = ['TODAS', ...AREAS_FIXAS].map(a=>`<option value="${a}">${a}</option>`).join('');
+      filtro.innerHTML = opts;
+      filtro.value = atual;
+    }
+    // selects do formulário
+    const areaForm = $q('#fCursoArea');
+    if(areaForm){
+      areaForm.innerHTML = AREAS_FIXAS.map(a=>`<option value="${a}">${a}</option>`).join('');
     }
   }
 
-  function GC_renderCursos(){
-    const tbody = $q('#tabCursos tbody'); if(!tbody) return;
-    const area = ($q('#curFiltroArea')?.value)||'TODAS';
-    const lista = area==='TODAS'? GC_cursos : GC_cursos.filter(c=>c.area===area);
-    tbody.innerHTML = lista.map((c,i)=>`
-      <tr>
-        <td>${c.id||'-'}</td>
-        <td>${c.nome}</td>
-        <td>${c.area}</td>
-        <td>${c.modulos?.length||0}</td>
-        <td><span class="badge ${c.publicado==='SIM'?'pub':'nop'}">${c.publicado==='SIM'?'SIM':'NÃO'}</span></td>
+  function renderTabela(){
+    const tbody = $q('#tabCursos tbody');
+    if(!tbody) return;
+
+    tbody.innerHTML = GC_cursos.map((c)=>`
+      <tr data-id="${c.id}">
+        <td>${c.id}</td>
         <td>
-          <button class="btn-mini" data-gc="edit" data-i="${i}">Editar</button>
-          <button class="btn-mini" data-gc="mods" data-i="${i}">Módulos</button>
-          <button class="btn-mini" data-gc="del"  data-i="${i}">Excluir</button>
+          <div class="curso-cell">
+            <img class="thumb" src="${c.capa_url || 'https://via.placeholder.com/64x40?text=CAPA'}" alt="capa">
+            <div class="tit">${toUp(c.titulo)}</div>
+          </div>
+        </td>
+        <td>${toUp(c.categoria || '-')}</td>
+        <td>
+          <span class="kpi">📚 ${c.total_materiais}</span>
+          <span class="kpi">📝 ${c.total_provas}</span>
+        </td>
+        <td><span class="badge ${c.publicado ? 'pub' : 'nop'}">${fmtBool(c.publicado)}</span></td>
+        <td class="acoes">
+          <button class="btn-mini gc-edit">Editar</button>
+          <button class="btn-mini gc-mods">Módulos</button>
+          <button class="btn-mini gc-prev">Visualizar</button>
+          <button class="btn-mini gc-dup">Duplicar</button>
+          <button class="btn-mini gc-del">Excluir</button>
         </td>
       </tr>
     `).join('');
   }
 
-  function GC_renderModulos(){
-    const cur = GC_cursos[GC_idxCurso]; if(!cur) return;
-    const tbody = $q('#tabModulos tbody'); if(!tbody) return;
-    tbody.innerHTML = (cur.modulos||[]).map((m,i)=>`
-      <tr>
-        <td>${i+1}</td>
-        <td>${m.titulo}</td>
-        <td>${m.materiais?.length||0}</td>
-        <td>${m.questoes?.length||0}/10</td>
-        <td>
-          <button class="btn-mini" data-mm="mat" data-i="${i}">Materiais</button>
-          <button class="btn-mini" data-mm="qst" data-i="${i}">Avaliação</button>
-          <button class="btn-mini" data-mm="del" data-i="${i}">Excluir</button>
-        </td>
-      </tr>
-    `).join('');
-
-    const table = $q('#tabModulos');
-    table.onclick = (ev)=>{
-      const b = ev.target.closest('button'); if(!b) return;
-      const i = parseInt(b.dataset.i,10);
-      const act = b.dataset.mm;
-      if(Number.isNaN(i)) return;
-      const cur = GC_cursos[GC_idxCurso];
-      if(act==='mat'){
-        GC_idxModulo = i;
-        $q('#matModuloTitulo').textContent = cur.modulos[i].titulo;
-        $q('#fMatTipo').value='PDF';
-        $q('#wrapUrl').classList.add('hidden');
-        $q('#wrapArquivo').classList.remove('hidden');
-        $q('#fMatNome').value=''; $q('#fMatUrl').value=''; $q('#fMatArquivo').value='';
-        GC_renderMateriais();
-        $q('#modalMateriais').setAttribute('aria-hidden','false');
-      }
-      if(act==='qst'){
-        GC_idxModulo = i;
-        $q('#qModuloTitulo').textContent = cur.modulos[i].titulo;
-        GC_renderQuestoes();
-        $q('#modalQuestoes').setAttribute('aria-hidden','false');
-      }
-      if(act==='del'){
-        if(confirm('Excluir módulo?')){ cur.modulos.splice(i,1); GC_renderModulos(); }
-      }
-    };
+  // ---------- CRUD ----------
+  async function carregarCursos(){
+    const area = $q('#curFiltroArea')?.value || 'TODAS';
+    GC_cursos = await fetchCursosComStats(area);
+    renderTabela();
   }
 
-  function GC_renderMateriais(){
-    const mod = GC_cursos[GC_idxCurso].modulos[GC_idxModulo];
-    const tbody = $q('#tabMateriais tbody'); if(!tbody) return;
-    tbody.innerHTML = (mod.materiais||[]).map((m,i)=>`
-      <tr>
-        <td>${m.tipo}</td>
-        <td>${m.nome}</td>
-        <td>${m.origem || '-'}</td>
-        <td><button class="btn-mini" data-rm="${i}">Remover</button></td>
-      </tr>
-    `).join('');
-    $q('#tabMateriais').onclick = (ev)=>{
-      const b = ev.target.closest('button'); if(!b) return;
-      const i = parseInt(b.dataset.rm,10);
-      if(!Number.isNaN(i)){ mod.materiais.splice(i,1); GC_renderMateriais(); }
-    };
+  function abrirModalNovo(){
+    GC_editId = null;
+    $q('#tituloCurso').textContent = 'Novo curso';
+    $q('#fCursoNome').value = '';
+    $q('#fCursoArea').value = AREAS_FIXAS[0] || 'TECNOLOGIA';
+    $q('#fCursoHoras').value = '';
+    $q('#fCursoDesc').value = '';
+    $q('#fCursoPub').value  = 'NAO';
+    $q('#fCursoCapa').value = '';
+    $q('#modalCurso')?.setAttribute('aria-hidden','false');
   }
 
-  function GC_renderQuestoes(){
-    const mod = GC_cursos[GC_idxCurso].modulos[GC_idxModulo];
-    const tbody = $q('#tabQuestoes tbody'); if(!tbody) return;
-    tbody.innerHTML = (mod.questoes||[]).map((q,i)=>`
-      <tr>
-        <td>${i+1}</td>
-        <td>${q.enunciado}</td>
-        <td>${q.correta}</td>
-        <td><button class="btn-mini" data-delq="${i}">Remover</button></td>
-      </tr>
-    `).join('');
-    $q('#tabQuestoes').onclick = (ev)=>{
-      const b = ev.target.closest('button'); if(!b) return;
-      const i = parseInt(b.dataset.delq,10);
-      if(!Number.isNaN(i)){ mod.questoes.splice(i,1); GC_renderQuestoes(); }
-    };
+  function abrirModalEditar(id){
+    const c = byId(id); if(!c) return;
+    GC_editId = id;
+    $q('#tituloCurso').textContent = `Editar curso #${id}`;
+    $q('#fCursoNome').value  = c.titulo || '';
+    $q('#fCursoArea').value  = toUp(c.categoria || AREAS_FIXAS[0]);
+    $q('#fCursoHoras').value = c.carga_horaria || 0;
+    $q('#fCursoDesc').value  = c.descricao || '';
+    $q('#fCursoPub').value   = c.publicado ? 'SIM' : 'NAO';
+    $q('#fCursoCapa').value  = '';
+    $q('#modalCurso')?.setAttribute('aria-hidden','false');
   }
 
-  document.addEventListener('DOMContentLoaded', ()=>{
-    // Se a aba de cursos não existe nesta página, não faz nada.
-    if(!$q('#cursos')) return;
+  async function salvarCurso(e){
+    e.preventDefault();
 
-    GC_renderAreas();
-    GC_renderCursos();
+    // Coleta
+    const nome   = $q('#fCursoNome')?.value?.trim();
+    const area   = toUp($q('#fCursoArea')?.value || 'TECNOLOGIA');
+    const horas  = parseInt($q('#fCursoHoras')?.value,10) || 0;
+    const desc   = $q('#fCursoDesc')?.value?.trim() || '';
+    const publi  = $q('#fCursoPub')?.value === 'SIM';
+    const arquivo= $q('#fCursoCapa')?.files[0] || null;
 
-    $q('#curFiltroArea')?.addEventListener('change', GC_renderCursos);
+    if(!nome){ alert('Informe o nome do curso.'); return; }
 
-    // Nova área
-    $q('#btnNovaArea')?.addEventListener('click', ()=> $q('#modalArea').setAttribute('aria-hidden','false'));
-    $q('#fecharArea')?.addEventListener('click', ()=> $q('#modalArea').setAttribute('aria-hidden','true'));
-    $q('#formArea')?.addEventListener('submit', e=>{
-      e.preventDefault();
-      const nome = GC_up($q('#fAreaNome').value);
-      if(nome && !GC_areas.includes(nome)){ GC_areas.push(nome); }
-      $q('#fAreaNome').value='';
-      $q('#modalArea').setAttribute('aria-hidden','true');
-      GC_renderAreas();
-    });
+    // Anti-duplicidade (case-insensitive). Permite o mesmo título se for o mesmo id em edição.
+    const { data:dupList, error:dupErr } = await sb
+      .from('cursos')
+      .select('id,titulo')
+      .ilike('titulo', nome);
+    if(dupErr){ console.warn(dupErr); }
+    const existeOutro = (dupList||[]).some(row => row.titulo.trim().toUpperCase() === nome.trim().toUpperCase() && row.id !== GC_editId);
+    if(existeOutro){
+      alert('Já existe um curso com esse nome. Escolha outro.');
+      return;
+    }
 
-    // Novo curso
-    $q('#btnNovoCurso')?.addEventListener('click', ()=>{
-      GC_idxCurso = -1;
-      $q('#tituloCurso').textContent = 'Novo curso';
-      $q('#fCursoNome').value = '';
-      // horas (se existir no HTML)
-      const horasEl = $q('#fCursoHoras'); if(horasEl) horasEl.value = '';
-      $q('#fCursoDesc').value = '';
-      $q('#fCursoPub').value  = 'NAO';
-      $q('#fCursoCapa').value = '';
-      $q('#modalCurso').setAttribute('aria-hidden','false');
-    });
-    $q('#fecharCurso')?.addEventListener('click', ()=> $q('#modalCurso').setAttribute('aria-hidden','true'));
+    try{
+      // Upload de capa (se houver)
+      let urlCapa = null;
+      if(arquivo) urlCapa = await uploadCapa(arquivo);
 
-    // Salvar curso
-    $q('#formCurso')?.addEventListener('submit', async (e) => {
-      e.preventDefault();
-    
-      const nome = $q('#fCursoNome')?.value?.trim();
-      const area = $q('#fCursoArea')?.value || 'profissional';
-      const horas = parseInt($q('#fCursoHoras')?.value, 10) || 0;
-      const descricao = $q('#fCursoDesc')?.value?.trim() || '';
-      const publicado = $q('#fCursoPub')?.value === 'SIM';
-      const capa = $q('#fCursoCapa')?.files[0]?.name || null;
-    
-      if (!nome) {
-        alert('Informe o nome do curso.');
-        return;
-      }
-    
-      const payload = {
+      const payloadBase = {
         titulo: nome,
-        descricao,
         categoria: area,
         carga_horaria: horas,
-        capa_url: capa,
-        publicado
+        descricao: desc,
+        publicado: publi
       };
-    
-      document.querySelector('#formNovoCurso').addEventListener('submit', async (e) => {
-        e.preventDefault();
-      
-        // Monta o payload com os dados do formulário
-        const payload = {
-          titulo: document.querySelector('#nomeCurso').value.trim(),
-          categoria: document.querySelector('#areaCurso').value.trim().toUpperCase(),
-          carga_horaria: parseInt(document.querySelector('#cargaHoraria').value) || 0,
-          descricao: document.querySelector('#descricaoCurso').value.trim(),
-          publicado: document.querySelector('#publicadoCurso').value === 'SIM',
-          criado_em: new Date().toISOString()
-        };
-      
-        try {
-          const { data, error } = await sb.from('cursos').insert(payload).select().single();
-          if (error) throw error;
-      
-          alert(`✅ Curso "${data.titulo}" criado com sucesso!`);
-          document.querySelector('#modalCurso').setAttribute('aria-hidden', 'true');
-      
-          if (typeof carregarCursosGestor === 'function') {
-            carregarCursosGestor(); // Atualiza a tabela
-          }
-        } catch (err) {
-          console.error('Erro ao salvar curso:', err);
-          alert('Erro ao salvar curso: ' + err.message);
+      if(urlCapa) payloadBase.capa_url = urlCapa;
+
+      let ok;
+      if(GC_editId){ // UPDATE
+        const { data, error } = await sb.from('cursos')
+  .update(payloadBase)
+  .eq('id', GC_editId)
+  .select();
+if (error) throw error;
+const ok = (data && data.length) ? data[0] : payloadBase;
+
+        /* ============================================================================
+   PORTAL.JS  —  Plataforma Altitude
+   Tudo em um arquivo. Supabase já deve estar disponível como `sb` (global).
+   ---------------------------------------------------------------------------
+   Seção A  ·  Utilidades e Guarda
+   Seção B  ·  Dashboard (KPIs + realtime)
+   Seção C  ·  Gestão de Alunos  (mock simples – você pode plugar no BD depois)
+   Seção D  ·  Gestão de Cursos  (CRUD + capa + anti-duplicidade + módulos)
+   Seção E  ·  Gestão de Usuários (mock simples)
+   Seção F  ·  Chamados          (mock simples)
+============================================================================ */
+
+/* ===================== Seção A · UTILs & Guardas ========================= */
+
+const $  = (s,sc=document)=>sc.querySelector(s);
+const $$ = (s,sc=document)=>Array.from(sc.querySelectorAll(s));
+
+function up(txt=''){ // UPPERCASE sem acentos
+  return txt.normalize('NFD').replace(/[\u0300-\u036f]/g,'').replace(/ç/gi,'c')
+            .replace(/[^\w\s]/g,' ').replace(/\s+/g,' ').trim().toUpperCase();
+}
+function brl(n){ return (Number(n)||0).toLocaleString('pt-BR',{style:'currency',currency:'BRL'}); }
+
+function toast(msg){ alert(msg); } // troque por sua lib de toast se quiser
+
+// Garante Supabase
+if(typeof sb === 'undefined' || !sb){ console.warn('⚠️ Supabase client (sb) não encontrado.'); }
+
+/* ===================== Seção B · DASHBOARD =============================== */
+/** KPIs via view v_dashboard_kpis */
+async function carregarKPIsDashboard(){
+  if(!$('#kpiTotalAlunos')) return; // não está nesta tela
+  try{
+    const { data, error } = await sb.from('v_dashboard_kpis').select('*').single();
+    if(error) throw error;
+    const safe = (v, d='--') => (v ?? d);
+    const safePct = (v)=> (typeof v==='number'? v.toFixed(1): '0.0');
+
+    $('#kpiTotalAlunos').textContent       = safe(data.total_alunos, 0);
+    $('#kpiMatriculasAtivas').textContent  = safe(data.matriculas_ativas, 0);
+    $('#kpiUsuariosInativos').textContent  = safe(data.usuarios_inativos, 0);
+    $('#kpiValoresPagos').textContent      = brl(safe(data.valores_pagos_mes,0));
+    $('#kpiCertificados').textContent      = safe(data.certificados_emitidos, 0);
+    $('#kpiCertPendentes').textContent     = safe(data.certificados_pendentes, 0);
+    $('#kpiTaxaConclusao').textContent     = safePct(data.taxa_conclusao)+'%';
+  }catch(err){
+    console.error('KPIs:', err);
+  }
+}
+
+/** Realtime reprocessa a view quando houver mudanças relevantes */
+function assinarRealtimeKPIs(){
+  if(!$('#kpiTotalAlunos')) return;
+  sb.channel('rt-kpis')
+    .on('postgres_changes',{ event:'*', schema:'public', table:'alunos' }, carregarKPIsDashboard)
+    .on('postgres_changes',{ event:'*', schema:'public', table:'matriculas' }, carregarKPIsDashboard)
+    .on('postgres_changes',{ event:'*', schema:'public', table:'financeiro_lancamentos' }, carregarKPIsDashboard)
+    .on('postgres_changes',{ event:'*', schema:'public', table:'certificados' }, carregarKPIsDashboard)
+    .on('postgres_changes',{ event:'*', schema:'public', table:'chamados' }, carregarKPIsDashboard)
+    .subscribe((s)=>{ if(s==='SUBSCRIBED') carregarKPIsDashboard(); });
+}
+
+/* ===================== Seção C · ALUNOS (mock local) ===================== */
+/* Mantive igual ao que você já tinha; não toca no BD por enquanto.
+   → Se quiser, a gente troca por CRUD Supabase depois, seguindo o mesmo padrão. */
+
+let alunos = [
+  { ra:'2025001', nome:'CARLOS JUNIOR', email:'carlos@example.com', telefone:'91982116890', status:'ATIVO' },
+  { ra:'2025002', nome:'MARIA SOUZA',   email:'maria@example.com',  telefone:'91988887777', status:'INATIVO' },
+  { ra:'2025003', nome:'JOAO SILVA',    email:'joao@example.com',   telefone:'91999998888', status:'ATIVO' },
+];
+const pageAln = { idx:1, size:10 };
+function maskPhone(v){
+  const d=(v||'').replace(/\D/g,'').slice(0,11);
+  const h=d.length>10, ddd=d.slice(0,2), p1=h?d.slice(2,7):d.slice(2,6), p2=h?d.slice(7):d.slice(6);
+  return (ddd?`(${ddd}) `:'')+p1+(p2?`-${p2}`:'');
+}
+function carregarAlunos(){
+  const tb = $('#tabAlunos tbody'); if(!tb) return;
+  const q=($('#alnBusca')?.value||'').trim().toUpperCase();
+  const st=$('#alnStatus')?.value||'TODOS';
+  const lista = alunos.filter(a=>{
+    const hit=a.nome.includes(q)||a.ra.includes(q);
+    const ok=(st==='TODOS')||a.status===st; return hit&&ok;
+  });
+  tb.innerHTML = lista.map((a,i)=>`
+    <tr>
+      <td>${a.ra}</td>
+      <td>${a.nome}</td>
+      <td>${a.email}</td>
+      <td>${maskPhone(a.telefone)}</td>
+      <td><span class="badge ${a.status==='ATIVO'?'ativo':'inativo'}">${a.status}</span></td>
+      <td><button class="btn-mini" data-i="${i}" data-act="toggle">${a.status==='ATIVO'?'Inativar':'Ativar'}</button></td>
+    </tr>`).join('');
+  $('#tabAlunos').onclick = (ev)=>{
+    const b = ev.target.closest('button'); if(!b) return;
+    const i = +b.dataset.i; if(Number.isNaN(i)) return;
+    alunos[i].status = alunos[i].status==='ATIVO'?'INATIVO':'ATIVO';
+    carregarAlunos();
+  };
+}
+
+/* ===================== Seção D · CURSOS ================================ */
+/** Esta seção faz CRUD completo no Supabase:
+ *  - Lista com thumb da capa + contadores (materiais e provas)
+ *  - Novo/Editar c/ validação de título (sem duplicar)
+ *  - Excluir com remoção de filhos (materiais/provas/questões)
+ *  - Duplicar curso (e filhos)
+ *  - Módulos: CRUD de materiais e provas/questões
+ */
+
+const GC = {
+  BUCKET_CAPAS: 'capas_cursos',
+  AREAS: ['TECNOLOGIA','HUMANAS','SAÚDE','ADMINISTRAÇÃO','ENGENHARIA'],
+  cursos: [],
+  editId: null,         // id do curso em edição
+  cursoAtual: null,     // objeto do curso para painel de módulos
+};
+
+/* ------------ Helpers de Cursos -------------- */
+const fmtBool = (b)=> b?'SIM':'NÃO';
+const thumb = (url)=> url || 'https://via.placeholder.com/64x40?text=CAPA';
+
+async function uploadCapa(file){
+  if(!file) return null;
+  const key = `${Date.now()}-${file.name}`.replace(/\s+/g,'_');
+  const { error:upErr } = await sb.storage.from(GC.BUCKET_CAPAS).upload(key, file, { upsert:true });
+  if(upErr) throw upErr;
+  const { data } = sb.storage.from(GC.BUCKET_CAPAS).getPublicUrl(key);
+  return data.publicUrl;
+}
+
+async function fetchCursosComStats(filtro='TODAS'){
+  // base de cursos
+  let q = sb.from('cursos').select('*').order('id',{ascending:false});
+  if(filtro && filtro!=='TODAS') q = q.eq('categoria', filtro);
+  const { data:cursos, error } = await q;
+  if(error) throw error;
+
+  if(!cursos.length) return [];
+
+  const ids = cursos.map(c=>c.id);
+  const mats = await sb.from('materiais').select('id,curso_id').in('curso_id', ids);
+  const prs  = await sb.from('provas').select('id,curso_id').in('curso_id', ids);
+  const matsCount = (mats.data||[]).reduce((a,x)=>{a[x.curso_id]=(a[x.curso_id]||0)+1;return a;}, {});
+  const prsCount  = (prs.data||[]).reduce((a,x)=>{a[x.curso_id]=(a[x.curso_id]||0)+1;return a;}, {});
+  return cursos.map(c=>({ ...c,
+    total_materiais: matsCount[c.id]||0,
+    total_provas: prsCount[c.id]||0
+  }));
+}
+
+function renderAreasSelects(){
+  const f = $('#curFiltroArea'); if(f){
+    const v = f.value || 'TODAS';
+    f.innerHTML = ['TODAS',...GC.AREAS].map(a=>`<option value="${a}">${a}</option>`).join('');
+    f.value = v;
+  }
+  const s = $('#fCursoArea'); if(s){
+    s.innerHTML = GC.AREAS.map(a=>`<option value="${a}">${a}</option>`).join('');
+  }
+}
+
+function renderTabelaCursos(){
+  const tb = $('#tabCursos tbody'); if(!tb) return;
+  tb.innerHTML = GC.cursos.map(c=>`
+    <tr data-id="${c.id}">
+      <td>${c.id}</td>
+      <td>
+        <div class="curso-cell">
+          <img class="thumb" src="${thumb(c.capa_url)}" alt="capa">
+          <div class="tit">${up(c.titulo)}</div>
+        </div>
+      </td>
+      <td>${up(c.categoria||'-')}</td>
+      <td>
+        <span class="kpi">📚 ${c.total_materiais}</span>
+        <span class="kpi">📝 ${c.total_provas}</span>
+      </td>
+      <td><span class="badge ${c.publicado?'pub':'nop'}">${fmtBool(c.publicado)}</span></td>
+      <td class="acoes">
+        <button class="btn-mini gc-edit">Editar</button>
+        <button class="btn-mini gc-mods">Módulos</button>
+        <button class="btn-mini gc-prev">Visualizar</button>
+        <button class="btn-mini gc-dup">Duplicar</button>
+        <button class="btn-mini gc-del">Excluir</button>
+      </td>
+    </tr>`).join('');
+}
+
+/* ------------ CRUD Cursos -------------------- */
+async function carregarCursos(){
+  if(!$('#cursos')) return;
+  const area = $('#curFiltroArea')?.value || 'TODAS';
+  GC.cursos = await fetchCursosComStats(area);
+  renderTabelaCursos();
+}
+
+function abrirModalCursoNovo(){
+  GC.editId = null;
+  $('#tituloCurso').textContent = 'Novo curso';
+  $('#fCursoNome').value = '';
+  $('#fCursoArea').value = GC.AREAS[0];
+  $('#fCursoHoras').value = '';
+  $('#fCursoDesc').value = '';
+  $('#fCursoPub').value = 'NAO';
+  $('#fCursoCapa').value = '';
+  $('#modalCurso')?.setAttribute('aria-hidden','false');
+}
+
+function abrirModalCursoEditar(id){
+  const c = GC.cursos.find(x=>x.id===id); if(!c) return;
+  GC.editId = id;
+  $('#tituloCurso').textContent = `Editar curso #${id}`;
+  $('#fCursoNome').value  = c.titulo || '';
+  $('#fCursoArea').value  = up(c.categoria||GC.AREAS[0]);
+  $('#fCursoHoras').value = c.carga_horaria || 0;
+  $('#fCursoDesc').value  = c.descricao || '';
+  $('#fCursoPub').value   = c.publicado ? 'SIM' : 'NAO';
+  $('#fCursoCapa').value  = '';
+  $('#modalCurso')?.setAttribute('aria-hidden','false');
+}
+
+async function salvarCurso(ev){
+  ev.preventDefault();
+  const nome = $('#fCursoNome')?.value?.trim();
+  const area = up($('#fCursoArea')?.value || 'TECNOLOGIA');
+  const horas = parseInt($('#fCursoHoras')?.value,10) || 0;
+  const desc = $('#fCursoDesc')?.value?.trim() || '';
+  const publi = $('#fCursoPub')?.value === 'SIM';
+  const file = $('#fCursoCapa')?.files[0] || null;
+
+  if(!nome){ return toast('Informe o nome do curso.'); }
+
+  // valida duplicidade (case-insensitive), exceto o próprio em edição
+  const { data:dup, error:dupErr } = await sb
+    .from('cursos')
+    .select('id,titulo')
+    .ilike('titulo', nome);
+  if(dupErr) console.warn(dupErr);
+  const existeOutro = (dup||[]).some(r => r.titulo.trim().toLowerCase()===nome.toLowerCase() && r.id!==GC.editId);
+  if(existeOutro) return toast('Já existe um curso com esse nome.');
+
+  try{
+    let urlCapa = null;
+    if(file) urlCapa = await uploadCapa(file);
+
+    const payload = {
+      titulo:nome, categoria:area, carga_horaria:horas,
+      descricao:desc, publicado:publi
+    };
+    if(urlCapa) payload.capa_url = urlCapa;
+
+    let salvo;
+    if(GC.editId){ // UPDATE
+      const q = sb.from('cursos').update(payload).eq('id', GC.editId).select().single();
+      const { data, error } = await q;
+      if(error) throw error;
+      salvo = data;
+    }else{       // INSERT
+      const novo = { ...payload, criado_em:new Date().toISOString() };
+      const { data, error } = await sb.from('cursos').insert(novo).select().single();
+      if(error) throw error;
+      salvo = data;
+    }
+    toast(`✅ Curso "${salvo.titulo}" salvo com sucesso!`);
+    $('#modalCurso')?.setAttribute('aria-hidden','true');
+    $('#formCurso')?.reset();
+    await carregarCursos();
+  }catch(err){
+    console.error(err);
+    toast('❌ Erro ao salvar: '+err.message);
+  }
+}
+
+async function excluirCurso(id){
+  const c = GC.cursos.find(x=>x.id===id); if(!c) return;
+  if(!confirm(`Excluir o curso "${c.titulo}"?`)) return;
+
+  try{
+    // remove filhos (caso FKs não sejam ON DELETE CASCADE)
+    await sb.from('questoes')
+      .delete()
+      .in('prova_id', (await sb.from('provas').select('id').eq('curso_id',id)).data?.map(x=>x.id)||[]);
+    await sb.from('provas').delete().eq('curso_id', id);
+    await sb.from('materiais').delete().eq('curso_id', id);
+    const { error } = await sb.from('cursos').delete().eq('id', id);
+    if(error) throw error;
+    await carregarCursos();
+  }catch(err){
+    console.error(err);
+    toast('❌ Não foi possível excluir. Remova materiais/provas se necessário.');
+  }
+}
+
+async function duplicarCurso(id){
+  const c = GC.cursos.find(x=>x.id===id); if(!c) return;
+  try{
+    // dup do curso
+    const base = {
+      titulo: `${c.titulo} (CÓPIA)`,
+      descricao: c.descricao, categoria:c.categoria,
+      carga_horaria:c.carga_horaria, capa_url:c.capa_url,
+      publicado:false, criado_em:new Date().toISOString()
+    };
+    const { data:newCurso, error:nErr } = await sb.from('cursos').insert(base).select().single();
+    if(nErr) throw nErr;
+
+    // dup materiais
+    const mats = await sb.from('materiais').select('*').eq('curso_id', id);
+    if(!mats.error && mats.data?.length){
+      const newMats = mats.data.map(m=>({ curso_id:newCurso.id, tipo:m.tipo, titulo:m.titulo, url:m.url, criado_em:new Date().toISOString() }));
+      await sb.from('materiais').insert(newMats);
+    }
+
+    // dup provas + questões
+    const prs = await sb.from('provas').select('*').eq('curso_id', id);
+    if(!prs.error && prs.data?.length){
+      for(const p of prs.data){
+        const { data:np } = await sb.from('provas').insert({
+          curso_id:newCurso.id, titulo:p.titulo, criado_em:new Date().toISOString()
+        }).select().single();
+        const qs = await sb.from('questoes').select('*').eq('prova_id', p.id);
+        if(!qs.error && qs.data?.length){
+          const newQs = qs.data.map(q=>({
+            prova_id:np.id, enunciado:q.enunciado, a:q.a, b:q.b, c:q.c, d:q.d, correta:q.correta
+          }));
+          await sb.from('questoes').insert(newQs);
         }
-      });
-      
-    });
+      }
+    }
 
-    // Tabela cursos – ações
-    $q('#tabCursos')?.addEventListener('click', ev=>{
-      const btn = ev.target.closest('button'); if(!btn) return;
-      const i = parseInt(btn.dataset.i,10);
-      const act = btn.dataset.gc;
-      if(Number.isNaN(i)) return;
+    toast(`✅ Curso duplicado: "${newCurso.titulo}"`);
+    await carregarCursos();
+  }catch(err){
+    console.error(err);
+    toast('❌ Erro ao duplicar: '+err.message);
+  }
+}
 
-      const filtro = $q('#curFiltroArea').value;
-      const lista = filtro==='TODAS' ? GC_cursos : GC_cursos.filter(c=>c.area===filtro);
-      const curso = lista[i];
-      const idxGlobal = GC_cursos.findIndex(c=>c.id===curso.id);
+/* ------------ Painel de MÓDULOS (Materiais + Provas/Questões) ---------- */
+/** O HTML deve ter um modal/aba com:
+ *  #modalModulos (container), #mmCursoNome (título),
+ *  Materiais: #tabMateriais tbody, #formMaterial (fMatTipo,fMatTitulo,fMatUrl)
+ *  Provas:    #tabProvas tbody,   #formProva   (fProvaTitulo)
+ *  Questões:  modal com #tabQuestoes tbody, #formQuestao (fPergunta,fA,fB,fC,fD,fCorreta)
+ *  → Caso não exista, as ações ficam silenciosas (guardas).
+ */
 
-      if(act==='edit'){
-        GC_idxCurso = idxGlobal;
-        $q('#tituloCurso').textContent = 'Editar curso';
-        $q('#fCursoArea').value = curso.area;
-        $q('#fCursoPub').value  = curso.publicado;
-        $q('#fCursoNome').value = curso.nome;
-        // horas (se existir no HTML)
-        const horasEl = $q('#fCursoHoras'); if(horasEl) horasEl.value = curso.horas || '';
-        $q('#fCursoDesc').value = curso.desc || '';
-        $q('#fCursoCapa').value = '';
-        $q('#modalCurso').setAttribute('aria-hidden','false');
+async function abrirModulos(id){
+  const c = GC.cursos.find(x=>x.id===id); if(!c || !$('#modalModulos')){ return toast('⚠️ Painel de módulos indisponível.'); }
+  GC.cursoAtual = c;
+  $('#mmCursoNome').textContent = `${c.titulo} · ${up(c.categoria)}`;
+
+  await renderMateriais();
+  await renderProvas();
+  $('#modalModulos').setAttribute('aria-hidden','false');
+}
+function fecharModulos(){ $('#modalModulos')?.setAttribute('aria-hidden','true'); }
+
+async function renderMateriais(){
+  const tb = $('#tabMateriais tbody'); if(!tb || !GC.cursoAtual) return;
+  const { data, error } = await sb.from('materiais').select('*').eq('curso_id', GC.cursoAtual.id).order('id');
+  if(error) return console.error(error);
+  tb.innerHTML = (data||[]).map(m=>`
+    <tr data-id="${m.id}">
+      <td>${m.tipo}</td>
+      <td>${m.titulo||'-'}</td>
+      <td>${m.url||'-'}</td>
+      <td><button class="btn-mini mat-del">Remover</button></td>
+    </tr>`).join('');
+  tb.onclick = async (ev)=>{
+    const b = ev.target.closest('.mat-del'); if(!b) return;
+    const id = +b.closest('tr').dataset.id;
+    if(!confirm('Remover material?')) return;
+    await sb.from('materiais').delete().eq('id',id);
+    renderMateriais();
+  };
+}
+async function renderProvas(){
+  const tb = $('#tabProvas tbody'); if(!tb || !GC.cursoAtual) return;
+  const { data, error } = await sb.from('provas').select('*').eq('curso_id', GC.cursoAtual.id).order('id');
+  if(error) return console.error(error);
+  tb.innerHTML = (data||[]).map(p=>`
+    <tr data-id="${p.id}">
+      <td>${p.id}</td>
+      <td>${p.titulo}</td>
+      <td>
+        <button class="btn-mini prova-q">Questões</button>
+        <button class="btn-mini prova-del">Excluir</button>
+      </td>
+    </tr>`).join('');
+  tb.onclick = async (ev)=>{
+    const tr = ev.target.closest('tr'); if(!tr) return;
+    const id = +tr.dataset.id;
+    if(ev.target.classList.contains('prova-del')){
+      if(!confirm('Excluir prova e questões?')) return;
+      await sb.from('questoes').delete().eq('prova_id', id);
+      await sb.from('provas').delete().eq('id', id);
+      renderProvas();
+    }
+    if(ev.target.classList.contains('prova-q')){
+      abrirQuestoes(id);
+    }
+  };
+}
+
+/* Materiais: add */
+async function submitMaterial(ev){
+  ev.preventDefault();
+  if(!GC.cursoAtual) return;
+  const tipo   = $('#fMatTipo')?.value || 'PDF';
+  const titulo = $('#fMatTitulo')?.value?.trim() || '';
+  const url    = $('#fMatUrl')?.value?.trim() || '';
+  if(!titulo) return toast('Informe o título do material.');
+  const { error } = await sb.from('materiais').insert({
+    curso_id: GC.cursoAtual.id, tipo, titulo, url, criado_em:new Date().toISOString()
+  });
+  if(error) return toast('Erro: '+error.message);
+  $('#formMaterial')?.reset();
+  renderMateriais();
+}
+
+/* Provas: add */
+async function submitProva(ev){
+  ev.preventDefault();
+  if(!GC.cursoAtual) return;
+  const titulo = $('#fProvaTitulo')?.value?.trim();
+  if(!titulo) return toast('Informe o título da prova.');
+  const { error } = await sb.from('provas').insert({
+    curso_id:GC.cursoAtual.id, titulo, criado_em:new Date().toISOString()
+  });
+  if(error) return toast('Erro: '+error.message);
+  $('#formProva')?.reset();
+  renderProvas();
+}
+
+/* Questões: CRUD simples (máx 10) */
+let PROVA_ATUAL_ID = null;
+
+async function abrirQuestoes(provaId){
+  PROVA_ATUAL_ID = provaId;
+  const md = $('#modalQuestoes'); if(!md) return;
+  // título do modal:
+  const pv = await sb.from('provas').select('titulo').eq('id',provaId).single();
+  $('#qModuloTitulo').textContent = pv.data?.titulo || 'Prova';
+  await renderQuestoes();
+  md.setAttribute('aria-hidden','false');
+}
+function fecharQuestoes(){ $('#modalQuestoes')?.setAttribute('aria-hidden','true'); }
+
+async function renderQuestoes(){
+  const tb = $('#tabQuestoes tbody'); if(!tb || !PROVA_ATUAL_ID) return;
+  const { data, error } = await sb.from('questoes').select('*').eq('prova_id', PROVA_ATUAL_ID).order('id');
+  if(error) return console.error(error);
+  tb.innerHTML = (data||[]).map((q,i)=>`
+    <tr data-id="${q.id}">
+      <td>${i+1}</td>
+      <td>${q.enunciado}</td>
+      <td>${q.correta}</td>
+      <td><button class="btn-mini q-del">Remover</button></td>
+    </tr>`).join('');
+  tb.onclick = async (ev)=>{
+    const b = ev.target.closest('.q-del'); if(!b) return;
+    const id = +b.closest('tr').dataset.id;
+    await sb.from('questoes').delete().eq('id', id);
+    renderQuestoes();
+  };
+}
+async function submitQuestao(ev){
+  ev.preventDefault();
+  if(!PROVA_ATUAL_ID) return;
+  // limita 10
+  const cnt = await sb.from('questoes').select('id', { count:'exact', head:true }).eq('prova_id', PROVA_ATUAL_ID);
+  if((cnt.count||0) >= 10) return toast('Máximo de 10 questões por prova.');
+  const enunciado = $('#fPergunta')?.value?.trim();
+  const A = $('#fA')?.value?.trim(), B=$('#fB')?.value?.trim(), C=$('#fC')?.value?.trim(), D=$('#fD')?.value?.trim();
+  const correta = $('#fCorreta')?.value || 'A';
+  if(!enunciado || !A || !B || !C || !D) return toast('Preencha a pergunta e as alternativas.');
+  const { error } = await sb.from('questoes').insert({ prova_id:PROVA_ATUAL_ID, enunciado, a:A, b:B, c:C, d:D, correta });
+  if(error) return toast('Erro: '+error.message);
+  $('#formQuestao')?.reset();
+  renderQuestoes();
+}
+
+/* ------------ WIRING (Cursos) ---------------- */
+function wireCursosUI(){
+  const wrap = $('#cursos'); if(!wrap) return; // não está nesta página
+
+  renderAreasSelects();
+  $('#curFiltroArea')?.addEventListener('change', carregarCursos);
+  $('#btnNovoCurso')?.addEventListener('click', abrirModalCursoNovo);
+  $('#fecharCurso')?.addEventListener('click', ()=>$('#modalCurso')?.setAttribute('aria-hidden','true'));
+  $('#formCurso')?.addEventListener('submit', salvarCurso);
+
+  // tabela ações
+  $('#tabCursos')?.addEventListener('click', (ev)=>{
+    const tr = ev.target.closest('tr[data-id]'); if(!tr) return;
+    const id = +tr.dataset.id; if(Number.isNaN(id)) return;
+
+    if(ev.target.classList.contains('gc-edit')) return abrirModalCursoEditar(id);
+    if(ev.target.classList.contains('gc-del'))  return excluirCurso(id);
+    if(ev.target.classList.contains('gc-dup'))  return duplicarCurso(id);
+    if(ev.target.classList.contains('gc-prev')) return window.open(`11-portaldoaluno.html?curso=${id}`,'_blank');
+    if(ev.target.classList.contains('gc-mods')) return abrirModulos(id);
+  });
+
+  // Módulos:
+  $('#fecharModulos')?.addEventListener('click', fecharModulos);
+  $('#formMaterial')?.addEventListener('submit', submitMaterial);
+  $('#formProva')?.addEventListener('submit', submitProva);
+
+  // Questões:
+  $('#fecharQuestoes')?.addEventListener('click', fecharQuestoes);
+  $('#formQuestao')?.addEventListener('submit', submitQuestao);
+
+  carregarCursos();
+}
+
+/* ===================== Seção E · USUÁRIOS (mock) ======================== */
+(function(){
+  const el = $('#usuarios'); if(!el) return;
+  let users=[{ id:'U001',nome:'ADMIN GERAL',email:'admin@altitude.com',cargo:'GESTOR',nivel:4,status:'ATIVO' }];
+  function render(){
+    const tb=$('#tabUsuarios tbody'); if(!tb) return;
+    tb.innerHTML = users.map((u,i)=>`
+      <tr>
+        <td>${u.id}</td><td>${u.nome}</td><td>${u.email}</td>
+        <td><span class="role-badge ${u.cargo}">${u.cargo}</span></td>
+        <td>${u.nivel}</td>
+        <td><span class="badge ${u.status==='ATIVO'?'ativo':'inativo'}">${u.status}</span></td>
+        <td><button class="btn-mini" data-i="${i}">Alternar</button></td>
+      </tr>`).join('');
+    tb.onclick=(ev)=>{const b=ev.target.closest('button'); if(!b) return;
+      const i=+b.dataset.i; users[i].status=users[i].status==='ATIVO'?'INATIVO':'ATIVO'; render();};
+  }
+  render();
+})();
+
+/* ===================== Seção F · CHAMADOS (mock) ======================== */
+(function(){
+  const el = $('#chamados'); if(!el) return;
+  const tb = $('#tabChamados tbody'); if(!tb) return;
+  const chamados = [
+    { protocolo:'TCK-2025-001', aluno:'JOAO SILVA', assunto:'Acesso', prioridade:'ALTA', status:'ABERTO', criado:new Date() }
+  ];
+  function render(){ tb.innerHTML = chamados.map(c=>`
+    <tr><td>${c.protocolo}</td><td>${c.aluno}</td><td>${c.assunto}</td>
+        <td>${c.prioridade}</td><td>${c.status}</td></tr>`).join(''); }
+  render();
+})();
+
+/* ===================== BOOT ============================================ */
+document.addEventListener('DOMContentLoaded', ()=>{
+  // Dashboard
+  carregarKPIsDashboard();
+  assinarRealtimeKPIs();
+
+  // Alunos (mock)
+  carregarAlunos();
+
+  // Cursos
+  wireCursosUI();
+});
+
+      }else{ // INSERT
+        const payloadNew = { ...payloadBase, criado_em: new Date().toISOString() };
+        const { data, error } = await sb.from('cursos').insert(payloadNew).select().single();
+        if(error) throw error;
+        ok = data;
       }
 
-      if(act==='mods'){
-        GC_idxCurso = idxGlobal;
-        $q('#mmCursoNome').textContent = curso.nome;
-        GC_renderModulos();
-        $q('#modalModulos').setAttribute('aria-hidden','false');
-      }
+      alert(`✅ Curso "${ok.titulo}" salvo com sucesso!`);
+      $q('#modalCurso')?.setAttribute('aria-hidden','true');
+      $q('#formCurso')?.reset();
+      await carregarCursos();
+    }catch(err){
+      console.error(err);
+      alert('❌ Erro ao salvar: ' + err.message);
+    }
+  }
 
-      if(act==='del'){
-        if(confirm('Excluir este curso?')){
-          GC_cursos.splice(idxGlobal,1);
-          GC_renderCursos();
-        }
-      }
-    });
+  async function excluirCurso(id){
+    const c = byId(id); if(!c) return;
+    const conf = confirm(`Excluir o curso "${c.titulo}"? Esta ação não pode ser desfeita.`);
+    if(!conf) return;
 
-    // MÓDULOS
-    $q('#fecharModulos')?.addEventListener('click', ()=> $q('#modalModulos').setAttribute('aria-hidden','true'));
-    $q('#formModulo')?.addEventListener('submit', e=>{
-      if(GC_idxCurso<0) return;
-      e.preventDefault();
-      const titulo = $q('#fModuloTitulo').value.trim();
-      if(!titulo) return;
-      GC_cursos[GC_idxCurso].modulos = GC_cursos[GC_idxCurso].modulos || [];
-      GC_cursos[GC_idxCurso].modulos.push({ titulo, materiais:[], questoes:[] });
-      $q('#fModuloTitulo').value='';
-      GC_renderModulos();
-    });
+    try{
+      const { error } = await sb.from('cursos').delete().eq('id', id);
+      if(error) throw error;
+      await carregarCursos();
+    }catch(err){
+      console.error(err);
+      alert('❌ Não foi possível excluir. Se houver materiais/provas vinculados, remova-os antes.');
+    }
+  }
 
-    // Materiais
-    $q('#fecharMateriais')?.addEventListener('click', ()=> $q('#modalMateriais').setAttribute('aria-hidden','true'));
-    $q('#fMatTipo')?.addEventListener('change', ()=>{
-      const t = $q('#fMatTipo').value;
-      if(t==='VIDEO'){ $q('#wrapUrl').classList.remove('hidden'); $q('#wrapArquivo').classList.add('hidden'); }
-      else           { $q('#wrapUrl').classList.add('hidden');    $q('#wrapArquivo').classList.remove('hidden'); }
-    });
-    $q('#formMaterial')?.addEventListener('submit', e=>{
-      if(GC_idxCurso<0 || GC_idxModulo<0) return;
-      e.preventDefault();
-      const tipo = $q('#fMatTipo').value;
-      const nome = $q('#fMatNome').value.trim();
-      const origem = (tipo==='VIDEO') ? ($q('#fMatUrl').value.trim()) : ($q('#fMatArquivo').files[0]?.name || '');
-      const mod = GC_cursos[GC_idxCurso].modulos[GC_idxModulo];
-      mod.materiais.push({ tipo, nome, origem });
-      $q('#fMatNome').value=''; $q('#fMatUrl').value=''; $q('#fMatArquivo').value='';
-      GC_renderMateriais();
-    });
-
-    // Questões
-    $q('#fecharQuestoes')?.addEventListener('click', ()=> $q('#modalQuestoes').setAttribute('aria-hidden','true'));
-    $q('#formQuestao')?.addEventListener('submit', e=>{
-      if(GC_idxCurso<0 || GC_idxModulo<0) return;
-      e.preventDefault();
-      const mod = GC_cursos[GC_idxCurso].modulos[GC_idxModulo];
-      mod.questoes = mod.questoes || [];
-      if(mod.questoes.length>=10){ alert('Máximo de 10 perguntas.'); return; }
-      const q = {
-        enunciado: $q('#fPergunta').value.trim(),
-        A: $q('#fA').value.trim(),
-        B: $q('#fB').value.trim(),
-        C: $q('#fC').value.trim(),
-        D: $q('#fD').value.trim(),
-        correta: $q('#fCorreta').value
+  async function duplicarCurso(id){
+    const c = byId(id); if(!c) return;
+    try{
+      const novo = {
+        titulo: `${c.titulo} (CÓPIA)`,
+        descricao: c.descricao,
+        categoria: c.categoria,
+        carga_horaria: c.carga_horaria,
+        capa_url: c.capa_url,
+        publicado: false,
+        criado_em: new Date().toISOString()
       };
-      if(!q.enunciado || !q.A || !q.B || !q.C || !q.D){ alert('Preencha a pergunta e todas as alternativas.'); return; }
-      mod.questoes.push(q);
-      $q('#fPergunta').value=''; $q('#fA').value=''; $q('#fB').value=''; $q('#fC').value=''; $q('#fD').value='';
-      GC_renderQuestoes();
-    });
+      const { data, error } = await sb.from('cursos').insert(novo).select().single();
+      if(error) throw error;
+      alert(`✅ Curso duplicado: "${data.titulo}"`);
+      await carregarCursos();
+    }catch(err){
+      console.error(err);
+      alert('❌ Erro ao duplicar: ' + err.message);
+    }
+  }
 
-    // Exportar CSV de cursos
-    $q('#btnExportCursos')?.addEventListener('click', ()=>{
-      const rows = [['CODIGO','CURSO','AREA','PUBLICADO','MODULOS']];
-      GC_cursos.forEach(c=> rows.push([c.id, c.nome, c.area, c.publicado, (c.modulos?.length||0)]));
-      const csv = rows.map(r=>r.join(';')).join('\n');
-      const blob = new Blob([csv],{type:'text/csv;charset=utf-8;'});
-      const a = document.createElement('a'); a.href=URL.createObjectURL(blob); a.download='cursos.csv'; a.click();
-    });
+  // ---------- Ações de linha ----------
+  function wireTabela(){
+    const tabela = $q('#tabCursos');
+    if(!tabela) return;
 
-  }); // DOMContentLoaded
-})(); // IIFE GC_
+    tabela.addEventListener('click', async (ev)=>{
+      const tr  = ev.target.closest('tr[data-id]');
+      const id  = tr ? parseInt(tr.dataset.id,10) : null;
+      if(!id) return;
+
+      if(ev.target.classList.contains('gc-edit')){
+        abrirModalEditar(id);
+      }
+      if(ev.target.classList.contains('gc-del')){
+        excluirCurso(id);
+      }
+      if(ev.target.classList.contains('gc-dup')){
+        duplicarCurso(id);
+      }
+      if(ev.target.classList.contains('gc-prev')){
+        // abre pré-visualização simples (você pode trocar a rota)
+        window.open(`11-portaldoaluno.html?curso=${id}`, '_blank');
+      }
+      if(ev.target.classList.contains('gc-mods')){
+        // painel lateral/placeholder (aqui você pode abrir seu modal de módulos existente)
+        alert('🔧 Em breve: painel de Módulos com materiais e avaliações.');
+      }
+    });
+  }
+
+  // ---------- Boot ----------
+  document.addEventListener('DOMContentLoaded', ()=>{
+    if(!$q('#cursos')) return; // só executa nesta página
+
+    renderAreasSelects();
+    wireTabela();
+
+    // Filtro por área
+    $q('#curFiltroArea')?.addEventListener('change', carregarCursos);
+
+    // Botões topo
+    $q('#btnNovoCurso')?.addEventListener('click', abrirModalNovo);
+    $q('#fecharCurso')?.addEventListener('click', ()=> $q('#modalCurso')?.setAttribute('aria-hidden','true'));
+
+    // Submit do formulário
+    $q('#formCurso')?.addEventListener('submit', salvarCurso);
+
+    // Primeira carga
+    carregarCursos();
+  });
+})();
+/* ===================== /GESTÃO DE CURSOS ===================== */
+
 
 
 /* ======================= GESTÃO DE USUÁRIOS (GU_) ======================= */

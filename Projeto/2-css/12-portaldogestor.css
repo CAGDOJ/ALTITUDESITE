@@ -190,3 +190,99 @@ body { display: flex; min-height: 100vh; background: #f5f6fa; }
 .msg .by{font-size:12px;color:#64748b}
 .msg .tx{margin-top:4px;white-space:pre-wrap}
 .mt8{margin-top:8px}
+/* =====================================================
+   ESTILO VISUAL - LISTAGEM DE CURSOS
+   ===================================================== */
+#tabCursos {
+  width: 100%;
+  border-collapse: collapse;
+}
+
+#tabCursos td, #tabCursos th {
+  padding: 10px 12px;
+  text-align: left;
+  vertical-align: middle;
+}
+
+#tabCursos tr:hover {
+  background-color: #f5f9ff;
+  transition: background-color 0.2s;
+}
+
+.col-id {
+  width: 50px;
+  text-align: center;
+  font-weight: 600;
+  color: #444;
+}
+
+.curso-info {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.curso-thumb {
+  width: 64px;
+  height: 40px;
+  border-radius: 6px;
+  object-fit: cover;
+  box-shadow: 0 0 3px rgba(0,0,0,0.2);
+}
+
+.curso-textos {
+  display: flex;
+  flex-direction: column;
+}
+
+.curso-titulo {
+  font-weight: 600;
+  color: #222;
+}
+
+.curso-categoria {
+  font-size: 0.85em;
+  color: #666;
+}
+
+.stats-box {
+  display: flex;
+  gap: 10px;
+  font-size: 0.9em;
+  color: #333;
+}
+
+.col-pub .badge.pub {
+  background: #d1fae5;
+  color: #065f46;
+  padding: 4px 8px;
+  border-radius: 6px;
+  font-weight: bold;
+}
+
+.col-pub .badge.nop {
+  background: #fee2e2;
+  color: #991b1b;
+  padding: 4px 8px;
+  border-radius: 6px;
+  font-weight: bold;
+}
+
+.col-acoes {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+}
+
+.btn-mini {
+  background: #f1f5f9;
+  border: 1px solid #ccc;
+  border-radius: 5px;
+  padding: 4px 6px;
+  cursor: pointer;
+  transition: background 0.2s;
+}
+
+.btn-mini:hover {
+  background: #e2e8f0;
+}

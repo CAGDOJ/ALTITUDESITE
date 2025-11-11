@@ -434,35 +434,43 @@ document.addEventListener('DOMContentLoaded', ()=>{
     }
   }
 
-  function renderTabela(){
-    const tbody = $q('#tabCursos tbody');
-    if(!tbody) return;
+ function renderTabela() {
+  const tbody = document.querySelector('#tabCursos tbody');
+  if (!tbody) return;
 
-    tbody.innerHTML = GC_cursos.map((c)=>`
-      <tr data-id="${c.id}">
-        <td>${c.id}</td>
-        <td>
-          <div class="curso-cell">
-            <img class="thumb" src="${c.capa_url || 'https://via.placeholder.com/64x40?text=CAPA'}" alt="capa">
-            <div class="tit">${toUp(c.titulo)}</div>
+  tbody.innerHTML = GC_cursos.map(c => `
+    <tr data-id="${c.id}">
+      <td class="col-id">${c.id}</td>
+      <td class="col-curso">
+        <div class="curso-info">
+          <img src="${c.capa_url || 'https://via.placeholder.com/64x40?text=CAPA'}" 
+               alt="Capa" class="curso-thumb">
+          <div class="curso-textos">
+            <div class="curso-titulo" title="${c.titulo}">${c.titulo}</div>
+            <div class="curso-categoria">${c.categoria || '-'}</div>
           </div>
-        </td>
-        <td>${toUp(c.categoria || '-')}</td>
-        <td>
-          <span class="kpi">📚 ${c.total_materiais}</span>
-          <span class="kpi">📝 ${c.total_provas}</span>
-        </td>
-        <td><span class="badge ${c.publicado ? 'pub' : 'nop'}">${fmtBool(c.publicado)}</span></td>
-        <td class="acoes">
-          <button class="btn-mini gc-edit">Editar</button>
-          <button class="btn-mini gc-mods">Módulos</button>
-          <button class="btn-mini gc-prev">Visualizar</button>
-          <button class="btn-mini gc-dup">Duplicar</button>
-          <button class="btn-mini gc-del">Excluir</button>
-        </td>
-      </tr>
-    `).join('');
-  }
+        </div>
+      </td>
+      <td class="col-stats">
+        <div class="stats-box">
+          <span title="Materiais">📚 ${c.total_materiais}</span>
+          <span title="Provas">📝 ${c.total_provas}</span>
+        </div>
+      </td>
+      <td class="col-pub">
+        <span class="badge ${c.publicado ? 'pub' : 'nop'}">${c.publicado ? 'SIM' : 'NÃO'}</span>
+      </td>
+      <td class="col-acoes">
+        <button class="btn-mini gc-edit" title="Editar curso">✏️</button>
+        <button class="btn-mini gc-mods" title="Gerenciar módulos">📦</button>
+        <button class="btn-mini gc-prev" title="Visualizar curso">👁️</button>
+        <button class="btn-mini gc-dup" title="Duplicar curso">📋</button>
+        <button class="btn-mini gc-del" title="Excluir curso">🗑️</button>
+      </td>
+    </tr>
+  `).join('');
+}
+
 
   // ---------- CRUD ----------
   async function carregarCursos(){

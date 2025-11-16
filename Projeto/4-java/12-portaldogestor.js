@@ -440,36 +440,52 @@ document.addEventListener('DOMContentLoaded', ()=>{
 
   tbody.innerHTML = GC_cursos.map(c => `
     <tr data-id="${c.id}">
+      
+      <!-- Código -->
       <td class="col-id">${c.id}</td>
+
+      <!-- Curso -->
       <td class="col-curso">
         <div class="curso-info">
-          <img src="${c.capa_url || 'https://via.placeholder.com/64x40?text=CAPA'}" 
-               alt="Capa" class="curso-thumb">
+          <img
+            src="${c.capa_url || 'https://via.placeholder.com/64x40?text=CAPA'}"
+            class="curso-thumb"
+            alt="Capa">
           <div class="curso-textos">
-            <div class="curso-titulo" title="${c.titulo}">${c.titulo}</div>
-            <div class="curso-categoria">${c.categoria || '-'}</div>
+            <div class="curso-titulo">${c.titulo}</div>
           </div>
         </div>
       </td>
-      <td class="col-stats">
-        <div class="stats-box">
-          <span title="Materiais">📚 ${c.total_materiais}</span>
-          <span title="Provas">📝 ${c.total_provas}</span>
-        </div>
+
+      <!-- Área -->
+      <td class="col-area">${c.categoria || '-'}</td>
+
+      <!-- Módulos (📚 materiais / 📝 provas) -->
+      <td class="col-modulos">
+        <span title="Materiais">📚 ${c.total_materiais}</span>
+        <span title="Provas">📝 ${c.total_provas}</span>
       </td>
+
+      <!-- Publicado -->
       <td class="col-pub">
-        <span class="badge ${c.publicado ? 'pub' : 'nop'}">${c.publicado ? 'SIM' : 'NÃO'}</span>
+        <span class="badge ${c.publicado ? 'pub' : 'nop'}">
+          ${c.publicado ? 'SIM' : 'NÃO'}
+        </span>
       </td>
+
+      <!-- Ações -->
       <td class="col-acoes">
         <button class="btn-mini gc-edit" title="Editar curso">✏️</button>
         <button class="btn-mini gc-mods" title="Gerenciar módulos">📦</button>
-        <button class="btn-mini gc-prev" title="Visualizar curso">👁️</button>
-        <button class="btn-mini gc-dup" title="Duplicar curso">📋</button>
-        <button class="btn-mini gc-del" title="Excluir curso">🗑️</button>
+        <button class="btn-mini gc-prev" title="Visualizar">👁️</button>
+        <button class="btn-mini gc-dup" title="Duplicar">📋</button>
+        <button class="btn-mini gc-del" title="Excluir">🗑️</button>
       </td>
+
     </tr>
   `).join('');
 }
+
 
 
   // ---------- CRUD ----------
@@ -550,7 +566,8 @@ document.addEventListener('DOMContentLoaded', ()=>{
   .eq('id', GC_editId)
   .select();
 if (error) throw error;
-const ok = (data && data.length) ? data[0] : payloadBase;
+ok = (data && data.length) ? data[0] : payloadBase;
+
 
         /* ============================================================================
    PORTAL.JS  —  Plataforma Altitude

@@ -1472,3 +1472,228 @@ document.addEventListener('DOMContentLoaded', ()=>{
 });
     ''
 
+
+    // =====================================================
+// GESTÃO DE MÓDULOS - INTEGRAÇÃO COM SUPABASE
+// =====================================================
+
+// Variáveis globais
+let cursoEditandoId = null;
+let moduloEditandoId = null;
+
+// Função para abrir modal de módulos
+function abrirModalModulos(cursoId, cursoNome, cursoArea) {
+    cursoEditandoId = cursoId;
+    document.getElementById('mmCursoNome').textContent = `${cursoNome} - ${cursoArea}`;
+    document.getElementById('modalModulos').setAttribute('aria-hidden', 'false');
+    
+    // Carregar módulos do curso
+    carregarModulosCurso(cursoId);
+}
+
+// Carregar módulos do curso do Supabase
+async function carregarModulosCurso(cursoId) {
+    try {
+        console.log('Carregando módulos do curso:', cursoId);
+        
+        const { data: modulos, error } = await supabase
+            .from('modulos')
+            .select('*')
+            .eq('curso_id', cursoId)
+            .order('ordem', { ascending: true });
+
+        if (error) throw error;
+
+        const tbody = document.querySelector('#tabModulos tbody');
+        tbody.innerHTML = '';
+
+        if (modulos && modulos.length > 0) {
+            modulos.forEach(modulo => {
+                const tr = document.createElement('tr');
+                tr.innerHTML = `
+                    <td>${modulo.ordem}</td>
+                    <td>
+                        <strong>${modulo.titulo}</strong>
+                        ${modulo.descricao ? `<br><small style="color: #64748b;">${modulo.descricao}</small>` : ''}
+                    </td>
+                    <td style="text-align: center;">0</td>
+                    <td style="text-align: center;">0</td>
+                    <td>
+                        <span class="status-badge ${modulo.publicado ? 'status-ativo' : 'status-inativo'}">
+                            ${modulo.publicado ? '✅ Ativo' : '⏸️ Inativo'}
+                        </span>
+                    </td>
+                    <td>
+                        <div class="btn-group">
+                            <button class="btn btn-sm" onclick="abrirEdicaoModulo('${modulo.id}', '${modulo.titulo}', '${cursoId}')">
+                                ✏️ Editar
+                            </button>
+                            <button class="btn btn-sm ghost" onclick="alternarStatusModulo('${modulo.id}')">
+                                ${modulo.publicado ? '⏸️' : '▶️'}
+                            </button>
+                            <button class="btn btn-sm ghost" onclick="excluirModulo('${modulo.id}')" style="color: #ef4444;">
+                                🗑️
+                            </button>
+                        </div>
+                    </td>
+                `;
+                tbody.appendChild(tr);
+            });
+        } else {
+            tbody.innerHTML = '<tr><td colspan="6" style="text-align: center; color: #64748b;">Nenhum módulo cadastrado</td></tr>';
+        }
+
+    } catch (error) {
+        console.error('Erro ao carregar módulos:', error);
+        alert('Erro ao carregar módulos do curso');
+    }
+}
+
+// Adicionar novo módulo
+document.addEventListener('DOMContentLoaded', function() {
+    const formModulo = document.getElementById('formModulo');
+    
+    if (formModulo) {
+        formModulo.addEventListener('submit', async (e) => {
+            e.preventDefault();
+
+            const titulo = document.getElementById('fModuloTitulo').value;
+            const ordem = parseInt(document.getElementById('fModuloOrdem').value) || 1;
+            const descricao = document.getElementById('fModuloDesc').value;
+
+            if (!titulo) {
+                alert('Por favor, insira um título para o módulo');
+                return;
+            }
+
+            try {
+                const { data, error } = await supabase
+                    .from('modulos')
+                    .insert([
+                        {
+                            curso_id: cursoEditandoId,
+                            titulo: titulo,
+                            ordem: ordem,
+                            descricao: descricao,
+                            publicado: false,
+                            created_at: new Date().toISOString()
+                        }
+                    ])
+                    .select();
+
+                if (error) throw error;
+
+                // Limpar formulário
+                formModulo.reset();
+                document.getElementById('fModuloOrdem').value = 1;
+                
+                // Recarregar lista
+                await carregarModulosCurso(cursoEditandoId);
+                
+                alert('Módulo adicionado com sucesso!');
+
+            } catch (error) {
+                console.error('Erro ao adicionar módulo:', error);
+                alert('Erro ao adicionar módulo: ' + error.message);
+            }
+        });
+    }
+
+    // Fechar modal de módulos
+    const fecharModulos = document.getElementById('fecharModulos');
+    if (fecharModulos) {
+        fecharModulos.addEventListener('click', () => {
+            document.getElementById('modalModulos').setAttribute('aria-hidden', 'true');
+            cursoEditandoId = null;
+        });
+    }
+
+    // Botão voltar
+    const btnVoltarModulos = document.getElementById('btnVoltarModulos');
+    if (btnVoltarModulos) {
+        btnVoltarModulos.addEventListener('click', () => {
+            document.getElementById('modalModulos').setAttribute('aria-hidden', 'true');
+            cursoEditandoId = null;
+        });
+    }
+});
+
+// Alternar status do módulo (ativo/inativo)
+async function alternarStatusModulo(moduloId) {
+    try {
+        // Primeiro busca o status atual
+        const { data: modulo, error: fetchError } = await supabase
+            .from('modulos')
+            .select('publicado')
+            .eq('id', moduloId)
+            .single();
+
+        if (fetchError) throw fetchError;
+
+        // Alterna o status
+        const { error } = await supabase
+            .from('modulos')
+            .update({ publicado: !modulo.publicado })
+            .eq('id', moduloId);
+
+        if (error) throw error;
+
+        // Recarrega a lista
+        await carregarModulosCurso(cursoEditandoId);
+        
+        alert('Status do módulo atualizado!');
+
+    } catch (error) {
+        console.error('Erro ao alternar status:', error);
+        alert('Erro ao alterar status do módulo');
+    }
+}
+
+// Excluir módulo
+async function excluirModulo(moduloId) {
+    if (!confirm('Tem certeza que deseja excluir este módulo? Esta ação não pode ser desfeita.')) {
+        return;
+    }
+
+    try {
+        const { error } = await supabase
+            .from('modulos')
+            .delete()
+            .eq('id', moduloId);
+
+        if (error) throw error;
+
+        // Recarrega a lista
+        await carregarModulosCurso(cursoEditandoId);
+        
+        alert('Módulo excluído com sucesso!');
+
+    } catch (error) {
+        console.error('Erro ao excluir módulo:', error);
+        alert('Erro ao excluir módulo');
+    }
+}
+
+// Abrir edição detalhada do módulo (Materiais + Questões)
+function abrirEdicaoModulo(moduloId, moduloTitulo, cursoId) {
+    moduloEditandoId = moduloId;
+    cursoEditandoId = cursoId;
+    
+    document.getElementById('editarModuloTitulo').textContent = moduloTitulo;
+    document.getElementById('modalEditarModulo').setAttribute('aria-hidden', 'false');
+    
+    // Carregar materiais e questões existentes
+    carregarMateriaisModulo(moduloId);
+    carregarQuestoesModulo(moduloId);
+}
+
+// Funções para carregar materiais e questões (você implementa depois)
+async function carregarMateriaisModulo(moduloId) {
+    console.log('Carregando materiais do módulo:', moduloId);
+    // Implementar busca no Supabase
+}
+
+async function carregarQuestoesModulo(moduloId) {
+    console.log('Carregando questões do módulo:', moduloId);
+    // Implementar busca no Supabase
+}

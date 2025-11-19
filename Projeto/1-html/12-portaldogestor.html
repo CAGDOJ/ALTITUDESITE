@@ -340,35 +340,75 @@
   </div>
 </div>
 
-<!-- ========== MODAL: MÓDULOS do curso ========== -->
+<!-- ========== MODAL: MÓDULOS DO CURSO ========== -->
 <div class="modal" id="modalModulos" aria-hidden="true">
-  <div class="modal__sheet">
-    <h3>Gerenciar módulos — <span id="mmCursoNome"></span></h3>
+  <div class="modal__sheet" style="max-width: 900px;">
+    <!-- Cabeçalho do Modal -->
+    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; padding-bottom: 15px; border-bottom: 1px solid #e2e8f0;">
+      <h3 style="margin: 0;">Gerenciar Módulos — <span id="mmCursoNome"></span></h3>
+      <button type="button" class="btn-fechar" id="fecharModulos" style="background: none; border: none; font-size: 24px; cursor: pointer; color: #64748b;">×</button>
+    </div>
 
-    <!-- Adicionar módulo -->
-    <form id="formModulo" class="inline">
-      <input id="fModuloTitulo" type="text" placeholder="Título do módulo" required>
-      <button type="submit">+ Adicionar módulo</button>
-    </form>
-    
-    <!-- Lista de módulos -->
-    <div class="card">
-      <table class="tabela" id="tabModulos">
+    <!-- Formulário Simples para Adicionar Módulo -->
+    <div style="background: #f8fafc; padding: 20px; border-radius: 8px; margin-bottom: 20px;">
+      <h4 style="margin: 0 0 15px 0; color: #1e293b;">➕ Adicionar Novo Módulo</h4>
+      <form id="formModulo">
+        <div style="display: grid; grid-template-columns: 1fr 100px; gap: 10px; margin-bottom: 10px;">
+          <div>
+            <label style="display: block; margin-bottom: 5px; font-weight: 500; color: #475569;">Título do Módulo</label>
+            <input type="text" id="fModuloTitulo" placeholder="Ex: Introdução à Informática" required 
+                   style="width: 100%; padding: 10px; border: 1px solid #d1d5db; border-radius: 6px;">
+          </div>
+          <div>
+            <label style="display: block; margin-bottom: 5px; font-weight: 500; color: #475569;">Ordem</label>
+            <input type="number" id="fModuloOrdem" min="1" value="1" 
+                   style="width: 100%; padding: 10px; border: 1px solid #d1d5db; border-radius: 6px;">
+          </div>
+        </div>
+        <div style="margin-bottom: 15px;">
+          <label style="display: block; margin-bottom: 5px; font-weight: 500; color: #475569;">Descrição (opcional)</label>
+          <textarea id="fModuloDesc" rows="2" placeholder="Breve descrição do módulo..." 
+                    style="width: 100%; padding: 10px; border: 1px solid #d1d5db; border-radius: 6px; resize: vertical;"></textarea>
+        </div>
+        <div style="text-align: right;">
+          <button type="submit" style="padding: 10px 20px; background: #0ea5a3; color: white; border: none; border-radius: 6px; cursor: pointer;">
+            ➕ Adicionar Módulo
+          </button>
+        </div>
+      </form>
+    </div>
+
+    <!-- Lista de Módulos -->
+    <div style="background: white; border-radius: 8px; padding: 20px; border: 1px solid #e2e8f0;">
+      <h4 style="margin: 0 0 15px 0; color: #1e293b;">📋 Módulos do Curso</h4>
+      
+      <table style="width: 100%; border-collapse: collapse;">
         <thead>
-          <tr>
-            <th style="width:50px">#</th>
-            <th>Título</th>
-            <th style="width:120px">Materiais</th>
-            <th style="width:120px">Questões</th>
-            <th style="width:300px">Ações</th>
+          <tr style="background: #f8fafc;">
+            <th style="padding: 12px; text-align: left; border-bottom: 1px solid #e2e8f0; width: 60px;">Ordem</th>
+            <th style="padding: 12px; text-align: left; border-bottom: 1px solid #e2e8f0;">Título</th>
+            <th style="padding: 12px; text-align: center; border-bottom: 1px solid #e2e8f0; width: 100px;">Materiais</th>
+            <th style="padding: 12px; text-align: center; border-bottom: 1px solid #e2e8f0; width: 100px;">Questões</th>
+            <th style="padding: 12px; text-align: center; border-bottom: 1px solid #e2e8f0; width: 100px;">Status</th>
+            <th style="padding: 12px; text-align: center; border-bottom: 1px solid #e2e8f0; width: 200px;">Ações</th>
           </tr>
         </thead>
-        <tbody></tbody>
+        <tbody id="tabModulosBody">
+          <!-- JavaScript vai preencher aqui -->
+          <tr>
+            <td colspan="6" style="padding: 20px; text-align: center; color: #64748b;">
+              Nenhum módulo cadastrado ainda
+            </td>
+          </tr>
+        </tbody>
       </table>
     </div>
 
-    <div class="actions">
-      <button type="button" class="ghost" id="fecharModulos">Voltar</button>
+    <!-- Botão Voltar -->
+    <div style="margin-top: 20px; text-align: left;">
+      <button id="btnVoltarModulos" style="padding: 10px 20px; background: #f1f5f9; border: 1px solid #d1d5db; border-radius: 6px; cursor: pointer; color: #475569;">
+        ← Voltar para Cursos
+      </button>
     </div>
   </div>
 </div>

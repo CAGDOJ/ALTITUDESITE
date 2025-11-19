@@ -361,30 +361,6 @@ document.addEventListener('DOMContentLoaded', ()=>{
 });
 
 /* ======================= GESTÃO DE CURSOS (GC_) ======================= */
-/*
-  O que esta seção faz:
-
-  1) Lista os cursos na tela "Gestão de Cursos" (#cursos):
-      - Código, título, área, quantos materiais 📚 e provas 📝
-      - Botões: Editar / Módulos / Visualizar / Duplicar / Excluir
-
-  2) Modal de curso (novo / editar):
-      - Usa o formulário já existente (#modalCurso, #formCurso, etc.)
-
-  3) Painel de MÓDULOS do curso:
-      - Abre quando clica no botão "Módulos" (botão com classe .gc-mods)
-      - Lista e permite cadastrar:
-          • Materiais (PDF, link, vídeo etc)
-          • Provas / Questionários
-          • Questões das provas (máx. 10 por prova)
-
-  ⚠ IMPORTANTE:
-  - Não muda layout, não cria HTML novo via JS.
-  - Ele só manipula os elementos que JÁ existem na página.
-  - Se algum ID abaixo não existir no seu HTML, esse pedaço simplesmente
-    não roda (tem `if (!element) return` em tudo que é crítico).
-*/
-
 (function () {
   // ---------- Atalhos básicos ----------
   const $  = (s, sc = document) => sc.querySelector(s);
@@ -425,7 +401,6 @@ document.addEventListener('DOMContentLoaded', ()=>{
     return data.publicUrl; // URL pública da capa
   }
 
-  // ---------- Consulta cursos + contadores de materiais/provas ----------
   async function fetchCursosComStats(filtroArea = 'TODAS') {
     // 1) Cursos
     let q = sb.from('cursos')
@@ -440,15 +415,19 @@ document.addEventListener('DOMContentLoaded', ()=>{
     if (error) throw error;
     if (!cursos || !cursos.length) return [];
 
-    // 2) Busca materiais e provas só para contar por curso
+    // 2) Busca materiais, provas E MÓDULOS para contar por curso
     const ids = cursos.map(c => c.id);
 
-    let mats = [], provas = [];
+    let mats = [], provas = [], modulos = [];
+    
     const m = await sb.from('materiais').select('id,curso_id').in('curso_id', ids);
     if (!m.error && m.data) mats = m.data;
 
     const p = await sb.from('provas').select('id,curso_id').in('curso_id', ids);
     if (!p.error && p.data) provas = p.data;
+
+    const mod = await sb.from('modulos').select('id,curso_id').in('curso_id', ids);
+    if (!mod.error && mod.data) modulos = mod.data;
 
     const countBy = (arr) =>
       arr.reduce((acc, x) => {
@@ -458,13 +437,15 @@ document.addEventListener('DOMContentLoaded', ()=>{
 
     const matsCount   = countBy(mats);
     const provasCount = countBy(provas);
+    const modulosCount = countBy(modulos);
 
     return cursos.map(c => ({
       ...c,
       total_materiais: matsCount[c.id]   || 0,
-      total_provas:    provasCount[c.id] || 0
+      total_provas:    provasCount[c.id] || 0,
+      total_modulos:   modulosCount[c.id] || 0
     }));
-  }
+}
 
   // ---------- Renderização da área / selects ----------
   function renderAreasSelects() {
@@ -511,11 +492,10 @@ document.addEventListener('DOMContentLoaded', ()=>{
         <!-- Área -->
         <td class="col-area">${c.categoria || '-'}</td>
 
-        <!-- Módulos (resumo de materiais e provas) -->
-        <td class="col-modulos">
-          <span title="Materiais cadastrados">📚 ${c.total_materiais}</span>
-          <span title="Provas / questionários">📝 ${c.total_provas}</span>
-        </td>
+       <!-- Módulos (contagem REAL de módulos) -->
+          <td class="col-modulos">
+            <span title="Módulos cadastrados">📦 ${c.total_modulos || 0}</span>
+          </td>
 
         <!-- Publicado -->
         <td class="col-pub">
@@ -763,259 +743,415 @@ document.addEventListener('DOMContentLoaded', ()=>{
   }
 
   // =====================================================================
-  //  PAINEL DE MÓDULOS: materiais, provas e questões
+  //  GESTÃO DE MÓDULOS - SISTEMA COMPLETO E FUNCIONAL
   // =====================================================================
 
-  // --- abrir/fechar painel de módulos (curso) ---
+  // Variáveis globais para módulos
+  let cursoEditandoId = null;
+  let moduloEditandoId = null;
+
+  // Função para debug
+  function debugModulos(mensagem, data = null) {
+    console.log(`🔧 MÓDULOS: ${mensagem}`, data || '');
+  }
+
+  // Abrir painel de módulos - FUNÇÃO PRINCIPAL
   async function abrirPainelModulos(id) {
+    debugModulos('Abrindo painel de módulos para curso:', id);
+    
     const curso = GC.cursos.find(c => c.id === id);
-    const modal = $('#modalModulos');
-    if (!curso || !modal) {
-      alert('Painel de módulos não está disponível nesta página.');
+    if (!curso) {
+      alert('Curso não encontrado');
       return;
     }
 
+    cursoEditandoId = id;
     GC.cursoAtual = curso;
-    $('#mmCursoNome').textContent =
-      `${curso.titulo} · ${curso.categoria || 'SEM ÁREA'}`;
+    
+    // Atualizar título
+    $('#mmCursoNome').textContent = `${curso.titulo} · ${curso.categoria || 'SEM ÁREA'}`;
 
-    await carregarMateriais();
-    await carregarProvas();
-
-    modal.setAttribute('aria-hidden', 'false');
+    // Carregar módulos
+    await carregarModulosCurso(id);
+    
+    // Mostrar modal
+    $('#modalModulos').setAttribute('aria-hidden', 'false');
+    
+    // Configurar event listeners do formulário
+    configurarEventListenersModulos();
   }
 
   function fecharPainelModulos() {
-    $('#modalModulos')?.setAttribute('aria-hidden', 'true');
-    GC.cursoAtual  = null;
-    GC.provaAtualId = null;
+    $('#modalModulos').setAttribute('aria-hidden', 'true');
+    GC.cursoAtual = null;
+    cursoEditandoId = null;
+    moduloEditandoId = null;
   }
 
-  // --- Materiais do curso ---
-  async function carregarMateriais() {
-    const tbody = $('#tabMateriais tbody');
-    if (!tbody || !GC.cursoAtual) return;
+  // Carregar módulos do curso - VERSÃO CORRIGIDA
+async function carregarModulosCurso(cursoId) {
+    try {
+        debugModulos('🎯 CARREGANDO MÓDULOS PARA CURSO:', cursoId);
+        
+        const { data: modulos, error } = await sb
+            .from('modulos')
+            .select('*')
+            .eq('curso_id', cursoId)
+            .order('ordem', { ascending: true });
 
-    const { data, error } = await sb
-      .from('materiais')
-      .select('*')
-      .eq('curso_id', GC.cursoAtual.id)
-      .order('id');
+        if (error) throw error;
 
-    if (error) {
-      console.error(error);
+        // 🎯 CORREÇÃO: Usar o ID correto
+        const tbody = $('#tabModulosBody');
+        console.log('📋 Elemento tbody encontrado:', !!tbody);
+        
+        if (!tbody) {
+            debugModulos('❌ Tabela de módulos não encontrada - ID: tabModulosBody');
+            return;
+        }
+
+        tbody.innerHTML = '';
+
+        if (modulos && modulos.length > 0) {
+            debugModulos(`✅ ${modulos.length} módulos encontrados`);
+            
+            for (const modulo of modulos) {
+                const materiaisCount = await contarMateriaisModulo(modulo.id);
+                const questaoCount = await contarQuestoesModulo(modulo.id);
+                
+                const tr = document.createElement('tr');
+                tr.innerHTML = `
+                    <td>${modulo.ordem}</td>
+                    <td>
+                        <strong>${modulo.titulo}</strong>
+                        ${modulo.descricao ? `<br><small style="color: #64748b;">${modulo.descricao}</small>` : ''}
+                    </td>
+                    <td style="text-align: center;">${materiaisCount}</td>
+                    <td style="text-align: center;">${questaoCount}</td>
+                    <td>
+                        <span class="badge ${modulo.publicado ? 'ativo' : 'inativo'}">
+                            ${modulo.publicado ? 'ATIVO' : 'INATIVO'}
+                        </span>
+                    </td>
+                    <td>
+                        <button class="btn-mini" onclick="abrirEdicaoModulo(${modulo.id})">
+                            ✏️ Editar
+                        </button>
+                        <button class="btn-mini" onclick="alternarStatusModulo(${modulo.id})">
+                            ${modulo.publicado ? '⏸️' : '▶️'}
+                        </button>
+                        <button class="btn-mini" onclick="excluirModulo(${modulo.id})" style="color: #ef4444;">
+                            🗑️ Excluir
+                        </button>
+                    </td>
+                `;
+                tbody.appendChild(tr);
+            }
+            
+            console.log('✅ Lista de módulos renderizada com sucesso');
+        } else {
+            tbody.innerHTML = '<tr><td colspan="6" style="text-align: center; color: #64748b;">Nenhum módulo cadastrado</td></tr>';
+            console.log('ℹ️ Nenhum módulo cadastrado ainda');
+        }
+
+    } catch (error) {
+        console.error('❌ Erro ao carregar módulos:', error);
+        alert('Erro ao carregar módulos: ' + error.message);
+    }
+}
+
+
+  // ADICIONAR MÓDULO - FUNÇÃO PRINCIPAL
+  async function adicionarModulo() {
+    debugModulos('=== INICIANDO ADIÇÃO DE MÓDULO ===');
+    
+    if (!cursoEditandoId) {
+      debugModulos('ERRO: Nenhum curso selecionado');
+      alert('❌ Erro: Nenhum curso selecionado');
       return;
     }
 
-    tbody.innerHTML = (data || []).map(m => `
-      <tr data-id="${m.id}">
-        <td>${m.tipo}</td>
-        <td>${m.titulo || '-'}</td>
-        <td>${m.url || '-'}</td>
-        <td>
-          <button class="btn-mini mat-del">Remover</button>
-        </td>
-      </tr>
-    `).join('');
-  }
+    // Obter valores do formulário
+    const tituloInput = $('#fModuloTitulo');
+    const ordemInput = $('#fModuloOrdem');
+    const descricaoInput = $('#fModuloDesc');
 
-  async function adicionarMaterial(ev) {
-    ev.preventDefault();
-    if (!GC.cursoAtual) return;
+    if (!tituloInput || !ordemInput) {
+      debugModulos('ERRO: Campos do formulário não encontrados');
+      return;
+    }
 
-    const tipo   = $('#fMatTipo')?.value || 'PDF';
-    const titulo = $('#fMatTitulo')?.value?.trim() || '';
-    const url    = $('#fMatUrl')?.value?.trim() || '';
+    const titulo = tituloInput.value.trim();
+    const ordem = parseInt(ordemInput.value) || 1;
+    const descricao = descricaoInput ? descricaoInput.value.trim() : '';
 
     if (!titulo) {
-      alert('Informe o título do material.');
+      alert('⚠️ Por favor, insira um título para o módulo');
+      tituloInput.focus();
       return;
     }
 
-    const { error } = await sb.from('materiais').insert({
-      curso_id: GC.cursoAtual.id,
-      tipo, titulo, url,
-      criado_em: new Date().toISOString()
-    });
+    debugModulos('Dados do formulário:', { titulo, ordem, descricao, cursoEditandoId });
 
-    if (error) {
-      alert('Erro ao adicionar material: ' + error.message);
-      return;
+    try {
+      debugModulos('Enviando para Supabase...');
+      
+      // INSERIR NO SUPABASE
+      const { data, error } = await sb
+        .from('modulos')
+        .insert([{
+          curso_id: cursoEditandoId,
+          titulo: titulo,
+          ordem: ordem,
+          descricao: descricao,
+          publicado: false,
+          created_at: new Date().toISOString()
+        }])
+        .select();
+
+      if (error) {
+        debugModulos('ERRO no Supabase:', error);
+        throw error;
+      }
+
+      debugModulos('✅ Módulo salvo com sucesso no Supabase:', data);
+
+      // LIMPAR FORMULÁRIO
+      tituloInput.value = '';
+      if (descricaoInput) descricaoInput.value = '';
+      ordemInput.value = '1';
+
+      // RECARREGAR LISTA
+      await carregarModulosCurso(cursoEditandoId);
+      
+      // MOSTRAR CONFIRMAÇÃO
+      alert('✅ Módulo adicionado com sucesso!');
+      
+      debugModulos('=== MÓDULO ADICIONADO COM SUCESSO ===');
+
+    } catch (error) {
+      debugModulos('ERRO COMPLETO:', error);
+      alert('❌ Erro ao adicionar módulo: ' + error.message);
     }
-
-    $('#formMaterial')?.reset();
-    carregarMateriais();
   }
 
-  async function removerMaterial(id) {
-    const ok = confirm('Remover este material?');
-    if (!ok) return;
+  // Configurar event listeners dos módulos
+  function configurarEventListenersModulos() {
+    debugModulos('Configurando event listeners para módulos...');
+    
+    // Formulário de adicionar módulo
+    const formModulo = $('#formModulo');
+    if (formModulo) {
+      debugModulos('Formulário de módulos encontrado');
+      
+      // Remover event listeners antigos
+      const newForm = formModulo.cloneNode(true);
+      formModulo.parentNode.replaceChild(newForm, formModulo);
+      
+      // Adicionar novo event listener
+      $('#formModulo').addEventListener('submit', function(e) {
+        debugModulos('Formulário submetido - PREVENINDO COMPORTAMENTO PADRÃO');
+        e.preventDefault();
+        e.stopPropagation();
+        adicionarModulo();
 
-    await sb.from('materiais').delete().eq('id', id);
-    carregarMateriais();
-  }
 
-  // --- Provas / questionários ---
-  async function carregarProvas() {
-    const tbody = $('#tabProvas tbody');
-    if (!tbody || !GC.cursoAtual) return;
-
-    const { data, error } = await sb
-      .from('provas')
-      .select('*')
-      .eq('curso_id', GC.cursoAtual.id)
-      .order('id');
-
-    if (error) {
-      console.error(error);
-      return;
+        // 🆕 ADICIONE ESTAS LINHAS - Event listener para o formulário de edição
+    const formEditar = document.getElementById('form-editar-modulo');
+    if (formEditar) {
+        debugModulos('Formulário de edição encontrado');
+        formEditar.addEventListener('submit', salvarEdicaoModulo);
     }
 
-    tbody.innerHTML = (data || []).map(p => `
-      <tr data-id="${p.id}">
-        <td>${p.id}</td>
-        <td>${p.titulo}</td>
-        <td>
-          <button class="btn-mini prova-q">Questões</button>
-          <button class="btn-mini prova-del">Excluir</button>
-        </td>
-      </tr>
-    `).join('');
-  }
-
-  async function adicionarProva(ev) {
-    ev.preventDefault();
-    if (!GC.cursoAtual) return;
-
-    const titulo = $('#fProvaTitulo')?.value?.trim();
-    if (!titulo) {
-      alert('Informe o título da prova.');
-      return;
+    // 🆕 Event listener para o botão cancelar
+    const btnCancelar = document.querySelector('button[onclick="fecharEdicaoModulo()"]');
+    if (btnCancelar) {
+        btnCancelar.addEventListener('click', fecharEdicaoModulo);
     }
 
-    const { error } = await sb.from('provas').insert({
-      curso_id : GC.cursoAtual.id,
-      titulo   : titulo,
-      criado_em: new Date().toISOString()
-    });
+        return false;
+      });
 
-    if (error) {
-      alert('Erro ao criar prova: ' + error.message);
-      return;
+
     }
 
-    $('#formProva')?.reset();
-    carregarProvas();
+    // Botão de fechar módulos
+    $('#fecharModulos')?.addEventListener('click', fecharPainelModulos);
+    
+    // Botão voltar módulos
+    $('#btnVoltarModulos')?.addEventListener('click', fecharPainelModulos);
   }
 
-  async function excluirProva(id) {
-    const ok = confirm('Excluir esta prova e todas as questões?');
-    if (!ok) return;
-
-    await sb.from('questoes').delete().eq('prova_id', id);
-    await sb.from('provas').delete().eq('id', id);
-    carregarProvas();
+  // Funções auxiliares
+  async function contarMateriaisModulo(moduloId) {
+    try {
+      const { count, error } = await sb
+        .from('materiais')
+        .select('*', { count: 'exact', head: true })
+        .eq('modulo_id', moduloId);
+      return count || 0;
+    } catch (error) {
+      return 0;
+    }
   }
 
-  // --- Questões da prova ---
-  async function abrirQuestoes(provaId) {
-    const modal = $('#modalQuestoes');
-    if (!modal) {
-      alert('Modal de questões não encontrado no HTML.');
-      return;
+  async function contarQuestoesModulo(moduloId) {
+    try {
+      const { data: provas, error: provError } = await sb
+        .from('provas')
+        .select('id')
+        .eq('modulo_id', moduloId);
+
+      if (!provas || provas.length === 0) return 0;
+
+      const provaIds = provas.map(p => p.id);
+      const { count, error: questError } = await sb
+        .from('questoes')
+        .select('*', { count: 'exact', head: true })
+        .in('prova_id', provaIds);
+      return count || 0;
+    } catch (error) {
+      return 0;
+    }
+  }
+
+  async function alternarStatusModulo(moduloId) {
+    try {
+      const { data: modulo, error: fetchError } = await sb
+        .from('modulos')
+        .select('publicado')
+        .eq('id', moduloId)
+        .single();
+      if (fetchError) throw fetchError;
+
+      const { error } = await sb
+        .from('modulos')
+        .update({ 
+          publicado: !modulo.publicado,
+          updated_at: new Date().toISOString()
+        })
+        .eq('id', moduloId);
+
+      if (error) throw error;
+      await carregarModulosCurso(cursoEditandoId);
+      alert('Status atualizado!');
+    } catch (error) {
+      alert('Erro: ' + error.message);
+    }
+  }
+
+  async function excluirModulo(moduloId) {
+    if (!confirm('Excluir este módulo?')) return;
+    
+    try {
+      const { error } = await sb
+        .from('modulos')
+        .delete()
+        .eq('id', moduloId);
+      if (error) throw error;
+      await carregarModulosCurso(cursoEditandoId);
+      alert('Módulo excluído!');
+    } catch (error) {
+      alert('Erro: ' + error.message);
+    }
+  }
+
+  function abrirEdicaoModulo(moduloId, titulo) {
+    moduloEditandoId = moduloId;
+    alert(`Editando módulo: ${titulo} (ID: ${moduloId})`);
+    // FUNÇÃO COMPLETA PARA ABRIR EDIÇÃO DE MÓDULO
+async function abrirEdicaoModulo(moduloId) {
+    try {
+        debugModulos('Abrindo edição do módulo:', moduloId);
+        
+        // Buscar dados do módulo no Supabase
+        const { data: modulo, error } = await sb
+            .from('modulos')
+            .select('*')
+            .eq('id', moduloId)
+            .single();
+
+        if (error) throw error;
+        if (!modulo) {
+            alert('Módulo não encontrado');
+            return;
+        }
+
+        debugModulos('Dados do módulo encontrado:', modulo);
+
+        // Preencher formulário de edição
+        document.getElementById('editar-id').value = modulo.id;
+        document.getElementById('editar-course-id').value = modulo.curso_id;
+        document.getElementById('editar-titulo').value = modulo.titulo || '';
+        document.getElementById('editar-descricao').value = modulo.descricao || '';
+        document.getElementById('editar-order').value = modulo.ordem || 1;
+        document.getElementById('editar-pdf-url').value = modulo.pdf_url || '';
+        document.getElementById('editar-video-url').value = modulo.video_url || '';
+        document.getElementById('editar-publicado').checked = modulo.publicado || false;
+
+        // Mostrar formulário de edição
+        document.getElementById('form-edicao-modulo').style.display = 'block';
+        
+    } catch (error) {
+        console.error('Erro ao abrir edição:', error);
+        alert('Erro ao carregar dados do módulo: ' + error.message);
+    }
+}
+
+// FUNÇÃO PARA FECHAR EDIÇÃO
+function fecharEdicaoModulo() {
+    document.getElementById('form-edicao-modulo').style.display = 'none';
+    document.getElementById('form-editar-modulo').reset();
+}
+
+// FUNÇÃO PARA SALVAR EDIÇÃO
+async function salvarEdicaoModulo(e) {
+    e.preventDefault();
+    
+    const moduloId = document.getElementById('editar-id').value;
+    const courseId = document.getElementById('editar-course-id').value;
+
+    if (!moduloId) {
+        alert('ID do módulo não encontrado');
+        return;
     }
 
-    GC.provaAtualId = provaId;
+    try {
+        const dadosAtualizados = {
+            titulo: document.getElementById('editar-titulo').value.trim(),
+            descricao: document.getElementById('editar-descricao').value.trim(),
+            ordem: parseInt(document.getElementById('editar-order').value) || 1,
+            pdf_url: document.getElementById('editar-pdf-url').value.trim(),
+            video_url: document.getElementById('editar-video-url').value.trim(),
+            publicado: document.getElementById('editar-publicado').checked,
+            updated_at: new Date().toISOString()
+        };
 
-    // título da prova no modal
-    const { data: prova } = await sb
-      .from('provas')
-      .select('titulo')
-      .eq('id', provaId)
-      .single();
+        if (!dadosAtualizados.titulo) {
+            alert('O título do módulo é obrigatório');
+            return;
+        }
 
-    $('#qModuloTitulo').textContent = prova?.titulo || 'Prova';
+        debugModulos('Salvando edição do módulo:', { moduloId, dadosAtualizados });
 
-    await carregarQuestoes();
-    modal.setAttribute('aria-hidden', 'false');
-  }
+        const { error } = await sb
+            .from('modulos')
+            .update(dadosAtualizados)
+            .eq('id', moduloId);
 
-  function fecharQuestoes() {
-    $('#modalQuestoes')?.setAttribute('aria-hidden', 'true');
-    GC.provaAtualId = null;
-  }
+        if (error) throw error;
 
-  async function carregarQuestoes() {
-    const tbody = $('#tabQuestoes tbody');
-    if (!tbody || !GC.provaAtualId) return;
-
-    const { data, error } = await sb
-      .from('questoes')
-      .select('*')
-      .eq('prova_id', GC.provaAtualId)
-      .order('id');
-
-    if (error) {
-      console.error(error);
-      return;
+        alert('✅ Módulo atualizado com sucesso!');
+        fecharEdicaoModulo();
+        
+        // Recarregar a lista de módulos
+        await carregarModulosCurso(courseId);
+        
+    } catch (error) {
+        console.error('Erro ao salvar edição:', error);
+        alert('❌ Erro ao atualizar módulo: ' + error.message);
     }
-
-    tbody.innerHTML = (data || []).map((q, idx) => `
-      <tr data-id="${q.id}">
-        <td>${idx + 1}</td>
-        <td>${q.enunciado}</td>
-        <td>${q.correta}</td>
-        <td><button class="btn-mini q-del">Remover</button></td>
-      </tr>
-    `).join('');
-  }
-
-  async function adicionarQuestao(ev) {
-    ev.preventDefault();
-    if (!GC.provaAtualId) return;
-
-    // Limite de 10 questões por prova
-    const countRes = await sb
-      .from('questoes')
-      .select('id', { count: 'exact', head: true })
-      .eq('prova_id', GC.provaAtualId);
-
-    if ((countRes.count || 0) >= 10) {
-      alert('Esta prova já possui 10 questões. Limite atingido.');
-      return;
-    }
-
-    const enunciado = $('#fPergunta')?.value?.trim();
-    const A = $('#fA')?.value?.trim();
-    const B = $('#fB')?.value?.trim();
-    const C = $('#fC')?.value?.trim();
-    const D = $('#fD')?.value?.trim();
-    const correta  = $('#fCorreta')?.value || 'A';
-
-    if (!enunciado || !A || !B || !C || !D) {
-      alert('Preencha a pergunta e todas as alternativas (A, B, C e D).');
-      return;
-    }
-
-    const { error } = await sb.from('questoes').insert({
-      prova_id : GC.provaAtualId,
-      enunciado,
-      a: A, b: B, c: C, d: D,
-      correta
-    });
-
-    if (error) {
-      alert('Erro ao salvar questão: ' + error.message);
-      return;
-    }
-
-    $('#formQuestao')?.reset();
-    carregarQuestoes();
-  }
-
-  async function removerQuestao(id) {
-    await sb.from('questoes').delete().eq('id', id);
-    carregarQuestoes();
+}
   }
 
   // =====================================================================
@@ -1048,55 +1184,27 @@ document.addEventListener('DOMContentLoaded', ()=>{
       if (ev.target.classList.contains('gc-del'))  return excluirCurso(id);
       if (ev.target.classList.contains('gc-dup'))  return duplicarCurso(id);
       if (ev.target.classList.contains('gc-prev')) return window.open(`11-portaldoaluno.html?curso=${id}`, '_blank');
-      if (ev.target.classList.contains('gc-mods')) return abrirPainelModulos(id);
+      if (ev.target.classList.contains('gc-mods')) {
+        debugModulos('Abrindo módulos para curso:', id);
+        return abrirPainelModulos(id);
+      }
     });
 
     // Painel de módulos (curso)
     $('#fecharModulos')?.addEventListener('click', fecharPainelModulos);
-    $('#formMaterial')?.addEventListener('submit', adicionarMaterial);
-    $('#formProva')?.addEventListener('submit', adicionarProva);
+    $('#btnVoltarModulos')?.addEventListener('click', fecharPainelModulos);
 
-    // Remoção de material / provas via delegação
-    $('#tabMateriais')?.addEventListener('click', (ev) => {
-      const btn = ev.target.closest('.mat-del');
-      if (!btn) return;
-      const tr = btn.closest('tr[data-id]');
-      const id = parseInt(tr.dataset.id, 10);
-      if (!Number.isNaN(id)) removerMaterial(id);
-    });
-
-    $('#tabProvas')?.addEventListener('click', (ev) => {
-      const tr = ev.target.closest('tr[data-id]');
-      if (!tr) return;
-      const id = parseInt(tr.dataset.id, 10);
-      if (Number.isNaN(id)) return;
-
-      if (ev.target.classList.contains('prova-del')) return excluirProva(id);
-      if (ev.target.classList.contains('prova-q'))   return abrirQuestoes(id);
-    });
-
-    // Questões
-    $('#fecharQuestoes')?.addEventListener('click', fecharQuestoes);
-    $('#formQuestao')?.addEventListener('submit', adicionarQuestao);
-    $('#tabQuestoes')?.addEventListener('click', (ev) => {
-      const btn = ev.target.closest('.q-del');
-      if (!btn) return;
-      const tr  = btn.closest('tr[data-id]');
-      const id  = parseInt(tr.dataset.id, 10);
-      if (!Number.isNaN(id)) removerQuestao(id);
-    });
-
-    // Primeira carga da tabela de cursos
+    // primeira carga da tabela de cursos
     carregarCursos();
   }
 
   // Chama o wiring quando o DOM estiver pronto
   document.addEventListener('DOMContentLoaded', wireCursosUI);
 })();
-/* ===================== /GESTÃO DE CURSOS (GC_) ======================= */
 
+/* ======================= /GESTÃO DE CURSOS ======================= */
 
-
+// ... (o resto do seu código permanece igual)
 
 /* ======================= GESTÃO DE USUÁRIOS (GU_) ======================= */
 (function(){
@@ -1235,6 +1343,7 @@ document.addEventListener('DOMContentLoaded', ()=>{
     GU_renderUsuarios();
   });
 })();
+
 /* ======================= CHAMADOS (CH_) ======================= */
 (function(){
   // SLA por prioridade (horas)
@@ -1422,7 +1531,6 @@ document.addEventListener('DOMContentLoaded', ()=>{
   });
 })();
 
-
 // 2) Helpers
 function setTxt(id, val){ const el = document.getElementById(id); if(el) el.textContent = val; }
 function moeda(n){ return (Number(n)||0).toLocaleString('pt-BR',{style:'currency',currency:'BRL'}); }
@@ -1450,7 +1558,6 @@ async function carregarKPIsDashboard() {
   setTxt('kpiTaxaConclusao', safeNum(data.taxa_conclusao) + '%');
 }
 
-
 // 4) Realtime: qualquer mudança nas tabelas abaixo reconsulta a view
 function assinarRealtimeKPIs(){
   if(!sb) return;
@@ -1470,230 +1577,3 @@ document.addEventListener('DOMContentLoaded', ()=>{
     assinarRealtimeKPIs();
   }
 });
-    ''
-
-
-    // =====================================================
-// GESTÃO DE MÓDULOS - INTEGRAÇÃO COM SUPABASE
-// =====================================================
-
-// Variáveis globais
-let cursoEditandoId = null;
-let moduloEditandoId = null;
-
-// Função para abrir modal de módulos
-function abrirModalModulos(cursoId, cursoNome, cursoArea) {
-    cursoEditandoId = cursoId;
-    document.getElementById('mmCursoNome').textContent = `${cursoNome} - ${cursoArea}`;
-    document.getElementById('modalModulos').setAttribute('aria-hidden', 'false');
-    
-    // Carregar módulos do curso
-    carregarModulosCurso(cursoId);
-}
-
-// Carregar módulos do curso do Supabase
-async function carregarModulosCurso(cursoId) {
-    try {
-        console.log('Carregando módulos do curso:', cursoId);
-        
-        const { data: modulos, error } = await supabase
-            .from('modulos')
-            .select('*')
-            .eq('curso_id', cursoId)
-            .order('ordem', { ascending: true });
-
-        if (error) throw error;
-
-        const tbody = document.querySelector('#tabModulos tbody');
-        tbody.innerHTML = '';
-
-        if (modulos && modulos.length > 0) {
-            modulos.forEach(modulo => {
-                const tr = document.createElement('tr');
-                tr.innerHTML = `
-                    <td>${modulo.ordem}</td>
-                    <td>
-                        <strong>${modulo.titulo}</strong>
-                        ${modulo.descricao ? `<br><small style="color: #64748b;">${modulo.descricao}</small>` : ''}
-                    </td>
-                    <td style="text-align: center;">0</td>
-                    <td style="text-align: center;">0</td>
-                    <td>
-                        <span class="status-badge ${modulo.publicado ? 'status-ativo' : 'status-inativo'}">
-                            ${modulo.publicado ? '✅ Ativo' : '⏸️ Inativo'}
-                        </span>
-                    </td>
-                    <td>
-                        <div class="btn-group">
-                            <button class="btn btn-sm" onclick="abrirEdicaoModulo('${modulo.id}', '${modulo.titulo}', '${cursoId}')">
-                                ✏️ Editar
-                            </button>
-                            <button class="btn btn-sm ghost" onclick="alternarStatusModulo('${modulo.id}')">
-                                ${modulo.publicado ? '⏸️' : '▶️'}
-                            </button>
-                            <button class="btn btn-sm ghost" onclick="excluirModulo('${modulo.id}')" style="color: #ef4444;">
-                                🗑️
-                            </button>
-                        </div>
-                    </td>
-                `;
-                tbody.appendChild(tr);
-            });
-        } else {
-            tbody.innerHTML = '<tr><td colspan="6" style="text-align: center; color: #64748b;">Nenhum módulo cadastrado</td></tr>';
-        }
-
-    } catch (error) {
-        console.error('Erro ao carregar módulos:', error);
-        alert('Erro ao carregar módulos do curso');
-    }
-}
-
-// Adicionar novo módulo
-document.addEventListener('DOMContentLoaded', function() {
-    const formModulo = document.getElementById('formModulo');
-    
-    if (formModulo) {
-        formModulo.addEventListener('submit', async (e) => {
-            e.preventDefault();
-
-            const titulo = document.getElementById('fModuloTitulo').value;
-            const ordem = parseInt(document.getElementById('fModuloOrdem').value) || 1;
-            const descricao = document.getElementById('fModuloDesc').value;
-
-            if (!titulo) {
-                alert('Por favor, insira um título para o módulo');
-                return;
-            }
-
-            try {
-                const { data, error } = await supabase
-                    .from('modulos')
-                    .insert([
-                        {
-                            curso_id: cursoEditandoId,
-                            titulo: titulo,
-                            ordem: ordem,
-                            descricao: descricao,
-                            publicado: false,
-                            created_at: new Date().toISOString()
-                        }
-                    ])
-                    .select();
-
-                if (error) throw error;
-
-                // Limpar formulário
-                formModulo.reset();
-                document.getElementById('fModuloOrdem').value = 1;
-                
-                // Recarregar lista
-                await carregarModulosCurso(cursoEditandoId);
-                
-                alert('Módulo adicionado com sucesso!');
-
-            } catch (error) {
-                console.error('Erro ao adicionar módulo:', error);
-                alert('Erro ao adicionar módulo: ' + error.message);
-            }
-        });
-    }
-
-    // Fechar modal de módulos
-    const fecharModulos = document.getElementById('fecharModulos');
-    if (fecharModulos) {
-        fecharModulos.addEventListener('click', () => {
-            document.getElementById('modalModulos').setAttribute('aria-hidden', 'true');
-            cursoEditandoId = null;
-        });
-    }
-
-    // Botão voltar
-    const btnVoltarModulos = document.getElementById('btnVoltarModulos');
-    if (btnVoltarModulos) {
-        btnVoltarModulos.addEventListener('click', () => {
-            document.getElementById('modalModulos').setAttribute('aria-hidden', 'true');
-            cursoEditandoId = null;
-        });
-    }
-});
-
-// Alternar status do módulo (ativo/inativo)
-async function alternarStatusModulo(moduloId) {
-    try {
-        // Primeiro busca o status atual
-        const { data: modulo, error: fetchError } = await supabase
-            .from('modulos')
-            .select('publicado')
-            .eq('id', moduloId)
-            .single();
-
-        if (fetchError) throw fetchError;
-
-        // Alterna o status
-        const { error } = await supabase
-            .from('modulos')
-            .update({ publicado: !modulo.publicado })
-            .eq('id', moduloId);
-
-        if (error) throw error;
-
-        // Recarrega a lista
-        await carregarModulosCurso(cursoEditandoId);
-        
-        alert('Status do módulo atualizado!');
-
-    } catch (error) {
-        console.error('Erro ao alternar status:', error);
-        alert('Erro ao alterar status do módulo');
-    }
-}
-
-// Excluir módulo
-async function excluirModulo(moduloId) {
-    if (!confirm('Tem certeza que deseja excluir este módulo? Esta ação não pode ser desfeita.')) {
-        return;
-    }
-
-    try {
-        const { error } = await supabase
-            .from('modulos')
-            .delete()
-            .eq('id', moduloId);
-
-        if (error) throw error;
-
-        // Recarrega a lista
-        await carregarModulosCurso(cursoEditandoId);
-        
-        alert('Módulo excluído com sucesso!');
-
-    } catch (error) {
-        console.error('Erro ao excluir módulo:', error);
-        alert('Erro ao excluir módulo');
-    }
-}
-
-// Abrir edição detalhada do módulo (Materiais + Questões)
-function abrirEdicaoModulo(moduloId, moduloTitulo, cursoId) {
-    moduloEditandoId = moduloId;
-    cursoEditandoId = cursoId;
-    
-    document.getElementById('editarModuloTitulo').textContent = moduloTitulo;
-    document.getElementById('modalEditarModulo').setAttribute('aria-hidden', 'false');
-    
-    // Carregar materiais e questões existentes
-    carregarMateriaisModulo(moduloId);
-    carregarQuestoesModulo(moduloId);
-}
-
-// Funções para carregar materiais e questões (você implementa depois)
-async function carregarMateriaisModulo(moduloId) {
-    console.log('Carregando materiais do módulo:', moduloId);
-    // Implementar busca no Supabase
-}
-
-async function carregarQuestoesModulo(moduloId) {
-    console.log('Carregando questões do módulo:', moduloId);
-    // Implementar busca no Supabase
-}

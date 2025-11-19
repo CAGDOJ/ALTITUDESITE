@@ -12,6 +12,26 @@
 
 
 </head>
+
+<script>
+// Funções para edição de módulos
+function abrirEdicaoModulo(moduloId, courseId) {
+    // Buscar dados do módulo e preencher formulário
+    console.log('Abrir edição do módulo:', moduloId);
+    document.getElementById('form-edicao-modulo').style.display = 'block';
+}
+
+function fecharEdicaoModulo() {
+    document.getElementById('form-edicao-modulo').style.display = 'none';
+}
+
+// Event listener para o formulário de edição
+document.getElementById('form-editar-modulo')?.addEventListener('submit', function(e) {
+    e.preventDefault();
+    alert('Funcionalidade de edição será implementada!');
+});
+</script>
+
 <body>
   <div class="container">
     <!-- Sidebar -->
@@ -393,6 +413,7 @@
             <th style="padding: 12px; text-align: center; border-bottom: 1px solid #e2e8f0; width: 200px;">Ações</th>
           </tr>
         </thead>
+       
         <tbody id="tabModulosBody">
           <!-- JavaScript vai preencher aqui -->
           <tr>
@@ -402,7 +423,62 @@
           </tr>
         </tbody>
       </table>
+
+      </table>
+
+<!-- 🎯 FORMULÁRIO DE EDIÇÃO DE MÓDULOS - COLE AQUI -->
+<div id="form-edicao-modulo" style="display: none; margin-top: 30px; padding: 25px; background: #f8fafc; border-radius: 8px; border: 1px solid #e2e8f0;">
+  <h4 style="margin: 0 0 20px 0; color: #1e293b;">✏️ Editar Módulo</h4>
+  <form id="form-editar-modulo">
+    <input type="hidden" id="editar-id">
+    <input type="hidden" id="editar-course-id">
+    
+    <div style="display: grid; grid-template-columns: 1fr 100px; gap: 15px; margin-bottom: 15px;">
+      <div>
+        <label style="display: block; margin-bottom: 5px; font-weight: 500; color: #475569;">Título do Módulo</label>
+        <input type="text" id="editar-titulo" required style="width: 100%; padding: 10px; border: 1px solid #d1d5db; border-radius: 6px;">
+      </div>
+      <div>
+        <label style="display: block; margin-bottom: 5px; font-weight: 500; color: #475569;">Ordem</label>
+        <input type="number" id="editar-order" min="1" value="1" style="width: 100%; padding: 10px; border: 1px solid #d1d5db; border-radius: 6px;">
+      </div>
     </div>
+    
+    <div style="margin-bottom: 15px;">
+      <label style="display: block; margin-bottom: 5px; font-weight: 500; color: #475569;">Descrição</label>
+      <textarea id="editar-descricao" rows="3" style="width: 100%; padding: 10px; border: 1px solid #d1d5db; border-radius: 6px; resize: vertical;"></textarea>
+    </div>
+    
+    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 15px; margin-bottom: 15px;">
+      <div>
+        <label style="display: block; margin-bottom: 5px; font-weight: 500; color: #475569;">PDF URL</label>
+        <input type="text" id="editar-pdf-url" style="width: 100%; padding: 10px; border: 1px solid #d1d5db; border-radius: 6px;">
+      </div>
+      <div>
+        <label style="display: block; margin-bottom: 5px; font-weight: 500; color: #475569;">Video URL</label>
+        <input type="text" id="editar-video-url" style="width: 100%; padding: 10px; border: 1px solid #d1d5db; border-radius: 6px;">
+      </div>
+    </div>
+    
+    <div style="margin-bottom: 20px;">
+      <label style="display: flex; align-items: center; gap: 8px; font-weight: 500; color: #475569;">
+        <input type="checkbox" id="editar-publicado"> 
+        Módulo publicado
+      </label>
+    </div>
+    
+    <div style="display: flex; gap: 10px;">
+      <button type="submit" style="padding: 10px 20px; background: #0ea5a3; color: white; border: none; border-radius: 6px; cursor: pointer;">
+        💾 Salvar Alterações
+      </button>
+      <button type="button" onclick="fecharEdicaoModulo()" style="padding: 10px 20px; background: #6b7280; color: white; border: none; border-radius: 6px; cursor: pointer;">
+        ❌ Cancelar
+      </button>
+    </div>
+  </form>
+</div>
+<!-- 🎯 FIM DO FORMULÁRIO DE EDIÇÃO -->
+ </div>
 
     <!-- Botão Voltar -->
     <div style="margin-top: 20px; text-align: left;">

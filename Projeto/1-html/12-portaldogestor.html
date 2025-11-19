@@ -173,10 +173,6 @@
   </form>
 </section>
 
-</form>
-
-
-
 <section id="alunos" class="aba">
   <h2>👨‍🎓 Gestão de Alunos</h2>
 
@@ -285,199 +281,11 @@
     </table>
   </div>
 </section>
-<!-- MODAL GERENCIAR MÓDULOS -->
-<div id="modalModulos" class="modal" aria-hidden="true">
-  <div class="modal-dialog lg">
-    <header class="modal-header">
-      <h2 id="mmCursoNome">Módulos do curso</h2>
-      <button type="button" id="fecharModulos" class="btn-fechar">×</button>
-    </header>
 
-    <section class="modal-body">
-      <!-- LISTA DE MÓDULOS -->
-      <div class="bloco">
-        <div class="bloco-header">
-          <h3>Módulos</h3>
-          <button class="btn" id="btnNovoModulo">+ Novo módulo</button>
-        </div>
-        <table class="tabela" id="tabModulos">
-          <thead>
-            <tr>
-              <th>#</th>
-              <th>Título</th>
-              <th>Publicado</th>
-              <th>Materiais</th>
-              <th>Provas</th>
-              <th>Ações</th>
-            </tr>
-          </thead>
-          <tbody>
-            <!-- preenchido via JS -->
-          </tbody>
-        </table>
-      </div>
 
-      <!-- FORM NOVO/EDITAR MÓDULO -->
-      <form id="formModulo" class="bloco bloco-form">
-        <h3 id="mmTituloForm">Novo módulo</h3>
-        <div class="grid-2">
-          <div class="campo">
-            <label for="fModTitulo">Título do módulo</label>
-            <input type="text" id="fModTitulo" required>
-          </div>
-          <div class="campo">
-            <label for="fModOrdem">Ordem</label>
-            <input type="number" id="fModOrdem" min="1" value="1">
-          </div>
-        </div>
-        <div class="campo">
-          <label for="fModDesc">Descrição (opcional)</label>
-          <textarea id="fModDesc" rows="2"></textarea>
-        </div>
-        <div class="campo">
-          <label for="fModPub">Publicado?</label>
-          <select id="fModPub">
-            <option value="NAO">NÃO</option>
-            <option value="SIM">SIM</option>
-          </select>
-        </div>
-        <div class="acoes-form">
-          <button type="submit" class="btn primario">Salvar módulo</button>
-        </div>
-      </form>
+    
 
-      <!-- MATERIAIS DO MÓDULO SELECIONADO -->
-      <div class="bloco">
-        <h3>Materiais do módulo selecionado</h3>
-        <form id="formMaterial" class="grid-3">
-          <div class="campo">
-            <label for="fMatTipo">Tipo</label>
-            <select id="fMatTipo">
-              <option value="PDF">PDF</option>
-              <option value="VIDEO">Vídeo</option>
-              <option value="AUDIO">Áudio</option>
-              <option value="LINK">Link</option>
-            </select>
-          </div>
-          <div class="campo">
-            <label for="fMatTitulo">Título</label>
-            <input type="text" id="fMatTitulo" required>
-          </div>
-          <div class="campo">
-            <label for="fMatUrl">URL / link do material</label>
-            <input type="text" id="fMatUrl" required>
-          </div>
-          <div class="acoes-form">
-            <button type="submit" class="btn primario">Adicionar material</button>
-          </div>
-        </form>
 
-        <table class="tabela" id="tabMateriais">
-          <thead>
-            <tr>
-              <th>Tipo</th>
-              <th>Título</th>
-              <th>URL</th>
-              <th>Ações</th>
-            </tr>
-          </thead>
-          <tbody></tbody>
-        </table>
-      </div>
-
-      <!-- PROVAS DO MÓDULO SELECIONADO -->
-      <div class="bloco">
-        <h3>Provas / Questionários</h3>
-        <form id="formProva" class="grid-2">
-          <div class="campo">
-            <label for="fProvaTitulo">Título da prova</label>
-            <input type="text" id="fProvaTitulo" required>
-          </div>
-          <div class="acoes-form">
-            <button type="submit" class="btn primario">Criar prova</button>
-          </div>
-        </form>
-
-        <table class="tabela" id="tabProvas">
-          <thead>
-            <tr>
-              <th>#</th>
-              <th>Título</th>
-              <th>Ações</th>
-            </tr>
-          </thead>
-          <tbody></tbody>
-        </table>
-      </div>
-    </section>
-  </div>
-</div>
-<!-- MODAL QUESTÕES DA PROVA -->
-<div id="modalQuestoes" class="modal" aria-hidden="true">
-  <div class="modal-dialog lg">
-    <header class="modal-header">
-      <h2 id="qModuloTitulo">Questões da prova</h2>
-      <button type="button" id="fecharQuestoes" class="btn-fechar">×</button>
-    </header>
-
-    <section class="modal-body">
-      <form id="formQuestao" class="bloco bloco-form">
-        <h3>Nova questão (máx. 10 por prova)</h3>
-        <div class="campo">
-          <label for="fPergunta">Enunciado</label>
-          <textarea id="fPergunta" rows="3" required></textarea>
-        </div>
-        <div class="grid-2">
-          <div class="campo">
-            <label for="fA">Alternativa A</label>
-            <input type="text" id="fA" required>
-          </div>
-          <div class="campo">
-            <label for="fB">Alternativa B</label>
-            <input type="text" id="fB" required>
-          </div>
-        </div>
-        <div class="grid-2">
-          <div class="campo">
-            <label for="fC">Alternativa C</label>
-            <input type="text" id="fC" required>
-          </div>
-          <div class="campo">
-            <label for="fD">Alternativa D</label>
-            <input type="text" id="fD" required>
-          </div>
-        </div>
-        <div class="campo">
-          <label for="fCorreta">Alternativa correta</label>
-          <select id="fCorreta">
-            <option value="A">A</option>
-            <option value="B">B</option>
-            <option value="C">C</option>
-            <option value="D">D</option>
-          </select>
-        </div>
-        <div class="acoes-form">
-          <button type="submit" class="btn primario">Adicionar questão</button>
-        </div>
-      </form>
-
-      <div class="bloco">
-        <h3>Questões cadastradas</h3>
-        <table class="tabela" id="tabQuestoes">
-          <thead>
-            <tr>
-              <th>#</th>
-              <th>Enunciado</th>
-              <th>Correta</th>
-              <th>Ações</th>
-            </tr>
-          </thead>
-          <tbody></tbody>
-        </table>
-      </div>
-    </section>
-  </div>
-</div>
 
 <!-- ========== MODAL: NOVA ÁREA ========== -->
 <div class="modal" id="modalArea" aria-hidden="true">
@@ -494,7 +302,7 @@
     </form>
   </div>
 </div>
-
+</section>
 <!-- ==========MODAL: CURSO (dados gerais) modelo de inserção de cursos========== -->
 <div class="modal" id="modalCurso" aria-hidden="true">
   <div class="modal__sheet">
@@ -542,7 +350,7 @@
       <input id="fModuloTitulo" type="text" placeholder="Título do módulo" required>
       <button type="submit">+ Adicionar módulo</button>
     </form>
-
+    
     <!-- Lista de módulos -->
     <div class="card">
       <table class="tabela" id="tabModulos">

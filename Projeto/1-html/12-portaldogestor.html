@@ -38,162 +38,16 @@ document.getElementById('form-editar-modulo')?.addEventListener('submit', functi
     <aside class="sidebar">
       <h1 class="logo">Instituição Altitude</h1>
       <nav>
- 
-        <button onclick="abrirAba('dashboard')">Dashboard</button>
-        <button onclick="abrirAba('relatorios')">Relatórios</button>
         <button onclick="abrirAba('alunos')">Gestão de Alunos</button>
         <button onclick="abrirAba('cursos')">Gestão de Cursos</button>
         <button onclick="abrirAba('usuarios')">Gestão de Usuários</button>
-        <button onclick="abrirAba('chamados')">Chamados</button>
+        <button onclick="abrirAba('chamados')">Gestão de Chamados</button>
       </nav>
     </aside>
 
     <!-- Conteúdo -->
     <main class="conteudo">
-      <section id="dashboard" class="aba ativa">
-  <h2>Dashboard de Indicadores</h2>
-
-  <div class="cards">
-    <!-- Indicadores já existentes -->
-    <div class="card"> 
-      <span class="icone">👥</span>
-      <h3 id="kpiTotalAlunos">--</h3>
-      <p>Total de Alunos</p>
-    </div>
-    <div class="card"> 
-      <span class="icone">📚</span>
-      <h3 id="kpiMatriculasAtivas">--</h3>
-      <p>Matrículas Ativas</p>
-    </div>
-    <div class="card"> 
-      <span class="icone">😴</span>
-      <h3 id="kpiUsuariosInativos">--</h3>
-      <p>Usuários Inativos</p>
-    </div>
-    <div class="card"> 
-      <span class="icone">💰</span>
-      <h3 id="kpiValoresPagos">R$ --</h3>
-      <p>Valores Pagos</p>
-    </div>
-
-    <!-- 👇 Novos cards -->
-    <div class="card">
-      <span class="icone">✅</span>
-      <h3 id="kpiCertificados">--</h3>
-      <p>Certificados Emitidos</p>
-    </div>
-    <div class="card">
-      <span class="icone">🕒</span>
-      <h3 id="kpiCertPendentes">--</h3>
-      <p>Certificados Pendentes</p>
-    </div>
-    <div class="card">
-      <span class="icone">📈</span>
-      <h3 id="kpiTaxaConclusao">--%</h3>
-      <p>Taxa de Conclusão</p>
-    </div>
-    <div class="card qualidade">
-  <span class="icone">⭐</span>
-  <h3>-- / 5</h3>
-  <p>Qualidade Média</p>
-</div>
-
-<div class="card chamados">
-  <span class="icone">📨</span>
-  <h3>--</h3>
-  <div class="detalhes-chamados"></div>
-</div>
-
-
-  <!-- Gráficos -->
-  <div class="graficos">
-    <div class="grafico">
-      <h3>Matrículas por Mês</h3>
-      <canvas id="graficoMatriculas"></canvas>
-    </div>
-    <div class="grafico">
-      <h3>Receita x Despesa</h3>
-      <canvas id="graficoFinanceiro"></canvas>
-    </div>
-    <div class="grafico">
-      <h3>Cursos Mais Procurados</h3>
-      <canvas id="graficoCursos"></canvas>
-    </div>
-  </div>
-</section>
-
-
-
-<section id="relatorios" class="aba">
-  <h2>💰 Relatórios Financeiros</h2>
-
-  <!-- Filtros / Ações -->
-  <div class="toolbar">
-    <label>Período:
-      <select id="filtroPeriodo">
-        <option value="30">Últimos 30 dias</option>
-        <option value="90">Últimos 90 dias</option>
-        <option value="365">Últimos 12 meses</option>
-      </select>
-    </label>
-    <button id="btnExportar">Exportar CSV</button>
-  </div>
-
-  <!-- KPIs -->
-  <div class="kpis">
-    <div class="kpi"><span class="lbl">Saldo Financeiro</span><strong id="kSaldo">R$ 0,00</strong></div>
-    <div class="kpi"><span class="lbl">Inadimplência</span><strong id="kInad">0%</strong></div>
-    <div class="kpi"><span class="lbl">Receita do mês</span><strong id="kReceitaMes">R$ 0,00</strong></div>
-    <div class="kpi"><span class="lbl">Ticket médio</span><strong id="kTicket">R$ 0,00</strong></div>
-  </div>
-
-  <!-- Gráficos -->
-  <div class="grid-2">
-    <div class="card graf">
-      <h3>Fluxo de Caixa</h3>
-      <canvas id="chartFluxo" height="140"></canvas>
-    </div>
-    <div class="card graf">
-      <h3>Receitas por Origem</h3>
-      <canvas id="chartReceita" height="140"></canvas>
-    </div>
-  </div>
-
-  <!-- Movimentações -->
-  <div class="card">
-    <h3>Movimentações</h3>
-    <table class="tabela" id="tabMov">
-      <thead>
-        <tr><th>Data</th><th>Tipo</th><th>Descrição</th><th>Valor (R$)</th></tr>
-      </thead>
-      <tbody></tbody>
-    </table>
-  </div>
-
-    <!-- Nova despesa -->
-  <form class="inline" id="formDespesa">
-    <input type="date" id="dtDespesa" required>
-    <input type="text" id="descDespesa" placeholder="Descrição" required>
-    <input type="number" step="0.01" id="valorDespesa" placeholder="Valor (R$)" required>
-    <button type="submit">Adicionar Despesa</button>
-  </form>
-
-  <!-- Nova receita -->
-  <form class="inline" id="formReceita">
-    <input type="date" id="dtReceita" required>
-    <input type="text" id="descReceita" placeholder="Descrição" required>
-    <input type="number" step="0.01" id="valorReceita" placeholder="Valor (R$)" required>
-    <select id="origemReceita" aria-label="Origem da receita">
-      <option value="Mensalidades">Mensalidades</option>
-      <option value="Matrículas">Matrículas</option>
-      <option value="Material">Material</option>
-      <option value="Outros">Outros</option>
-    </select>
-    <button type="submit">Adicionar Receita</button>
-  </form>
-</section>
-
-<section id="alunos" class="aba">
+      <section id="alunos" class="aba ativa">
   <h2>👨‍🎓 Gestão de Alunos</h2>
 
   <div class="toolbar">
@@ -696,7 +550,7 @@ document.getElementById('form-editar-modulo')?.addEventListener('submit', functi
       
 
       <section id="chamados" class="aba">
-  <h2>📨 Chamados</h2>
+  <h2>📨 Gestão de Chamados</h2>
 
   <!-- KPIs -->
   <div class="kpis-ch">

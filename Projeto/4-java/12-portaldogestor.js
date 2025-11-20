@@ -7,14 +7,9 @@ function abrirAba(id) {
 }
 
 /* ----------------------------------------------------------
-   GESTÃO DE ALUNOS
+   GESTÃO DE ALUNOS - CONECTADO AO SUPABASE
 -----------------------------------------------------------*/
-let alunos = [
-  { ra:'2025001', nome:'CARLOS JUNIOR', email:'carlos@example.com', telefone:'91982116890', status:'ATIVO' },
-  { ra:'2025002', nome:'MARIA SOUZA',   email:'maria@example.com',  telefone:'91988887777', status:'INATIVO' },
-  { ra:'2025003', nome:'JOAO SILVA',    email:'joao@example.com',   telefone:'91999998888', status:'ATIVO' },
-];
-
+let alunos = [];
 const pageAln = { idx:1, size:10 };
 let editIndexAln = -1;
 const $ = s => document.querySelector(s);
@@ -27,11 +22,67 @@ function up(t){
     .replace(/\s+/g,' ')
     .trim().toUpperCase();
 }
+
 function maskPhone(v){
   const d=(v||'').replace(/\D/g,'').slice(0,11);
   const has9=d.length>10;
   const ddd=d.slice(0,2), p1=has9?d.slice(2,7):d.slice(2,6), p2=has9?d.slice(7,11):d.slice(6,10);
   return (ddd?`(${ddd}) `:'')+p1+(p2?`-${p2}`:'');
+}
+
+// Carregar alunos do Supabase
+async function carregarAlunosDoSupabase() {
+  try {
+    console.log('🔍 Iniciando carregamento de alunos do Supabase...');
+    
+    const { data, error } = await sb
+      .from('alunos')
+      .select('*')
+      .order('criado_em', { ascending: false });
+
+    if (error) {
+      console.error('❌ Erro do Supabase:', error);
+      throw error;
+    }
+    
+    console.log('✅ Alunos carregados:', data);
+    
+    alunos = data.map(aluno => ({
+      id: aluno.user_id,
+      ra: aluno.ra || '',
+      nome: aluno.nome || '',
+      email: aluno.email || '',
+      telefone: aluno.telefone || '',
+      status: aluno.status || 'ATIVO',
+      user_id: aluno.user_id,
+      cpf: aluno.cpf,
+      data_nascimento: aluno.data_nascimento,
+      objetivo: aluno.objetivo,
+      criado_em: aluno.criado_em
+    }));
+    
+    renderAlunos();
+  } catch (error) {
+    console.error('❌ Erro ao carregar alunos:', error);
+    
+    alunos = [
+      { 
+        id: 'cf3c57f7-ea29-4fb0-813f-21aaadcd4a6c', 
+        user_id: 'cf3c57f7-ea29-4fb0-813f-21aaadcd4a6c',
+        ra: '20251', 
+        nome: 'CARLOS JUNIOR', 
+        email: 'oliveiracagoj@gmail.com', 
+        telefone: null, 
+        status: 'ATIVO',
+        cpf: null,
+        data_nascimento: null,
+        objetivo: null,
+        criado_em: '2025-08-17 05:22:04.142164+00'
+      }
+    ];
+    
+    renderAlunos();
+  }
 }
 
 function getFilteredAln(){
@@ -72,8 +123,8 @@ function renderAlunos(){
       <td>${maskPhone(a.telefone)}</td>
       <td><span class="badge ${a.status==='ATIVO'?'ativo':'inativo'}">${a.status}</span></td>
       <td>
-        <button class="btn-mini" data-act="edit" data-i="${start+i}">Editar</button>
-        <button class="btn-mini" data-act="toggle" data-i="${start+i}">${a.status==='ATIVO'?'Inativar':'Ativar'}</button>
+        <button class="btn-mini" data-act="edit" data-id="${a.id}" data-i="${start+i}">Editar</button>
+        <button class="btn-mini" data-act="toggle" data-id="${a.id}" data-i="${start+i}">${a.status==='ATIVO'?'Inativar':'Ativar'}</button>
       </td>
     </tr>`).join('');
   $('#pgInfo') && ($('#pgInfo').textContent = `${pageAln.idx} / ${totalPages}`);
@@ -82,15 +133,28 @@ function renderAlunos(){
 function openModalAln(idx=-1){
   editIndexAln = idx;
   $('#modalTitulo').textContent = idx>=0 ? 'Editar aluno' : 'Novo aluno';
-  const a = idx>=0 ? alunos[idx] : { ra:'', nome:'', email:'', telefone:'', status:'ATIVO' };
-  $('#fRa').value = a.ra || '';
-  $('#fStatus').value = a.status || 'ATIVO';
-  $('#fNome').value = a.nome || '';
-  $('#fEmail').value = a.email || '';
-  $('#fTel').value = maskPhone(a.telefone||'');
+  
+  if (idx >= 0) {
+    const a = alunos[idx];
+    $('#fRa').value = a.ra || '';
+    $('#fStatus').value = a.status || 'ATIVO';
+    $('#fNome').value = a.nome || '';
+    $('#fEmail').value = a.email || '';
+    $('#fTel').value = maskPhone(a.telefone||'');
+  } else {
+    $('#fRa').value = gerarRaLocal();
+    $('#fStatus').value = 'ATIVO';
+    $('#fNome').value = '';
+    $('#fEmail').value = '';
+    $('#fTel').value = '';
+  }
+  
   $('#modalAluno').setAttribute('aria-hidden','false');
 }
-function closeModalAln(){ $('#modalAluno')?.setAttribute('aria-hidden','true'); }
+
+function closeModalAln(){ 
+  $('#modalAluno')?.setAttribute('aria-hidden','true'); 
+}
 
 function exportCSVAln(){
   const rows = [['RA','NOME','EMAIL','TELEFONE','STATUS']];
@@ -100,8 +164,68 @@ function exportCSVAln(){
   const a = document.createElement('a'); a.href=URL.createObjectURL(blob); a.download='alunos.csv'; a.click();
 }
 
+async function salvarAluno(alunoData, isEdit = false, alunoId = null) {
+  try {
+    let result;
+    
+    const dadosParaSalvar = {
+      nome: alunoData.nome,
+      email: alunoData.email,
+      telefone: alunoData.telefone,
+      status: alunoData.status,
+      ra: alunoData.ra,
+      updated_at: new Date().toISOString()
+    };
+    
+    if (isEdit && alunoId) {
+      const { data, error } = await sb
+        .from('alunos')
+        .update(dadosParaSalvar)
+        .eq('user_id', alunoId)
+        .select();
+      
+      if (error) throw error;
+      result = data[0];
+    } else {
+      const { data, error } = await sb
+        .from('alunos')
+        .insert([{ 
+          ...dadosParaSalvar, 
+          criado_em: new Date().toISOString() 
+        }])
+        .select();
+      
+      if (error) throw error;
+      result = data[0];
+    }
+    
+    return result;
+  } catch (error) {
+    console.error('Erro ao salvar aluno:', error);
+    throw error;
+  }
+}
+
+async function alternarStatusAluno(alunoId, novoStatus) {
+  try {
+    const { error } = await sb
+      .from('alunos')
+      .update({ 
+        status: novoStatus, 
+        updated_at: new Date().toISOString() 
+      })
+      .eq('user_id', alunoId);
+    
+    if (error) throw error;
+    return true;
+  } catch (error) {
+    console.error('Erro ao alterar status:', error);
+    throw error;
+  }
+}
+
 function carregarAlunos(){
-  if($('#alnBusca')){ // wire uma única vez
+  if($('#alnBusca')){
     $('#alnBusca').addEventListener('input', ()=>{ pageAln.idx=1; renderAlunos(); });
     $('#alnStatus').addEventListener('change', ()=>{ pageAln.idx=1; renderAlunos(); });
     $('#alnOrdenar').addEventListener('change', ()=>{ pageAln.idx=1; renderAlunos(); });
@@ -113,30 +237,65 @@ function carregarAlunos(){
     $('#alnNovo').addEventListener('click', ()=> openModalAln(-1));
     $('#btnCancelar').addEventListener('click', closeModalAln);
 
-    $('#tabAlunos').addEventListener('click', (ev)=>{
-      const btn = ev.target.closest('button'); if(!btn) return;
-      const idx = parseInt(btn.dataset.i,10); const act = btn.dataset.act;
+    $('#tabAlunos').addEventListener('click', async (ev)=>{
+      const btn = ev.target.closest('button'); 
+      if(!btn) return;
+      
+      const idx = parseInt(btn.dataset.i,10); 
+      const alunoId = btn.dataset.id;
+      const act = btn.dataset.act;
+      
       if(Number.isNaN(idx)) return;
-      if(act==='edit'){ openModalAln(idx); }
-      if(act==='toggle'){ alunos[idx].status = alunos[idx].status==='ATIVO'?'INATIVO':'ATIVO'; renderAlunos(); }
+      
+      if(act==='edit'){ 
+        openModalAln(idx); 
+      }
+      
+      if(act==='toggle'){ 
+        try {
+          const novoStatus = alunos[idx].status === 'ATIVO' ? 'INATIVO' : 'ATIVO';
+          await alternarStatusAluno(alunoId, novoStatus);
+          alunos[idx].status = novoStatus;
+          renderAlunos();
+        } catch (error) {
+          alert('Erro ao alterar status do aluno');
+        }
+      }
     });
 
-    $('#formAluno').addEventListener('submit', (e)=>{
+    $('#formAluno').addEventListener('submit', async (e)=>{
       e.preventDefault();
+      
       const payload = {
         ra: $('#fRa').value || gerarRaLocal(),
         nome: up($('#fNome').value),
         email: $('#fEmail').value.trim().toLowerCase(),
         telefone: ($('#fTel').value||'').replace(/\D/g,''),
-        status: $('#fStatus').value
+        status: $('#fStatus').value,
+        updated_at: new Date().toISOString()
       };
-      if(editIndexAln>=0){ alunos[editIndexAln] = payload; } else { alunos.push(payload); }
-      closeModalAln(); renderAlunos();
+
+      try {
+        if(editIndexAln>=0){ 
+          const alunoId = alunos[editIndexAln].id;
+          await salvarAluno(payload, true, alunoId);
+          alunos[editIndexAln] = { ...payload, id: alunoId };
+        } else { 
+          const novoAluno = await salvarAluno(payload, false);
+          alunos.push({ ...payload, id: novoAluno.user_id });
+        }
+        
+        closeModalAln(); 
+        renderAlunos();
+      } catch (error) {
+        alert('Erro ao salvar aluno: ' + error.message);
+      }
     });
 
     $('#fTel').addEventListener('input', e=> e.target.value = maskPhone(e.target.value));
   }
-  renderAlunos();
+  
+  carregarAlunosDoSupabase();
 }
 
 function gerarRaLocal(){
@@ -144,242 +303,24 @@ function gerarRaLocal(){
   const max = alunos.filter(a=>a.ra.startsWith(ano))
                     .map(a=>parseInt(a.ra.slice(4),10))
                     .reduce((m,v)=>isNaN(v)?m:Math.max(m,v),0);
-  return ano + String(max+1);
+  return ano + String(max+1).padStart(3, '0');
 }
-
-/* ----------------------------------------------------------
-   DASHBOARD (gráficos + indicadores) – com guardas
------------------------------------------------------------*/
-document.addEventListener('DOMContentLoaded', ()=> {
-  const gm = document.getElementById('graficoMatriculas');
-  if (gm) new Chart(gm, {
-    type: 'line',
-    data: {
-      labels: ['Jan','Fev','Mar','Abr','Mai','Jun'],
-      datasets: [{
-        label: 'Matrículas',
-        data: [120,150,180,170,200,210],
-        borderColor: '#003366',
-        backgroundColor: 'rgba(0,51,102,0.2)',
-        fill: true
-      }]
-    }
-  });
-
-  const gf = document.getElementById('graficoFinanceiro');
-  if (gf) new Chart(gf, {
-    type: 'bar',
-    data: {
-      labels: ['Jan','Fev','Mar','Abr','Mai','Jun'],
-      datasets: [
-        { label:'Receita', data:[45000,47000,49000,51000,52000,54000], backgroundColor:'#0077cc' },
-        { label:'Despesa', data:[25000,26000,27000,28000,30000,32000], backgroundColor:'#ff9933' }
-      ]
-    },
-    options:{ responsive:true }
-  });
-
-  const gc = document.getElementById('graficoCursos');
-  if (gc) new Chart(gc, {
-    type: 'pie',
-    data: {
-      labels: ['Engenharia','Direito','ADM','TI','Saúde'],
-      datasets: [{ data:[45,25,15,10,5], backgroundColor:['#003366','#0077cc','#00aaff','#66ccff','#99ddff'] }]
-    }
-  });
-
-  const cardQual = document.querySelector('.card.qualidade h3');
-  const cardQualP = document.querySelector('.card.qualidade p');
-  if (cardQual && cardQualP) {
-    const avaliacoes = [5,4,5,3,4,5,5,4];
-    const media = (avaliacoes.reduce((a,b)=>a+b,0)/avaliacoes.length).toFixed(1);
-    cardQual.textContent = `${media} / 5`;
-    cardQualP.textContent = 'Qualidade Média';
-  }
-
-  const cardCham = document.querySelector('.card.chamados');
-  if (cardCham) {
-    const chamados = { abertos:15, andamento:8, fechados:12 };
-    const totalChamados = chamados.abertos + chamados.andamento + chamados.fechados;
-    cardCham.querySelector('h3').textContent = totalChamados;
-    cardCham.querySelector('.detalhes-chamados').innerHTML =
-      `<p>📂 Abertos: ${chamados.abertos}</p>
-       <p>🔄 Em Andamento: ${chamados.andamento}</p>
-       <p>✅ Fechados: ${chamados.fechados}</p>`;
-  }
-
-  carregarAlunos(); // monta a aba de alunos ao carregar
-});
-
-/* ----------------------------------------------------------
-   RELATÓRIOS FINANCEIROS
------------------------------------------------------------*/
-const BRL = v => (v||0).toLocaleString('pt-BR',{style:'currency',currency:'BRL'});
-const dSub = n => { const d = new Date(); d.setDate(d.getDate()-n); return d; };
-
-const receitas = [
-  { data:dSub( 3), origem:'Mensalidades', valor:450.00 },
-  { data:dSub(15), origem:'Mensalidades', valor:900.00 },
-  { data:dSub(40), origem:'Matrículas',   valor:300.00 },
-  { data:dSub(55), origem:'Mensalidades', valor:450.00 },
-  { data:dSub(65), origem:'Material',     valor:120.00 },
-  { data:dSub(85), origem:'Mensalidades', valor:900.00 }
-];
-let despesasFin = [
-  { data:dSub( 2), tipo:'Despesa', desc:'Energia',  valor:250.00 },
-  { data:dSub(20), tipo:'Despesa', desc:'Água',     valor:140.00 },
-  { data:dSub(47), tipo:'Despesa', desc:'Serviços', valor:500.00 }
-];
-
-let chartFluxo, chartReceita;
-
-function filtrarPeriodo(dias){
-  const limite = new Date(); limite.setDate(limite.getDate()-dias);
-  return {
-    r: receitas.filter(x => x.data >= limite),
-    d: despesasFin.filter(x => x.data >= limite)
-  };
-}
-
-function atualizarRelatorios(dias=30){
-  const cardFluxo = document.getElementById('chartFluxo');
-  const cardRecei = document.getElementById('chartReceita');
-  if(!cardFluxo || !cardRecei) return; // aba não está nesta tela
-
-  const { r, d } = filtrarPeriodo(dias);
-  const totalR = r.reduce((a,b)=>a+b.valor,0);
-  const totalD = d.reduce((a,b)=>a+b.valor,0);
-  const saldo  = totalR - totalD;
-
-  const inad = 0.08; // mock
-  const mesAtual = (new Date()).getMonth();
-  const receitaMes = r.filter(x=>x.data.getMonth()===mesAtual).reduce((a,b)=>a+b.valor,0);
-  const ticket = r.length ? (receitaMes / r.length) : 0;
-
-  // KPIs
-  $('#kSaldo')       && ( $('#kSaldo').textContent      = BRL(saldo) );
-  $('#kInad')        && ( $('#kInad').textContent       = (inad*100).toFixed(1)+'%' );
-  $('#kReceitaMes')  && ( $('#kReceitaMes').textContent = BRL(receitaMes) );
-  $('#kTicket')      && ( $('#kTicket').textContent     = BRL(ticket) );
-
-  // Tabela
-  const tbody = document.querySelector('#tabMov tbody');
-  if (tbody){
-    tbody.innerHTML = '';
-    const linhas = [
-      ...r.map(x=>({data:x.data,tipo:'Receita',desc:(x.desc||x.origem),valor:x.valor})),
-      ...d
-    ].sort((a,b)=>b.data - a.data);
-    linhas.forEach(m=>{
-      const tr = document.createElement('tr');
-      tr.innerHTML = `
-        <td>${m.data.toLocaleDateString('pt-BR')}</td>
-        <td>${m.tipo || 'Despesa'}</td>
-        <td>${m.desc || m.origem}</td>
-        <td>${BRL(m.valor)}</td>`;
-      tbody.appendChild(tr);
-    });
-  }
-
-  // Gráfico Fluxo (mês)
-  const fmtMes = x => new Intl.DateTimeFormat('pt-BR',{month:'short'}).format(x).replace('.','');
-  const meses = [...new Set([...r,...d].map(x=>fmtMes(x.data)))];
-  const recMes  = meses.map(m=> r.filter(x=>fmtMes(x.data)===m).reduce((a,b)=>a+b.valor,0));
-  const despMes = meses.map(m=> d.filter(x=>fmtMes(x.data)===m).reduce((a,b)=>a+b.valor,0));
-
-  if (chartFluxo) chartFluxo.destroy();
-  chartFluxo = new Chart(cardFluxo, {
-    type:'bar',
-    data:{ labels: meses, datasets:[
-      { label:'Receitas', data:recMes,  backgroundColor:'#16a34a' },
-      { label:'Despesas', data:despMes, backgroundColor:'#ef4444' }
-    ]},
-    options:{ responsive:true, plugins:{ legend:{ position:'bottom' } } }
-  });
-
-  // Rosca
-  const porOrigem = {};
-  r.forEach(x => porOrigem[x.origem] = (porOrigem[x.origem]||0) + x.valor);
-  if (chartReceita) chartReceita.destroy();
-  chartReceita = new Chart(cardRecei, {
-    type:'doughnut',
-    data:{ labels:Object.keys(porOrigem), datasets:[{ data:Object.values(porOrigem) }] },
-    options:{ plugins:{ legend:{ position:'bottom' } } }
-  });
-}
-
-/* ---- Listeners da aba Relatórios (com guarda) ---- */
-document.addEventListener('DOMContentLoaded', ()=>{
-  const filtro = document.getElementById('filtroPeriodo');
-  const fDesp  = document.getElementById('formDespesa');
-  const fRec   = document.getElementById('formReceita');
-  const btnExp = document.getElementById('btnExportar');
-
-  if (filtro) filtro.addEventListener('change', e=> atualizarRelatorios(parseInt(e.target.value,10)));
-
-  if (fDesp) fDesp.addEventListener('submit', e=>{
-    e.preventDefault();
-    const data  = new Date(document.getElementById('dtDespesa').value);
-    const desc  = document.getElementById('descDespesa').value.trim();
-    const valor = parseFloat(document.getElementById('valorDespesa').value);
-    if (!isNaN(valor)) {
-      despesasFin.push({ data, tipo:'Despesa', desc, valor });
-      atualizarRelatorios(parseInt((filtro?.value||'30'),10));
-      e.target.reset();
-    }
-  });
-
-  if (fRec) fRec.addEventListener('submit', e=>{
-    e.preventDefault();
-    const data   = new Date(document.getElementById('dtReceita').value);
-    const desc   = document.getElementById('descReceita').value.trim();
-    const valor  = parseFloat(document.getElementById('valorReceita').value);
-    const origem = document.getElementById('origemReceita').value;
-    if (!isNaN(valor)) {
-      receitas.push({ data, origem, valor, desc });
-      atualizarRelatorios(parseInt((filtro?.value||'30'),10));
-      e.target.reset();
-    }
-  });
-
-  if (btnExp) btnExp.addEventListener('click', ()=>{
-    const tbody = document.querySelector('#tabMov tbody'); if(!tbody) return;
-    const rows = [['Data','Tipo','Descrição','Valor']];
-    tbody.querySelectorAll('tr').forEach(tr=>{
-      rows.push([...tr.children].map(td=>td.textContent));
-    });
-    const csv = rows.map(r=>r.join(';')).join('\n');
-    const blob = new Blob([csv],{type:'text/csv;charset=utf-8;'});
-    const a = document.createElement('a');
-    a.href = URL.createObjectURL(blob);
-    a.download = 'relatorio_financeiro.csv';
-    a.click();
-  });
-
-  // primeira renderização se a aba existir
-  if (document.getElementById('chartFluxo')) atualizarRelatorios(30);
-});
 
 /* ======================= GESTÃO DE CURSOS (GC_) ======================= */
 (function () {
-  // ---------- Atalhos básicos ----------
   const $  = (s, sc = document) => sc.querySelector(s);
   const $$ = (s, sc = document) => Array.from(sc.querySelectorAll(s));
 
-  // Bucket das capas no Supabase
   const BUCKET_CAPAS = 'capas_cursos';
-  // Áreas fixas para o select
   const AREAS_FIXAS  = ['TECNOLOGIA', 'HUMANAS', 'SAÚDE', 'ADMINISTRAÇÃO', 'ENGENHARIA'];
 
-  // Estado em memória (somente para a tela de cursos)
   const GC = {
-    cursos: [],        // lista atual de cursos com stats
-    editId: null,      // ID do curso que está sendo editado (null = novo)
-    cursoAtual: null,  // curso selecionado no painel de módulos
-    provaAtualId: null // id da prova que está aberta no modal de questões
+    cursos: [],
+    editId: null,
+    cursoAtual: null,
+    provaAtualId: null
   };
 
-  // ---------- Funções utilitárias ----------
   const toUp   = (t) => (t || '').trim().toUpperCase();
   const fmtBool = (b) => (b ? 'SIM' : 'NÃO');
   const thumb   = (url) => url || 'https://via.placeholder.com/64x40?text=CAPA';
@@ -398,11 +339,10 @@ document.addEventListener('DOMContentLoaded', ()=>{
       .from(BUCKET_CAPAS)
       .getPublicUrl(nomeArquivo);
 
-    return data.publicUrl; // URL pública da capa
+    return data.publicUrl;
   }
 
   async function fetchCursosComStats(filtroArea = 'TODAS') {
-    // 1) Cursos
     let q = sb.from('cursos')
       .select('*')
       .order('id', { ascending: false });
@@ -415,7 +355,6 @@ document.addEventListener('DOMContentLoaded', ()=>{
     if (error) throw error;
     if (!cursos || !cursos.length) return [];
 
-    // 2) Busca materiais, provas E MÓDULOS para contar por curso
     const ids = cursos.map(c => c.id);
 
     let mats = [], provas = [], modulos = [];
@@ -447,9 +386,7 @@ document.addEventListener('DOMContentLoaded', ()=>{
     }));
 }
 
-  // ---------- Renderização da área / selects ----------
   function renderAreasSelects() {
-    // Filtro de área no topo
     const filtro = $('#curFiltroArea');
     if (filtro) {
       const atual = filtro.value || 'TODAS';
@@ -459,7 +396,6 @@ document.addEventListener('DOMContentLoaded', ()=>{
       filtro.value = atual;
     }
 
-    // Select de área no formulário do curso
     const areaForm = $('#fCursoArea');
     if (areaForm) {
       areaForm.innerHTML = AREAS_FIXAS
@@ -468,17 +404,13 @@ document.addEventListener('DOMContentLoaded', ()=>{
     }
   }
 
-  // ---------- Renderização da tabela de cursos ----------
   function renderTabelaCursos() {
     const tbody = $('#tabCursos tbody');
-    if (!tbody) return; // tela não está presente
+    if (!tbody) return;
 
     tbody.innerHTML = GC.cursos.map(c => `
       <tr data-id="${c.id}">
-        <!-- Código -->
         <td class="col-id">${c.id}</td>
-
-        <!-- Curso (capa + título) -->
         <td class="col-curso">
           <div class="curso-info">
             <img src="${thumb(c.capa_url)}" class="curso-thumb" alt="Capa do curso">
@@ -488,23 +420,15 @@ document.addEventListener('DOMContentLoaded', ()=>{
             </div>
           </div>
         </td>
-
-        <!-- Área -->
         <td class="col-area">${c.categoria || '-'}</td>
-
-       <!-- Módulos (contagem REAL de módulos) -->
-          <td class="col-modulos">
-            <span title="Módulos cadastrados">📦 ${c.total_modulos || 0}</span>
-          </td>
-
-        <!-- Publicado -->
+        <td class="col-modulos">
+          <span title="Módulos cadastrados">📦 ${c.total_modulos || 0}</span>
+        </td>
         <td class="col-pub">
           <span class="badge ${c.publicado ? 'pub' : 'nop'}">
             ${fmtBool(c.publicado)}
           </span>
         </td>
-
-        <!-- Ações -->
         <td class="col-acoes">
           <button class="btn-mini gc-edit" title="Editar curso">✏️</button>
           <button class="btn-mini gc-mods" title="Gerenciar módulos, materiais e provas">📦</button>
@@ -516,9 +440,7 @@ document.addEventListener('DOMContentLoaded', ()=>{
     `).join('');
   }
 
-  // ---------- CRUD de cursos ----------
   async function carregarCursos() {
-    // se a tabela de cursos não existe nesta página, não faz nada
     if (!$('#tabCursos')) return;
 
     const area = $('#curFiltroArea')?.value || 'TODAS';
@@ -577,8 +499,6 @@ document.addEventListener('DOMContentLoaded', ()=>{
       return;
     }
 
-    // Impede cursos com o mesmo título (case-insensitive),
-    // mas permite o mesmo nome se for o próprio curso em edição.
     const { data: dupList, error: dupErr } = await sb
       .from('cursos')
       .select('id,titulo')
@@ -596,7 +516,6 @@ document.addEventListener('DOMContentLoaded', ()=>{
     }
 
     try {
-      // upload da capa se o usuário escolheu arquivo
       let urlCapa = null;
       if (arquivo) {
         urlCapa = await uploadCapa(arquivo);
@@ -613,7 +532,6 @@ document.addEventListener('DOMContentLoaded', ()=>{
 
       let salvo;
       if (GC.editId) {
-        // UPDATE
         const { data, error } = await sb
           .from('cursos')
           .update(payloadBase)
@@ -623,7 +541,6 @@ document.addEventListener('DOMContentLoaded', ()=>{
         if (error) throw error;
         salvo = data;
       } else {
-        // INSERT
         const payloadNew = { ...payloadBase, criado_em: new Date().toISOString() };
         const { data, error } = await sb
           .from('cursos')
@@ -652,7 +569,6 @@ document.addEventListener('DOMContentLoaded', ()=>{
     if (!ok) return;
 
     try {
-      // Remove filhos (materiais, provas e questões)
       const { data: provas } = await sb.from('provas').select('id').eq('curso_id', id);
       if (provas && provas.length) {
         const provaIds = provas.map(p => p.id);
@@ -677,7 +593,6 @@ document.addEventListener('DOMContentLoaded', ()=>{
     if (!curso) return;
 
     try {
-      // 1) duplica o curso
       const base = {
         titulo       : `${curso.titulo} (CÓPIA)`,
         descricao    : curso.descricao,
@@ -694,7 +609,6 @@ document.addEventListener('DOMContentLoaded', ()=>{
         .single();
       if (cErr) throw cErr;
 
-      // 2) duplica materiais
       const mats = await sb.from('materiais').select('*').eq('curso_id', id);
       if (!mats.error && mats.data && mats.data.length) {
         const novos = mats.data.map(m => ({
@@ -707,7 +621,6 @@ document.addEventListener('DOMContentLoaded', ()=>{
         await sb.from('materiais').insert(novos);
       }
 
-      // 3) duplica provas + questões
       const prs = await sb.from('provas').select('*').eq('curso_id', id);
       if (!prs.error && prs.data && prs.data.length) {
         for (const p of prs.data) {
@@ -746,16 +659,13 @@ document.addEventListener('DOMContentLoaded', ()=>{
   //  GESTÃO DE MÓDULOS - SISTEMA COMPLETO E FUNCIONAL
   // =====================================================================
 
-  // Variáveis globais para módulos
   let cursoEditandoId = null;
   let moduloEditandoId = null;
 
-  // Função para debug
   function debugModulos(mensagem, data = null) {
     console.log(`🔧 MÓDULOS: ${mensagem}`, data || '');
   }
 
-  // Abrir painel de módulos - FUNÇÃO PRINCIPAL
   async function abrirPainelModulos(id) {
     debugModulos('Abrindo painel de módulos para curso:', id);
     
@@ -768,16 +678,12 @@ document.addEventListener('DOMContentLoaded', ()=>{
     cursoEditandoId = id;
     GC.cursoAtual = curso;
     
-    // Atualizar título
     $('#mmCursoNome').textContent = `${curso.titulo} · ${curso.categoria || 'SEM ÁREA'}`;
 
-    // Carregar módulos
     await carregarModulosCurso(id);
     
-    // Mostrar modal
     $('#modalModulos').setAttribute('aria-hidden', 'false');
     
-    // Configurar event listeners do formulário
     configurarEventListenersModulos();
   }
 
@@ -788,8 +694,7 @@ document.addEventListener('DOMContentLoaded', ()=>{
     moduloEditandoId = null;
   }
 
-  // Carregar módulos do curso - VERSÃO CORRIGIDA
-async function carregarModulosCurso(cursoId) {
+  async function carregarModulosCurso(cursoId) {
     try {
         debugModulos('🎯 CARREGANDO MÓDULOS PARA CURSO:', cursoId);
         
@@ -801,7 +706,6 @@ async function carregarModulosCurso(cursoId) {
 
         if (error) throw error;
 
-        // 🎯 CORREÇÃO: Usar o ID correto
         const tbody = $('#tabModulosBody');
         console.log('📋 Elemento tbody encontrado:', !!tbody);
         
@@ -834,11 +738,11 @@ async function carregarModulosCurso(cursoId) {
                         </span>
                     </td>
                     <td>
-                        <button class="btn-mini" onclick="abrirEdicaoModulo(${modulo.id})">
-                            ✏️ Editar
-                        </button>
                         <button class="btn-mini" onclick="alternarStatusModulo(${modulo.id})">
                             ${modulo.publicado ? '⏸️' : '▶️'}
+                        </button>
+                        <button class="btn-mini" onclick="abrirEdicaoModulo(${modulo.id})">
+                            ✏️ Editar
                         </button>
                         <button class="btn-mini" onclick="excluirModulo(${modulo.id})" style="color: #ef4444;">
                             🗑️ Excluir
@@ -860,8 +764,6 @@ async function carregarModulosCurso(cursoId) {
     }
 }
 
-
-  // ADICIONAR MÓDULO - FUNÇÃO PRINCIPAL
   async function adicionarModulo() {
     debugModulos('=== INICIANDO ADIÇÃO DE MÓDULO ===');
     
@@ -871,7 +773,6 @@ async function carregarModulosCurso(cursoId) {
       return;
     }
 
-    // Obter valores do formulário
     const tituloInput = $('#fModuloTitulo');
     const ordemInput = $('#fModuloOrdem');
     const descricaoInput = $('#fModuloDesc');
@@ -896,7 +797,6 @@ async function carregarModulosCurso(cursoId) {
     try {
       debugModulos('Enviando para Supabase...');
       
-      // INSERIR NO SUPABASE
       const { data, error } = await sb
         .from('modulos')
         .insert([{
@@ -916,15 +816,12 @@ async function carregarModulosCurso(cursoId) {
 
       debugModulos('✅ Módulo salvo com sucesso no Supabase:', data);
 
-      // LIMPAR FORMULÁRIO
       tituloInput.value = '';
       if (descricaoInput) descricaoInput.value = '';
       ordemInput.value = '1';
 
-      // RECARREGAR LISTA
       await carregarModulosCurso(cursoEditandoId);
       
-      // MOSTRAR CONFIRMAÇÃO
       alert('✅ Módulo adicionado com sucesso!');
       
       debugModulos('=== MÓDULO ADICIONADO COM SUCESSO ===');
@@ -935,54 +832,29 @@ async function carregarModulosCurso(cursoId) {
     }
   }
 
-  // Configurar event listeners dos módulos
   function configurarEventListenersModulos() {
     debugModulos('Configurando event listeners para módulos...');
     
-    // Formulário de adicionar módulo
     const formModulo = $('#formModulo');
     if (formModulo) {
       debugModulos('Formulário de módulos encontrado');
       
-      // Remover event listeners antigos
       const newForm = formModulo.cloneNode(true);
       formModulo.parentNode.replaceChild(newForm, formModulo);
       
-      // Adicionar novo event listener
       $('#formModulo').addEventListener('submit', function(e) {
         debugModulos('Formulário submetido - PREVENINDO COMPORTAMENTO PADRÃO');
         e.preventDefault();
         e.stopPropagation();
         adicionarModulo();
-
-
-        // 🆕 ADICIONE ESTAS LINHAS - Event listener para o formulário de edição
-    const formEditar = document.getElementById('form-editar-modulo');
-    if (formEditar) {
-        debugModulos('Formulário de edição encontrado');
-        formEditar.addEventListener('submit', salvarEdicaoModulo);
-    }
-
-    // 🆕 Event listener para o botão cancelar
-    const btnCancelar = document.querySelector('button[onclick="fecharEdicaoModulo()"]');
-    if (btnCancelar) {
-        btnCancelar.addEventListener('click', fecharEdicaoModulo);
-    }
-
         return false;
       });
-
-
     }
 
-    // Botão de fechar módulos
     $('#fecharModulos')?.addEventListener('click', fecharPainelModulos);
-    
-    // Botão voltar módulos
     $('#btnVoltarModulos')?.addEventListener('click', fecharPainelModulos);
   }
 
-  // Funções auxiliares
   async function contarMateriaisModulo(moduloId) {
     try {
       const { count, error } = await sb
@@ -1015,165 +887,161 @@ async function carregarModulosCurso(cursoId) {
     }
   }
 
-  async function alternarStatusModulo(moduloId) {
+  // 🎯 FUNÇÕES GLOBAIS PARA MÓDULOS
+  window.alternarStatusModulo = async function(moduloId) {
     try {
+      console.log('🔄 Alternando status do módulo:', moduloId);
+      
       const { data: modulo, error: fetchError } = await sb
         .from('modulos')
         .select('publicado')
         .eq('id', moduloId)
         .single();
+        
       if (fetchError) throw fetchError;
 
+      const novoStatus = !modulo.publicado;
+      
       const { error } = await sb
         .from('modulos')
         .update({ 
-          publicado: !modulo.publicado,
+          publicado: novoStatus,
           updated_at: new Date().toISOString()
         })
         .eq('id', moduloId);
 
       if (error) throw error;
+      
       await carregarModulosCurso(cursoEditandoId);
-      alert('Status atualizado!');
+      alert(`✅ Módulo ${novoStatus ? 'ativado' : 'desativado'} com sucesso!`);
+      
     } catch (error) {
-      alert('Erro: ' + error.message);
+      console.error('❌ Erro ao alternar status:', error);
+      alert('Erro ao alterar status do módulo: ' + error.message);
     }
   }
 
-  async function excluirModulo(moduloId) {
-    if (!confirm('Excluir este módulo?')) return;
+  window.abrirEdicaoModulo = async function(moduloId) {
+    try {
+      console.log('✏️ Abrindo edição do módulo:', moduloId);
+      
+      const { data: modulo, error } = await sb
+        .from('modulos')
+        .select('*')
+        .eq('id', moduloId)
+        .single();
+
+      if (error) throw error;
+      if (!modulo) {
+        alert('Módulo não encontrado');
+        return;
+      }
+
+      console.log('📋 Dados do módulo:', modulo);
+
+      document.getElementById('editar-id').value = modulo.id;
+      document.getElementById('editar-course-id').value = modulo.curso_id;
+      document.getElementById('editar-titulo').value = modulo.titulo || '';
+      document.getElementById('editar-descricao').value = modulo.descricao || '';
+      document.getElementById('editar-order').value = modulo.ordem || 1;
+      document.getElementById('editar-pdf-url').value = modulo.pdf_url || '';
+      document.getElementById('editar-video-url').value = modulo.video_url || '';
+      document.getElementById('editar-publicado').checked = modulo.publicado || false;
+
+      document.getElementById('form-edicao-modulo').style.display = 'block';
+      
+    } catch (error) {
+      console.error('❌ Erro ao abrir edição:', error);
+      alert('Erro ao carregar dados do módulo: ' + error.message);
+    }
+  }
+
+  window.excluirModulo = async function(moduloId) {
+    if (!confirm('Tem certeza que deseja excluir este módulo?\nEsta ação não pode ser desfeita.')) return;
     
     try {
       const { error } = await sb
         .from('modulos')
         .delete()
         .eq('id', moduloId);
+        
       if (error) throw error;
+      
       await carregarModulosCurso(cursoEditandoId);
-      alert('Módulo excluído!');
+      alert('✅ Módulo excluído com sucesso!');
+      
     } catch (error) {
-      alert('Erro: ' + error.message);
+      console.error('❌ Erro ao excluir módulo:', error);
+      alert('Erro ao excluir módulo: ' + error.message);
     }
   }
 
-  function abrirEdicaoModulo(moduloId, titulo) {
-    moduloEditandoId = moduloId;
-    alert(`Editando módulo: ${titulo} (ID: ${moduloId})`);
-    // FUNÇÃO COMPLETA PARA ABRIR EDIÇÃO DE MÓDULO
-async function abrirEdicaoModulo(moduloId) {
-    try {
-        debugModulos('Abrindo edição do módulo:', moduloId);
-        
-        // Buscar dados do módulo no Supabase
-        const { data: modulo, error } = await sb
-            .from('modulos')
-            .select('*')
-            .eq('id', moduloId)
-            .single();
-
-        if (error) throw error;
-        if (!modulo) {
-            alert('Módulo não encontrado');
-            return;
-        }
-
-        debugModulos('Dados do módulo encontrado:', modulo);
-
-        // Preencher formulário de edição
-        document.getElementById('editar-id').value = modulo.id;
-        document.getElementById('editar-course-id').value = modulo.curso_id;
-        document.getElementById('editar-titulo').value = modulo.titulo || '';
-        document.getElementById('editar-descricao').value = modulo.descricao || '';
-        document.getElementById('editar-order').value = modulo.ordem || 1;
-        document.getElementById('editar-pdf-url').value = modulo.pdf_url || '';
-        document.getElementById('editar-video-url').value = modulo.video_url || '';
-        document.getElementById('editar-publicado').checked = modulo.publicado || false;
-
-        // Mostrar formulário de edição
-        document.getElementById('form-edicao-modulo').style.display = 'block';
-        
-    } catch (error) {
-        console.error('Erro ao abrir edição:', error);
-        alert('Erro ao carregar dados do módulo: ' + error.message);
-    }
-}
-
-// FUNÇÃO PARA FECHAR EDIÇÃO
-function fecharEdicaoModulo() {
-    document.getElementById('form-edicao-modulo').style.display = 'none';
-    document.getElementById('form-editar-modulo').reset();
-}
-
-// FUNÇÃO PARA SALVAR EDIÇÃO
-async function salvarEdicaoModulo(e) {
+  window.salvarEdicaoModulo = async function(e) {
     e.preventDefault();
     
     const moduloId = document.getElementById('editar-id').value;
     const courseId = document.getElementById('editar-course-id').value;
 
     if (!moduloId) {
-        alert('ID do módulo não encontrado');
-        return;
+      alert('ID do módulo não encontrado');
+      return;
     }
 
     try {
-        const dadosAtualizados = {
-            titulo: document.getElementById('editar-titulo').value.trim(),
-            descricao: document.getElementById('editar-descricao').value.trim(),
-            ordem: parseInt(document.getElementById('editar-order').value) || 1,
-            pdf_url: document.getElementById('editar-pdf-url').value.trim(),
-            video_url: document.getElementById('editar-video-url').value.trim(),
-            publicado: document.getElementById('editar-publicado').checked,
-            updated_at: new Date().toISOString()
-        };
+      const dadosAtualizados = {
+        titulo: document.getElementById('editar-titulo').value.trim(),
+        descricao: document.getElementById('editar-descricao').value.trim(),
+        ordem: parseInt(document.getElementById('editar-order').value) || 1,
+        pdf_url: document.getElementById('editar-pdf-url').value.trim(),
+        video_url: document.getElementById('editar-video-url').value.trim(),
+        publicado: document.getElementById('editar-publicado').checked,
+        updated_at: new Date().toISOString()
+      };
 
-        if (!dadosAtualizados.titulo) {
-            alert('O título do módulo é obrigatório');
-            return;
-        }
+      if (!dadosAtualizados.titulo) {
+        alert('O título do módulo é obrigatório');
+        return;
+      }
 
-        debugModulos('Salvando edição do módulo:', { moduloId, dadosAtualizados });
+      console.log('💾 Salvando edição do módulo:', { moduloId, dadosAtualizados });
 
-        const { error } = await sb
-            .from('modulos')
-            .update(dadosAtualizados)
-            .eq('id', moduloId);
+      const { error } = await sb
+        .from('modulos')
+        .update(dadosAtualizados)
+        .eq('id', moduloId);
 
-        if (error) throw error;
+      if (error) throw error;
 
-        alert('✅ Módulo atualizado com sucesso!');
-        fecharEdicaoModulo();
-        
-        // Recarregar a lista de módulos
-        await carregarModulosCurso(courseId);
-        
+      alert('✅ Módulo atualizado com sucesso!');
+      fecharEdicaoModulo();
+      
+      await carregarModulosCurso(courseId);
+      
     } catch (error) {
-        console.error('Erro ao salvar edição:', error);
-        alert('❌ Erro ao atualizar módulo: ' + error.message);
+      console.error('❌ Erro ao salvar edição:', error);
+      alert('Erro ao atualizar módulo: ' + error.message);
     }
-}
   }
 
-  // =====================================================================
-  //  WIRING (ligando tudo nos botões da tela)
-  // =====================================================================
+  window.fecharEdicaoModulo = function() {
+    document.getElementById('form-edicao-modulo').style.display = 'none';
+    document.getElementById('form-editar-modulo').reset();
+  }
+
   function wireCursosUI() {
     const wrap = $('#cursos');
-    if (!wrap) return; // não está na tela de cursos
+    if (!wrap) return;
 
     renderAreasSelects();
 
-    // Filtro por área
     $('#curFiltroArea')?.addEventListener('change', carregarCursos);
 
-    // Botões de topo
     $('#btnNovoCurso')?.addEventListener('click', abrirModalCursoNovo);
     $('#fecharCurso')?.addEventListener('click', () =>
       $('#modalCurso')?.setAttribute('aria-hidden', 'true')
     );
     $('#formCurso')?.addEventListener('submit', salvarCurso);
 
-    // Tabela de cursos (ações por linha)
     $('#tabCursos')?.addEventListener('click', (ev) => {
       const tr = ev.target.closest('tr[data-id]');
       if (!tr) return;
@@ -1190,25 +1058,17 @@ async function salvarEdicaoModulo(e) {
       }
     });
 
-    // Painel de módulos (curso)
     $('#fecharModulos')?.addEventListener('click', fecharPainelModulos);
     $('#btnVoltarModulos')?.addEventListener('click', fecharPainelModulos);
 
-    // primeira carga da tabela de cursos
     carregarCursos();
   }
 
-  // Chama o wiring quando o DOM estiver pronto
   document.addEventListener('DOMContentLoaded', wireCursosUI);
 })();
 
-/* ======================= /GESTÃO DE CURSOS ======================= */
-
-// ... (o resto do seu código permanece igual)
-
 /* ======================= GESTÃO DE USUÁRIOS (GU_) ======================= */
 (function(){
-  // Mock em memória; depois plugar no banco
   let GU_usuarios = [
     { id:'U001', nome:'ADMIN GERAL', email:'admin@altitude.com', telefone:'', cargo:'GESTOR', nivel:4, status:'ATIVO',
       acessos:{ colab:true, prof:true, coord:true, gestor:true } }
@@ -1305,7 +1165,6 @@ async function salvarEdicaoModulo(e) {
       if(act==='del'){ if(confirm('Excluir usuário?')){ GU_usuarios.splice(i,1); GU_renderUsuarios(); } }
     });
 
-    // Cargo → nível e sugestão de liberação
     $q('#guCargo')?.addEventListener('change', ()=>{
       const cargo = $q('#guCargo').value;
       $q('#guNivel').value = {COLABORADOR:1,PROFESSOR:2,COORDENADOR:3,GESTOR:4}[cargo] || 1;
@@ -1344,17 +1203,14 @@ async function salvarEdicaoModulo(e) {
   });
 })();
 
-/* ======================= CHAMADOS (CH_) ======================= */
+/* ======================= GESTÃO DE CHAMADOS (CH_) ======================= */
 (function(){
-  // SLA por prioridade (horas)
   const CH_SLA_H = { URGENTE:4, ALTA:24, MEDIA:48, BAIXA:72 };
 
-  // Mock inicial — depois plugamos no banco/portais dos alunos
   let CH_chamados = [
     novoChamado('TCK-2025-001','JOAO SILVA','joao@exemplo.com','Dificuldade para acessar o Portal','Acesso/Plataforma','Não consigo entrar no portal do aluno desde ontem.', 'ALTA', diasAtras(1)),
     novoChamado('TCK-2025-002','MARIA SOUZA','maria@exemplo.com','Boleto em duplicidade','Financeiro','Meu boleto deste mês veio em duplicidade.', 'MEDIA', diasAtras(3)),
     novoChamado('TCK-2025-003','CARLOS JUNIOR','carlos@exemplo.com','Correção de nome no histórico','Acadêmico','Meu nome saiu errado no histórico, como corrigir?', 'BAIXA', diasAtras(6)),
-    // Um já resolvido
     (()=>{ const c=novoChamado('TCK-2025-004','ANA LIMA','ana@exemplo.com','Certificado não liberado','Documentos','Concluí o curso e não liberou certificado.', 'ALTA', diasAtras(10)); c.status='RESOLVIDO'; c.resolvidoEm=new Date(); c.mensagens.push(msg('ATENDENTE','Chamado resolvido e certificado liberado.')); return c; })()
   ];
 
@@ -1369,8 +1225,8 @@ async function salvarEdicaoModulo(e) {
       protocolo,
       aluno:{nome: alunoNome, email: alunoEmail},
       assunto, categoria, descricao,
-      prioridade, // URGENTE | ALTA | MEDIA | BAIXA
-      status:'ABERTO', // ABERTO | EM_ANDAMENTO | RESOLVIDO
+      prioridade,
+      status:'ABERTO',
       criadoEm, prazo: addHours(criadoEm, slaH),
       mensagens: [ msg('ALUNO', descricao) ],
       resolvidoEm: null
@@ -1379,7 +1235,6 @@ async function salvarEdicaoModulo(e) {
   function msg(by, texto){ return { by, data: new Date(), texto }; }
   function isAtrasado(ch){ return ch.status!=='RESOLVIDO' && new Date() > ch.prazo; }
 
-  // ------ Renderização
   const $q = s => document.querySelector(s);
 
   function badgeStatus(st){ return `<span class="badge status-${st}">${st.replace('_',' ')}</span>`; }
@@ -1387,7 +1242,7 @@ async function salvarEdicaoModulo(e) {
 
   function slaChip(ch){
     if(ch.status==='RESOLVIDO') return `<span class="sla-chip sla-ok">Concluído</span>`;
-    const horas = diffHoras(ch.prazo, new Date()); // horas restantes (negativo = vencido)
+    const horas = diffHoras(ch.prazo, new Date());
     if(horas < 0) return `<span class="sla-chip sla-vencida">${Math.abs(horas)}h vencido</span>`;
     if(horas <= 6) return `<span class="sla-chip sla-alerta">${horas}h restante</span>`;
     return `<span class="sla-chip sla-ok">${horas}h restante</span>`;
@@ -1427,7 +1282,6 @@ async function salvarEdicaoModulo(e) {
     const tb = $q('#tabChamados tbody'); if(!tb) return;
     const lista = aplicaFiltros(CH_chamados)
       .sort((a,b)=> {
-        // ordenar por urgência: atrasados primeiro, depois mais próximos do prazo
         const aA = isAtrasado(a), bA = isAtrasado(b);
         if(aA!==bA) return aA? -1 : 1;
         return a.prazo - b.prazo;
@@ -1464,7 +1318,7 @@ async function salvarEdicaoModulo(e) {
     $q('#chStatus').className = 'badge status-'+ch.status; $q('#chStatus').textContent = ch.status.replace('_',' ');
     $q('#chCriado').textContent = fmtData(ch.criadoEm);
     $q('#chPrazo').textContent = fmtData(ch.prazo);
-    $q('#chSLAChip').outerHTML = slaChip(ch); // substitui chip
+    $q('#chSLAChip').outerHTML = slaChip(ch);
     $q('#chDescricao').textContent = ch.descricao;
 
     const hist = $q('#chHistorico');
@@ -1475,7 +1329,6 @@ async function salvarEdicaoModulo(e) {
       </div>
     `).join('');
 
-    // guardar o protocolo visível no modal
     $q('#modalChamado').dataset.protocolo = ch.protocolo;
     $q('#modalChamado').setAttribute('aria-hidden','false');
   }
@@ -1493,13 +1346,11 @@ async function salvarEdicaoModulo(e) {
   document.addEventListener('DOMContentLoaded', ()=>{
     if(!$q('#chamados')) return;
 
-    // filtros
     $q('#chBusca')?.addEventListener('input', ()=>{ renderKPIs(); renderTabela(); });
     $q('#chFiltroStatus')?.addEventListener('change', ()=>{ renderKPIs(); renderTabela(); });
     $q('#chFiltroPrioridade')?.addEventListener('change', ()=>{ renderKPIs(); renderTabela(); });
     $q('#chPeriodo')?.addEventListener('change', ()=>{ renderKPIs(); renderTabela(); });
 
-    // tabela ações
     $q('#tabChamados')?.addEventListener('click', (ev)=>{
       const b = ev.target.closest('button'); if(!b) return;
       const i = parseInt(b.dataset.i,10); const act=b.dataset.ch;
@@ -1511,7 +1362,6 @@ async function salvarEdicaoModulo(e) {
       if(act==='reabrir'){  setStatus(ch, 'EM_ANDAMENTO'); }
     });
 
-    // modal ações
     $q('#chFecharModal')?.addEventListener('click', fecharModal);
     $q('#formResposta')?.addEventListener('submit', (e)=>{
       e.preventDefault();
@@ -1523,57 +1373,16 @@ async function salvarEdicaoModulo(e) {
       if(acao==='RESP_E_ANDAMENTO') setStatus(ch,'EM_ANDAMENTO');
       if(acao==='RESP_RESOLVER')   setStatus(ch,'RESOLVIDO');
       $q('#chResposta').value='';
-      abrirModal(aplicaFiltros(CH_chamados).findIndex(c=>c.protocolo===proto)); // re-render modal
+      abrirModal(aplicaFiltros(CH_chamados).findIndex(c=>c.protocolo===proto));
     });
 
-    // primeira renderização
     renderKPIs(); renderTabela();
   });
 })();
 
-// 2) Helpers
-function setTxt(id, val){ const el = document.getElementById(id); if(el) el.textContent = val; }
-function moeda(n){ return (Number(n)||0).toLocaleString('pt-BR',{style:'currency',currency:'BRL'}); }
-
-// 3) Busca a view v_dashboard_kpis (uma linha só)
-async function carregarKPIsDashboard() {
-  if (!sb) return;
-
-  const { data, error } = await sb.from('v_dashboard_kpis').select('*').single();
-  if (error) {
-    console.warn('KPIs:', error.message);
-    return;
-  }
-
-  // função auxiliar pra evitar erro de undefined
-  const safe = (v) => (v ?? '--');
-  const safeNum = (v) => (typeof v === 'number' ? v.toFixed(1) : '0.0');
-
-  setTxt('kpiTotalAlunos', safe(data.total_alunos));
-  setTxt('kpiMatriculasAtivas', safe(data.matriculas_ativas));
-  setTxt('kpiUsuariosInativos', safe(data.usuarios_inativos));
-  setTxt('kpiValoresPagos', moeda(data.valores_pagos_mes || 0));
-  setTxt('kpiCertificados', safe(data.certificados_emitidos));
-  setTxt('kpiCertPendentes', safe(data.certificados_pendentes));
-  setTxt('kpiTaxaConclusao', safeNum(data.taxa_conclusao) + '%');
-}
-
-// 4) Realtime: qualquer mudança nas tabelas abaixo reconsulta a view
-function assinarRealtimeKPIs(){
-  if(!sb) return;
-  sb.channel('realtime-kpis')
-    .on('postgres_changes', { event: '*', schema: 'public', table: 'alunos' },                 carregarKPIsDashboard)
-    .on('postgres_changes', { event: '*', schema: 'public', table: 'matriculas' },             carregarKPIsDashboard)
-    .on('postgres_changes', { event: '*', schema: 'public', table: 'financeiro_lancamentos' }, carregarKPIsDashboard)
-    .on('postgres_changes', { event: '*', schema: 'public', table: 'certificados' },           carregarKPIsDashboard)
-    .on('postgres_changes', { event: '*', schema: 'public', table: 'chamados' },               carregarKPIsDashboard)
-    .subscribe((status)=>{ if(status==='SUBSCRIBED') carregarKPIsDashboard(); });
-}
-
-// 5) Boot
-document.addEventListener('DOMContentLoaded', ()=>{
-  if(document.getElementById('kpiTotalAlunos')){  // estamos no dashboard
-    carregarKPIsDashboard();
-    assinarRealtimeKPIs();
+// Inicializar gestão de alunos quando o DOM estiver pronto
+document.addEventListener('DOMContentLoaded', () => {
+  if ($('#alunos')) {
+    carregarAlunos();
   }
 });

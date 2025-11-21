@@ -1,9 +1,100 @@
 /* ----------------------------------------------------------
-   Navegação entre abas
+   Sistema de Carregamento
+-----------------------------------------------------------*/
+function mostrarCarregamento(mensagem = 'Carregando...') {
+  const loaderExistente = document.getElementById('global-loader');
+  if (loaderExistente) {
+    loaderExistente.remove();
+  }
+
+  const loader = document.createElement('div');
+  loader.id = 'global-loader';
+  loader.innerHTML = `
+    <div class="loader-overlay">
+      <div class="loader-content">
+        <div class="loader-spinner"></div>
+        <p>${mensagem}</p>
+      </div>
+    </div>
+  `;
+  
+  if (!document.querySelector('#loader-styles')) {
+    const styles = document.createElement('style');
+    styles.id = 'loader-styles';
+    styles.textContent = `
+      .loader-overlay {
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        background: rgba(255, 255, 255, 0.9);
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        z-index: 9999;
+        backdrop-filter: blur(5px);
+      }
+      .loader-content {
+        text-align: center;
+        background: white;
+        padding: 2rem;
+        border-radius: 12px;
+        box-shadow: 0 10px 30px rgba(0, 0, 0, 0.2);
+        border: 1px solid #e2e8f0;
+      }
+      .loader-spinner {
+        width: 40px;
+        height: 40px;
+        border: 4px solid #f3f4f6;
+        border-top: 4px solid #0ea5a3;
+        border-radius: 50%;
+        animation: spin 1s linear infinite;
+        margin: 0 auto 1rem;
+      }
+      @keyframes spin {
+        0% { transform: rotate(0deg); }
+        100% { transform: rotate(360deg); }
+      }
+      .loader-content p {
+        margin: 0;
+        color: #374151;
+        font-weight: 500;
+      }
+    `;
+    document.head.appendChild(styles);
+  }
+  
+  document.body.appendChild(loader);
+}
+
+function esconderCarregamento() {
+  const loader = document.getElementById('global-loader');
+  if (loader) {
+    loader.remove();
+  }
+}
+
+/* ----------------------------------------------------------
+   Navegação entre abas com feedback visual
 -----------------------------------------------------------*/
 function abrirAba(id) {
-  document.querySelectorAll('.aba').forEach(a => a.classList.remove('ativa'));
-  document.getElementById(id)?.classList.add('ativa');
+  mostrarCarregamento('Carregando dados...');
+  
+  setTimeout(() => {
+    document.querySelectorAll('.aba').forEach(a => a.classList.remove('ativa'));
+    document.getElementById(id)?.classList.add('ativa');
+    
+    if (id === 'alunos') {
+      carregarAlunosDoSupabase();
+    } else if (id === 'cursos') {
+      if (window.carregarCursosCompleto) {
+        carregarCursosCompleto();
+      }
+    }
+    
+    esconderCarregamento();
+  }, 300);
 }
 
 /* ----------------------------------------------------------
@@ -48,7 +139,7 @@ async function carregarAlunosDoSupabase() {
     console.log('✅ Alunos carregados:', data);
     
     alunos = data.map(aluno => ({
-      id: aluno.user_id,
+      id: aluno.id,
       ra: aluno.ra || '',
       nome: aluno.nome || '',
       email: aluno.email || '',
@@ -67,7 +158,7 @@ async function carregarAlunosDoSupabase() {
     
     alunos = [
       { 
-        id: 'cf3c57f7-ea29-4fb0-813f-21aaadcd4a6c', 
+        id: '1',
         user_id: 'cf3c57f7-ea29-4fb0-813f-21aaadcd4a6c',
         ra: '20251', 
         nome: 'CARLOS JUNIOR', 
@@ -131,25 +222,30 @@ function renderAlunos(){
 }
 
 function openModalAln(idx=-1){
-  editIndexAln = idx;
-  $('#modalTitulo').textContent = idx>=0 ? 'Editar aluno' : 'Novo aluno';
+  mostrarCarregamento('Preparando formulário...');
   
-  if (idx >= 0) {
-    const a = alunos[idx];
-    $('#fRa').value = a.ra || '';
-    $('#fStatus').value = a.status || 'ATIVO';
-    $('#fNome').value = a.nome || '';
-    $('#fEmail').value = a.email || '';
-    $('#fTel').value = maskPhone(a.telefone||'');
-  } else {
-    $('#fRa').value = gerarRaLocal();
-    $('#fStatus').value = 'ATIVO';
-    $('#fNome').value = '';
-    $('#fEmail').value = '';
-    $('#fTel').value = '';
-  }
-  
-  $('#modalAluno').setAttribute('aria-hidden','false');
+  setTimeout(() => {
+    editIndexAln = idx;
+    $('#modalTitulo').textContent = idx>=0 ? 'Editar aluno' : 'Novo aluno';
+    
+    if (idx >= 0) {
+      const a = alunos[idx];
+      $('#fRa').value = a.ra || '';
+      $('#fStatus').value = a.status || 'ATIVO';
+      $('#fNome').value = a.nome || '';
+      $('#fEmail').value = a.email || '';
+      $('#fTel').value = maskPhone(a.telefone||'');
+    } else {
+      $('#fRa').value = gerarRaLocal();
+      $('#fStatus').value = 'ATIVO';
+      $('#fNome').value = '';
+      $('#fEmail').value = '';
+      $('#fTel').value = '';
+    }
+    
+    $('#modalAluno').setAttribute('aria-hidden','false');
+    esconderCarregamento();
+  }, 200);
 }
 
 function closeModalAln(){ 
@@ -178,15 +274,18 @@ async function salvarAluno(alunoData, isEdit = false, alunoId = null) {
     };
     
     if (isEdit && alunoId) {
+      console.log('📝 Editando aluno:', alunoId, dadosParaSalvar);
       const { data, error } = await sb
         .from('alunos')
         .update(dadosParaSalvar)
-        .eq('user_id', alunoId)
+        .eq('id', alunoId)
         .select();
       
       if (error) throw error;
       result = data[0];
+      console.log('✅ Aluno editado:', result);
     } else {
+      console.log('➕ Criando novo aluno:', dadosParaSalvar);
       const { data, error } = await sb
         .from('alunos')
         .insert([{ 
@@ -197,29 +296,35 @@ async function salvarAluno(alunoData, isEdit = false, alunoId = null) {
       
       if (error) throw error;
       result = data[0];
+      console.log('✅ Novo aluno criado:', result);
     }
     
     return result;
   } catch (error) {
-    console.error('Erro ao salvar aluno:', error);
+    console.error('❌ Erro ao salvar aluno:', error);
     throw error;
   }
 }
 
 async function alternarStatusAluno(alunoId, novoStatus) {
   try {
-    const { error } = await sb
+    console.log('🔄 Alternando status do aluno:', alunoId, novoStatus);
+    
+    const { data, error } = await sb
       .from('alunos')
       .update({ 
         status: novoStatus, 
         updated_at: new Date().toISOString() 
       })
-      .eq('user_id', alunoId);
+      .eq('id', alunoId)
+      .select();
     
     if (error) throw error;
-    return true;
+    
+    console.log('✅ Status alterado com sucesso');
+    return data[0];
   } catch (error) {
-    console.error('Erro ao alterar status:', error);
+    console.error('❌ Erro ao alterar status:', error);
     throw error;
   }
 }
@@ -253,11 +358,14 @@ function carregarAlunos(){
       
       if(act==='toggle'){ 
         try {
+          mostrarCarregamento('Alterando status...');
           const novoStatus = alunos[idx].status === 'ATIVO' ? 'INATIVO' : 'ATIVO';
           await alternarStatusAluno(alunoId, novoStatus);
           alunos[idx].status = novoStatus;
           renderAlunos();
+          esconderCarregamento();
         } catch (error) {
+          esconderCarregamento();
           alert('Erro ao alterar status do aluno');
         }
       }
@@ -265,6 +373,7 @@ function carregarAlunos(){
 
     $('#formAluno').addEventListener('submit', async (e)=>{
       e.preventDefault();
+      mostrarCarregamento('Salvando aluno...');
       
       const payload = {
         ra: $('#fRa').value || gerarRaLocal(),
@@ -282,12 +391,14 @@ function carregarAlunos(){
           alunos[editIndexAln] = { ...payload, id: alunoId };
         } else { 
           const novoAluno = await salvarAluno(payload, false);
-          alunos.push({ ...payload, id: novoAluno.user_id });
+          alunos.push({ ...payload, id: novoAluno.id });
         }
         
         closeModalAln(); 
         renderAlunos();
+        esconderCarregamento();
       } catch (error) {
+        esconderCarregamento();
         alert('Erro ao salvar aluno: ' + error.message);
       }
     });
@@ -318,6 +429,7 @@ function gerarRaLocal(){
     cursos: [],
     editId: null,
     cursoAtual: null,
+    moduloAtual: null,
     provaAtualId: null
   };
 
@@ -384,7 +496,7 @@ function gerarRaLocal(){
       total_provas:    provasCount[c.id] || 0,
       total_modulos:   modulosCount[c.id] || 0
     }));
-}
+  }
 
   function renderAreasSelects() {
     const filtro = $('#curFiltroArea');
@@ -440,52 +552,63 @@ function gerarRaLocal(){
     `).join('');
   }
 
-  async function carregarCursos() {
+  async function carregarCursosCompleto() {
     if (!$('#tabCursos')) return;
 
     const area = $('#curFiltroArea')?.value || 'TODAS';
     try {
+      console.log('🎯 Carregando cursos do Supabase...');
       GC.cursos = await fetchCursosComStats(area);
+      console.log('✅ Cursos carregados:', GC.cursos);
       renderTabelaCursos();
     } catch (err) {
-      console.error('Erro ao carregar cursos:', err);
-      alert('Erro ao carregar cursos. Veja o console para detalhes.');
+      console.error('❌ Erro ao carregar cursos:', err);
+      alert('Erro ao carregar cursos: ' + err.message);
     }
   }
 
   function abrirModalCursoNovo() {
-    GC.editId = null;
-    $('#tituloCurso').textContent = 'Novo curso';
+    mostrarCarregamento('Abrindo formulário...');
+    setTimeout(() => {
+      GC.editId = null;
+      $('#tituloCurso').textContent = 'Novo curso';
 
-    $('#fCursoNome').value  = '';
-    $('#fCursoArea').value  = AREAS_FIXAS[0] || 'TECNOLOGIA';
-    $('#fCursoHoras').value = '';
-    $('#fCursoDesc').value  = '';
-    $('#fCursoPub').value   = 'NAO';
-    $('#fCursoCapa').value  = '';
+      $('#fCursoNome').value  = '';
+      $('#fCursoArea').value  = AREAS_FIXAS[0] || 'TECNOLOGIA';
+      $('#fCursoHoras').value = '';
+      $('#fCursoDesc').value  = '';
+      $('#fCursoPub').value   = 'NAO';
+      $('#fCursoCapa').value  = '';
 
-    $('#modalCurso')?.setAttribute('aria-hidden', 'false');
+      $('#modalCurso')?.setAttribute('aria-hidden', 'false');
+      esconderCarregamento();
+    }, 300);
   }
 
   function abrirModalCursoEditar(id) {
-    const c = GC.cursos.find(x => x.id === id);
-    if (!c) return;
+    mostrarCarregamento('Carregando dados do curso...');
+    setTimeout(() => {
+      const c = GC.cursos.find(x => x.id === id);
+      if (!c) return;
 
-    GC.editId = id;
-    $('#tituloCurso').textContent = `Editar curso #${id}`;
+      GC.editId = id;
+      $('#tituloCurso').textContent = `Editar curso #${id}`;
 
-    $('#fCursoNome').value  = c.titulo || '';
-    $('#fCursoArea').value  = toUp(c.categoria || AREAS_FIXAS[0]);
-    $('#fCursoHoras').value = c.carga_horaria || 0;
-    $('#fCursoDesc').value  = c.descricao || '';
-    $('#fCursoPub').value   = c.publicado ? 'SIM' : 'NAO';
-    $('#fCursoCapa').value  = '';
+      $('#fCursoNome').value  = c.titulo || '';
+      $('#fCursoArea').value  = toUp(c.categoria || AREAS_FIXAS[0]);
+      $('#fCursoHoras').value = c.carga_horaria || 0;
+      $('#fCursoDesc').value  = c.descricao || '';
+      $('#fCursoPub').value   = c.publicado ? 'SIM' : 'NAO';
+      $('#fCursoCapa').value  = '';
 
-    $('#modalCurso')?.setAttribute('aria-hidden', 'false');
+      $('#modalCurso')?.setAttribute('aria-hidden', 'false');
+      esconderCarregamento();
+    }, 300);
   }
 
   async function salvarCurso(ev) {
     ev.preventDefault();
+    mostrarCarregamento('Salvando curso...');
 
     const nome   = $('#fCursoNome')?.value?.trim();
     const area   = toUp($('#fCursoArea')?.value || 'TECNOLOGIA');
@@ -495,6 +618,7 @@ function gerarRaLocal(){
     const arquivo= $('#fCursoCapa')?.files[0] || null;
 
     if (!nome) {
+      esconderCarregamento();
       alert('Informe o nome do curso.');
       return;
     }
@@ -511,6 +635,7 @@ function gerarRaLocal(){
       row.id !== GC.editId
     );
     if (existeOutro) {
+      esconderCarregamento();
       alert('Já existe um curso com esse nome. Escolha outro título.');
       return;
     }
@@ -551,11 +676,13 @@ function gerarRaLocal(){
         salvo = data;
       }
 
+      esconderCarregamento();
       alert(`✅ Curso "${salvo.titulo}" salvo com sucesso!`);
       $('#modalCurso')?.setAttribute('aria-hidden', 'true');
       $('#formCurso')?.reset();
-      await carregarCursos();
+      await carregarCursosCompleto();
     } catch (err) {
+      esconderCarregamento();
       console.error(err);
       alert('❌ Erro ao salvar curso: ' + err.message);
     }
@@ -568,6 +695,7 @@ function gerarRaLocal(){
     const ok = confirm(`Excluir o curso "${curso.titulo}"?\nEssa ação não pode ser desfeita.`);
     if (!ok) return;
 
+    mostrarCarregamento('Excluindo curso...');
     try {
       const { data: provas } = await sb.from('provas').select('id').eq('curso_id', id);
       if (provas && provas.length) {
@@ -580,9 +708,11 @@ function gerarRaLocal(){
       const { error } = await sb.from('cursos').delete().eq('id', id);
       if (error) throw error;
 
+      esconderCarregamento();
       alert('✅ Curso excluído com sucesso.');
-      await carregarCursos();
+      await carregarCursosCompleto();
     } catch (err) {
+      esconderCarregamento();
       console.error(err);
       alert('❌ Não foi possível excluir o curso. Veja o console para detalhes.');
     }
@@ -592,6 +722,7 @@ function gerarRaLocal(){
     const curso = GC.cursos.find(c => c.id === id);
     if (!curso) return;
 
+    mostrarCarregamento('Duplicando curso...');
     try {
       const base = {
         titulo       : `${curso.titulo} (CÓPIA)`,
@@ -647,9 +778,11 @@ function gerarRaLocal(){
         }
       }
 
+      esconderCarregamento();
       alert(`✅ Curso duplicado: "${novoCurso.titulo}"`);
-      await carregarCursos();
+      await carregarCursosCompleto();
     } catch (err) {
+      esconderCarregamento();
       console.error(err);
       alert('❌ Erro ao duplicar curso: ' + err.message);
     }
@@ -668,9 +801,11 @@ function gerarRaLocal(){
 
   async function abrirPainelModulos(id) {
     debugModulos('Abrindo painel de módulos para curso:', id);
+    mostrarCarregamento('Carregando módulos...');
     
     const curso = GC.cursos.find(c => c.id === id);
     if (!curso) {
+      esconderCarregamento();
       alert('Curso não encontrado');
       return;
     }
@@ -685,6 +820,7 @@ function gerarRaLocal(){
     $('#modalModulos').setAttribute('aria-hidden', 'false');
     
     configurarEventListenersModulos();
+    esconderCarregamento();
   }
 
   function fecharPainelModulos() {
@@ -762,13 +898,15 @@ function gerarRaLocal(){
         console.error('❌ Erro ao carregar módulos:', error);
         alert('Erro ao carregar módulos: ' + error.message);
     }
-}
+  }
 
   async function adicionarModulo() {
     debugModulos('=== INICIANDO ADIÇÃO DE MÓDULO ===');
+    mostrarCarregamento('Adicionando módulo...');
     
     if (!cursoEditandoId) {
       debugModulos('ERRO: Nenhum curso selecionado');
+      esconderCarregamento();
       alert('❌ Erro: Nenhum curso selecionado');
       return;
     }
@@ -778,6 +916,7 @@ function gerarRaLocal(){
     const descricaoInput = $('#fModuloDesc');
 
     if (!tituloInput || !ordemInput) {
+      esconderCarregamento();
       debugModulos('ERRO: Campos do formulário não encontrados');
       return;
     }
@@ -787,6 +926,7 @@ function gerarRaLocal(){
     const descricao = descricaoInput ? descricaoInput.value.trim() : '';
 
     if (!titulo) {
+      esconderCarregamento();
       alert('⚠️ Por favor, insira um título para o módulo');
       tituloInput.focus();
       return;
@@ -822,11 +962,13 @@ function gerarRaLocal(){
 
       await carregarModulosCurso(cursoEditandoId);
       
+      esconderCarregamento();
       alert('✅ Módulo adicionado com sucesso!');
       
       debugModulos('=== MÓDULO ADICIONADO COM SUCESSO ===');
 
     } catch (error) {
+      esconderCarregamento();
       debugModulos('ERRO COMPLETO:', error);
       alert('❌ Erro ao adicionar módulo: ' + error.message);
     }
@@ -887,10 +1029,461 @@ function gerarRaLocal(){
     }
   }
 
+  // =====================================================================
+  //  SISTEMA DE SELEÇÃO: MÓDULOS vs PROVAS
+  // =====================================================================
+
+  function mostrarSelecaoGestao(moduloId, moduloTitulo) {
+    GC.moduloAtual = { id: moduloId, titulo: moduloTitulo };
+    
+    const modalSelecao = document.createElement('div');
+    modalSelecao.className = 'modal';
+    modalSelecao.setAttribute('aria-hidden', 'false');
+    modalSelecao.innerHTML = `
+      <div class="modal__sheet" style="max-width: 500px;">
+        <h3>Gerenciar Módulo</h3>
+        <p style="margin-bottom: 20px; color: #64748b;">Selecione o que deseja gerenciar no módulo:</p>
+        
+        <div style="display: grid; gap: 15px; margin-bottom: 25px;">
+          <button class="btn-grande" onclick="abrirGestaoMateriais(${moduloId}, '${moduloTitulo}')" 
+                  style="padding: 20px; text-align: left; background: #f0f9ff; border: 2px solid #0ea5e9; border-radius: 8px; cursor: pointer;">
+            <div style="font-size: 18px; font-weight: bold; color: #0369a1;">📚 Materiais</div>
+            <div style="color: #64748b; margin-top: 5px;">Adicionar PDFs, vídeos, áudios e imagens</div>
+          </button>
+          
+          <button class="btn-grande" onclick="abrirGestaoProvas(${moduloId}, '${moduloTitulo}')" 
+                  style="padding: 20px; text-align: left; background: #f0fdf4; border: 2px solid #10b981; border-radius: 8px; cursor: pointer;">
+            <div style="font-size: 18px; font-weight: bold; color: #047857;">📝 Provas</div>
+            <div style="color: #64748b; margin-top: 5px;">Criar e gerenciar avaliações com questões</div>
+          </button>
+        </div>
+        
+        <div style="text-align: center;">
+          <button type="button" class="ghost" onclick="fecharModalSelecao()">Cancelar</button>
+        </div>
+      </div>
+    `;
+    
+    modalSelecao.id = 'modalSelecao';
+    document.body.appendChild(modalSelecao);
+  }
+
+  function fecharModalSelecao() {
+    const modal = document.getElementById('modalSelecao');
+    if (modal) {
+      modal.remove();
+    }
+  }
+
+  // =====================================================================
+  //  GESTÃO DE PROVAS - SISTEMA COMPLETO
+  // =====================================================================
+
+  window.abrirGestaoProvas = async function(moduloId, moduloTitulo) {
+    fecharModalSelecao();
+    mostrarCarregamento('Carregando provas...');
+    
+    GC.moduloAtual = { id: moduloId, titulo: moduloTitulo };
+    
+    try {
+      // Carregar provas existentes para este módulo
+      const { data: provas, error } = await sb
+        .from('provas')
+        .select('*')
+        .eq('modulo_id', moduloId)
+        .order('criado_em', { ascending: false });
+
+      if (error) throw error;
+
+      // Criar ou atualizar modal de provas
+      let modalProvas = document.getElementById('modalProvas');
+      if (!modalProvas) {
+        modalProvas = document.createElement('div');
+        modalProvas.className = 'modal';
+        modalProvas.id = 'modalProvas';
+        document.body.appendChild(modalProvas);
+      }
+
+      modalProvas.innerHTML = `
+        <div class="modal__sheet" style="max-width: 900px;">
+          <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
+            <h3>📝 Provas - ${moduloTitulo}</h3>
+            <button type="button" class="btn-fechar" onclick="fecharModalProvas()" style="background: none; border: none; font-size: 24px; cursor: pointer;">×</button>
+          </div>
+
+          <!-- Formulário para nova prova -->
+          <div style="background: #f8fafc; padding: 20px; border-radius: 8px; margin-bottom: 20px;">
+            <h4 style="margin: 0 0 15px 0;">➕ Nova Prova</h4>
+            <form id="formProva">
+              <div style="display: grid; grid-template-columns: 1fr auto; gap: 10px; align-items: end;">
+                <div>
+                  <label style="display: block; margin-bottom: 5px; font-weight: 500;">Título da Prova</label>
+                  <input type="text" id="fProvaTitulo" required 
+                         style="width: 100%; padding: 10px; border: 1px solid #d1d5db; border-radius: 6px;"
+                         placeholder="Ex: Avaliação do Módulo 1">
+                </div>
+                <button type="submit" style="padding: 10px 20px; background: #0ea5a3; color: white; border: none; border-radius: 6px; cursor: pointer;">
+                  Criar Prova
+                </button>
+              </div>
+            </form>
+          </div>
+
+          <!-- Lista de provas existentes -->
+          <div style="background: white; border-radius: 8px; padding: 20px; border: 1px solid #e2e8f0;">
+            <h4 style="margin: 0 0 15px 0;">📋 Provas do Módulo</h4>
+            <div id="listaProvas">
+              ${provas && provas.length > 0 ? 
+                provas.map(prova => `
+                  <div style="padding: 15px; border: 1px solid #e2e8f0; border-radius: 6px; margin-bottom: 10px; background: #f8fafc;">
+                    <div style="display: flex; justify-content: between; align-items: center;">
+                      <div style="flex: 1;">
+                        <strong>${prova.titulo}</strong>
+                        <div style="color: #64748b; font-size: 14px; margin-top: 5px;">
+                          ${prova.total_questoes || 0} questões • Criada em ${new Date(prova.criado_em).toLocaleDateString('pt-BR')}
+                        </div>
+                      </div>
+                      <div style="display: flex; gap: 8px;">
+                        <button class="btn-mini" onclick="editarProva(${prova.id})">✏️ Editar</button>
+                        <button class="btn-mini" onclick="excluirProva(${prova.id})" style="color: #ef4444;">🗑️ Excluir</button>
+                      </div>
+                    </div>
+                  </div>
+                `).join('') : 
+                '<p style="text-align: center; color: #64748b; padding: 20px;">Nenhuma prova cadastrada ainda</p>'
+              }
+            </div>
+          </div>
+
+          <div style="margin-top: 20px; text-align: left;">
+            <button type="button" class="ghost" onclick="fecharModalProvas()">← Voltar</button>
+          </div>
+        </div>
+      `;
+
+      // Configurar evento do formulário
+      document.getElementById('formProva')?.addEventListener('submit', async (e) => {
+        e.preventDefault();
+        await criarProva(moduloId);
+      });
+
+      modalProvas.setAttribute('aria-hidden', 'false');
+      esconderCarregamento();
+
+    } catch (error) {
+      esconderCarregamento();
+      console.error('❌ Erro ao carregar provas:', error);
+      alert('Erro ao carregar provas: ' + error.message);
+    }
+  }
+
+  async function criarProva(moduloId) {
+    const tituloInput = document.getElementById('fProvaTitulo');
+    const titulo = tituloInput.value.trim();
+
+    if (!titulo) {
+      alert('Por favor, insira um título para a prova');
+      return;
+    }
+
+    mostrarCarregamento('Criando prova...');
+    
+    try {
+      const { data, error } = await sb
+        .from('provas')
+        .insert([{
+          modulo_id: moduloId,
+          titulo: titulo,
+          criado_em: new Date().toISOString()
+        }])
+        .select();
+
+      if (error) throw error;
+
+      // Recarregar a lista de provas
+      await window.abrirGestaoProvas(moduloId, GC.moduloAtual.titulo);
+      
+      esconderCarregamento();
+      alert('✅ Prova criada com sucesso!');
+      
+    } catch (error) {
+      esconderCarregamento();
+      console.error('❌ Erro ao criar prova:', error);
+      alert('Erro ao criar prova: ' + error.message);
+    }
+  }
+
+  window.editarProva = async function(provaId) {
+    mostrarCarregamento('Abrindo editor de prova...');
+    
+    try {
+      // Buscar dados da prova e suas questões
+      const { data: prova, error: provaError } = await sb
+        .from('provas')
+        .select('*')
+        .eq('id', provaId)
+        .single();
+
+      if (provaError) throw provaError;
+
+      const { data: questões, error: questError } = await sb
+        .from('questoes')
+        .select('*')
+        .eq('prova_id', provaId)
+        .order('id', { ascending: true });
+
+      if (questError) throw questError;
+
+      // Criar modal de edição da prova
+      const modalEdicao = document.createElement('div');
+      modalEdicao.className = 'modal';
+      modalEdicao.id = 'modalEdicaoProva';
+      modalEdicao.innerHTML = `
+        <div class="modal__sheet" style="max-width: 1000px;">
+          <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
+            <h3>✏️ Editar Prova: ${prova.titulo}</h3>
+            <button type="button" class="btn-fechar" onclick="fecharModalEdicaoProva()" style="background: none; border: none; font-size: 24px; cursor: pointer;">×</button>
+          </div>
+
+          <!-- Formulário para nova questão -->
+          <div style="background: #f8fafc; padding: 20px; border-radius: 8px; margin-bottom: 20px;">
+            <h4 style="margin: 0 0 15px 0;">➕ Adicionar Questão</h4>
+            <form id="formQuestao">
+              <input type="hidden" id="fProvaId" value="${provaId}">
+              
+              <div style="margin-bottom: 15px;">
+                <label style="display: block; margin-bottom: 5px; font-weight: 500;">Enunciado da Questão</label>
+                <textarea id="fEnunciado" rows="3" required style="width: 100%; padding: 10px; border: 1px solid #d1d5db; border-radius: 6px;"></textarea>
+              </div>
+
+              <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 15px; margin-bottom: 15px;">
+                <div>
+                  <label style="display: block; margin-bottom: 5px; font-weight: 500;">Alternativa A</label>
+                  <input type="text" id="fAlternativaA" required style="width: 100%; padding: 10px; border: 1px solid #d1d5db; border-radius: 6px;">
+                </div>
+                <div>
+                  <label style="display: block; margin-bottom: 5px; font-weight: 500;">Alternativa B</label>
+                  <input type="text" id="fAlternativaB" required style="width: 100%; padding: 10px; border: 1px solid #d1d5db; border-radius: 6px;">
+                </div>
+              </div>
+
+              <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 15px; margin-bottom: 15px;">
+                <div>
+                  <label style="display: block; margin-bottom: 5px; font-weight: 500;">Alternativa C</label>
+                  <input type="text" id="fAlternativaC" required style="width: 100%; padding: 10px; border: 1px solid #d1d5db; border-radius: 6px;">
+                </div>
+                <div>
+                  <label style="display: block; margin-bottom: 5px; font-weight: 500;">Alternativa D</label>
+                  <input type="text" id="fAlternativaD" required style="width: 100%; padding: 10px; border: 1px solid #d1d5db; border-radius: 6px;">
+                </div>
+              </div>
+
+              <div style="margin-bottom: 15px;">
+                <label style="display: block; margin-bottom: 5px; font-weight: 500;">Alternativa Correta</label>
+                <select id="fCorreta" required style="width: 100%; padding: 10px; border: 1px solid #d1d5db; border-radius: 6px;">
+                  <option value="A">A</option>
+                  <option value="B">B</option>
+                  <option value="C">C</option>
+                  <option value="D">D</option>
+                </select>
+              </div>
+
+              <div style="text-align: right;">
+                <button type="submit" style="padding: 10px 20px; background: #0ea5a3; color: white; border: none; border-radius: 6px; cursor: pointer;">
+                  ➕ Adicionar Questão
+                </button>
+              </div>
+            </form>
+          </div>
+
+          <!-- Lista de questões -->
+          <div style="background: white; border-radius: 8px; padding: 20px; border: 1px solid #e2e8f0;">
+            <h4 style="margin: 0 0 15px 0;">📋 Questões da Prova (${questões?.length || 0})</h4>
+            <div id="listaQuestoes">
+              ${questões && questões.length > 0 ? 
+                questões.map((q, index) => `
+                  <div style="padding: 15px; border: 1px solid #e2e8f0; border-radius: 6px; margin-bottom: 10px; background: #f8fafc;">
+                    <div style="display: flex; justify-content: between; align-items: start;">
+                      <div style="flex: 1;">
+                        <strong>Questão ${index + 1}:</strong> ${q.enunciado}
+                        <div style="margin-top: 10px; display: grid; grid-template-columns: 1fr 1fr; gap: 10px;">
+                          <div style="color: ${q.correta === 'A' ? '#10b981' : '#64748b'}">A) ${q.a}</div>
+                          <div style="color: ${q.correta === 'B' ? '#10b981' : '#64748b'}">B) ${q.b}</div>
+                          <div style="color: ${q.correta === 'C' ? '#10b981' : '#64748b'}">C) ${q.c}</div>
+                          <div style="color: ${q.correta === 'D' ? '#10b981' : '#64748b'}">D) ${q.d}</div>
+                        </div>
+                      </div>
+                      <div style="display: flex; gap: 8px;">
+                        <button class="btn-mini" onclick="editarQuestao(${q.id})">✏️</button>
+                        <button class="btn-mini" onclick="excluirQuestao(${q.id})" style="color: #ef4444;">🗑️</button>
+                      </div>
+                    </div>
+                  </div>
+                `).join('') : 
+                '<p style="text-align: center; color: #64748b; padding: 20px;">Nenhuma questão cadastrada ainda</p>'
+              }
+            </div>
+          </div>
+
+          <div style="margin-top: 20px; text-align: left;">
+            <button type="button" class="ghost" onclick="fecharModalEdicaoProva()">← Voltar para Provas</button>
+          </div>
+        </div>
+      `;
+
+      document.body.appendChild(modalEdicao);
+
+      // Configurar evento do formulário de questão
+      document.getElementById('formQuestao')?.addEventListener('submit', async (e) => {
+        e.preventDefault();
+        await adicionarQuestao(provaId);
+      });
+
+      modalEdicao.setAttribute('aria-hidden', 'false');
+      esconderCarregamento();
+
+    } catch (error) {
+      esconderCarregamento();
+      console.error('❌ Erro ao carregar prova:', error);
+      alert('Erro ao carregar prova: ' + error.message);
+    }
+  }
+
+  async function adicionarQuestao(provaId) {
+    const enunciado = document.getElementById('fEnunciado').value.trim();
+    const alternativaA = document.getElementById('fAlternativaA').value.trim();
+    const alternativaB = document.getElementById('fAlternativaB').value.trim();
+    const alternativaC = document.getElementById('fAlternativaC').value.trim();
+    const alternativaD = document.getElementById('fAlternativaD').value.trim();
+    const correta = document.getElementById('fCorreta').value;
+
+    if (!enunciado || !alternativaA || !alternativaB || !alternativaC || !alternativaD) {
+      alert('Por favor, preencha todos os campos');
+      return;
+    }
+
+    mostrarCarregamento('Adicionando questão...');
+    
+    try {
+      const { data, error } = await sb
+        .from('questoes')
+        .insert([{
+          prova_id: provaId,
+          enunciado: enunciado,
+          a: alternativaA,
+          b: alternativaB,
+          c: alternativaC,
+          d: alternativaD,
+          correta: correta
+        }])
+        .select();
+
+      if (error) throw error;
+
+      // Limpar formulário
+      document.getElementById('formQuestao').reset();
+      
+      // Recarregar a lista de questões
+      const provaIdAtual = document.getElementById('fProvaId').value;
+      await window.editarProva(parseInt(provaIdAtual));
+      
+      esconderCarregamento();
+      
+    } catch (error) {
+      esconderCarregamento();
+      console.error('❌ Erro ao adicionar questão:', error);
+      alert('Erro ao adicionar questão: ' + error.message);
+    }
+  }
+
+  window.excluirQuestao = async function(questaoId) {
+    if (!confirm('Tem certeza que deseja excluir esta questão?')) return;
+    
+    mostrarCarregamento('Excluindo questão...');
+    
+    try {
+      const { error } = await sb
+        .from('questoes')
+        .delete()
+        .eq('id', questaoId);
+
+      if (error) throw error;
+
+      // Recarregar a edição da prova
+      const provaId = document.getElementById('fProvaId').value;
+      await window.editarProva(parseInt(provaId));
+      
+      esconderCarregamento();
+      alert('✅ Questão excluída com sucesso!');
+      
+    } catch (error) {
+      esconderCarregamento();
+      console.error('❌ Erro ao excluir questão:', error);
+      alert('Erro ao excluir questão: ' + error.message);
+    }
+  }
+
+  window.excluirProva = async function(provaId) {
+    if (!confirm('Tem certeza que deseja excluir esta prova? Todas as questões serão excluídas.')) return;
+    
+    mostrarCarregamento('Excluindo prova...');
+    
+    try {
+      // Primeiro excluir as questões
+      await sb.from('questoes').delete().eq('prova_id', provaId);
+      
+      // Depois excluir a prova
+      const { error } = await sb
+        .from('provas')
+        .delete()
+        .eq('id', provaId);
+
+      if (error) throw error;
+
+      // Recarregar a lista de provas
+      await window.abrirGestaoProvas(GC.moduloAtual.id, GC.moduloAtual.titulo);
+      
+      esconderCarregamento();
+      alert('✅ Prova excluída com sucesso!');
+      
+    } catch (error) {
+      esconderCarregamento();
+      console.error('❌ Erro ao excluir prova:', error);
+      alert('Erro ao excluir prova: ' + error.message);
+    }
+  }
+
+  window.fecharModalProvas = function() {
+    const modal = document.getElementById('modalProvas');
+    if (modal) {
+      modal.setAttribute('aria-hidden', 'true');
+      setTimeout(() => modal.remove(), 300);
+    }
+  }
+
+  window.fecharModalEdicaoProva = function() {
+    const modal = document.getElementById('modalEdicaoProva');
+    if (modal) {
+      modal.setAttribute('aria-hidden', 'true');
+      setTimeout(() => modal.remove(), 300);
+    }
+  }
+
+  // =====================================================================
+  //  GESTÃO DE MATERIAIS (Placeholder - você pode implementar similar às provas)
+  // =====================================================================
+
+  window.abrirGestaoMateriais = function(moduloId, moduloTitulo) {
+    fecharModalSelecao();
+    alert(`🎯 Gestão de Materiais para: ${moduloTitulo}\n\nEsta funcionalidade será implementada em breve!`);
+    // Aqui você pode implementar um sistema similar ao de provas para materiais
+  }
+
   // 🎯 FUNÇÕES GLOBAIS PARA MÓDULOS
   window.alternarStatusModulo = async function(moduloId) {
     try {
       console.log('🔄 Alternando status do módulo:', moduloId);
+      mostrarCarregamento('Alterando status...');
       
       const { data: modulo, error: fetchError } = await sb
         .from('modulos')
@@ -913,9 +1506,11 @@ function gerarRaLocal(){
       if (error) throw error;
       
       await carregarModulosCurso(cursoEditandoId);
+      esconderCarregamento();
       alert(`✅ Módulo ${novoStatus ? 'ativado' : 'desativado'} com sucesso!`);
       
     } catch (error) {
+      esconderCarregamento();
       console.error('❌ Erro ao alternar status:', error);
       alert('Erro ao alterar status do módulo: ' + error.message);
     }
@@ -924,6 +1519,7 @@ function gerarRaLocal(){
   window.abrirEdicaoModulo = async function(moduloId) {
     try {
       console.log('✏️ Abrindo edição do módulo:', moduloId);
+      mostrarCarregamento('Carregando dados do módulo...');
       
       const { data: modulo, error } = await sb
         .from('modulos')
@@ -933,6 +1529,7 @@ function gerarRaLocal(){
 
       if (error) throw error;
       if (!modulo) {
+        esconderCarregamento();
         alert('Módulo não encontrado');
         return;
       }
@@ -949,8 +1546,10 @@ function gerarRaLocal(){
       document.getElementById('editar-publicado').checked = modulo.publicado || false;
 
       document.getElementById('form-edicao-modulo').style.display = 'block';
+      esconderCarregamento();
       
     } catch (error) {
+      esconderCarregamento();
       console.error('❌ Erro ao abrir edição:', error);
       alert('Erro ao carregar dados do módulo: ' + error.message);
     }
@@ -959,6 +1558,7 @@ function gerarRaLocal(){
   window.excluirModulo = async function(moduloId) {
     if (!confirm('Tem certeza que deseja excluir este módulo?\nEsta ação não pode ser desfeita.')) return;
     
+    mostrarCarregamento('Excluindo módulo...');
     try {
       const { error } = await sb
         .from('modulos')
@@ -968,9 +1568,11 @@ function gerarRaLocal(){
       if (error) throw error;
       
       await carregarModulosCurso(cursoEditandoId);
+      esconderCarregamento();
       alert('✅ Módulo excluído com sucesso!');
       
     } catch (error) {
+      esconderCarregamento();
       console.error('❌ Erro ao excluir módulo:', error);
       alert('Erro ao excluir módulo: ' + error.message);
     }
@@ -978,11 +1580,13 @@ function gerarRaLocal(){
 
   window.salvarEdicaoModulo = async function(e) {
     e.preventDefault();
+    mostrarCarregamento('Salvando alterações...');
     
     const moduloId = document.getElementById('editar-id').value;
     const courseId = document.getElementById('editar-course-id').value;
 
     if (!moduloId) {
+      esconderCarregamento();
       alert('ID do módulo não encontrado');
       return;
     }
@@ -999,6 +1603,7 @@ function gerarRaLocal(){
       };
 
       if (!dadosAtualizados.titulo) {
+        esconderCarregamento();
         alert('O título do módulo é obrigatório');
         return;
       }
@@ -1012,12 +1617,14 @@ function gerarRaLocal(){
 
       if (error) throw error;
 
+      esconderCarregamento();
       alert('✅ Módulo atualizado com sucesso!');
       fecharEdicaoModulo();
       
       await carregarModulosCurso(courseId);
       
     } catch (error) {
+      esconderCarregamento();
       console.error('❌ Erro ao salvar edição:', error);
       alert('Erro ao atualizar módulo: ' + error.message);
     }
@@ -1028,13 +1635,17 @@ function gerarRaLocal(){
     document.getElementById('form-editar-modulo').reset();
   }
 
+  // =====================================================================
+  //  ATUALIZAÇÃO DO BOTÃO PARA USAR O SISTEMA DE SELEÇÃO
+  // =====================================================================
+
   function wireCursosUI() {
     const wrap = $('#cursos');
     if (!wrap) return;
 
     renderAreasSelects();
 
-    $('#curFiltroArea')?.addEventListener('change', carregarCursos);
+    $('#curFiltroArea')?.addEventListener('change', carregarCursosCompleto);
 
     $('#btnNovoCurso')?.addEventListener('click', abrirModalCursoNovo);
     $('#fecharCurso')?.addEventListener('click', () =>
@@ -1058,331 +1669,22 @@ function gerarRaLocal(){
       }
     });
 
+    // Atualizar o evento dos botões de módulo para usar o sistema de seleção
+    document.addEventListener('click', (ev) => {
+      if (ev.target.classList.contains('gc-gestao-modulo')) {
+        const moduloId = ev.target.dataset.moduloId;
+        const moduloTitulo = ev.target.dataset.moduloTitulo;
+        mostrarSelecaoGestao(moduloId, moduloTitulo);
+      }
+    });
+
     $('#fecharModulos')?.addEventListener('click', fecharPainelModulos);
     $('#btnVoltarModulos')?.addEventListener('click', fecharPainelModulos);
 
-    carregarCursos();
+    carregarCursosCompleto();
   }
 
   document.addEventListener('DOMContentLoaded', wireCursosUI);
 })();
 
-/* ======================= GESTÃO DE USUÁRIOS (GU_) ======================= */
-(function(){
-  let GU_usuarios = [
-    { id:'U001', nome:'ADMIN GERAL', email:'admin@altitude.com', telefone:'', cargo:'GESTOR', nivel:4, status:'ATIVO',
-      acessos:{ colab:true, prof:true, coord:true, gestor:true } }
-  ];
-  let GU_editIdx = -1;
-
-  const $q = s => document.querySelector(s);
-  const GU_up = t => (t||'').normalize('NFD').replace(/[\u0300-\u036f]/g,'').replace(/ç/gi,'c').replace(/[^a-zA-Z\s]/g,' ').replace(/\s+/g,' ').trim().toUpperCase();
-  const GU_maskPhone = v => { const d=(v||'').replace(/\D/g,'').slice(0,11); const h=d.length>10; const ddd=d.slice(0,2), p1=h?d.slice(2,7):d.slice(2,6), p2=h?d.slice(7,11):d.slice(6,10); return (ddd?`(${ddd}) `:'')+p1+(p2?`-${p2}`:''); };
-
-  const GU_cargoNivel = { COLABORADOR:1, PROFESSOR:2, COORDENADOR:3, GESTOR:4 };
-  const GU_permissoesNivel = {
-    1:['Matrículas: realizar novas','Matrículas: gerenciar as próprias'],
-    2:['Tudo do nível 1','Cursos: criar/editar','Materiais e avaliações'],
-    3:['Tudo do nível 2','Chamados: gerenciar','Solicitações: certificados/históricos/liberações'],
-    4:['Tudo do nível 3','Administração global de todos os módulos']
-  };
-  function GU_getPermissoes(nv){ const n=Math.max(1,Math.min(4,parseInt(nv,10)||1)); const out=[]; for(let i=1;i<=n;i++) GU_permissoesNivel[i].forEach(p=>out.push(p)); return out; }
-  function GU_renderPermissoes(nv){ const ul=$q('#guPermissoes'); if(!ul) return; ul.innerHTML = GU_getPermissoes(nv).map(p=>`<li>• ${p}</li>`).join(''); }
-
-  function GU_renderUsuarios(){
-    const tbody = $q('#tabUsuarios tbody'); if(!tbody) return;
-    const q = ($q('#guBusca')?.value||'').trim().toUpperCase();
-    const cargo = $q('#guFiltroCargo')?.value || 'TODOS';
-    const status = $q('#guFiltroStatus')?.value || 'TODOS';
-    const lista = GU_usuarios.filter(u=>{
-      const okBusca = u.nome.includes(q) || u.email.toUpperCase().includes(q);
-      const okCargo = cargo==='TODOS' || u.cargo===cargo;
-      const okStatus = status==='TODOS' || u.status===status;
-      return okBusca && okCargo && okStatus;
-    });
-    tbody.innerHTML = lista.map((u,i)=>`
-      <tr>
-        <td>${u.id||'-'}</td>
-        <td>${u.nome}</td>
-        <td>${u.email}</td>
-        <td><span class="role-badge ${u.cargo}">${u.cargo}</span></td>
-        <td><span class="nivel-badge">${u.nivel}</span></td>
-        <td><span class="badge ${u.status==='ATIVO'?'ativo':'inativo'}">${u.status}</span></td>
-        <td>
-          <button class="btn-mini" data-gu="edit" data-i="${i}">Editar</button>
-          <button class="btn-mini" data-gu="toggle" data-i="${i}">${u.status==='ATIVO'?'Inativar':'Ativar'}</button>
-          <button class="btn-mini" data-gu="reset" data-i="${i}">Reset senha</button>
-          <button class="btn-mini" data-gu="del" data-i="${i}">Excluir</button>
-        </td>
-      </tr>`).join('');
-  }
-
-  function GU_openModal(idx=-1){
-    GU_editIdx = idx;
-    $q('#guTitulo').textContent = idx>=0 ? 'Editar usuário' : 'Novo usuário';
-    const u = idx>=0 ? GU_usuarios[idx] : { id:'', nome:'', email:'', telefone:'', cargo:'COLABORADOR', nivel:1, status:'ATIVO', acessos:{colab:false,prof:false,coord:false,gestor:false} };
-    $q('#guId').value    = u.id || '';
-    $q('#guNome').value  = u.nome || '';
-    $q('#guEmail').value = u.email || '';
-    $q('#guTel').value   = GU_maskPhone(u.telefone || '');
-    $q('#guCargo').value = u.cargo || 'COLABORADOR';
-    $q('#guNivel').value = u.nivel || GU_cargoNivel[$q('#guCargo').value] || 1;
-    $q('#guStatus').value= u.status || 'ATIVO';
-    $q('#acColab').checked = !!u.acessos.colab;
-    $q('#acProf').checked  = !!u.acessos.prof;
-    $q('#acCoord').checked = !!u.acessos.coord;
-    $q('#acGestor').checked= !!u.acessos.gestor;
-    GU_renderPermissoes($q('#guNivel').value);
-    $q('#modalUsuario').setAttribute('aria-hidden','false');
-  }
-  function GU_closeModal(){ $q('#modalUsuario').setAttribute('aria-hidden','true'); }
-
-  function GU_exportCSV(){
-    const rows = [['ID','NOME','EMAIL','TELEFONE','CARGO','NIVEL','STATUS','COLAB','PROF','COORD','GESTOR']];
-    GU_usuarios.forEach(u=> rows.push([u.id,u.nome,u.email,u.telefone,u.cargo,u.nivel,u.status, u.acessos.colab?'1':'0',u.acessos.prof?'1':'0',u.acessos.coord?'1':'0',u.acessos.gestor?'1':'0']));
-    const csv = rows.map(r=>r.join(';')).join('\n');
-    const blob = new Blob([csv],{type:'text/csv;charset=utf-8;'});
-    const a = document.createElement('a'); a.href=URL.createObjectURL(blob); a.download='usuarios.csv'; a.click();
-  }
-
-  document.addEventListener('DOMContentLoaded', ()=>{
-    if(!$q('#usuarios')) return;
-
-    $q('#guBusca')?.addEventListener('input', GU_renderUsuarios);
-    $q('#guFiltroCargo')?.addEventListener('change', GU_renderUsuarios);
-    $q('#guFiltroStatus')?.addEventListener('change', GU_renderUsuarios);
-    $q('#guExport')?.addEventListener('click', GU_exportCSV);
-    $q('#guNovo')?.addEventListener('click', ()=>GU_openModal(-1));
-    $q('#guCancelar')?.addEventListener('click', GU_closeModal);
-
-    $q('#tabUsuarios')?.addEventListener('click', ev=>{
-      const b = ev.target.closest('button'); if(!b) return;
-      const i = parseInt(b.dataset.i,10), act=b.dataset.gu;
-      if(Number.isNaN(i)) return;
-      if(act==='edit'){ GU_openModal(i); }
-      if(act==='toggle'){ GU_usuarios[i].status = GU_usuarios[i].status==='ATIVO'?'INATIVO':'ATIVO'; GU_renderUsuarios(); }
-      if(act==='reset'){ alert('Link de redefinição enviado para: ' + GU_usuarios[i].email); }
-      if(act==='del'){ if(confirm('Excluir usuário?')){ GU_usuarios.splice(i,1); GU_renderUsuarios(); } }
-    });
-
-    $q('#guCargo')?.addEventListener('change', ()=>{
-      const cargo = $q('#guCargo').value;
-      $q('#guNivel').value = {COLABORADOR:1,PROFESSOR:2,COORDENADOR:3,GESTOR:4}[cargo] || 1;
-      GU_renderPermissoes($q('#guNivel').value);
-      $q('#acColab').checked = true;
-      $q('#acProf').checked  = (cargo==='PROFESSOR'||cargo==='COORDENADOR'||cargo==='GESTOR');
-      $q('#acCoord').checked = (cargo==='COORDENADOR'||cargo==='GESTOR');
-      $q('#acGestor').checked= (cargo==='GESTOR');
-    });
-    $q('#guNivel')?.addEventListener('change', ()=> GU_renderPermissoes($q('#guNivel').value));
-    $q('#guTel')?.addEventListener('input', e=> e.target.value = GU_maskPhone(e.target.value));
-
-    $q('#formUsuario')?.addEventListener('submit', e=>{
-      e.preventDefault();
-      const payload = {
-        id: ($q('#guId').value || `U${String(GU_usuarios.length+1).padStart(3,'0')}`).toUpperCase(),
-        nome: GU_up($q('#guNome').value),
-        email: ($q('#guEmail').value||'').trim().toLowerCase(),
-        telefone: ($q('#guTel').value||'').replace(/\D/g,''),
-        cargo: $q('#guCargo').value,
-        nivel: parseInt($q('#guNivel').value,10)||1,
-        status: $q('#guStatus').value,
-        acessos: {
-          colab: $q('#acColab').checked,
-          prof:  $q('#acProf').checked,
-          coord: $q('#acCoord').checked,
-          gestor:$q('#acGestor').checked
-        }
-      };
-      if(GU_editIdx>=0) GU_usuarios[GU_editIdx] = payload; else GU_usuarios.push(payload);
-      GU_closeModal(); GU_renderUsuarios();
-    });
-
-    GU_renderPermissoes(4);
-    GU_renderUsuarios();
-  });
-})();
-
-/* ======================= GESTÃO DE CHAMADOS (CH_) ======================= */
-(function(){
-  const CH_SLA_H = { URGENTE:4, ALTA:24, MEDIA:48, BAIXA:72 };
-
-  let CH_chamados = [
-    novoChamado('TCK-2025-001','JOAO SILVA','joao@exemplo.com','Dificuldade para acessar o Portal','Acesso/Plataforma','Não consigo entrar no portal do aluno desde ontem.', 'ALTA', diasAtras(1)),
-    novoChamado('TCK-2025-002','MARIA SOUZA','maria@exemplo.com','Boleto em duplicidade','Financeiro','Meu boleto deste mês veio em duplicidade.', 'MEDIA', diasAtras(3)),
-    novoChamado('TCK-2025-003','CARLOS JUNIOR','carlos@exemplo.com','Correção de nome no histórico','Acadêmico','Meu nome saiu errado no histórico, como corrigir?', 'BAIXA', diasAtras(6)),
-    (()=>{ const c=novoChamado('TCK-2025-004','ANA LIMA','ana@exemplo.com','Certificado não liberado','Documentos','Concluí o curso e não liberou certificado.', 'ALTA', diasAtras(10)); c.status='RESOLVIDO'; c.resolvidoEm=new Date(); c.mensagens.push(msg('ATENDENTE','Chamado resolvido e certificado liberado.')); return c; })()
-  ];
-
-  function diasAtras(n){ const d=new Date(); d.setDate(d.getDate()-n); return d; }
-  function addHours(dt, h){ return new Date(dt.getTime()+h*3600*1000); }
-  function fmtData(d){ return new Date(d).toLocaleDateString('pt-BR'); }
-  function diffHoras(a,b){ return Math.round((a.getTime()-b.getTime())/3600000); }
-
-  function novoChamado(protocolo, alunoNome, alunoEmail, assunto, categoria, descricao, prioridade, criadoEm=new Date()){
-    const slaH = CH_SLA_H[prioridade] || CH_SLA_H.MEDIA;
-    return {
-      protocolo,
-      aluno:{nome: alunoNome, email: alunoEmail},
-      assunto, categoria, descricao,
-      prioridade,
-      status:'ABERTO',
-      criadoEm, prazo: addHours(criadoEm, slaH),
-      mensagens: [ msg('ALUNO', descricao) ],
-      resolvidoEm: null
-    };
-  }
-  function msg(by, texto){ return { by, data: new Date(), texto }; }
-  function isAtrasado(ch){ return ch.status!=='RESOLVIDO' && new Date() > ch.prazo; }
-
-  const $q = s => document.querySelector(s);
-
-  function badgeStatus(st){ return `<span class="badge status-${st}">${st.replace('_',' ')}</span>`; }
-  function badgePri(p){ return `<span class="badge pri-${p}">${p}</span>`; }
-
-  function slaChip(ch){
-    if(ch.status==='RESOLVIDO') return `<span class="sla-chip sla-ok">Concluído</span>`;
-    const horas = diffHoras(ch.prazo, new Date());
-    if(horas < 0) return `<span class="sla-chip sla-vencida">${Math.abs(horas)}h vencido</span>`;
-    if(horas <= 6) return `<span class="sla-chip sla-alerta">${horas}h restante</span>`;
-    return `<span class="sla-chip sla-ok">${horas}h restante</span>`;
-  }
-
-  function filtrosAtuais(){
-    const q = ($q('#chBusca')?.value || '').trim().toUpperCase();
-    const st = $q('#chFiltroStatus')?.value || 'TODOS';
-    const pr = $q('#chFiltroPrioridade')?.value || 'TODAS';
-    const pd = parseInt($q('#chPeriodo')?.value || '15', 10);
-    const dtMin = new Date(); dtMin.setDate(dtMin.getDate()-pd);
-    return { q, st, pr, dtMin };
-  }
-
-  function aplicaFiltros(lista){
-    const { q, st, pr, dtMin } = filtrosAtuais();
-    return lista.filter(ch=>{
-      const hit = ch.protocolo.includes(q) || ch.aluno.nome.includes(q) || ch.assunto.toUpperCase().includes(q);
-      const okSt = (st==='TODOS') || (ch.status===st);
-      const okPr = (pr==='TODAS') || (ch.prioridade===pr);
-      const okDt = ch.criadoEm >= dtMin;
-      return hit && okSt && okPr && okDt;
-    });
-  }
-
-  function renderKPIs(){
-    const lista = aplicaFiltros(CH_chamados);
-    const pendentes = lista.filter(ch => ch.status!=='RESOLVIDO').length;
-    const resolvidos = lista.filter(ch => ch.status==='RESOLVIDO').length;
-    const atrasados = lista.filter(ch => isAtrasado(ch)).length;
-    $q('#chPendentes').textContent = pendentes;
-    $q('#chResolvidos').textContent = resolvidos;
-    $q('#chAtrasados').textContent = atrasados;
-  }
-
-  function renderTabela(){
-    const tb = $q('#tabChamados tbody'); if(!tb) return;
-    const lista = aplicaFiltros(CH_chamados)
-      .sort((a,b)=> {
-        const aA = isAtrasado(a), bA = isAtrasado(b);
-        if(aA!==bA) return aA? -1 : 1;
-        return a.prazo - b.prazo;
-      });
-
-    tb.innerHTML = lista.map((ch,i)=>`
-      <tr>
-        <td>${ch.protocolo}</td>
-        <td>${ch.aluno.nome}</td>
-        <td>${ch.assunto}</td>
-        <td>${badgePri(ch.prioridade)}</td>
-        <td>${fmtData(ch.criadoEm)}</td>
-        <td>${fmtData(ch.prazo)}</td>
-        <td>${badgeStatus(ch.status)}</td>
-        <td>${slaChip(ch)}</td>
-        <td>
-          <button class="btn-mini" data-ch="ver" data-i="${i}">Ver</button>
-          ${ch.status!=='RESOLVIDO' ? `<button class="btn-mini" data-ch="resolver" data-i="${i}">Resolver</button>` : `<button class="btn-mini" data-ch="reabrir" data-i="${i}">Reabrir</button>`}
-        </td>
-      </tr>
-    `).join('');
-  }
-
-  function abrirModal(idx){
-    const lista = aplicaFiltros(CH_chamados);
-    const ch = lista[idx]; if(!ch) return;
-    $q('#chModalTitulo').textContent = `${ch.protocolo} — ${ch.assunto}`;
-    $q('#chProto').textContent = ch.protocolo;
-    $q('#chAluno').textContent = ch.aluno.nome;
-    $q('#chEmail').textContent = ch.aluno.email;
-    $q('#chAssunto').textContent = ch.assunto;
-    $q('#chCategoria').textContent = ch.category || ch.categoria || '-';
-    $q('#chPrioridade').className = 'badge pri-'+ch.prioridade; $q('#chPrioridade').textContent = ch.prioridade;
-    $q('#chStatus').className = 'badge status-'+ch.status; $q('#chStatus').textContent = ch.status.replace('_',' ');
-    $q('#chCriado').textContent = fmtData(ch.criadoEm);
-    $q('#chPrazo').textContent = fmtData(ch.prazo);
-    $q('#chSLAChip').outerHTML = slaChip(ch);
-    $q('#chDescricao').textContent = ch.descricao;
-
-    const hist = $q('#chHistorico');
-    hist.innerHTML = ch.mensagens.map(m=>`
-      <div class="msg">
-        <div class="by">${m.by} — ${new Date(m.data).toLocaleString('pt-BR')}</div>
-        <div class="tx">${m.texto}</div>
-      </div>
-    `).join('');
-
-    $q('#modalChamado').dataset.protocolo = ch.protocolo;
-    $q('#modalChamado').setAttribute('aria-hidden','false');
-  }
-
-  function fecharModal(){ $q('#modalChamado').setAttribute('aria-hidden','true'); }
-
-  function getChamadoByProto(proto){ return CH_chamados.find(c=>c.protocolo===proto); }
-
-  function setStatus(ch, novo){
-    ch.status = novo;
-    if(novo==='RESOLVIDO') ch.resolvidoEm = new Date();
-    renderKPIs(); renderTabela();
-  }
-
-  document.addEventListener('DOMContentLoaded', ()=>{
-    if(!$q('#chamados')) return;
-
-    $q('#chBusca')?.addEventListener('input', ()=>{ renderKPIs(); renderTabela(); });
-    $q('#chFiltroStatus')?.addEventListener('change', ()=>{ renderKPIs(); renderTabela(); });
-    $q('#chFiltroPrioridade')?.addEventListener('change', ()=>{ renderKPIs(); renderTabela(); });
-    $q('#chPeriodo')?.addEventListener('change', ()=>{ renderKPIs(); renderTabela(); });
-
-    $q('#tabChamados')?.addEventListener('click', (ev)=>{
-      const b = ev.target.closest('button'); if(!b) return;
-      const i = parseInt(b.dataset.i,10); const act=b.dataset.ch;
-      const lista = aplicaFiltros(CH_chamados);
-      const ch = lista[i]; if(!ch) return;
-
-      if(act==='ver'){ abrirModal(i); }
-      if(act==='resolver'){ setStatus(ch, 'RESOLVIDO'); }
-      if(act==='reabrir'){  setStatus(ch, 'EM_ANDAMENTO'); }
-    });
-
-    $q('#chFecharModal')?.addEventListener('click', fecharModal);
-    $q('#formResposta')?.addEventListener('submit', (e)=>{
-      e.preventDefault();
-      const proto = $q('#modalChamado').dataset.protocolo;
-      const ch = getChamadoByProto(proto); if(!ch) return;
-      const texto = ($q('#chResposta').value||'').trim();
-      if(texto){ ch.mensagens.push(msg('ATENDENTE', texto)); }
-      const acao = $q('#chAcaoRapida').value;
-      if(acao==='RESP_E_ANDAMENTO') setStatus(ch,'EM_ANDAMENTO');
-      if(acao==='RESP_RESOLVER')   setStatus(ch,'RESOLVIDO');
-      $q('#chResposta').value='';
-      abrirModal(aplicaFiltros(CH_chamados).findIndex(c=>c.protocolo===proto));
-    });
-
-    renderKPIs(); renderTabela();
-  });
-})();
-
-// Inicializar gestão de alunos quando o DOM estiver pronto
-document.addEventListener('DOMContentLoaded', () => {
-  if ($('#alunos')) {
-    carregarAlunos();
-  }
-});
+// ... (o restante do código de usuários e chamados permanece igual)

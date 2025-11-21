@@ -512,3 +512,214 @@ body { display: flex; min-height: 100vh; background: #f5f6fa; }
   background: #f8fafc;
   border-color: #e2e8f0;
 }
+
+/* ===== ESTILOS ESPECÍFICOS PARA GESTÃO DE MÓDULOS ===== */
+
+/* Container principal do modal de módulos */
+.modal__sheet[style*="max-width: 900px"] {
+  background: white;
+  border-radius: 12px;
+  padding: 25px;
+  max-height: 85vh;
+  overflow-y: auto;
+}
+
+/* Cabeçalho do modal */
+.modal__sheet h3 {
+  color: #1e293b;
+  font-size: 1.5rem;
+  margin-bottom: 1.5rem;
+  border-bottom: 2px solid #0ea5a3;
+  padding-bottom: 10px;
+}
+
+/* Seção de adicionar módulo */
+.modal__sheet > div:first-of-type {
+  background: #f8fafc !important;
+  border: 1px solid #e2e8f0 !important;
+  border-radius: 8px !important;
+  padding: 20px !important;
+  margin-bottom: 25px !important;
+}
+
+.modal__sheet h4 {
+  color: #1e293b;
+  font-size: 1.2rem;
+  margin-bottom: 15px;
+}
+
+/* Formulário de módulos */
+#formModulo {
+  background: white;
+  padding: 15px;
+  border-radius: 6px;
+  border: 1px solid #e2e8f0;
+}
+
+/* Tabela de módulos */
+#tabModulosBody {
+  font-size: 14px;
+}
+
+#tabModulosBody tr {
+  transition: background-color 0.2s;
+}
+
+#tabModulosBody tr:hover {
+  background-color: #f8fafc;
+}
+
+#tabModulosBody td {
+  padding: 12px 8px;
+  vertical-align: top;
+  border-bottom: 1px solid #e2e8f0;
+}
+
+#tabModulosBody td:first-child {
+  font-weight: 600;
+  color: #475569;
+}
+
+#tabModulosBody td:nth-child(2) {
+  max-width: 300px;
+}
+
+#tabModulosBody td:nth-child(2) small {
+  display: block;
+  margin-top: 4px;
+  line-height: 1.3;
+}
+
+/* Botões de ação na tabela */
+.btn-mini {
+  padding: 6px 12px !important;
+  margin: 2px !important;
+  border: 1px solid #d1d5db !important;
+  border-radius: 6px !important;
+  background: white !important;
+  cursor: pointer !important;
+  font-size: 12px !important;
+  transition: all 0.2s !important;
+}
+
+.btn-mini:hover {
+  background: #f3f4f6 !important;
+  transform: translateY(-1px);
+}
+
+/* Badges de status */
+.badge {
+  display: inline-block;
+  padding: 4px 8px;
+  border-radius: 12px;
+  font-size: 11px;
+  font-weight: 600;
+}
+
+.badge.ativo {
+  background: #dcfce7;
+  color: #166534;
+  border: 1px solid #bbf7d0;
+}
+
+.badge.inativo {
+  background: #fef3c7;
+  color: #92400e;
+  border: 1px solid #fde68a;
+}
+
+/* Formulário de edição */
+#form-edicao-modulo {
+  background: #f8fafc;
+  border: 1px solid #e2e8f0;
+  border-radius: 8px;
+  padding: 25px;
+  margin-top: 25px;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+}
+
+#form-edicao-modulo h4 {
+  color: #1e293b;
+  margin-bottom: 20px;
+  font-size: 1.2rem;
+}
+
+/* Botões principais */
+button[type="submit"] {
+  background: #0ea5a3 !important;
+  color: white !important;
+  border: none !important;
+  padding: 10px 20px !important;
+  border-radius: 6px !important;
+  cursor: pointer !important;
+  font-weight: 500 !important;
+  transition: background 0.2s !important;
+}
+
+button[type="submit"]:hover {
+  background: #0d9488 !important;
+}
+
+/* Botão voltar */
+#btnVoltarModulos {
+  background: #f1f5f9;
+  border: 1px solid #d1d5db;
+  border-radius: 6px;
+  padding: 10px 20px;
+  cursor: pointer;
+  color: #475569;
+  font-weight: 500;
+  transition: all 0.2s;
+}
+
+#btnVoltarModulos:hover {
+  background: #e2e8f0;
+}
+
+/* Responsividade */
+@media (max-width: 768px) {
+  .modal__sheet[style*="max-width: 900px"] {
+    margin: 10px;
+    padding: 15px;
+  }
+  
+  #tabModulosBody td {
+    padding: 8px 4px;
+    font-size: 13px;
+  }
+  
+  .btn-mini {
+    padding: 4px 8px !important;
+    font-size: 11px !important;
+    margin: 1px !important;
+  }
+}
+
+/* Melhorias na tabela */
+table {
+  width: 100%;
+  border-collapse: collapse;
+  margin: 15px 0;
+}
+
+th {
+  background: #f8fafc;
+  padding: 12px 8px;
+  text-align: left;
+  font-weight: 600;
+  color: #475569;
+  border-bottom: 2px solid #e2e8f0;
+}
+
+/* Estados dos botões */
+.btn-mini:active {
+  transform: translateY(0);
+}
+
+/* Contadores de materiais e questões */
+#tabModulosBody td:nth-child(3),
+#tabModulosBody td:nth-child(4) {
+  text-align: center;
+  font-weight: 600;
+  color: #475569;
+}

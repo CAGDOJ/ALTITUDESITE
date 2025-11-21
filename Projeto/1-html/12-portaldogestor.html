@@ -588,7 +588,6 @@
   <script>
   // Funções para edição de módulos
   function abrirEdicaoModulo(moduloId, courseId) {
-      // Buscar dados do módulo e preencher formulário
       console.log('Abrir edição do módulo:', moduloId);
       document.getElementById('form-edicao-modulo').style.display = 'block';
   }
@@ -597,7 +596,6 @@
       document.getElementById('form-edicao-modulo').style.display = 'none';
   }
 
-  // Event listener para o formulário de edição
   document.getElementById('form-editar-modulo')?.addEventListener('submit', function(e) {
       e.preventDefault();
       alert('Funcionalidade de edição será implementada!');

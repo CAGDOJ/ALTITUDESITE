@@ -1687,4 +1687,44 @@ function gerarRaLocal(){
   document.addEventListener('DOMContentLoaded', wireCursosUI);
 })();
 
-// ... (o restante do código de usuários e chamados permanece igual)
+// Função para melhorar a renderização dos módulos
+function melhorarRenderizacaoModulos() {
+  const tbody = document.getElementById('tabModulosBody');
+  if (!tbody) return;
+  
+  // Adicionar classes para estilização
+  const rows = tbody.querySelectorAll('tr');
+  rows.forEach(row => {
+    if (!row.classList.contains('modulo-row')) {
+      row.classList.add('modulo-row');
+    }
+  });
+}
+
+// Modificar a função carregarModulosCurso para incluir a melhoria
+const originalCarregarModulosCurso = window.carregarModulosCurso;
+window.carregarModulosCurso = async function(cursoId) {
+  await originalCarregarModulosCurso(cursoId);
+  setTimeout(melhorarRenderizacaoModulos, 100);
+};
+
+// Adicionar estilos dinâmicos se necessário
+document.addEventListener('DOMContentLoaded', function() {
+  const style = document.createElement('style');
+  style.textContent = `
+    .modulo-row {
+      transition: all 0.2s ease;
+    }
+    .modulo-row:hover {
+      background-color: #f8fafc !important;
+      transform: translateX(2px);
+    }
+    .btn-mini {
+      transition: all 0.2s ease !important;
+    }
+  `;
+  document.head.appendChild(style);
+});
+
+
+

@@ -5,7 +5,8 @@
 
   // cria o cliente global
   window.sb = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
-  console.log("✅ Supabase conectado:", window.sb);
+
+console.log("✅ Supabase conectado:", window.sb);
 })();
 
 

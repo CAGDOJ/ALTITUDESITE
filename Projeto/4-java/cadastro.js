@@ -261,7 +261,7 @@ form && form.addEventListener("submit", async (e) => {
     if (btnEnviar) btnEnviar.disabled = true;
 
     // INSERT + retorna RA gerado no servidor (trigger)
-    const { data, error } = await supabase
+    const sb = window.sb;
       .from("alunos")
       .insert(payload)
       .select("id, ra, nome")

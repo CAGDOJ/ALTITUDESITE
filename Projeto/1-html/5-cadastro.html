@@ -1,151 +1,213 @@
 <!DOCTYPE html>
 <html lang="pt-BR">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Cadastro • Altitude</title>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Cadastro - Altitude</title>
 
-  <link rel="stylesheet" href="/Projeto/2-css/5-cadastro.css">
-  <link rel="icon" href="/Projeto/3-img/favicon.ico">
+    <!-- favicon -->
+    <link rel="apple-touch-icon" sizes="180x180" href="/Projeto/3-img/apple-touch-icon.png">
+    <link rel="icon" type="image/png" sizes="32x32" href="/Projeto/3-img/favicon-32x32.png">
+    <link rel="icon" type="image/png" sizes="16x16" href="/Projeto/3-img/favicon-16x16.png">
+    <link rel="manifest" href="/Projeto/3-img/site.webmanifest">
+
+    <!-- CSS -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+    <link rel="stylesheet" href="/Projeto/2-css/5-cadastro.css">
 </head>
+
 <body>
 
-  <header class="site-header">
-    <div class="header-inner">
-      <a href="/Projeto/1-html/1-index.html" class="brand">
-        <img src="/Projeto/3-img/LOGO.png" alt="Logo Altitude" class="brand-logo">
-      </a>
-
-      <nav class="nav-links">
-        <a href="/Projeto/1-html/1-index.html">Início</a>
-        <a href="/Projeto/1-html/2-profissional.html">Cursos Profissionais</a>
-        <a href="/Projeto/1-html/8-certificados.html">Certificados</a>
-        <a href="/Projeto/1-html/6-sobrenos.html">Sobre Nós</a>
-      </nav>
-    </div>
-  </header>
-
-  <main class="login-container">
-    <section class="register-card" id="register-card">
-      <h1>Comece agora gratuitamente</h1>
-
-      <form id="form-cadastro" novalidate>
-        <div class="form-group">
-          <label for="nome">Nome completo</label>
-          <input type="text" id="nome" placeholder="Digite seu nome completo">
-          <small id="fb-nome" class="feedback"></small>
+    <!-- Cabeçalho mobile -->
+    <header class="new-header">
+        <div class="logo">
+            <a href="/Projeto/1-html/1-index.html">
+                <img src="/Projeto/3-img/LOGO.png" alt="logo Altitude">
+            </a>
         </div>
 
-        <div class="form-group">
-          <label for="cpf">CPF</label>
-          <input type="text" id="cpf" placeholder="000.000.000-00" inputmode="numeric">
-          <small id="fb-cpf" class="feedback"></small>
+        <div class="menu-icon" id="menu-icon">
+            <img src="/Projeto/3-img/iconeamburguer.png" alt="Menu">
+            <div class="dropdown-menu" id="dropdown-menu">
+                <ul>
+                    <li><a href="/Projeto/1-html/1-index.html">Início</a></li>
+                    <li><a href="/Projeto/1-html/2-profissional.html">Cursos Profissionais</a></li>
+                    <li><a href="/Projeto/1-html/8-certificados.html">Certificados</a></li>
+                    <li><a href="/Projeto/1-html/6-sobrenos.html">Sobre Nós</a></li>
+                    <li><a href="/Projeto/1-html/7-ajuda.html">Ajuda</a></li>
+                </ul>
+            </div>
+        </div>
+    </header>
+
+    <!-- Cabeçalho desktop -->
+    <header class="old-header">
+        <div class="top-bar">
+            <div class="institution-logo">
+                <a href="/Projeto/1-html/1-index.html">
+                    <img src="/Projeto/3-img/LOGO.png" alt="Emblema Altitude" class="logo">
+                </a>
+            </div>
+
+            <nav class="navbar">
+                <ul>
+                    <li><a href="/Projeto/1-html/1-index.html">Início</a></li>
+                    <li class="dropdown">
+                        <a href="#" class="dropbtn">Cursos</a>
+                        <div class="dropdown-content">
+                            <a href="/Projeto/1-html/2-profissional.html">Profissional</a>
+                        </div>
+                    </li>
+                    <li><a href="/Projeto/1-html/8-certificados.html">Certificados</a></li>
+                    <li><a href="/Projeto/1-html/6-sobrenos.html">Sobre Nós</a></li>
+                    <li><a href="/Projeto/1-html/7-ajuda.html">Ajuda</a></li>
+                </ul>
+            </nav>
+
+            <div class="header-buttons">
+                <a href="/Projeto/1-html/4-login.html" class="btn-outline">Acessar</a>
+                <a href="/Projeto/1-html/5-cadastro.html" class="btn-primary">Cadastrar</a>
+            </div>
+        </div>
+    </header>
+
+    <!-- Conteúdo principal -->
+    <main class="login-container" id="register-card">
+        <h1 class="login-title">Comece agora gratuitamente</h1>
+
+        <div id="form-msg" class="form-alert" aria-live="polite" hidden></div>
+
+        <form id="form-cadastro" novalidate>
+            <div class="form-group">
+                <label for="nome">Nome completo</label>
+                <input id="nome" name="name" type="text" autocomplete="name" placeholder="Digite seu nome completo" required style="text-transform: uppercase;">
+                <small class="feedback" id="fb-nome" aria-live="polite"></small>
+            </div>
+
+            <div class="form-group">
+                <label for="cpf">CPF</label>
+                <input id="cpf" name="cpf" inputmode="numeric" autocomplete="off" placeholder="000.000.000-00" required>
+                <small class="feedback" id="fb-cpf" aria-live="polite"></small>
+            </div>
+
+            <div class="form-group">
+                <label for="nascimento">Data de nascimento</label>
+                <input id="nascimento" name="nascimento" type="date" required>
+                <small class="feedback" id="fb-nascimento" aria-live="polite"></small>
+            </div>
+
+            <div class="form-group">
+                <label for="email">E-mail</label>
+                <input id="email" name="email" type="email" autocomplete="email" placeholder="seunome@gmail.com" required>
+                <small class="feedback" id="fb-email" aria-live="polite"></small>
+            </div>
+
+            <div class="form-group has-icon">
+                <label for="senha">Senha</label>
+                <input id="senha" name="password" type="password" autocomplete="new-password" placeholder="Mínimo 8 caracteres" minlength="8" required>
+                <button type="button" class="toggle-pass" data-target="senha" aria-label="Mostrar/ocultar senha">
+                    <i class="fa-regular fa-eye"></i>
+                </button>
+                <small class="feedback" id="fb-senha" aria-live="polite"></small>
+            </div>
+
+            <div class="form-group has-icon">
+                <label for="confirma">Confirme a senha</label>
+                <input id="confirma" name="confirm" type="password" autocomplete="new-password" placeholder="Repita a senha" minlength="8" required>
+                <button type="button" class="toggle-pass" data-target="confirma" aria-label="Mostrar/ocultar senha">
+                    <i class="fa-regular fa-eye"></i>
+                </button>
+                <small class="feedback" id="fb-confirma" aria-live="polite"></small>
+            </div>
+
+            <div class="form-group">
+                <label for="telefone">Telefone (WhatsApp) — com DDD</label>
+                <input id="telefone" name="tel" inputmode="tel" autocomplete="tel-national" placeholder="(00) 00000-0000" required>
+                <small class="feedback" id="fb-telefone" aria-live="polite"></small>
+            </div>
+
+            <div class="form-group">
+                <label for="objetivo">Qual seu objetivo?</label>
+                <select id="objetivo" name="objetivo" required>
+                    <option value="" selected disabled>Selecione…</option>
+                    <option>Certificado para horas complementares</option>
+                    <option>Aprender um novo tema</option>
+                    <option>Reciclagem profissional</option>
+                </select>
+                <small class="feedback" id="fb-objetivo" aria-live="polite"></small>
+            </div>
+
+            <div class="terms">
+                <label class="check">
+                    <input id="termos" type="checkbox" checked>
+                    <span>
+                        Eu li e concordo com os
+                        <a href="/Projeto/1-html/9-contrato.html" target="_blank">Termos de Contrato</a>
+                        e a
+                        <a href="/Projeto/1-html/10-politicadeprivacidade.html" target="_blank">Política de Privacidade</a>.
+                    </span>
+                </label>
+            </div>
+
+            <button id="btn-enviar" class="btn-login" type="submit" disabled>Enviar</button>
+
+            <div class="login-options">
+                <span>Já tenho uma conta — <a href="/Projeto/1-html/4-login.html">Fazer login</a></span>
+            </div>
+        </form>
+    </main>
+
+    <!-- Rodapé -->
+    <footer class="rodape">
+        <div class="footer-container">
+            <div class="footer-column logo-info">
+                <img src="/Projeto/3-img/LOGO.png" alt="Logo Altitude" class="footer-logo">
+                <p>Portal Altitude</p>
+                <p>Aprender é alcançar novos horizontes</p>
+                <p>CNPJ: 45.628.030/0001-85</p>
+            </div>
+
+            <div class="footer-column redes-sociais">
+                <h3>Redes Sociais</h3>
+                <ul>
+                    <li><a href="https://www.instagram.com/altitudeltda/"><i class="fab fa-instagram"></i> Instagram</a></li>
+                </ul>
+            </div>
+
+            <div class="footer-column contato">
+                <h3>Entre em contato</h3>
+                <ul>
+                    <li><a href="https://w.app/Altitude"><i class="fab fa-whatsapp"></i> WhatsApp</a></li>
+                    <li><a href="https://w.app/Altitude"><i class="fas fa-phone-alt"></i> Telefone</a></li>
+                </ul>
+            </div>
+
+            <div class="footer-column links-rapidos">
+                <h3>Links Rápidos</h3>
+                <ul>
+                    <li><a href="https://www.reclameaqui.com.br/reclamar/">Reclame Aqui</a></li>
+                    <li><a href="/Projeto/1-html/8-certificados.html">Validar Certificado</a></li>
+                    <li><a href="/Projeto/1-html/9-contrato.html">Termos de Contrato</a></li>
+                    <li><a href="/Projeto/1-html/10-politicadeprivacidade.html">Política de Privacidade</a></li>
+                    <li><a href="#">Registro Mec</a></li>
+                </ul>
+            </div>
         </div>
 
-        <div class="form-group">
-          <label for="nascimento">Data de nascimento</label>
-          <input type="date" id="nascimento">
-          <small id="fb-nascimento" class="feedback"></small>
+        <div class="footer-payments">
+            <img src="/Projeto/3-img/PIX.png" alt="PIX" class="payment-icon">
+            <img src="/Projeto/3-img/paypal.png" alt="PayPal" class="payment-icon">
+            <img src="/Projeto/3-img/PICPAY.png" alt="PicPay" class="payment-icon">
         </div>
 
-        <div class="form-group">
-          <label for="email">E-mail</label>
-          <input type="email" id="email" placeholder="seunome@gmail.com">
-          <small id="fb-email" class="feedback"></small>
+        <div class="footer-bottom">
+            <p>&copy; 2025 - Instituto de Educação e Tecnologia - Altitude</p>
         </div>
+    </footer>
 
-        <div class="form-group">
-          <label for="senha">Senha</label>
-          <input type="password" id="senha" placeholder="Mínimo 8 caracteres">
-          <small id="fb-senha" class="feedback"></small>
-        </div>
-
-        <div class="form-group">
-          <label for="confirma">Confirme a senha</label>
-          <input type="password" id="confirma" placeholder="Repita a senha">
-          <small id="fb-confirma" class="feedback"></small>
-        </div>
-
-        <div class="form-group">
-          <label for="telefone">Telefone (WhatsApp) — com DDD</label>
-          <input type="text" id="telefone" placeholder="(91) 99999-9999" inputmode="numeric">
-          <small id="fb-telefone" class="feedback"></small>
-        </div>
-
-        <div class="form-group">
-          <label for="objetivo">Qual seu objetivo?</label>
-          <select id="objetivo">
-            <option value="">Selecione…</option>
-            <option value="Certificado para horas complementares">Certificado para horas complementares</option>
-            <option value="Aprender um novo tema">Aprender um novo tema</option>
-            <option value="Reciclagem profissional">Reciclagem profissional</option>
-          </select>
-          <small id="fb-objetivo" class="feedback"></small>
-        </div>
-
-        <label class="terms">
-          <input type="checkbox" id="termos">
-          <span>
-            Eu li e concordo com os
-            <a href="/Projeto/1-html/9-contrato.html" target="_blank">Termos de Contrato</a>
-            e a
-            <a href="/Projeto/1-html/10-politicadeprivacidade.html" target="_blank">Política de Privacidade</a>.
-          </span>
-        </label>
-
-        <button id="btn-enviar" class="btn-login" type="submit" disabled>Enviar</button>
-
-        <div id="form-msg" class="form-msg" hidden></div>
-
-        <div class="login-options">
-          <span>Já tenho uma conta — <a href="/Projeto/1-html/4-login.html">Fazer login</a></span>
-        </div>
-      </form>
-    </section>
-  </main>
-
-  <footer class="rodape">
-    <div class="footer-container">
-      <div class="footer-column logo-info">
-        <img src="/Projeto/3-img/LOGO.png" alt="Logo Altitude" class="footer-logo">
-        <p>Portal Altitude</p>
-        <p>Aprender é alcançar novos horizontes</p>
-        <p>CNPJ: 45.628.030/0001-85</p>
-      </div>
-
-      <div class="footer-column redes-sociais">
-        <h3>Redes Sociais</h3>
-        <ul>
-          <li><a href="https://www.instagram.com/altitudeltda/" target="_blank">Instagram</a></li>
-        </ul>
-      </div>
-
-      <div class="footer-column contato">
-        <h3>Entre em contato</h3>
-        <ul>
-          <li><a href="https://w.app/Altitude" target="_blank">WhatsApp</a></li>
-          <li><a href="https://w.app/Altitude" target="_blank">Telefone</a></li>
-        </ul>
-      </div>
-
-      <div class="footer-column links-rapidos">
-        <h3>Links Rápidos</h3>
-        <ul>
-          <li><a href="https://www.reclameaqui.com.br/reclamar/" target="_blank">Reclame Aqui</a></li>
-          <li><a href="/Projeto/1-html/8-certificados.html">Validar Certificado</a></li>
-          <li><a href="/Projeto/1-html/9-contrato.html">Termos de Contrato</a></li>
-          <li><a href="/Projeto/1-html/10-politicadeprivacidade.html">Política de Privacidade</a></li>
-        </ul>
-      </div>
-    </div>
-
-    <div class="footer-bottom">
-      <p>&copy; 2025 - Instituto de Educação e Tecnologia - Altitude</p>
-    </div>
-  </footer>
-
-  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-  <script src="/Projeto/4-java/supabase-init.js"></script>
-  <script src="/Projeto/4-java/cadastro.js"></script>
+    <!-- Scripts -->
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <script src="/Projeto/4-java/supabase-init.js"></script>
+    <script src="/Projeto/4-java/cadastro.js"></script>
 </body>
 </html>

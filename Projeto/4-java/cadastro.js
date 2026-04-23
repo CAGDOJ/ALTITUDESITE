@@ -320,9 +320,12 @@ form?.addEventListener("submit", async (e) => {
     }
 
     const { data: authData, error: authError } = await sb.auth.signUp({
-      email: payloadAluno.email,
-      password: senhaEl.value
-    });
+  email: payloadAluno.email,
+  password: senhaEl.value,
+  options: {
+    emailRedirectTo: "https://www.portalaltitude.com.br/Projeto/1-html/4-login.html"
+  }
+});
 
     if (authError) throw authError;
 

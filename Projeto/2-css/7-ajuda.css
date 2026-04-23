@@ -103,39 +103,73 @@ header {
     display: block; /* Mostra o dropdown ao passar o mouse */
 }
 
-/* Botões do Cabeçalho */
+/*==============================*/
+/* Botões do Cabeçalho          */
+/*==============================*/
+.header-buttons {
+    position: relative;
+    right: -130px;
+}
+
 .header-buttons .btn-outline {
-    border: 2px solid var(--azul-claro); /* Borda azul claro */
-    color: var(--azul-claro); /* Texto azul claro */
-    background-color: transparent; /* Fundo transparente */
-    padding: 10px 20px; /* Espaçamento interno */
-    border-radius: 5px; /* Bordas arredondadas */
-    text-decoration: none; /* Remove sublinhado */
-    transition: background-color 0.3s ease, color 0.3s ease, box-shadow 0.3s ease; /* Transição suave */
+    border: 2px solid var(--azul-claro);
+    color: var(--azul-claro);
+    background-color: transparent;
+    padding: 10px 20px;
+    border-radius: 5px;
+    text-decoration: none;
+    transition: background-color 0.3s ease, color 0.3s ease, box-shadow 0.3s ease;
 }
 
 .header-buttons .btn-primary {
-    background-color: var(--azul-claro); /* Fundo azul claro */
-    color: var(--branco); /* Texto branco */
-    padding: 10px 20px; /* Espaçamento interno */
-    border-radius: 5px; /* Bordas arredondadas */
-    text-decoration: none; /* Remove sublinhado */
-    font-weight: bold; /* Texto mais grosso */
-    transition: background-color 0.3s ease, box-shadow 0.3s ease; /* Transição suave */
+    background-color: var(--azul-claro);
+    color: var(--branco);
+    padding: 10px 20px;
+    border-radius: 5px;
+    text-decoration: none;
+    font-weight: bold;
+    transition: background-color 0.3s ease, box-shadow 0.3s ease;
 }
 
-.btn-outline:hover,
-.btn-outline:focus {
-    background-color: var(--azul-escuro); /* Fundo azul escuro ao passar o mouse */
-    color: var(--branco); /* Texto branco */
-    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2); /* Sombra ao passar o mouse */
+.btn-outline:hover, .btn-outline:focus {
+    background-color: var(--azul-escuro);
+    color: var(--branco);
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
 }
 
-.btn-primary:hover,
-.btn-primary:focus {
-    background-color: var(--azul-escuro); /* Fundo azul escuro */
-    color: var(--branco); /* Texto branco */
-    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2); /* Sombra ao passar o mouse */
+.btn-primary:hover, .btn-primary:focus {
+    background-color: var(--azul-escuro);
+    color: var(--branco);
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+}
+
+/* Ajuste para cabeçalho e botões */
+.old-header .header-buttons, .new-header .header-buttons {
+    display: flex;
+    align-items: center;
+    gap: 10px; /* Espaçamento entre os botões */
+}
+
+.header-buttons .btn-outline,
+.header-buttons .btn-primary {
+    padding: 5px 15px; /* Reduz o padding para economizar espaço */
+    font-size: 14px;   /* Ajusta o tamanho da fonte */
+    white-space: nowrap; /* Impede quebra de linha no botão */
+    margin: 0;
+}
+
+/* Ajuste do espaçamento dos botões em telas pequenas */
+@media screen and (max-width: 768px) {
+    .header-buttons .btn-outline,
+    .header-buttons .btn-primary {
+        padding: 5px 10px; /* Reduz o padding ainda mais em telas pequenas */
+        font-size: 13px;   /* Ajusta o tamanho da fonte para caber melhor */
+        white-space: nowrap;
+    }
+
+    .old-header, .new-header {
+        padding: 10px 15px; /* Reduz o padding do cabeçalho */
+    }
 }
 
 

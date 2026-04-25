@@ -1,10 +1,10 @@
 <!DOCTYPE html>
 <html lang="pt-BR">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>ALTITUDE - Portal do Aluno</title>
-  <link rel="stylesheet" href="../2-css/11-portaldoaluno.css">
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>ALTITUDE • Portal do Aluno</title>
+  <link rel="stylesheet" href="../2-css/11-portaldoaluno.css" />
 </head>
 
 <body>
@@ -25,10 +25,10 @@
 
     <main class="content">
       <header class="topbar">
-        <input id="buscaPortalAluno" class="search-input" type="text" placeholder="Pesquisar cursos, certificados ou pagamentos">
+        <input id="buscaPortalAluno" class="search-input" type="text" placeholder="Pesquisar cursos, certificados ou pagamentos" />
 
         <div class="user-box">
-          <img id="avatarAluno" class="avatar" src="https://placehold.co/80x80" alt="Avatar">
+          <img class="avatar" src="https://placehold.co/80x80?text=Aluno" alt="Avatar" />
           <div>
             <strong id="nomeTopoAluno">Aluno</strong>
             <p>RA: <span id="infoRA">—</span></p>
@@ -67,7 +67,7 @@
         <div class="grid-inferior">
           <div class="card">
             <h3>Últimas atividades</h3>
-            <div id="ultimasAtividades" class="empty-state">Nenhuma atividade recente</div>
+            <div id="ultimasAtividades" class="empty-state">Nenhuma atividade recente.</div>
           </div>
 
           <div class="card">
@@ -85,7 +85,7 @@
       <section class="aba" id="cursos">
         <div class="section-head">
           <h2>Meus cursos</h2>
-          <p>Cursos matriculados e cursos disponíveis para matrícula.</p>
+          <p>Acesse seus cursos matriculados, materiais e provas.</p>
         </div>
 
         <h3 class="subtitulo">Cursos matriculados</h3>
@@ -98,15 +98,20 @@
       <section class="aba" id="certificados">
         <div class="section-head">
           <h2>Certificados</h2>
-          <p>Acompanhe certificados emitidos e pendentes.</p>
+          <p>Gerencie horas disponíveis, pagamento e emissão.</p>
         </div>
+
+        <div class="notice">
+          Cada curso libera até <strong>8 horas por dia</strong>, limitado à carga horária máxima cadastrada. Você pode emitir certificado parcial e usar o saldo restante depois.
+        </div>
+
         <div id="listaCertificados"></div>
       </section>
 
       <section class="aba" id="pagamentos">
         <div class="section-head">
           <h2>Pagamentos</h2>
-          <p>Histórico de pagamentos e pendências.</p>
+          <p>Acompanhe pagamentos pendentes, pagos e utilizados.</p>
         </div>
         <div id="listaPagamentos"></div>
       </section>
@@ -114,11 +119,57 @@
       <section class="aba" id="atendimento">
         <div class="section-head">
           <h2>Atendimento</h2>
-          <p>Seus chamados e solicitações.</p>
+          <p>Abra chamados e acompanhe suas solicitações.</p>
         </div>
+
+        <div class="atendimento-grid">
+          <div class="card">
+            <h3>Abrir novo chamado</h3>
+
+            <div class="form-chamado">
+              <input id="chAssunto" type="text" placeholder="Assunto" />
+
+              <select id="chCategoria">
+                <option value="CERTIFICADO">Certificado</option>
+                <option value="PAGAMENTO">Pagamento</option>
+                <option value="CURSO">Curso</option>
+                <option value="ACESSO">Acesso</option>
+                <option value="OUTRO">Outro</option>
+              </select>
+
+              <select id="chPrioridade">
+                <option value="BAIXA">Baixa</option>
+                <option value="MEDIA" selected>Média</option>
+                <option value="ALTA">Alta</option>
+              </select>
+
+              <textarea id="chMensagem" placeholder="Descreva sua solicitação"></textarea>
+
+              <button onclick="abrirChamadoAluno()">Abrir chamado</button>
+            </div>
+          </div>
+
+          <div class="card">
+            <h3>Resumo dos chamados</h3>
+            <div class="mini-grid">
+              <div><strong id="chAbertos">0</strong><span>Abertos</span></div>
+              <div><strong id="chAndamento">0</strong><span>Em andamento</span></div>
+              <div><strong id="chResolvidos">0</strong><span>Resolvidos</span></div>
+            </div>
+          </div>
+        </div>
+
+        <h3 class="subtitulo">Meus chamados</h3>
         <div id="listaChamados"></div>
       </section>
     </main>
+  </div>
+
+  <div id="modalCurso" class="modal" aria-hidden="true">
+    <div class="modal-box">
+      <button class="modal-close" onclick="fecharCurso()">×</button>
+      <div id="cursoDetalheConteudo"></div>
+    </div>
   </div>
 
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>

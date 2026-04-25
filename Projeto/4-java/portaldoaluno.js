@@ -1,6 +1,6 @@
 /* =========================================================
    PORTAL DO ALUNO - ALTITUDE
-   Cursos, certificados, pagamento manual, cupons e chamados.
+   Cursos, materiais, prova, certificados, pagamentos e chamados.
 ========================================================= */
 
 const sb = window.sb;
@@ -43,7 +43,8 @@ function badge(status){
   return `<span class="status-badge ${cls}">${s}</span>`;
 }
 
-/* Abas principais */
+/* ---------------- ABAS PRINCIPAIS ---------------- */
+
 function abrirAba(id){
   document.querySelectorAll(".aba").forEach(sec => sec.classList.remove("ativa"));
   document.querySelectorAll(".menu-link").forEach(btn => btn.classList.remove("ativo"));
@@ -51,9 +52,11 @@ function abrirAba(id){
   $(id)?.classList.add("ativa");
   document.querySelector(`[data-aba="${id}"]`)?.classList.add("ativo");
 }
+
 window.abrirAba = abrirAba;
 
-/* Login obrigatório */
+/* ---------------- AUTENTICAÇÃO ---------------- */
+
 async function obterUsuarioLogado(){
   const { data, error } = await sb.auth.getUser();
 
@@ -70,7 +73,8 @@ async function sair(){
   window.location.href = "/Projeto/1-html/4-login.html";
 }
 
-/* Dados pessoais */
+/* ---------------- DADOS DO ALUNO ---------------- */
+
 async function carregarAluno(user){
   const { data, error } = await sb
     .from("alunos")
@@ -96,7 +100,8 @@ async function carregarAluno(user){
   setText("infoCelular", data.telefone || "—");
 }
 
-/* Cursos matriculados */
+/* ---------------- CURSOS ---------------- */
+
 async function carregarCursosMatriculados(){
   const { data: matriculas, error } = await sb
     .from("matriculas")
@@ -123,7 +128,7 @@ async function carregarCursosMatriculados(){
   }
 
   cursosMatriculados = matriculas.map(m => {
-    const c = (cursos || []).find(x => x.id === m.curso_id) || {};
+    const c = (cursos || []).find(x => Number(x.id) === Number(m.curso_id)) || {};
     return {
       ...c,
       matricula_id: m.id,
@@ -136,7 +141,6 @@ async function carregarCursosMatriculados(){
   renderCursosMatriculados();
 }
 
-/* Cursos disponíveis */
 async function carregarCursosDisponiveis(){
   const { data, error } = await sb
     .from("cursos")
@@ -151,8 +155,8 @@ async function carregarCursosDisponiveis(){
     return;
   }
 
-  const idsMatriculados = cursosMatriculados.map(c => c.id);
-  cursosDisponiveis = (data || []).filter(c => !idsMatriculados.includes(c.id));
+  const idsMatriculados = cursosMatriculados.map(c => Number(c.id));
+  cursosDisponiveis = (data || []).filter(c => !idsMatriculados.includes(Number(c.id)));
 
   renderCursosDisponiveis();
 }
@@ -256,9 +260,191 @@ async function matricularCurso(cursoId){
   alert("Matrícula realizada com sucesso!");
   await carregarTudo();
 }
+
 window.matricularCurso = matricularCurso;
 
-/* Banco de horas: 8h por dia, limitado à carga máxima do curso */
+/* ---------------- MODAL DO CURSO: MATERIAIS E PROVA ---------------- */
+
+async function abrirCurso(id){
+  const curso = cursosMatriculados.find(c => Number(c.id) === Number(id));
+
+  if(!curso){
+    alert("Curso não encontrado na matrícula.");
+    return;
+  }
+
+  const box = $("cursoDetalheConteudo");
+  const modal = $("modalCurso");
+
+  if(!box || !modal){
+    alert("Modal do curso não encontrado no HTML.");
+    return;
+  }
+
+  box.innerHTML = `
+    <h2>${curso.titulo}</h2>
+    <p>${curso.categoria || "—"} · até ${curso.carga_horaria || 0}h</p>
+
+    <div class="tabs-internas">
+      <button class="ativo" data-painel="visao">Visão geral</button>
+      <button data-painel="materiais">Materiais</button>
+      <button data-painel="prova">Prova</button>
+      <button data-painel="certificadoCurso">Certificado</button>
+    </div>
+
+    <div id="painel-visao" class="painel-interno ativo">
+      <p>${curso.descricao || "Curso disponível para estudo."}</p>
+    </div>
+
+    <div id="painel-materiais" class="painel-interno">
+      <div id="materiaisCurso">Carregando materiais...</div>
+    </div>
+
+    <div id="painel-prova" class="painel-interno">
+      <div id="provaCurso">Carregando prova...</div>
+    </div>
+
+    <div id="painel-certificadoCurso" class="painel-interno">
+      <p>A emissão do certificado é feita na aba <strong>Certificados</strong>, conforme saldo de horas e pagamento confirmado.</p>
+    </div>
+  `;
+
+  modal.setAttribute("aria-hidden", "false");
+
+  document.querySelectorAll(".tabs-internas button").forEach(btn => {
+    btn.addEventListener("click", () => abrirPainelCurso(btn.dataset.painel, btn));
+  });
+
+  await carregarMateriaisCurso(id);
+  await carregarProvaCurso(id);
+}
+
+function fecharCurso(){
+  $("modalCurso")?.setAttribute("aria-hidden", "true");
+}
+
+function abrirPainelCurso(id, btn){
+  document.querySelectorAll(".painel-interno").forEach(p => p.classList.remove("ativo"));
+  document.querySelectorAll(".tabs-internas button").forEach(b => b.classList.remove("ativo"));
+
+  $("painel-" + id)?.classList.add("ativo");
+  btn?.classList.add("ativo");
+}
+
+async function carregarMateriaisCurso(cursoId){
+  const el = $("materiaisCurso");
+  if(!el) return;
+
+  const { data, error } = await sb
+    .from("materiais")
+    .select("*")
+    .eq("curso_id", cursoId)
+    .order("id", { ascending:true });
+
+  if(error){
+    el.innerHTML = `<div class="empty-state">Erro ao carregar materiais: ${error.message}</div>`;
+    return;
+  }
+
+  if(!data?.length){
+    el.innerHTML = `<div class="empty-state">Nenhum material disponível para este curso.</div>`;
+    return;
+  }
+
+  el.innerHTML = data.map(m => `
+    <div class="material-card">
+      <h3>${m.titulo || "Material"}</h3>
+      <p>Tipo: ${m.tipo || "Material"}</p>
+      ${m.url ? `<a href="${m.url}" target="_blank">Abrir material</a>` : ""}
+    </div>
+  `).join("");
+}
+
+async function carregarProvaCurso(cursoId){
+  const el = $("provaCurso");
+  if(!el) return;
+
+  const { data: provas, error: erroProva } = await sb
+    .from("provas")
+    .select("*")
+    .eq("curso_id", cursoId)
+    .limit(1);
+
+  if(erroProva){
+    el.innerHTML = `<div class="empty-state">Erro ao carregar prova: ${erroProva.message}</div>`;
+    return;
+  }
+
+  const prova = provas?.[0];
+
+  if(!prova){
+    el.innerHTML = `<div class="empty-state">Nenhuma prova cadastrada para este curso.</div>`;
+    return;
+  }
+
+  const { data: questoes, error: erroQuestoes } = await sb
+    .from("questoes")
+    .select("*")
+    .eq("prova_id", prova.id)
+    .order("id", { ascending:true });
+
+  if(erroQuestoes){
+    el.innerHTML = `<div class="empty-state">Erro ao carregar questões: ${erroQuestoes.message}</div>`;
+    return;
+  }
+
+  if(!questoes?.length){
+    el.innerHTML = `<div class="empty-state">Esta prova ainda não possui questões.</div>`;
+    return;
+  }
+
+  el.innerHTML = `
+    <h3>${prova.titulo || "Prova do curso"}</h3>
+
+    ${questoes.map((q, i) => `
+      <div class="material-card">
+        <strong>${i + 1}. ${q.enunciado}</strong>
+
+        <label class="prova-opcao">
+          <input type="radio" name="q${q.id}" value="A"> ${q.a}
+        </label>
+
+        <label class="prova-opcao">
+          <input type="radio" name="q${q.id}" value="B"> ${q.b}
+        </label>
+
+        <label class="prova-opcao">
+          <input type="radio" name="q${q.id}" value="C"> ${q.c}
+        </label>
+
+        <label class="prova-opcao">
+          <input type="radio" name="q${q.id}" value="D"> ${q.d}
+        </label>
+      </div>
+    `).join("")}
+
+    <button onclick="corrigirProva(${prova.id})">Finalizar prova</button>
+  `;
+}
+
+function corrigirProva(provaId){
+  alert("Prova enviada para correção. ID: " + provaId);
+}
+
+function visualizarCurso(id){
+  abrirCurso(id);
+}
+
+window.abrirCurso = abrirCurso;
+window.fecharCurso = fecharCurso;
+window.abrirPainelCurso = abrirPainelCurso;
+window.carregarMateriaisCurso = carregarMateriaisCurso;
+window.carregarProvaCurso = carregarProvaCurso;
+window.corrigirProva = corrigirProva;
+window.visualizarCurso = visualizarCurso;
+
+/* ---------------- BANCO DE HORAS E CERTIFICADOS ---------------- */
+
 function diasDesde(data){
   const inicio = new Date(data);
   const hoje = new Date();
@@ -282,7 +468,6 @@ async function calcularBancoHorasDoCurso(curso){
   return { cargaMaxima, dias, horasLiberadas, horasUsadas, saldo };
 }
 
-/* Certificados */
 async function carregarCertificados(){
   const { data } = await sb
     .from("certificados")
@@ -375,7 +560,6 @@ async function renderCertificados(){
   lista.innerHTML = cards.join("");
 }
 
-/* Gera pagamento pendente no banco. O gestor confirma depois. */
 async function solicitarPagamentoCertificado(cursoId, saldo){
   const horas = Number($("horas-cert-" + cursoId)?.value || 0);
   const cupom = ($("cupom-cert-" + cursoId)?.value || "").trim().toUpperCase();
@@ -390,7 +574,7 @@ async function solicitarPagamentoCertificado(cursoId, saldo){
     return;
   }
 
-  const curso = cursosMatriculados.find(c => c.id === cursoId);
+  const curso = cursosMatriculados.find(c => Number(c.id) === Number(cursoId));
   const valorHora = 5.00;
 
   let valor = horas * valorHora;
@@ -447,9 +631,7 @@ async function solicitarPagamentoCertificado(cursoId, saldo){
   await carregarPagamentos();
   await carregarCertificados();
 }
-window.solicitarPagamentoCertificado = solicitarPagamentoCertificado;
 
-/* Após gestor confirmar pagamento como PAGO, aluno emite */
 async function emitirCertificadoPago(cursoId, pagamentoId, horas){
   const { data: pagamento } = await sb
     .from("pagamentos")
@@ -488,9 +670,12 @@ async function emitirCertificadoPago(cursoId, pagamentoId, horas){
   await carregarPagamentos();
   await carregarCertificados();
 }
+
+window.solicitarPagamentoCertificado = solicitarPagamentoCertificado;
 window.emitirCertificadoPago = emitirCertificadoPago;
 
-/* Pagamentos */
+/* ---------------- PAGAMENTOS ---------------- */
+
 async function carregarPagamentos(){
   const lista = $("listaPagamentos");
   if(!lista) return;
@@ -541,7 +726,8 @@ async function carregarPagamentos(){
   `;
 }
 
-/* Atendimento */
+/* ---------------- ATENDIMENTO ---------------- */
+
 async function abrirChamadoAluno(){
   const assunto = $("chAssunto")?.value.trim();
   const categoria = $("chCategoria")?.value;
@@ -579,7 +765,6 @@ async function abrirChamadoAluno(){
 
   await carregarChamados();
 }
-window.abrirChamadoAluno = abrirChamadoAluno;
 
 async function carregarChamados(){
   const lista = $("listaChamados");
@@ -635,7 +820,10 @@ async function carregarChamados(){
   `;
 }
 
-/* Progresso */
+window.abrirChamadoAluno = abrirChamadoAluno;
+
+/* ---------------- PROGRESSO ---------------- */
+
 function atualizarProgresso(){
   const media = cursosMatriculados.length
     ? Math.round(cursosMatriculados.reduce((acc,c) => acc + Number(c.progresso || 0), 0) / cursosMatriculados.length)
@@ -655,144 +843,8 @@ function atualizarProgresso(){
   setText("nivelAlunoNome", nivel);
 }
 
-/* Modal do curso */
-async function abrirCurso(id){
-  const curso = cursosMatriculados.find(c => c.id === id);
-  if(!curso) return;
+/* ---------------- BUSCA ---------------- */
 
-  const box = $("cursoDetalheConteudo");
-  const modal = $("modalCurso");
-
-  box.innerHTML = `
-    <h2>${curso.titulo}</h2>
-    <p>${curso.categoria || "—"} · até ${curso.carga_horaria || 0}h</p>
-
-    <div class="tabs-internas">
-      <button class="ativo" data-painel="visao">Visão geral</button>
-      <button data-painel="materiais">Materiais</button>
-      <button data-painel="prova">Prova</button>
-      <button data-painel="certificadoCurso">Certificado</button>
-    </div>
-
-    <div id="painel-visao" class="painel-interno ativo">
-      <p>${curso.descricao || "Curso disponível para estudo."}</p>
-    </div>
-
-    <div id="painel-materiais" class="painel-interno">
-      <div id="materiaisCurso">Carregando materiais...</div>
-    </div>
-
-    <div id="painel-prova" class="painel-interno">
-      <div id="provaCurso">Carregando prova...</div>
-    </div>
-
-    <div id="painel-certificadoCurso" class="painel-interno">
-      <p>A emissão do certificado é feita na aba <strong>Certificados</strong>, conforme saldo de horas e pagamento confirmado.</p>
-    </div>
-  `;
-
-  modal.setAttribute("aria-hidden", "false");
-
-  document.querySelectorAll(".tabs-internas button").forEach(btn => {
-    btn.addEventListener("click", () => abrirPainelCurso(btn.dataset.painel, btn));
-  });
-
-  await carregarMateriaisCurso(id);
-  await carregarProvaCurso(id);
-}
-window.abrirCurso = abrirCurso;
-
-function fecharCurso(){
-  $("modalCurso")?.setAttribute("aria-hidden", "true");
-}
-window.fecharCurso = fecharCurso;
-
-function abrirPainelCurso(id, btn){
-  document.querySelectorAll(".painel-interno").forEach(p => p.classList.remove("ativo"));
-  document.querySelectorAll(".tabs-internas button").forEach(b => b.classList.remove("ativo"));
-
-  $("painel-" + id)?.classList.add("ativo");
-  btn?.classList.add("ativo");
-}
-
-async function carregarMateriaisCurso(cursoId){
-  const el = $("materiaisCurso");
-  if(!el) return;
-
-  const { data, error } = await sb
-    .from("materiais")
-    .select("*")
-    .eq("curso_id", cursoId)
-    .order("id");
-
-  if(error || !data?.length){
-    el.innerHTML = `<div class="empty-state">Nenhum material disponível.</div>`;
-    return;
-  }
-
-  el.innerHTML = data.map(m => `
-    <div class="cert-card">
-      <h3>${m.titulo || m.nome || "Material"}</h3>
-      <p>Tipo: ${m.tipo || "Material"}</p>
-      ${m.url ? `<a href="${m.url}" target="_blank">Abrir material</a>` : ""}
-    </div>
-  `).join("");
-}
-
-async function carregarProvaCurso(cursoId){
-  const el = $("provaCurso");
-  if(!el) return;
-
-  const { data: provas } = await sb
-    .from("provas")
-    .select("*")
-    .eq("curso_id", cursoId)
-    .limit(1);
-
-  const prova = provas?.[0];
-
-  if(!prova){
-    el.innerHTML = `<div class="empty-state">Nenhuma prova disponível.</div>`;
-    return;
-  }
-
-  const { data: questoes } = await sb
-    .from("questoes")
-    .select("*")
-    .eq("prova_id", prova.id)
-    .order("id");
-
-  if(!questoes?.length){
-    el.innerHTML = `<div class="empty-state">Prova sem questões.</div>`;
-    return;
-  }
-
-  el.innerHTML = `
-    <h3>${prova.titulo}</h3>
-    ${questoes.map((q,i) => `
-      <div class="cert-card">
-        <strong>${i+1}. ${q.enunciado}</strong>
-        <label class="prova-opcao"><input type="radio" name="q${q.id}" value="A"> ${q.a}</label>
-        <label class="prova-opcao"><input type="radio" name="q${q.id}" value="B"> ${q.b}</label>
-        <label class="prova-opcao"><input type="radio" name="q${q.id}" value="C"> ${q.c}</label>
-        <label class="prova-opcao"><input type="radio" name="q${q.id}" value="D"> ${q.d}</label>
-      </div>
-    `).join("")}
-    <button onclick="corrigirProva(${prova.id})">Finalizar prova</button>
-  `;
-}
-
-function corrigirProva(provaId){
-  alert("Correção da prova será gravada na próxima etapa. Prova ID: " + provaId);
-}
-window.corrigirProva = corrigirProva;
-
-function visualizarCurso(id){
-  alert("Detalhes do curso ID: " + id);
-}
-window.visualizarCurso = visualizarCurso;
-
-/* Busca interna */
 function configurarBusca(){
   const input = $("buscaPortalAluno");
   if(!input) return;
@@ -806,7 +858,8 @@ function configurarBusca(){
   });
 }
 
-/* Carregamento geral */
+/* ---------------- CARREGAMENTO GERAL ---------------- */
+
 async function carregarTudo(){
   await carregarCursosMatriculados();
   await carregarCursosDisponiveis();
@@ -815,7 +868,8 @@ async function carregarTudo(){
   await carregarChamados();
 }
 
-/* Inicialização */
+/* ---------------- INICIALIZAÇÃO ---------------- */
+
 document.addEventListener("DOMContentLoaded", async () => {
   document.querySelectorAll(".menu-link").forEach(btn => {
     btn.addEventListener("click", () => abrirAba(btn.dataset.aba));

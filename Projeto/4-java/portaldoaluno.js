@@ -1,108 +1,96 @@
 /* =========================================================
    PORTAL DO ALUNO - ALTITUDE
-   JS completo para colar
-   Requer:
-   - sb (Supabase client global já inicializado)
-   - views/tabelas já criadas no banco
-   ========================================================= */
+   JavaScript completo e documentado
+========================================================= */
+
+/* Cliente Supabase vem do arquivo supabase-init.js */
+const sb = window.sb;
+
+/* Atalho para buscar elemento por ID */
+const $ = (id) => document.getElementById(id);
+
+/* Estado local da página */
+let alunoAtual = null;
+let cursosMatriculados = [];
+let cursosDisponiveis = [];
+let certificados = [];
+let pagamentos = [];
 
 /* ---------------------------
-   Utilidades
+   Funções utilitárias
 --------------------------- */
-const $ = (selector, scope = document) => scope.querySelector(selector);
-const $$ = (selector, scope = document) => Array.from(scope.querySelectorAll(selector));
 
-function setText(id, value, fallback = "—") {
-  const el = document.getElementById(id);
-  if (el) el.textContent = value ?? fallback;
+function setText(id, value) {
+  const el = $(id);
+  if (el) el.textContent = value ?? "—";
 }
 
-function setHTML(id, html) {
-  const el = document.getElementById(id);
-  if (el) el.innerHTML = html;
-}
-
-function formatMoney(value) {
-  return Number(value || 0).toLocaleString("pt-BR", {
+function dinheiro(v) {
+  return Number(v || 0).toLocaleString("pt-BR", {
     style: "currency",
     currency: "BRL"
   });
 }
 
-function formatDate(dateStr) {
-  if (!dateStr) return "—";
-  const d = new Date(dateStr);
-  if (isNaN(d.getTime())) return "—";
-  return d.toLocaleDateString("pt-BR");
+function dataBR(v) {
+  if (!v) return "—";
+  return new Date(v).toLocaleDateString("pt-BR");
 }
 
-function getStatusBadgeClass(status) {
-  const s = String(status || "").toUpperCase();
-  if (["EMITIDO", "PAGO", "CONCLUIDA", "ATIVA", "RESOLVIDO"].includes(s)) return "ok";
-  if (["PENDENTE", "EM_ANDAMENTO", "BLOQUEADO"].includes(s)) return "warn";
-  if (["CANCELADO", "INATIVO", "TRANCADA"].includes(s)) return "bad";
-  return "neutral";
+function imgCurso(url) {
+  return url || "https://placehold.co/140x90?text=Curso";
 }
 
-function statusBadge(status) {
-  return `<span class="status-badge ${getStatusBadgeClass(status)}">${status || "—"}</span>`;
-}
+function badge(status) {
+  const s = String(status || "PENDENTE").toUpperCase();
 
-function safeImage(url, fallback = "https://placehold.co/120x70?text=Curso") {
-  return url || fallback;
+  let cls = "neutral";
+  if (["ATIVA", "PAGO", "EMITIDO", "CONCLUIDA", "RESOLVIDO"].includes(s)) cls = "ok";
+  if (["PENDENTE", "EM_ANDAMENTO", "ABERTO"].includes(s)) cls = "warn";
+  if (["CANCELADO", "INATIVO", "BLOQUEADO"].includes(s)) cls = "bad";
+
+  return `<span class="status-badge ${cls}">${s}</span>`;
 }
 
 /* ---------------------------
-   Navegação entre abas
-   Usa data-aba nos botões/menu
-   e ids das seções
+   Controle das abas
 --------------------------- */
-function abrirAba(id) {
-  $$(".aba").forEach(sec => sec.classList.remove("ativa"));
-  const alvo = document.getElementById(id);
-  if (alvo) alvo.classList.add("ativa");
 
-  $$(".menu-link").forEach(btn => btn.classList.remove("ativo"));
-  const link = document.querySelector(`[data-aba="${id}"]`);
-  if (link) link.classList.add("ativo");
+function abrirAba(id) {
+  document.querySelectorAll(".aba").forEach(sec => sec.classList.remove("ativa"));
+  document.querySelectorAll(".menu-link").forEach(btn => btn.classList.remove("ativo"));
+
+  $(id)?.classList.add("ativa");
+  document.querySelector(`[data-aba="${id}"]`)?.classList.add("ativo");
 }
 
 window.abrirAba = abrirAba;
 
 /* ---------------------------
-   Estado global
+   Autenticação
 --------------------------- */
-let ALUNO_ATUAL = null;
-let CURSOS_ALUNO = [];
-let CERTIFICADOS_ALUNO = [];
-let PAGAMENTOS_ALUNO = [];
-let CHAMADOS_ALUNO = [];
 
-/* ---------------------------
-   Auth / usuário atual
---------------------------- */
-async function obterUsuarioAtual() {
-  if (typeof sb === "undefined" || !sb) {
-    console.error("Supabase client não encontrado.");
-    return null;
-  }
-
+async function obterUsuarioLogado() {
   const { data, error } = await sb.auth.getUser();
-  if (error) {
-    console.error("Erro ao obter usuário autenticado:", error);
+
+  if (error || !data?.user) {
+    window.location.href = "/Projeto/1-html/4-login.html";
     return null;
   }
 
-  return data?.user || null;
+  return data.user;
+}
+
+async function sair() {
+  await sb.auth.signOut();
+  window.location.href = "/Projeto/1-html/4-login.html";
 }
 
 /* ---------------------------
-   Carregar dados pessoais do aluno
+   Dados pessoais do aluno
 --------------------------- */
-async function carregarDadosAluno() {
-  const user = await obterUsuarioAtual();
-  if (!user) return null;
 
+async function carregarAluno(user) {
   const { data, error } = await sb
     .from("alunos")
     .select("*")
@@ -110,193 +98,214 @@ async function carregarDadosAluno() {
     .single();
 
   if (error) {
-    console.error("Erro ao carregar dados do aluno:", error);
-    return null;
+    console.error("Erro ao carregar aluno:", error);
+    return;
   }
 
-  ALUNO_ATUAL = data;
+  alunoAtual = data;
 
-  setText("nomeAluno", data.nome || "Aluno");
-  setText("nomeTopoAluno", data.nome || "Aluno");
+  const nomeCompleto = data.nome || "Aluno";
+  const primeiroNome = nomeCompleto.split(" ")[0];
+
+  setText("nomeAluno", primeiroNome);
+  setText("nomeTopoAluno", primeiroNome);
   setText("infoRA", data.ra || "—");
+  setText("infoRA2", data.ra || "—");
   setText("infoCPF", data.cpf || "—");
   setText("infoEmail", data.email || user.email || "—");
   setText("infoCelular", data.telefone || "—");
-
-  return data;
 }
 
 /* ---------------------------
-   Dashboard resumido do aluno
-   Requer view: v_aluno_dashboard
+   Cursos matriculados
 --------------------------- */
-async function carregarDashboardAluno() {
-  const user = await obterUsuarioAtual();
-  if (!user) return;
 
-  const { data, error } = await sb
-    .from("v_aluno_dashboard")
-    .select("*")
-    .eq("user_id", user.id)
-    .single();
-
-  if (error) {
-    console.error("Erro ao carregar dashboard do aluno:", error);
-    return;
-  }
-
-  setText("kpiCursos", data.total_cursos || 0);
-  setText("kpiCertEmitidos", data.certificados_emitidos || 0);
-  setText("kpiCertPendentes", data.certificados_pendentes || 0);
-
-  // resumo em outros cards, se existirem
-  setText("resumoTotalCursos", data.total_cursos || 0);
-  setText("resumoCertEmitidos", data.certificados_emitidos || 0);
-  setText("resumoCertPendentes", data.certificados_pendentes || 0);
-}
-
-/* ---------------------------
-   Cursos do aluno
-   Requer view: v_aluno_cursos
---------------------------- */
-async function carregarCursosAluno() {
-  const user = await obterUsuarioAtual();
-  if (!user) return;
-
-  const { data, error } = await sb
-    .from("v_aluno_cursos")
+async function carregarCursosMatriculados(user) {
+  const { data: matriculas, error } = await sb
+    .from("matriculas")
     .select("*")
     .eq("aluno_id", user.id)
-    .order("curso_id", { ascending: false });
+    .order("id", { ascending: false });
 
   if (error) {
-    console.error("Erro ao carregar cursos do aluno:", error);
+    console.warn("Sem matrículas ou tabela bloqueada:", error.message);
+    cursosMatriculados = [];
+    renderCursosMatriculados();
     return;
   }
 
-  CURSOS_ALUNO = data || [];
+  if (!matriculas?.length) {
+    cursosMatriculados = [];
+    renderCursosMatriculados();
+    return;
+  }
 
-  renderCursosAluno();
-  renderContinuarEstudo();
-  atualizarProgressoGeral();
+  const idsCursos = matriculas.map(m => m.curso_id);
+
+  const { data: cursos, error: erroCursos } = await sb
+    .from("cursos")
+    .select("*")
+    .in("id", idsCursos);
+
+  if (erroCursos) {
+    console.error("Erro ao carregar cursos:", erroCursos);
+    return;
+  }
+
+  cursosMatriculados = matriculas.map(m => {
+    const curso = cursos.find(c => c.id === m.curso_id) || {};
+    return {
+      ...curso,
+      matricula_id: m.id,
+      status_matricula: m.status || "ATIVA",
+      progresso: m.progresso || 0
+    };
+  });
+
+  renderCursosMatriculados();
 }
 
-function renderCursosAluno() {
-  const lista = document.getElementById("listaCursos");
-  if (!lista) return;
+/* ---------------------------
+   Cursos disponíveis
+--------------------------- */
 
-  if (!CURSOS_ALUNO.length) {
-    lista.innerHTML = `<div class="empty-state">Nenhum curso matriculado ainda.</div>`;
+async function carregarCursosDisponiveis() {
+  const { data, error } = await sb
+    .from("cursos")
+    .select("*")
+    .eq("publicado", true)
+    .order("id", { ascending: false });
+
+  if (error) {
+    console.error("Erro ao carregar cursos disponíveis:", error);
+    cursosDisponiveis = [];
+    renderCursosDisponiveis();
     return;
   }
 
-  lista.innerHTML = CURSOS_ALUNO.map(item => `
+  const idsMatriculados = cursosMatriculados.map(c => c.id);
+  cursosDisponiveis = (data || []).filter(c => !idsMatriculados.includes(c.id));
+
+  renderCursosDisponiveis();
+}
+
+/* ---------------------------
+   Renderização dos cursos
+--------------------------- */
+
+function renderCursosMatriculados() {
+  setText("kpiCursos", cursosMatriculados.length);
+
+  const lista = $("listaCursos");
+  const continuar = $("continuarEstudoBox");
+
+  if (!cursosMatriculados.length) {
+    if (lista) lista.innerHTML = `<div class="empty-state">Você ainda não possui cursos matriculados.</div>`;
+    if (continuar) continuar.innerHTML = `<div class="empty-state">Nenhum curso disponível para continuar.</div>`;
+    atualizarProgresso();
+    return;
+  }
+
+  const html = cursosMatriculados.map(c => `
     <div class="card-curso-aluno">
-      <img class="curso-thumb" src="${safeImage(item.capa_url)}" alt="Capa do curso">
+      <img class="curso-thumb" src="${imgCurso(c.capa_url)}" alt="Capa do curso">
+
       <div class="curso-conteudo">
-        <h4>${item.titulo || "Curso"}</h4>
-        <p>${item.categoria || "—"} · ${item.carga_horaria || 0}h</p>
-        <p>Status matrícula: ${statusBadge(item.status_matricula)}</p>
-        <p>Status certificado: ${statusBadge(item.status_certificado)}</p>
-        <p>Status pagamento: ${statusBadge(item.status_pagamento)}</p>
+        <h4>${c.titulo || "Curso"}</h4>
+        <p>${c.categoria || "—"} · ${c.carga_horaria || 0}h</p>
+        <p>Matrícula: ${badge(c.status_matricula)}</p>
+
         <div class="progress-wrap">
           <div class="progress-bar">
-            <div class="progress-fill" style="width:${Number(item.progresso || 0)}%"></div>
+            <div class="progress-fill" style="width:${Number(c.progresso || 0)}%"></div>
           </div>
-          <span>${Number(item.progresso || 0)}%</span>
+          <span>${Number(c.progresso || 0)}%</span>
         </div>
+
         <div class="curso-acoes">
-          <button onclick="abrirCurso(${item.curso_id})">Continuar</button>
-          ${String(item.status_pagamento || "").toUpperCase() !== "PAGO"
-            ? `<button onclick="pagarCurso(${item.curso_id})">Pagar</button>`
-            : ``}
+          <button onclick="abrirCurso(${c.id})">Continuar</button>
+        </div>
+      </div>
+    </div>
+  `).join("");
+
+  if (lista) lista.innerHTML = html;
+
+  const primeiro = cursosMatriculados[0];
+  if (continuar) {
+    continuar.innerHTML = `
+      <div class="curso-destaque">
+        <img class="curso-thumb" src="${imgCurso(primeiro.capa_url)}" alt="Curso">
+        <div class="curso-conteudo">
+          <h3>${primeiro.titulo}</h3>
+          <p>${primeiro.categoria || "—"} · ${primeiro.carga_horaria || 0}h</p>
+          <button onclick="abrirCurso(${primeiro.id})">Iniciar estudo</button>
+        </div>
+      </div>
+    `;
+  }
+
+  atualizarProgresso();
+}
+
+function renderCursosDisponiveis() {
+  const lista = $("listaCursosDisponiveis");
+  if (!lista) return;
+
+  if (!cursosDisponiveis.length) {
+    lista.innerHTML = `<div class="empty-state">Nenhum curso novo disponível no momento.</div>`;
+    return;
+  }
+
+  lista.innerHTML = cursosDisponiveis.map(c => `
+    <div class="card-curso-aluno">
+      <img class="curso-thumb" src="${imgCurso(c.capa_url)}" alt="Capa do curso">
+
+      <div class="curso-conteudo">
+        <h4>${c.titulo}</h4>
+        <p>${c.categoria || "—"} · ${c.carga_horaria || 0}h</p>
+
+        <div class="curso-acoes">
+          <button onclick="matricularCurso(${c.id})">Matricular</button>
+          <button class="secundario" onclick="visualizarCurso(${c.id})">Detalhes</button>
         </div>
       </div>
     </div>
   `).join("");
 }
 
-function renderContinuarEstudo() {
-  const box = document.getElementById("continuarEstudoBox");
-  if (!box) return;
-
-  if (!CURSOS_ALUNO.length) {
-    box.innerHTML = `<div class="empty-state">Nenhum curso disponível para continuar.</div>`;
-    return;
-  }
-
-  const curso = [...CURSOS_ALUNO]
-    .sort((a, b) => Number(b.progresso || 0) - Number(a.progresso || 0))
-    .find(c => String(c.status_matricula || "").toUpperCase() === "ATIVA")
-    || CURSOS_ALUNO[0];
-
-  box.innerHTML = `
-    <div class="curso-destaque">
-      <img class="curso-thumb destaque" src="${safeImage(curso.capa_url)}" alt="Curso">
-      <div class="curso-conteudo">
-        <h3>${curso.titulo}</h3>
-        <p>${curso.categoria || "—"} · ${curso.carga_horaria || 0}h</p>
-        <p>Progresso atual: ${Number(curso.progresso || 0)}%</p>
-        <button onclick="abrirCurso(${curso.curso_id})">Iniciar Estudo</button>
-      </div>
-    </div>
-  `;
-}
-
-function atualizarProgressoGeral() {
-  const progressoEl = document.getElementById("progressoGeral");
-  const progressoTxt = document.getElementById("progressoGeralTexto");
-  if (!progressoEl && !progressoTxt) return;
-
-  let media = 0;
-  if (CURSOS_ALUNO.length) {
-    media = CURSOS_ALUNO.reduce((acc, item) => acc + Number(item.progresso || 0), 0) / CURSOS_ALUNO.length;
-  }
-  media = Math.round(media);
-
-  if (progressoTxt) progressoTxt.textContent = `${media}%`;
-
-  // para círculo CSS via conic-gradient
-  if (progressoEl) {
-    progressoEl.style.background = `conic-gradient(#4e8df5 ${media * 3.6}deg, #e8edf7 0deg)`;
-  }
-}
-
 /* ---------------------------
    Certificados
 --------------------------- */
-async function carregarCertificadosAluno() {
-  const user = await obterUsuarioAtual();
-  if (!user) return;
 
+async function carregarCertificados(user) {
   const { data, error } = await sb
     .from("certificados")
-    .select(`
-      id,
-      curso_id,
-      status,
-      emitido_em,
-      cursos (
-        titulo
-      )
-    `)
+    .select("*")
     .eq("aluno_id", user.id)
     .order("id", { ascending: false });
 
   if (error) {
-    console.error("Erro ao carregar certificados:", error);
-    return;
+    console.warn("Erro ao carregar certificados:", error.message);
+    certificados = [];
+  } else {
+    certificados = data || [];
   }
 
-  CERTIFICADOS_ALUNO = data || [];
-  renderCertificadosAluno();
+  renderCertificados();
 }
 
-function renderCertificadosAluno() {
-  const lista = document.getElementById("listaCertificados");
+function renderCertificados() {
+  const emitidos = certificados.filter(c => String(c.status).toUpperCase() === "EMITIDO").length;
+  const pendentes = certificados.length - emitidos;
+
+  setText("kpiCertEmitidos", emitidos);
+  setText("kpiCertPendentes", pendentes);
+
+  const lista = $("listaCertificados");
   if (!lista) return;
 
-  if (!CERTIFICADOS_ALUNO.length) {
+  if (!certificados.length) {
     lista.innerHTML = `<div class="empty-state">Nenhum certificado encontrado.</div>`;
     return;
   }
@@ -312,18 +321,19 @@ function renderCertificadosAluno() {
         </tr>
       </thead>
       <tbody>
-        ${CERTIFICADOS_ALUNO.map(item => `
-          <tr>
-            <td>${item.cursos?.titulo || "Curso"}</td>
-            <td>${statusBadge(item.status)}</td>
-            <td>${formatDate(item.emitido_em)}</td>
-            <td>
-              ${String(item.status || "").toUpperCase() === "EMITIDO"
-                ? `<button onclick="baixarCertificado(${item.id})">Baixar</button>`
-                : `<button disabled>Indisponível</button>`}
-            </td>
-          </tr>
-        `).join("")}
+        ${certificados.map(c => {
+          const curso = cursosMatriculados.find(x => x.id === c.curso_id);
+          const emitido = String(c.status).toUpperCase() === "EMITIDO";
+
+          return `
+            <tr>
+              <td>${curso?.titulo || "Curso"}</td>
+              <td>${badge(c.status)}</td>
+              <td>${dataBR(c.emitido_em)}</td>
+              <td>${emitido ? `<button onclick="baixarCertificado(${c.id})">Baixar</button>` : `<button disabled>Pendente</button>`}</td>
+            </tr>
+          `;
+        }).join("")}
       </tbody>
     </table>
   `;
@@ -332,40 +342,29 @@ function renderCertificadosAluno() {
 /* ---------------------------
    Pagamentos
 --------------------------- */
-async function carregarPagamentosAluno() {
-  const user = await obterUsuarioAtual();
-  if (!user) return;
 
-  const { data, error } = await sb
-    .from("pagamentos")
-    .select(`
-      id,
-      curso_id,
-      valor,
-      status,
-      vencimento,
-      pago_em,
-      cursos (
-        titulo
-      )
-    `)
-    .eq("aluno_id", user.id)
-    .order("id", { ascending: false });
+async function carregarPagamentos(user) {
+  try {
+    const { data, error } = await sb
+      .from("pagamentos")
+      .select("*")
+      .eq("aluno_id", user.id)
+      .order("id", { ascending: false });
 
-  if (error) {
-    console.error("Erro ao carregar pagamentos:", error);
-    return;
+    if (error) throw error;
+    pagamentos = data || [];
+  } catch (err) {
+    pagamentos = [];
   }
 
-  PAGAMENTOS_ALUNO = data || [];
-  renderPagamentosAluno();
+  renderPagamentos();
 }
 
-function renderPagamentosAluno() {
-  const lista = document.getElementById("listaPagamentos");
+function renderPagamentos() {
+  const lista = $("listaPagamentos");
   if (!lista) return;
 
-  if (!PAGAMENTOS_ALUNO.length) {
+  if (!pagamentos.length) {
     lista.innerHTML = `<div class="empty-state">Nenhum pagamento encontrado.</div>`;
     return;
   }
@@ -374,29 +373,26 @@ function renderPagamentosAluno() {
     <table class="table-portal">
       <thead>
         <tr>
-          <th>Curso</th>
+          <th>Descrição</th>
           <th>Valor</th>
           <th>Status</th>
           <th>Vencimento</th>
-          <th>Pago em</th>
           <th>Ação</th>
         </tr>
       </thead>
       <tbody>
-        ${PAGAMENTOS_ALUNO.map(item => `
-          <tr>
-            <td>${item.cursos?.titulo || "Curso"}</td>
-            <td>${formatMoney(item.valor)}</td>
-            <td>${statusBadge(item.status)}</td>
-            <td>${formatDate(item.vencimento)}</td>
-            <td>${formatDate(item.pago_em)}</td>
-            <td>
-              ${String(item.status || "").toUpperCase() === "PENDENTE"
-                ? `<button onclick="pagarPagamento(${item.id})">Pagar</button>`
-                : `<button disabled>Quitado</button>`}
-            </td>
-          </tr>
-        `).join("")}
+        ${pagamentos.map(p => {
+          const pendente = String(p.status).toUpperCase() === "PENDENTE";
+          return `
+            <tr>
+              <td>${p.descricao || "Pagamento"}</td>
+              <td>${dinheiro(p.valor)}</td>
+              <td>${badge(p.status)}</td>
+              <td>${dataBR(p.vencimento)}</td>
+              <td>${pendente ? `<button onclick="pagar(${p.id})">Pagar</button>` : `<button disabled>Pago</button>`}</td>
+            </tr>
+          `;
+        }).join("")}
       </tbody>
     </table>
   `;
@@ -405,9 +401,10 @@ function renderPagamentosAluno() {
 /* ---------------------------
    Chamados
 --------------------------- */
-async function carregarChamadosAluno() {
-  const user = await obterUsuarioAtual();
-  if (!user) return;
+
+async function carregarChamados(user) {
+  const lista = $("listaChamados");
+  if (!lista) return;
 
   const { data, error } = await sb
     .from("chamados")
@@ -415,21 +412,7 @@ async function carregarChamadosAluno() {
     .eq("aluno_id", user.id)
     .order("id", { ascending: false });
 
-  if (error) {
-    console.error("Erro ao carregar chamados:", error);
-    return;
-  }
-
-  CHAMADOS_ALUNO = data || [];
-  renderChamadosAluno();
-  renderUltimasAtividades();
-}
-
-function renderChamadosAluno() {
-  const lista = document.getElementById("listaChamados");
-  if (!lista) return;
-
-  if (!CHAMADOS_ALUNO.length) {
+  if (error || !data?.length) {
     lista.innerHTML = `<div class="empty-state">Nenhum chamado registrado.</div>`;
     return;
   }
@@ -442,17 +425,15 @@ function renderChamadosAluno() {
           <th>Assunto</th>
           <th>Status</th>
           <th>Prioridade</th>
-          <th>Criado em</th>
         </tr>
       </thead>
       <tbody>
-        ${CHAMADOS_ALUNO.map(item => `
+        ${data.map(c => `
           <tr>
-            <td>${item.protocolo || "—"}</td>
-            <td>${item.assunto || "—"}</td>
-            <td>${statusBadge(item.status)}</td>
-            <td>${statusBadge(item.prioridade)}</td>
-            <td>${formatDate(item.criado_em)}</td>
+            <td>${c.protocolo || "—"}</td>
+            <td>${c.assunto || "—"}</td>
+            <td>${badge(c.status)}</td>
+            <td>${badge(c.prioridade)}</td>
           </tr>
         `).join("")}
       </tbody>
@@ -460,114 +441,111 @@ function renderChamadosAluno() {
   `;
 }
 
-function renderUltimasAtividades() {
-  const box = document.getElementById("ultimasAtividades");
-  if (!box) return;
+/* ---------------------------
+   Progresso e nível
+--------------------------- */
 
-  const atividades = [];
+function atualizarProgresso() {
+  const media = cursosMatriculados.length
+    ? Math.round(cursosMatriculados.reduce((acc, c) => acc + Number(c.progresso || 0), 0) / cursosMatriculados.length)
+    : 0;
 
-  CURSOS_ALUNO.slice(0, 3).forEach(c => {
-    atividades.push(`Curso: ${c.titulo} · progresso ${Number(c.progresso || 0)}%`);
+  setText("progressoGeralTexto", `${media}%`);
+
+  const circulo = $("progressoGeral");
+  if (circulo) {
+    circulo.style.background = `conic-gradient(#3f7ee8 ${media * 3.6}deg, #e8edf7 0deg)`;
+  }
+
+  let nivel = "Bronze";
+  if (media >= 50) nivel = "Prata";
+  if (media >= 90) nivel = "Ouro";
+
+  setText("nivelAlunoNome", nivel);
+}
+
+/* ---------------------------
+   Ações
+--------------------------- */
+
+async function matricularCurso(cursoId) {
+  if (!alunoAtual) return;
+
+  const { error } = await sb.from("matriculas").insert({
+    aluno_id: alunoAtual.user_id,
+    curso_id: cursoId,
+    status: "ATIVA"
   });
 
-  CHAMADOS_ALUNO.slice(0, 3).forEach(ch => {
-    atividades.push(`Chamado ${ch.protocolo || ""} · ${ch.status}`);
-  });
-
-  if (!atividades.length) {
-    box.innerHTML = `<div class="empty-state">Nenhuma atividade recente</div>`;
+  if (error) {
+    alert("Erro ao matricular: " + error.message);
     return;
   }
 
-  box.innerHTML = atividades.map(a => `<div class="atividade-item">${a}</div>`).join("");
+  alert("Matrícula realizada com sucesso!");
+  location.reload();
 }
 
-/* ---------------------------
-   Pagamento
-   Hoje: placeholder funcional
-   Depois: integrar checkout real
---------------------------- */
-function pagarCurso(cursoId) {
-  alert(`Pagamento do curso ${cursoId} ainda será integrado ao gateway.`);
+function abrirCurso(id) {
+  alert("Abrir ambiente do curso ID: " + id);
 }
 
-function pagarPagamento(pagamentoId) {
-  alert(`Pagamento ${pagamentoId} ainda será integrado ao gateway.`);
+function visualizarCurso(id) {
+  alert("Visualizar detalhes do curso ID: " + id);
 }
 
-window.pagarCurso = pagarCurso;
-window.pagarPagamento = pagarPagamento;
-
-/* ---------------------------
-   Curso / certificado
---------------------------- */
-function abrirCurso(cursoId) {
-  alert(`Abrir curso ID: ${cursoId}`);
+function baixarCertificado(id) {
+  alert("Baixar certificado ID: " + id);
 }
 
-function baixarCertificado(certificadoId) {
-  alert(`Baixar certificado ID: ${certificadoId}`);
+function pagar(id) {
+  alert("Integração de pagamento ID: " + id);
 }
 
+window.matricularCurso = matricularCurso;
 window.abrirCurso = abrirCurso;
+window.visualizarCurso = visualizarCurso;
 window.baixarCertificado = baixarCertificado;
+window.pagar = pagar;
 
 /* ---------------------------
-   Nível do aluno
+   Busca interna
 --------------------------- */
-function atualizarNivelAluno() {
-  const nivelNome = document.getElementById("nivelAlunoNome");
-  if (!nivelNome) return;
 
-  let concluidos = CURSOS_ALUNO.filter(c => String(c.status_matricula || "").toUpperCase() === "CONCLUIDA").length;
-
-  let nivel = "Bronze";
-  if (concluidos >= 3) nivel = "Prata";
-  if (concluidos >= 5) nivel = "Ouro";
-
-  nivelNome.textContent = nivel;
-}
-
-/* ---------------------------
-   Busca local simples
---------------------------- */
 function configurarBusca() {
-  const input = document.getElementById("buscaPortalAluno");
+  const input = $("buscaPortalAluno");
   if (!input) return;
 
   input.addEventListener("input", () => {
-    const termo = input.value.trim().toLowerCase();
-    const cards = $$(".card-curso-aluno");
+    const termo = input.value.toLowerCase();
 
-    cards.forEach(card => {
-      const txt = card.textContent.toLowerCase();
-      card.style.display = txt.includes(termo) ? "" : "none";
+    document.querySelectorAll(".card-curso-aluno").forEach(card => {
+      const texto = card.textContent.toLowerCase();
+      card.style.display = texto.includes(termo) ? "flex" : "none";
     });
   });
 }
 
 /* ---------------------------
-   Boot principal
+   Inicialização da página
 --------------------------- */
-async function iniciarPortalAluno() {
-  await carregarDadosAluno();
-  await carregarDashboardAluno();
-  await carregarCursosAluno();
-  await carregarCertificadosAluno();
-  await carregarPagamentosAluno();
-  await carregarChamadosAluno();
-  atualizarNivelAluno();
-  configurarBusca();
-}
 
-/* ---------------------------
-   Inicialização
---------------------------- */
-document.addEventListener("DOMContentLoaded", () => {
-  iniciarPortalAluno();
-
-  // liga navegação caso existam botões com data-aba
-  $$(".menu-link[data-aba]").forEach(btn => {
+document.addEventListener("DOMContentLoaded", async () => {
+  document.querySelectorAll(".menu-link").forEach(btn => {
     btn.addEventListener("click", () => abrirAba(btn.dataset.aba));
   });
+
+  $("btnSair")?.addEventListener("click", sair);
+
+  configurarBusca();
+
+  const user = await obterUsuarioLogado();
+  if (!user) return;
+
+  await carregarAluno(user);
+  await carregarCursosMatriculados(user);
+  await carregarCursosDisponiveis();
+  await carregarCertificados(user);
+  await carregarPagamentos(user);
+  await carregarChamados(user);
 });

@@ -3,485 +3,52 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>ALTITUDE • Portal do Aluno</title>
-
-  <style>
-    * {
-      box-sizing: border-box;
-      margin: 0;
-      padding: 0;
-      font-family: Arial, Helvetica, sans-serif;
-    }
-
-    body {
-      background: #f3f6fb;
-      color: #1c2430;
-    }
-
-    .layout {
-      display: flex;
-      min-height: 100vh;
-    }
-
-    .sidebar {
-      width: 230px;
-      background: #082b63;
-      color: #fff;
-      padding: 20px 16px;
-      display: flex;
-      flex-direction: column;
-      gap: 20px;
-      position: fixed;
-      top: 0;
-      left: 0;
-      bottom: 0;
-    }
-
-    .logo {
-      font-size: 28px;
-      font-weight: 800;
-      letter-spacing: 1px;
-      margin-bottom: 8px;
-    }
-
-    .menu {
-      display: flex;
-      flex-direction: column;
-      gap: 10px;
-    }
-
-    .menu-link {
-      width: 100%;
-      border: none;
-      background: transparent;
-      color: #fff;
-      text-align: left;
-      padding: 12px 14px;
-      border-radius: 12px;
-      cursor: pointer;
-      font-size: 16px;
-      transition: 0.2s;
-    }
-
-    .menu-link:hover,
-    .menu-link.ativo {
-      background: #3f7ee8;
-    }
-
-    .content {
-      margin-left: 230px;
-      width: calc(100% - 230px);
-      padding: 24px;
-    }
-
-    .topbar {
-      background: #fff;
-      border-radius: 18px;
-      padding: 14px 18px;
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-      gap: 16px;
-      box-shadow: 0 2px 10px rgba(0,0,0,.06);
-      margin-bottom: 24px;
-    }
-
-    .search-box {
-      flex: 1;
-      max-width: 600px;
-    }
-
-    .search-box input {
-      width: 100%;
-      border: 1px solid #d9e2ef;
-      border-radius: 12px;
-      padding: 12px 14px;
-      outline: none;
-      background: #f9fbff;
-    }
-
-    .user-box {
-      display: flex;
-      align-items: center;
-      gap: 12px;
-      background: #f9fbff;
-      border: 1px solid #d9e2ef;
-      border-radius: 14px;
-      padding: 8px 12px;
-      min-width: 220px;
-      justify-content: flex-end;
-    }
-
-    .avatar {
-      width: 42px;
-      height: 42px;
-      border-radius: 50%;
-      object-fit: cover;
-      background: #dce6f7;
-    }
-
-    .user-name {
-      font-weight: 700;
-    }
-
-    .aba {
-      display: none;
-    }
-
-    .aba.ativa {
-      display: block;
-    }
-
-    h1, h2, h3 {
-      color: #0d2349;
-    }
-
-    h1 {
-      font-size: 26px;
-      margin-bottom: 18px;
-    }
-
-    h2 {
-      font-size: 24px;
-      margin-bottom: 18px;
-    }
-
-    .grid-resumo-aluno,
-    .grid-topo-aluno,
-    .grid-meio-aluno {
-      display: grid;
-      gap: 18px;
-      margin-bottom: 18px;
-    }
-
-    .grid-resumo-aluno {
-      grid-template-columns: repeat(3, 1fr);
-    }
-
-    .grid-topo-aluno {
-      grid-template-columns: 2fr 1fr 1fr;
-      align-items: stretch;
-    }
-
-    .grid-meio-aluno {
-      grid-template-columns: 2fr 1fr;
-    }
-
-    .card {
-      background: #fff;
-      border-radius: 18px;
-      padding: 18px;
-      box-shadow: 0 3px 12px rgba(0,0,0,.05);
-    }
-
-    .card h3 {
-      margin-bottom: 14px;
-      font-size: 20px;
-    }
-
-    #kpiCursos,
-    #kpiCertEmitidos,
-    #kpiCertPendentes {
-      font-size: 34px;
-      font-weight: 800;
-      color: #2c65d8;
-    }
-
-    .circulo-progresso {
-      width: 180px;
-      height: 180px;
-      border-radius: 50%;
-      margin: 8px auto 0 auto;
-      background: conic-gradient(#4e8df5 0deg, #e8edf7 0deg);
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      position: relative;
-    }
-
-    .circulo-progresso::before {
-      content: "";
-      width: 130px;
-      height: 130px;
-      border-radius: 50%;
-      background: #fff;
-      position: absolute;
-    }
-
-    .circulo-progresso span {
-      position: relative;
-      z-index: 2;
-      font-size: 30px;
-      font-weight: 800;
-      color: #1b2740;
-    }
-
-    #nivelAlunoNome {
-      font-size: 28px;
-      font-weight: 800;
-      color: #c58b12;
-      margin-top: 20px;
-      text-align: center;
-    }
-
-    .empty-state {
-      color: #6d7a8d;
-      border: 1px dashed #d4deeb;
-      border-radius: 14px;
-      padding: 20px;
-      text-align: center;
-      background: #fbfcfe;
-    }
-
-    .atividade-item {
-      padding: 10px 12px;
-      border-bottom: 1px solid #eef3f9;
-      color: #42506a;
-    }
-
-    .atividade-item:last-child {
-      border-bottom: none;
-    }
-
-    .curso-destaque,
-    .card-curso-aluno {
-      display: flex;
-      gap: 16px;
-      align-items: flex-start;
-      background: #fbfcff;
-      border: 1px solid #e5edf7;
-      border-radius: 16px;
-      padding: 14px;
-      margin-bottom: 14px;
-    }
-
-    .curso-thumb {
-      width: 120px;
-      height: 72px;
-      object-fit: cover;
-      border-radius: 12px;
-      background: #e8eef7;
-      flex-shrink: 0;
-    }
-
-    .curso-thumb.destaque {
-      width: 150px;
-      height: 88px;
-    }
-
-    .curso-conteudo h3,
-    .curso-conteudo h4 {
-      margin-bottom: 8px;
-    }
-
-    .curso-conteudo p {
-      color: #526176;
-      margin-bottom: 8px;
-    }
-
-    .curso-acoes {
-      display: flex;
-      gap: 10px;
-      flex-wrap: wrap;
-      margin-top: 8px;
-    }
-
-    button {
-      cursor: pointer;
-    }
-
-    .curso-conteudo button,
-    .table-portal button {
-      border: none;
-      background: #3f7ee8;
-      color: #fff;
-      padding: 10px 14px;
-      border-radius: 10px;
-      font-weight: 700;
-    }
-
-    .curso-conteudo button:hover,
-    .table-portal button:hover {
-      background: #2c65d8;
-    }
-
-    .table-portal button[disabled] {
-      background: #c8d4e7;
-      cursor: not-allowed;
-    }
-
-    .progress-wrap {
-      display: flex;
-      align-items: center;
-      gap: 10px;
-      margin-top: 8px;
-      margin-bottom: 8px;
-    }
-
-    .progress-bar {
-      width: 220px;
-      height: 10px;
-      border-radius: 999px;
-      background: #e8edf6;
-      overflow: hidden;
-    }
-
-    .progress-fill {
-      height: 100%;
-      background: linear-gradient(90deg, #4e8df5, #2f67d8);
-      border-radius: 999px;
-    }
-
-    .table-portal {
-      width: 100%;
-      border-collapse: collapse;
-      background: #fff;
-      border-radius: 16px;
-      overflow: hidden;
-      box-shadow: 0 2px 10px rgba(0,0,0,.04);
-    }
-
-    .table-portal th,
-    .table-portal td {
-      padding: 14px;
-      text-align: left;
-      border-bottom: 1px solid #eef3f9;
-      vertical-align: middle;
-    }
-
-    .table-portal th {
-      background: #f6f9fd;
-      color: #1d2e4b;
-      font-size: 15px;
-    }
-
-    .table-portal tr:last-child td {
-      border-bottom: none;
-    }
-
-    .status-badge {
-      display: inline-block;
-      padding: 7px 11px;
-      border-radius: 999px;
-      font-size: 13px;
-      font-weight: 700;
-    }
-
-    .status-badge.ok {
-      background: #dff5e6;
-      color: #18794e;
-    }
-
-    .status-badge.warn {
-      background: #fff3d9;
-      color: #9c6a00;
-    }
-
-    .status-badge.bad {
-      background: #ffe0e0;
-      color: #b42318;
-    }
-
-    .status-badge.neutral {
-      background: #edf2f8;
-      color: #4f5f78;
-    }
-
-    .bloco-info p {
-      margin-bottom: 12px;
-      color: #47566c;
-      line-height: 1.5;
-    }
-
-    .bloco-info strong {
-      color: #132544;
-      min-width: 70px;
-      display: inline-block;
-    }
-
-    @media (max-width: 1100px) {
-      .grid-resumo-aluno,
-      .grid-topo-aluno,
-      .grid-meio-aluno {
-        grid-template-columns: 1fr;
-      }
-
-      .content {
-        margin-left: 0;
-        width: 100%;
-      }
-
-      .sidebar {
-        position: static;
-        width: 100%;
-        height: auto;
-      }
-
-      .layout {
-        flex-direction: column;
-      }
-    }
-  </style>
+  <title>ALTITUDE - Portal do Aluno</title>
+  <link rel="stylesheet" href="../2-css/11-portaldoaluno.css">
 </head>
-<body>
 
+<body>
   <div class="layout">
-    <!-- Sidebar -->
     <aside class="sidebar">
       <div class="logo">ALTITUDE</div>
 
       <nav class="menu">
-        <button class="menu-link ativo" data-aba="perfil" onclick="abrirAba('perfil')">Perfil</button>
-        <button class="menu-link" data-aba="cursos" onclick="abrirAba('cursos')">Cursos</button>
-        <button class="menu-link" data-aba="certificados" onclick="abrirAba('certificados')">Certificados</button>
-        <button class="menu-link" data-aba="pagamentos" onclick="abrirAba('pagamentos')">Pagamentos</button>
-        <button class="menu-link" data-aba="atendimento" onclick="abrirAba('atendimento')">Atendimento</button>
+        <button class="menu-link ativo" data-aba="perfil">Perfil</button>
+        <button class="menu-link" data-aba="cursos">Cursos</button>
+        <button class="menu-link" data-aba="certificados">Certificados</button>
+        <button class="menu-link" data-aba="pagamentos">Pagamentos</button>
+        <button class="menu-link" data-aba="atendimento">Atendimento</button>
       </nav>
+
+      <button id="btnSair" class="btn-sair">Sair</button>
     </aside>
 
-    <!-- Conteúdo -->
     <main class="content">
-      <div class="topbar">
-        <div class="search-box">
-          <input type="text" id="buscaPortalAluno" placeholder="Pesquisar">
-        </div>
+      <header class="topbar">
+        <input id="buscaPortalAluno" class="search-input" type="text" placeholder="Pesquisar cursos, certificados ou pagamentos">
 
         <div class="user-box">
-          <img class="avatar" src="https://placehold.co/80x80" alt="Avatar">
+          <img id="avatarAluno" class="avatar" src="https://placehold.co/80x80" alt="Avatar">
           <div>
-            <div class="user-name" id="nomeTopoAluno">Aluno</div>
-            <div>RA: <span id="infoRA">—</span></div>
+            <strong id="nomeTopoAluno">Aluno</strong>
+            <p>RA: <span id="infoRA">—</span></p>
           </div>
         </div>
-      </div>
+      </header>
 
-      <!-- PERFIL -->
       <section class="aba ativa" id="perfil">
         <h1>Bem-vindo, <span id="nomeAluno">Aluno</span>!</h1>
 
-        <div class="grid-resumo-aluno">
-          <div class="card">
-            <h3>Total de cursos</h3>
-            <div id="kpiCursos">0</div>
-          </div>
-
-          <div class="card">
-            <h3>Certificados emitidos</h3>
-            <div id="kpiCertEmitidos">0</div>
-          </div>
-
-          <div class="card">
-            <h3>Certificados pendentes</h3>
-            <div id="kpiCertPendentes">0</div>
-          </div>
+        <div class="grid-resumo">
+          <div class="card kpi"><h3>Total de cursos</h3><strong id="kpiCursos">0</strong></div>
+          <div class="card kpi"><h3>Certificados emitidos</h3><strong id="kpiCertEmitidos">0</strong></div>
+          <div class="card kpi"><h3>Certificados pendentes</h3><strong id="kpiCertPendentes">0</strong></div>
         </div>
 
-        <div class="grid-topo-aluno">
-          <div class="card">
+        <div class="grid-principal">
+          <div class="card card-grande">
             <h3>Continuar estudo</h3>
-            <div id="continuarEstudoBox">
-              <div class="empty-state">Nenhum curso disponível para continuar.</div>
-            </div>
+            <div id="continuarEstudoBox" class="empty-state">Nenhum curso disponível para continuar.</div>
           </div>
 
           <div class="card">
@@ -491,13 +58,13 @@
             </div>
           </div>
 
-          <div class="card">
+          <div class="card nivel-card">
             <h3>Nível</h3>
             <div id="nivelAlunoNome">Bronze</div>
           </div>
         </div>
 
-        <div class="grid-meio-aluno">
+        <div class="grid-inferior">
           <div class="card">
             <h3>Últimas atividades</h3>
             <div id="ultimasAtividades" class="empty-state">Nenhuma atividade recente</div>
@@ -505,62 +72,57 @@
 
           <div class="card">
             <h3>Informações pessoais</h3>
-            <div class="bloco-info">
-              <p><strong>RA:</strong> <span id="infoRA2">—</span></p>
-              <p><strong>CPF:</strong> <span id="infoCPF">—</span></p>
-              <p><strong>E-mail:</strong> <span id="infoEmail">—</span></p>
-              <p><strong>Celular:</strong> <span id="infoCelular">—</span></p>
+            <div class="info-list">
+              <p><span>RA:</span> <strong id="infoRA2">—</strong></p>
+              <p><span>CPF:</span> <strong id="infoCPF">—</strong></p>
+              <p><span>E-mail:</span> <strong id="infoEmail">—</strong></p>
+              <p><span>Celular:</span> <strong id="infoCelular">—</strong></p>
             </div>
           </div>
         </div>
       </section>
 
-      <!-- CURSOS -->
       <section class="aba" id="cursos">
-        <h2>Meus cursos</h2>
-        <div id="listaCursos"></div>
+        <div class="section-head">
+          <h2>Meus cursos</h2>
+          <p>Cursos matriculados e cursos disponíveis para matrícula.</p>
+        </div>
+
+        <h3 class="subtitulo">Cursos matriculados</h3>
+        <div id="listaCursos" class="lista-cards"></div>
+
+        <h3 class="subtitulo">Cursos disponíveis</h3>
+        <div id="listaCursosDisponiveis" class="lista-cards"></div>
       </section>
 
-      <!-- CERTIFICADOS -->
       <section class="aba" id="certificados">
-        <h2>Certificados</h2>
+        <div class="section-head">
+          <h2>Certificados</h2>
+          <p>Acompanhe certificados emitidos e pendentes.</p>
+        </div>
         <div id="listaCertificados"></div>
       </section>
 
-      <!-- PAGAMENTOS -->
       <section class="aba" id="pagamentos">
-        <h2>Pagamentos</h2>
+        <div class="section-head">
+          <h2>Pagamentos</h2>
+          <p>Histórico de pagamentos e pendências.</p>
+        </div>
         <div id="listaPagamentos"></div>
       </section>
 
-      <!-- ATENDIMENTO -->
       <section class="aba" id="atendimento">
-        <h2>Atendimento</h2>
+        <div class="section-head">
+          <h2>Atendimento</h2>
+          <p>Seus chamados e solicitações.</p>
+        </div>
         <div id="listaChamados"></div>
       </section>
     </main>
   </div>
 
-  <!-- Supabase init -->
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
   <script src="../4-java/supabase-init.js"></script>
-
-  <!-- JS do portal do aluno -->
   <script src="../4-java/portaldoaluno.js"></script>
-
-  <script>
-    // Espelha RA também na segunda área
-    const observer = new MutationObserver(() => {
-      const ra1 = document.getElementById('infoRA');
-      const ra2 = document.getElementById('infoRA2');
-      if (ra1 && ra2) ra2.textContent = ra1.textContent;
-    });
-
-    window.addEventListener('DOMContentLoaded', () => {
-      const target = document.getElementById('infoRA');
-      if (target) {
-        observer.observe(target, { childList: true, subtree: true });
-      }
-    });
-  </script>
 </body>
 </html>

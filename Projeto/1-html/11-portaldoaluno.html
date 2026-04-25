@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>ALTITUDE • Portal do Aluno</title>
+  <title>Portal do Aluno - Altitude</title>
   <link rel="stylesheet" href="../2-css/11-portaldoaluno.css" />
 </head>
 
@@ -14,6 +14,7 @@
 
       <nav class="menu">
         <button class="menu-link ativo" data-aba="perfil">Perfil</button>
+        <button class="menu-link" data-aba="cadastro">Meu Cadastro</button>
         <button class="menu-link" data-aba="cursos">Cursos</button>
         <button class="menu-link" data-aba="certificados">Certificados</button>
         <button class="menu-link" data-aba="pagamentos">Pagamentos</button>
@@ -25,10 +26,10 @@
 
     <main class="content">
       <header class="topbar">
-        <input id="buscaPortalAluno" class="search-input" type="text" placeholder="Pesquisar cursos, certificados ou pagamentos" />
+        <input id="buscaPortalAluno" class="search-input" type="text" placeholder="Pesquisar no portal" />
 
         <div class="user-box">
-          <img class="avatar" src="https://placehold.co/80x80?text=Aluno" alt="Avatar" />
+          <img id="avatarTopo" class="avatar" src="https://placehold.co/80x80?text=Aluno" alt="Avatar" />
           <div>
             <strong id="nomeTopoAluno">Aluno</strong>
             <p>RA: <span id="infoRA">—</span></p>
@@ -36,13 +37,25 @@
         </div>
       </header>
 
+      <!-- PERFIL -->
       <section class="aba ativa" id="perfil">
         <h1>Bem-vindo, <span id="nomeAluno">Aluno</span>!</h1>
 
         <div class="grid-resumo">
-          <div class="card kpi"><h3>Total de cursos</h3><strong id="kpiCursos">0</strong></div>
-          <div class="card kpi"><h3>Certificados emitidos</h3><strong id="kpiCertEmitidos">0</strong></div>
-          <div class="card kpi"><h3>Certificados pendentes</h3><strong id="kpiCertPendentes">0</strong></div>
+          <div class="card kpi">
+            <h3>Total de cursos</h3>
+            <strong id="kpiCursos">0</strong>
+          </div>
+
+          <div class="card kpi">
+            <h3>Certificados emitidos</h3>
+            <strong id="kpiCertEmitidos">0</strong>
+          </div>
+
+          <div class="card kpi">
+            <h3>Créditos emitidos</h3>
+            <strong id="kpiHorasEmitidas">0h</strong>
+          </div>
         </div>
 
         <div class="grid-principal">
@@ -82,10 +95,81 @@
         </div>
       </section>
 
+      <!-- MEU CADASTRO -->
+      <section class="aba" id="cadastro">
+        <div class="section-head">
+          <h2>Meu Cadastro</h2>
+          <p>Atualize seus dados e acompanhe sua carteirinha digital Altitude.</p>
+        </div>
+
+        <div class="cadastro-grid">
+          <div class="card">
+            <h3>Dados pessoais</h3>
+
+            <form id="formCadastroAluno" class="form-cadastro">
+              <div class="foto-area">
+                <img id="previewFotoAluno" class="foto-preview" src="https://placehold.co/120x120?text=Aluno" alt="Foto do aluno">
+                <div>
+                  <label class="label-upload">
+                    Alterar foto
+                    <input id="fotoAlunoInput" type="file" accept="image/*">
+                  </label>
+                  <p class="hint">Essa foto também aparece no topo do portal.</p>
+                </div>
+              </div>
+
+              <label>
+                Nome completo
+                <input id="cadNome" type="text" placeholder="Nome completo">
+              </label>
+
+              <label>
+                E-mail
+                <input id="cadEmail" type="email" placeholder="E-mail">
+              </label>
+
+              <label>
+                Telefone
+                <input id="cadTelefone" type="text" placeholder="Telefone">
+              </label>
+
+              <label>
+                Data de nascimento
+                <input id="cadNascimento" type="date">
+              </label>
+
+              <label>
+                Objetivo
+                <select id="cadObjetivo">
+                  <option value="">Selecione</option>
+                  <option value="Certificado para horas complementares">Certificado para horas complementares</option>
+                  <option value="Qualificação profissional">Qualificação profissional</option>
+                  <option value="Atualização curricular">Atualização curricular</option>
+                  <option value="Outro">Outro</option>
+                </select>
+              </label>
+
+              <div class="cpf-lock">
+                CPF: <strong id="cadCpfTexto">—</strong>
+                <span>Para alterar CPF, abra um chamado no atendimento.</span>
+              </div>
+
+              <button type="submit">Salvar alterações</button>
+            </form>
+          </div>
+
+          <div class="card">
+            <h3>Carteirinha Digital</h3>
+            <div id="boxCarteirinha"></div>
+          </div>
+        </div>
+      </section>
+
+      <!-- CURSOS -->
       <section class="aba" id="cursos">
         <div class="section-head">
           <h2>Meus cursos</h2>
-          <p>Acesse seus cursos matriculados, materiais e provas.</p>
+          <p>Acesse seus cursos, materiais e provas.</p>
         </div>
 
         <h3 class="subtitulo">Cursos matriculados</h3>
@@ -95,27 +179,43 @@
         <div id="listaCursosDisponiveis" class="lista-cards"></div>
       </section>
 
+      <!-- CERTIFICADOS -->
       <section class="aba" id="certificados">
-        <div class="section-head">
-          <h2>Certificados</h2>
-          <p>Gerencie horas disponíveis, pagamento e emissão.</p>
+        <div class="section-head cert-head">
+          <div>
+            <h2>Certificados</h2>
+            <p>Solicite certificados somente após concluir o curso e atingir nota mínima de 70%.</p>
+          </div>
+
+          <div class="creditos-box">
+            <div>
+              <span>Créditos de estudo</span>
+              <strong id="certCreditosEstudo">0h</strong>
+            </div>
+            <div>
+              <span>Créditos emitidos</span>
+              <strong id="certCreditosEmitidos">0h</strong>
+            </div>
+          </div>
         </div>
 
         <div class="notice">
-          Cada curso libera até <strong>8 horas por dia</strong>, limitado à carga horária máxima cadastrada. Você pode emitir certificado parcial e usar o saldo restante depois.
+          Para solicitar certificado: curso 100% concluído, prova realizada, média mínima de 70% e créditos disponíveis.
         </div>
 
         <div id="listaCertificados"></div>
       </section>
 
+      <!-- PAGAMENTOS -->
       <section class="aba" id="pagamentos">
         <div class="section-head">
           <h2>Pagamentos</h2>
-          <p>Acompanhe pagamentos pendentes, pagos e utilizados.</p>
+          <p>Histórico dos pagamentos gerados, pagos e utilizados.</p>
         </div>
         <div id="listaPagamentos"></div>
       </section>
 
+      <!-- ATENDIMENTO -->
       <section class="aba" id="atendimento">
         <div class="section-head">
           <h2>Atendimento</h2>
@@ -134,6 +234,7 @@
                 <option value="PAGAMENTO">Pagamento</option>
                 <option value="CURSO">Curso</option>
                 <option value="ACESSO">Acesso</option>
+                <option value="CADASTRO">Cadastro</option>
                 <option value="OUTRO">Outro</option>
               </select>
 
@@ -165,10 +266,48 @@
     </main>
   </div>
 
+  <!-- MODAL DO CURSO -->
   <div id="modalCurso" class="modal" aria-hidden="true">
     <div class="modal-box">
       <button class="modal-close" onclick="fecharCurso()">×</button>
       <div id="cursoDetalheConteudo"></div>
+    </div>
+  </div>
+
+  <!-- MODAL SOLICITAR CERTIFICADO -->
+  <div id="modalSolicitarCertificado" class="modal" aria-hidden="true">
+    <div class="modal-box modal-menor">
+      <button class="modal-close" onclick="fecharSolicitacaoCertificado()">×</button>
+
+      <h2>Solicitar certificado</h2>
+      <p id="solCursoNome" class="muted"></p>
+
+      <div class="solicitacao-info">
+        <p>Limite máximo do curso: <strong id="solLimiteCurso">0h</strong></p>
+        <p>Créditos liberados agora: <strong id="solCreditosAgora">0h</strong></p>
+        <p>Já emitidas neste curso: <strong id="solJaEmitidasCurso">0h</strong></p>
+        <p>Você pode solicitar agora: <strong id="solPodeSolicitar">0h</strong></p>
+      </div>
+
+      <form id="formSolicitarCertificado" class="form-cadastro">
+        <input type="hidden" id="solCursoId">
+
+        <label>
+          Quantas horas deseja emitir?
+          <input id="solHoras" type="number" min="1" placeholder="Ex: 8">
+        </label>
+
+        <label>
+          Cupom de desconto
+          <input id="solCupom" type="text" placeholder="Opcional">
+        </label>
+
+        <div class="valor-preview">
+          Valor estimado: <strong id="solValorPreview">R$ 0,00</strong>
+        </div>
+
+        <button type="submit">Gerar pagamento</button>
+      </form>
     </div>
   </div>
 

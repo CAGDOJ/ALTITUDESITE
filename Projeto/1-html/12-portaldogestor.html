@@ -585,21 +585,8 @@
     </main>
   </div>
 
-  <script>
-  // Funções para edição de módulos
-  function abrirEdicaoModulo(moduloId, courseId) {
-      console.log('Abrir edição do módulo:', moduloId);
-      document.getElementById('form-edicao-modulo').style.display = 'block';
-  }
-
-  function fecharEdicaoModulo() {
-      document.getElementById('form-edicao-modulo').style.display = 'none';
-  }
-
-  document.getElementById('form-editar-modulo')?.addEventListener('submit', function(e) {
-      e.preventDefault();
-      alert('Funcionalidade de edição será implementada!');
-  });
-  </script>
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <script src="../4-java/supabase-init.js"></script>
+  <script src="../4-java/12-portaldogestor.js"></script>
 </body>
 </html>

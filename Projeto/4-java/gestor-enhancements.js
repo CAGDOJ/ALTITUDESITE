@@ -54,6 +54,7 @@
     const title = $('#gestorPageTitle');
     if (title) title.textContent = pageTitle(id);
     $('#gestorSidebar')?.classList.remove('open');
+    $('#gestorSidebarOverlay')?.classList.remove('show');
 
     if (id === 'dashboard') carregarDashboard();
     else if (typeof originalAbrirAba === 'function') originalAbrirAba(id);
@@ -410,10 +411,22 @@
     }
   }
 
-  function wire() {
+  async function wire() {
+    const profile = await window.GESTOR_AUTH_READY;
+    if (!profile) return;
     $('#gestorHoje').textContent = new Intl.DateTimeFormat('pt-BR', { dateStyle: 'long' }).format(new Date());
-    $('#btnMenuGestor')?.addEventListener('click', () => $('#gestorSidebar')?.classList.toggle('open'));
-    $('#btnSairGestor')?.addEventListener('click', async () => { await sb.auth.signOut(); location.href = '4-login.html'; });
+    if (typeof window.carregarAlunos === 'function') window.carregarAlunos();
+    $('#btnMenuGestor')?.addEventListener('click', () => {
+      const sidebar = $('#gestorSidebar');
+      const opened = !sidebar?.classList.contains('open');
+      sidebar?.classList.toggle('open', opened);
+      $('#gestorSidebarOverlay')?.classList.toggle('show', opened);
+    });
+    $('#gestorSidebarOverlay')?.addEventListener('click', () => {
+      $('#gestorSidebar')?.classList.remove('open');
+      $('#gestorSidebarOverlay')?.classList.remove('show');
+    });
+    $('#btnSairGestor')?.addEventListener('click', async () => { await sb.auth.signOut(); location.href = '14-login-gestor.html'; });
     $$('.quick-hours button').forEach(btn => btn.addEventListener('click', () => { $('#fCursoHoras').value = btn.dataset.hours; }));
     $('#fCursoCapa')?.addEventListener('change', event => {
       const file = event.target.files?.[0];

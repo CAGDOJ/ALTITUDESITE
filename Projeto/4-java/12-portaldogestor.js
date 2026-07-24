@@ -139,7 +139,7 @@ async function carregarAlunosDoSupabase() {
     console.log('✅ Alunos carregados:', data);
     
     alunos = data.map(aluno => ({
-      id: aluno.id,
+      id: aluno.user_id,
       ra: aluno.ra || '',
       nome: aluno.nome || '',
       email: aluno.email || '',
@@ -270,7 +270,7 @@ async function salvarAluno(alunoData, isEdit = false, alunoId = null) {
       telefone: alunoData.telefone,
       status: alunoData.status,
       ra: alunoData.ra,
-      updated_at: new Date().toISOString()
+      atualizado_em: new Date().toISOString()
     };
     
     if (isEdit && alunoId) {
@@ -278,25 +278,14 @@ async function salvarAluno(alunoData, isEdit = false, alunoId = null) {
       const { data, error } = await sb
         .from('alunos')
         .update(dadosParaSalvar)
-        .eq('id', alunoId)
+        .eq('user_id', alunoId)
         .select();
       
       if (error) throw error;
       result = data[0];
       console.log('✅ Aluno editado:', result);
     } else {
-      console.log('➕ Criando novo aluno:', dadosParaSalvar);
-      const { data, error } = await sb
-        .from('alunos')
-        .insert([{ 
-          ...dadosParaSalvar, 
-          criado_em: new Date().toISOString() 
-        }])
-        .select();
-      
-      if (error) throw error;
-      result = data[0];
-      console.log('✅ Novo aluno criado:', result);
+      throw new Error('Novos alunos devem criar a conta pelo formulário público de cadastro.');
     }
     
     return result;
@@ -314,9 +303,9 @@ async function alternarStatusAluno(alunoId, novoStatus) {
       .from('alunos')
       .update({ 
         status: novoStatus, 
-        updated_at: new Date().toISOString() 
+        atualizado_em: new Date().toISOString() 
       })
-      .eq('id', alunoId)
+      .eq('user_id', alunoId)
       .select();
     
     if (error) throw error;
@@ -339,7 +328,11 @@ function carregarAlunos(){
     $('#pgNext').addEventListener('click', ()=>{ pageAln.idx++; renderAlunos(); });
 
     $('#alnExportar').addEventListener('click', exportCSVAln);
-    $('#alnNovo').addEventListener('click', ()=> openModalAln(-1));
+    $('#alnNovo').addEventListener('click', async ()=> {
+      const url = new URL('5-cadastro.html', window.location.href).href;
+      try { await navigator.clipboard.writeText(url); alert('Link de cadastro copiado. Envie ao novo aluno.'); }
+      catch { prompt('Copie o link de cadastro:', url); }
+    });
     $('#btnCancelar').addEventListener('click', closeModalAln);
 
     $('#tabAlunos').addEventListener('click', async (ev)=>{
@@ -381,7 +374,7 @@ function carregarAlunos(){
         email: $('#fEmail').value.trim().toLowerCase(),
         telefone: ($('#fTel').value||'').replace(/\D/g,''),
         status: $('#fStatus').value,
-        updated_at: new Date().toISOString()
+        atualizado_em: new Date().toISOString()
       };
 
       try {
@@ -576,7 +569,7 @@ function gerarRaLocal(){
 
       $('#fCursoNome').value  = '';
       $('#fCursoArea').value  = AREAS_FIXAS[0] || 'TECNOLOGIA';
-      $('#fCursoHoras').value = '';
+      $('#fCursoHoras').value = '20';
       $('#fCursoDesc').value  = '';
       $('#fCursoPub').value   = 'NAO';
       $('#fCursoCapa').value  = '';
@@ -634,6 +627,12 @@ function gerarRaLocal(){
     if (!nome) {
       esconderCarregamento();
       alert('Informe o nome do curso.');
+      return;
+    }
+
+    if (horas < 5 || horas > 200 || horas % 5 !== 0) {
+      esconderCarregamento();
+      alert('A carga horária deve ser de 5 em 5 horas, entre 5h e 200h.');
       return;
     }
 

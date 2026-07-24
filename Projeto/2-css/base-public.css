@@ -687,3 +687,33 @@ body > .rodape {
 }
 .legal-page h1{margin:0;color:#0a3d62;font-size:clamp(1.8rem,4vw,2.6rem);line-height:1.2}
 @media(max-width:600px){.legal-page{width:min(100% - 22px,1080px);margin:22px auto 34px;padding:24px 18px;border-radius:14px}}
+
+/* Ajuste 03: posição idêntica do botão móvel em todas as páginas públicas */
+@media (max-width: 900px) {
+  .new-header {
+    display: grid !important;
+    grid-template-columns: minmax(0, 1fr) 42px;
+    gap: 12px;
+  }
+
+  .new-header .logo {
+    min-width: 0;
+    width: 100%;
+    justify-content: flex-start;
+  }
+
+  .new-header .menu-icon {
+    justify-self: end;
+    align-self: center;
+    flex: 0 0 42px;
+    margin: 0;
+    inset: auto;
+    transform: none;
+  }
+
+  .new-header .menu-icon > img {
+    margin: 0;
+    inset: auto;
+    transform: none;
+  }
+}

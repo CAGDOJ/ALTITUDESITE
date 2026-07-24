@@ -40,3 +40,10 @@ Antes de publicar, o gestor verifica automaticamente:
 - questões cadastradas.
 
 O curso gerado por IA sempre nasce como RASCUNHO. Somente o gestor publica.
+
+ATUALIZAÇÃO 03 — OBRIGATÓRIA PARA OS AJUSTES MAIS RECENTES
+1. Execute ATUALIZACAO_03_ACESSOS_AJUSTES.sql no SQL Editor do Supabase.
+2. Publique a Edge Function supabase/functions/gerenciar-gestor.
+3. Acesse Projeto/1-html/14-login-gestor.html para configurar o primeiro gestor.
+4. Limpe o cache do navegador após publicar os novos arquivos.
+5. Consulte GUIA_ATUALIZACAO_03.md para o passo a passo completo.

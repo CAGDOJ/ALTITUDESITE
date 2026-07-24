@@ -10,12 +10,14 @@
   <script src="https://cdn.jsdelivr.net/npm/jspdf@2.5.2/dist/jspdf.umd.min.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
   <script src="../4-java/supabase-init.js" defer></script>
+  <script src="../4-java/gestor-guard.js" defer></script>
   <script src="../4-java/12-portaldogestor.js" defer></script>
   <script src="../4-java/gestor-enhancements.js" defer></script>
+  <script src="../4-java/gestor-acessos.js" defer></script>
   <link rel="stylesheet" href="../2-css/base-portal.css">
 </head>
 
-<body>
+<body class="gestor-auth-pending">
   <div class="container">
     <!-- Sidebar -->
     <aside class="sidebar" id="gestorSidebar">
@@ -24,18 +26,19 @@
         <div><strong>ALTITUDE</strong><span>Portal de Gestão</span></div>
       </div>
       <nav class="gestor-nav">
-        <button class="nav-item ativa" data-tab="dashboard" onclick="abrirAba('dashboard')"><span>⌂</span> Visão geral</button>
-        <button class="nav-item" data-tab="cursos" onclick="abrirAba('cursos')"><span>▣</span> Cursos e conteúdos</button>
-        <button class="nav-item nav-ai" data-tab="curso-ia" onclick="abrirAba('curso-ia')"><span>✦</span> Criar curso com IA</button>
-        <button class="nav-item" data-tab="alunos" onclick="abrirAba('alunos')"><span>♟</span> Alunos</button>
-        <button class="nav-item" data-tab="usuarios" onclick="abrirAba('usuarios')"><span>♙</span> Equipe e acessos</button>
-        <button class="nav-item" data-tab="chamados" onclick="abrirAba('chamados')"><span>✉</span> Atendimento</button>
+        <button class="nav-item ativa" data-min-level="1" data-tab="dashboard" onclick="abrirAba('dashboard')"><span>⌂</span> Visão geral</button>
+        <button class="nav-item" data-min-level="2" data-tab="cursos" onclick="abrirAba('cursos')"><span>▣</span> Cursos e conteúdos</button>
+        <button class="nav-item nav-ai" data-min-level="2" data-tab="curso-ia" onclick="abrirAba('curso-ia')"><span>✦</span> Criar curso com IA</button>
+        <button class="nav-item" data-min-level="2" data-tab="alunos" onclick="abrirAba('alunos')"><span>♟</span> Alunos</button>
+        <button class="nav-item" data-min-level="4" data-tab="usuarios" onclick="abrirAba('usuarios')"><span>♙</span> Equipe e acessos</button>
+        <button class="nav-item" data-min-level="1" data-tab="chamados" onclick="abrirAba('chamados')"><span>✉</span> Atendimento</button>
       </nav>
       <div class="sidebar-bottom">
         <a href="2-profissional.html" target="_blank" rel="noopener">Ver catálogo público ↗</a>
         <button type="button" id="btnSairGestor">Sair</button>
       </div>
     </aside>
+    <div class="gestor-sidebar-overlay" id="gestorSidebarOverlay" aria-hidden="true"></div>
 
     <!-- Conteúdo -->
     <main class="conteudo">
@@ -45,7 +48,7 @@
         <div class="topbar-actions"><span id="gestorHoje"></span><a href="2-profissional.html" target="_blank" rel="noopener">Ver site</a></div>
       </header>
 
-      <section id="dashboard" class="aba ativa">
+      <section id="dashboard" class="aba ativa" data-min-level="1">
         <div class="welcome-panel">
           <div><span class="status-dot"></span> Ambiente de produção</div>
           <h2>Gerencie a jornada completa do aluno</h2>
@@ -77,7 +80,7 @@
         </div>
       </section>
 
-      <section id="alunos" class="aba">
+      <section id="alunos" class="aba" data-min-level="2">
         <h2>👨‍🎓 Gestão de Alunos</h2>
         <div class="toolbar">
           <input id="alnBusca" type="search" placeholder="Buscar por nome ou RA…">
@@ -92,7 +95,7 @@
             <option value="nome-asc">Nome (A→Z)</option>
             <option value="nome-desc">Nome (Z→A)</option>
           </select>
-          <button id="alnNovo">Adicionar aluno</button>
+          <button id="alnNovo">Copiar link de cadastro</button>
           <button id="alnExportar">Exportar CSV</button>
         </div>
         <div class="card">
@@ -150,7 +153,7 @@
         </div>
       </div>
 
-      <section id="cursos" class="aba">
+      <section id="cursos" class="aba" data-min-level="2">
         <div class="page-heading"><div><span>Conteúdo acadêmico</span><h2>Cursos e conteúdos</h2><p>Monte cada curso em etapas: informações, módulos, materiais, prova, revisão e publicação.</p></div><button type="button" class="primary-action" onclick="abrirAba('curso-ia')">✦ Criar com IA</button></div>
         <div class="course-steps"><span class="done">1. Curso</span><span>2. Módulos</span><span>3. Materiais</span><span>4. Prova</span><span>5. Publicar</span></div>
         <div class="toolbar">
@@ -216,7 +219,7 @@
             </label>
             <div class="grid3">
               <label>Carga horária (horas)
-                <input id="fCursoHoras" type="number" min="1" max="2000" step="1" required>
+                <select id="fCursoHoras" required><option value="5">5 horas</option><option value="10">10 horas</option><option value="15">15 horas</option><option value="20" selected>20 horas</option><option value="25">25 horas</option><option value="30">30 horas</option><option value="35">35 horas</option><option value="40">40 horas</option><option value="45">45 horas</option><option value="50">50 horas</option><option value="55">55 horas</option><option value="60">60 horas</option><option value="65">65 horas</option><option value="70">70 horas</option><option value="75">75 horas</option><option value="80">80 horas</option><option value="85">85 horas</option><option value="90">90 horas</option><option value="95">95 horas</option><option value="100">100 horas</option><option value="105">105 horas</option><option value="110">110 horas</option><option value="115">115 horas</option><option value="120">120 horas</option><option value="125">125 horas</option><option value="130">130 horas</option><option value="135">135 horas</option><option value="140">140 horas</option><option value="145">145 horas</option><option value="150">150 horas</option><option value="155">155 horas</option><option value="160">160 horas</option><option value="165">165 horas</option><option value="170">170 horas</option><option value="175">175 horas</option><option value="180">180 horas</option><option value="185">185 horas</option><option value="190">190 horas</option><option value="195">195 horas</option><option value="200">200 horas</option></select>
               </label>
               <label>Nível
                 <select id="fCursoNivel"><option value="BASICO">Básico</option><option value="INTERMEDIARIO">Intermediário</option><option value="AVANCADO">Avançado</option></select>
@@ -229,7 +232,7 @@
             <label>Descrição breve
               <input id="fCursoDesc" type="text" maxlength="160" placeholder="Até 160 caracteres">
             </label>
-            <div class="quick-hours"><span>Cargas mais usadas:</span><button type="button" data-hours="10">10h</button><button type="button" data-hours="20">20h</button><button type="button" data-hours="30">30h</button><button type="button" data-hours="40">40h</button><button type="button" data-hours="60">60h</button><button type="button" data-hours="80">80h</button></div>
+            <div class="quick-hours"><span>Cargas mais usadas:</span><button type="button" data-hours="5">5h</button><button type="button" data-hours="10">10h</button><button type="button" data-hours="20">20h</button><button type="button" data-hours="40">40h</button><button type="button" data-hours="60">60h</button><button type="button" data-hours="80">80h</button><button type="button" data-hours="120">120h</button><button type="button" data-hours="160">160h</button><button type="button" data-hours="200">200h</button></div>
             <label>Foto de capa
               <input id="fCursoCapa" type="file" accept="image/*">
             </label>
@@ -452,14 +455,14 @@
         </div>
       </div>
 
-      <section id="curso-ia" class="aba">
+      <section id="curso-ia" class="aba" data-min-level="2">
         <div class="page-heading"><div><span>Assistente acadêmico</span><h2>Criar curso com IA</h2><p>A IA prepara um rascunho completo. Nada será publicado sem sua revisão.</p></div><span class="draft-badge">Sempre em rascunho</span></div>
         <div class="ai-layout">
           <form id="formCursoIA" class="panel ai-form">
             <div class="ai-callout"><strong>Descreva o curso como falaria comigo</strong><p>Inclua tema, público, objetivo e qualquer regra importante.</p></div>
             <label>Pedido do curso<textarea id="iaPrompt" rows="6" required placeholder="Ex.: Crie um curso de Informática Básica para iniciantes, com 20 horas, 5 módulos, linguagem simples e prova final de 10 questões."></textarea></label>
             <div class="grid2">
-              <label>Carga horária<select id="iaCarga"><option>10</option><option selected>20</option><option>30</option><option>40</option><option>60</option><option>80</option></select></label>
+              <label>Carga horária<select id="iaCarga"><option value="5">5 horas</option><option value="10">10 horas</option><option value="15">15 horas</option><option value="20" selected>20 horas</option><option value="25">25 horas</option><option value="30">30 horas</option><option value="35">35 horas</option><option value="40">40 horas</option><option value="45">45 horas</option><option value="50">50 horas</option><option value="55">55 horas</option><option value="60">60 horas</option><option value="65">65 horas</option><option value="70">70 horas</option><option value="75">75 horas</option><option value="80">80 horas</option><option value="85">85 horas</option><option value="90">90 horas</option><option value="95">95 horas</option><option value="100">100 horas</option><option value="105">105 horas</option><option value="110">110 horas</option><option value="115">115 horas</option><option value="120">120 horas</option><option value="125">125 horas</option><option value="130">130 horas</option><option value="135">135 horas</option><option value="140">140 horas</option><option value="145">145 horas</option><option value="150">150 horas</option><option value="155">155 horas</option><option value="160">160 horas</option><option value="165">165 horas</option><option value="170">170 horas</option><option value="175">175 horas</option><option value="180">180 horas</option><option value="185">185 horas</option><option value="190">190 horas</option><option value="195">195 horas</option><option value="200">200 horas</option></select></label>
               <label>Nível<select id="iaNivel"><option value="BASICO">Básico</option><option value="INTERMEDIARIO">Intermediário</option><option value="AVANCADO">Avançado</option></select></label>
             </div>
             <div class="grid2">
@@ -479,7 +482,7 @@
         </div>
       </section>
 
-      <section id="usuarios" class="aba">
+      <section id="usuarios" class="aba" data-min-level="4">
         <h2>👥 Gestão de Usuários</h2>
         <p class="sub">Criar/editar gestores, coordenadores, professores e colaboradores. Defina nível de acesso (1–4) e libere o portal.</p>
         <div class="toolbar">
@@ -531,6 +534,15 @@
               </label>
             </div>
             <div class="grid2">
+              <label>ID de gestor
+                <input id="guGestorId" type="text" placeholder="Ex.: GST-2026-0002" required>
+              </label>
+              <label>Senha inicial
+                <input id="guSenha" type="password" minlength="8" placeholder="Mínimo de 8 caracteres">
+                <small class="field-hint">Obrigatória apenas ao criar um novo acesso.</small>
+              </label>
+            </div>
+            <div class="grid2">
               <label>Telefone
                 <input id="guTel" type="text" placeholder="(00) 00000-0000">
               </label>
@@ -558,8 +570,8 @@
                   <option value="4">4 — Gestor</option>
                 </select>
               </label>
-              <label>UID (opcional)
-                <input id="guId" type="text" placeholder="id do auth/sistema">
+              <label>Identificador interno
+                <input id="guId" type="text" placeholder="Gerado automaticamente" readonly>
               </label>
             </div>
             <div class="card" style="margin-top:8px">
@@ -585,7 +597,7 @@
         </div>
       </div>
 
-      <section id="chamados" class="aba">
+      <section id="chamados" class="aba" data-min-level="1">
         <h2>📨 Gestão de Chamados</h2>
         <div class="kpis-ch">
           <div class="kpi-ch">
@@ -658,8 +670,23 @@
                 <p><b>Aluno:</b> <span id="chAluno"></span> — <span id="chEmail"></span></p>
                 <p><b>Assunto:</b> <span id="chAssunto"></span></p>
                 <p><b>Categoria:</b> <span id="chCategoria"></span></p>
-                <p><b>Prioridade:</b> <span id="chPrioridade" class="badge"></span></p>
-                <p><b>Status:</b> <span id="chStatus" class="badge"></span></p>
+                <label>Prioridade definida pela gestão
+                  <select id="chPrioridadeGestor">
+                    <option value="BAIXA">Baixa</option>
+                    <option value="MEDIA">Média</option>
+                    <option value="ALTA">Alta</option>
+                    <option value="URGENTE">Urgente</option>
+                  </select>
+                </label>
+                <label>Status
+                  <select id="chStatusGestor">
+                    <option value="ABERTO">Aberto</option>
+                    <option value="EM_ANDAMENTO">Em andamento</option>
+                    <option value="RESOLVIDO">Resolvido</option>
+                    <option value="CANCELADO">Cancelado</option>
+                  </select>
+                </label>
+                <button type="button" id="chSalvarClassificacao" class="btn-classificar">Salvar prioridade e status</button>
                 <p><b>Criado em:</b> <span id="chCriado"></span></p>
                 <p><b>Prazo:</b> <span id="chPrazo"></span> <span id="chSLAChip" class="sla-chip"></span></p>
               </div>

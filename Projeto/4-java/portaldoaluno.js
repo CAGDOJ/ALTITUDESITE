@@ -440,8 +440,14 @@ function renderSalaEstudo() {
   renderModuloAtual();
   const approved = Boolean(melhorResultadoCurso(curso.id)?.aprovado);
   const examButton = $("btnAbrirProva");
-  examButton.disabled = progress < 100;
-  examButton.textContent = approved ? "Ver resultado da prova" : progress >= 100 ? "Fazer prova" : "Conclua os módulos";
+  if (examButton) {
+    examButton.disabled = progress < 100;
+    examButton.textContent = approved ? "Ver resultado da prova" : progress >= 100 ? "Fazer prova" : "Conclua os módulos";
+  }
+  const finishPanel = $("courseCompletionPanel");
+  if (finishPanel) finishPanel.hidden = progress < 100;
+  const finishButton = $("btnIrParaProva");
+  if (finishButton) finishButton.textContent = approved ? "Ver resultado da prova" : "Fazer prova agora";
 }
 
 function selecionarModulo(index) {
@@ -531,7 +537,8 @@ async function concluirModuloAtual() {
     if (state.moduloIndex < state.modulos.length - 1) {
       setTimeout(() => selecionarModulo(state.moduloIndex + 1), 350);
     } else if (clamp(data) >= 100) {
-      toast("Conteúdo concluído. A prova foi liberada!", "success");
+      toast("Conteúdo concluído. Abrindo a avaliação...", "success");
+      setTimeout(() => abrirProva(), 650);
     }
   } catch (error) {
     toast(`Erro ao salvar progresso: ${error.message}`, "error");
@@ -971,7 +978,7 @@ async function abrirChamado(event) {
       aluno_id: state.aluno.user_id,
       assunto: $("chAssunto").value.trim(),
       categoria: $("chCategoria").value,
-      prioridade: $("chPrioridade").value,
+      prioridade: "MEDIA",
       mensagem: $("chMensagem").value.trim(),
       status: "ABERTO"
     });
@@ -992,10 +999,15 @@ async function uploadFoto(file) {
   if (!file.type.startsWith("image/")) throw new Error("Selecione uma imagem válida.");
   if (file.size > 5 * 1024 * 1024) throw new Error("A imagem deve ter no máximo 5 MB.");
   const extension = file.name.split(".").pop()?.toLowerCase() || "jpg";
-  const path = `${state.aluno.user_id}/${Date.now()}.${extension}`;
-  const { error } = await sb.storage.from("fotos_alunos").upload(path, file, { upsert: true });
+  const path = `${state.aluno.user_id}/avatar.${extension}`;
+  const { error } = await sb.storage.from("fotos_alunos").upload(path, file, {
+    upsert: true,
+    contentType: file.type,
+    cacheControl: "3600"
+  });
   if (error) throw error;
-  return sb.storage.from("fotos_alunos").getPublicUrl(path).data.publicUrl;
+  const publicUrl = sb.storage.from("fotos_alunos").getPublicUrl(path).data.publicUrl;
+  return `${publicUrl}?v=${Date.now()}`;
 }
 
 async function salvarCadastro(event) {
@@ -1028,14 +1040,33 @@ async function salvarCadastro(event) {
 function renderCarteirinha() {
   const box = $("boxCarteirinha");
   if (!box || !state.aluno) return;
+  const code = state.aluno.codigo_carteirinha || "";
   box.innerHTML = `
     <div class="digital-card">
       <div class="digital-card-top"><img src="../3-img/LOGO.png" alt="Altitude"><span>${new Date().getFullYear()}</span></div>
       <div class="digital-card-body">
         <img src="${escapeHTML(imgAluno(state.aluno.foto_url))}" alt="Foto do aluno">
-        <div><strong>${escapeHTML(state.aluno.nome || "Aluno")}</strong><span>Registro acadêmico: ${escapeHTML(state.aluno.ra || "—")}</span><span>Status: ${escapeHTML(state.aluno.status || "ATIVO")}</span><span>Instituto Altitude</span></div>
+        <div class="digital-card-data"><strong>${escapeHTML(state.aluno.nome || "Aluno")}</strong><span>Registro acadêmico: ${escapeHTML(state.aluno.ra || "—")}</span><span>Status: ${escapeHTML(state.aluno.status || "ATIVO")}</span><span>Instituto Altitude</span></div>
+        <div class="digital-card-qr"><div id="qrCarteirinha" aria-label="QR Code de validação da carteirinha"></div><small>Validar carteirinha</small></div>
       </div>
     </div>`;
+
+  const holder = $("qrCarteirinha");
+  if (!holder) return;
+  if (!code || !window.QRCode) {
+    holder.innerHTML = '<span class="qr-pending">QR indisponível</span>';
+    return;
+  }
+  const validationUrl = new URL(`13-validar-carteirinha.html?codigo=${encodeURIComponent(code)}`, window.location.href).href;
+  holder.innerHTML = "";
+  new window.QRCode(holder, {
+    text: validationUrl,
+    width: 96,
+    height: 96,
+    colorDark: "#07314f",
+    colorLight: "#ffffff",
+    correctLevel: window.QRCode.CorrectLevel.H
+  });
 }
 
 function filtrarCursos(query) {
@@ -1072,6 +1103,7 @@ function configurarEventos() {
   $("btnProximoModulo")?.addEventListener("click", () => selecionarModulo(state.moduloIndex + 1));
   $("btnConcluirModulo")?.addEventListener("click", concluirModuloAtual);
   $("btnAbrirProva")?.addEventListener("click", abrirProva);
+  $("btnIrParaProva")?.addEventListener("click", abrirProva);
   $("btnQuestaoAnterior")?.addEventListener("click", questaoAnterior);
   $("btnQuestaoProxima")?.addEventListener("click", questaoProxima);
   document.querySelectorAll("[data-fechar-modal]").forEach((button) => button.addEventListener("click", () => fecharModal(button.dataset.fecharModal)));

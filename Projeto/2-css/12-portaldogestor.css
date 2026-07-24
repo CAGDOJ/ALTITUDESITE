@@ -791,3 +791,60 @@ button:focus-visible,input:focus-visible,select:focus-visible,textarea:focus-vis
 #modalModulos table{min-width:780px}
 .form-review-note{margin:12px 0;padding:12px 14px;border:1px solid #cce7e6;border-radius:10px;background:#f1fbfa;color:#315a68;font-size:12px;line-height:1.5}
 @media(max-width:520px){.ia-result-stats{grid-template-columns:1fr}.dashboard-kpis{grid-template-columns:1fr}.topbar-actions{gap:5px}}
+
+/* =========================================================
+   AJUSTES 03 — acesso, menu móvel, sidebar e chamados
+   ========================================================= */
+body.gestor-auth-pending{visibility:hidden}
+.gestor-autorizado body{visibility:visible}
+.container{min-height:100dvh}
+.sidebar{
+  height:100dvh;
+  min-height:100vh;
+  overflow-y:auto;
+  overscroll-behavior:contain;
+}
+.gestor-nav{flex:0 0 auto}
+.sidebar-bottom{flex:0 0 auto}
+.gestor-topbar{align-items:center}
+.mobile-menu{
+  flex:0 0 42px;
+  width:42px;
+  height:42px;
+  margin:0;
+  padding:0;
+  line-height:1;
+  place-items:center;
+}
+.gestor-sidebar-overlay{display:none}
+.modal{z-index:350}
+.modal__sheet{position:relative}
+#modalModulos .modal__sheet,#modalMateriais .modal__sheet,#modalProvas .modal__sheet,#modalEdicaoProva .modal__sheet{margin:auto}
+.btn-classificar{width:100%;margin:8px 0 4px;padding:10px 12px;border:0;border-radius:9px;background:var(--alt-blue);color:#fff;font-weight:800;cursor:pointer}
+.history-message{margin:9px 0;padding:11px 12px;border:1px solid var(--alt-border);border-radius:10px;background:#f8fafc}
+.history-message.gestor{border-color:#bde6e4;background:#effbfa}
+.history-message strong,.history-message small{display:block}.history-message p{margin:5px 0}.history-message small{color:var(--alt-muted)}
+.badge.urgente{background:#fee4e2;color:#9d241f}.badge.alta{background:#fff0e6;color:#a34c12}.badge.media{background:#fff7dc;color:#845b00}.badge.baixa{background:#edf4fb;color:#315f86}
+.badge.aberto{background:#edf4fb;color:#315f86}.badge.em-andamento{background:#fff7dc;color:#845b00}.badge.resolvido{background:#e8f7ef;color:#176b40}.badge.cancelado{background:#f1f2f4;color:#5f6874}
+.sla-chip{display:inline-block;padding:4px 7px;border-radius:999px;background:#eef4fb;color:#315f86;font-size:10px;font-weight:800}.sla-chip.ok{background:#e8f7ef;color:#176b40}.sla-chip.late{background:#fee8e8;color:#9c2f35}
+#modalChamado label{margin:9px 0}
+#modalChamado .meta select{margin-top:4px}
+
+@media(max-width:800px){
+  .sidebar{top:0;bottom:0;height:100dvh;min-height:100dvh}
+  .gestor-sidebar-overlay.show{display:block;position:fixed;inset:0;z-index:80;background:rgba(5,25,44,.48);backdrop-filter:blur(2px)}
+  .sidebar{z-index:100}
+  .gestor-topbar{display:grid;grid-template-columns:42px minmax(0,1fr) auto;gap:10px}
+  .mobile-menu{display:grid}
+  .gestor-topbar>div:nth-child(2){min-width:0}
+  .gestor-topbar h1{white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  .modal{z-index:350}
+}
+
+@media(max-width:520px){
+  .gestor-topbar{grid-template-columns:42px minmax(0,1fr) auto}
+  .topbar-actions{justify-self:end}
+  #modalChamado .grid2{display:block!important}
+}
+
+.access-hidden{display:none!important}

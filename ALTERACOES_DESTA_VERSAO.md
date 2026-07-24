@@ -55,3 +55,13 @@
 - Ano do rodapé atualizado para 2026.
 - Política de conteúdo misto HTTPS incluída nas páginas.
 - Guia de DNS e HTTPS incluído para correção do aviso do domínio.
+
+## Complemento — Atualização 03
+- Login separado do gestor com ID e senha.
+- Menu móvel padronizado em todas as áreas.
+- Prova liberada e visível após 100% do conteúdo.
+- Cargas horárias de 5 em 5 até 200 horas.
+- Gestor define prioridade dos chamados.
+- QR Code na carteirinha digital.
+- Bucket e políticas de upload de fotos.
+- Sidebar da gestão em altura total.

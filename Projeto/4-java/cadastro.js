@@ -197,32 +197,14 @@ function toggleSubmit() {
   if (btnEnviar) btnEnviar.disabled = !ok;
 }
 
-async function checkCPFExists(rawCpf) {
-  if (!sb) return false;
-  const { count, error } = await sb
-    .from("alunos")
-    .select("user_id", { count: "exact", head: true })
-    .eq("cpf", rawCpf);
-
-  if (error) {
-    console.error(error);
-    return false;
-  }
-  return (count || 0) > 0;
-}
-
-async function checkEmailExists(email) {
-  if (!sb) return false;
-  const { count, error } = await sb
-    .from("alunos")
-    .select("user_id", { count: "exact", head: true })
-    .eq("email", email.trim().toLowerCase());
-
-  if (error) {
-    console.error(error);
-    return false;
-  }
-  return (count || 0) > 0;
+async function checkRegistrationExists(email, rawCpf) {
+  if (!sb) return { cpf_existe: false, email_existe: false };
+  const { data, error } = await sb.rpc("verificar_cadastro_aluno", {
+    p_email: String(email || "").trim().toLowerCase(),
+    p_cpf: onlyDigits(rawCpf)
+  });
+  if (error) throw error;
+  return data || { cpf_existe: false, email_existe: false };
 }
 
 cpfEl?.addEventListener("input", (e) => {
@@ -301,8 +283,8 @@ form?.addEventListener("submit", async (e) => {
     btnEnviar.disabled = true;
     btnEnviar.textContent = "Enviando...";
 
-    const cpfExiste = await checkCPFExists(payloadAluno.cpf);
-    if (cpfExiste) {
+    const disponibilidade = await checkRegistrationExists(payloadAluno.email, payloadAluno.cpf);
+    if (disponibilidade.cpf_existe) {
       setInvalid(cpfEl, fb.cpf, "CPF já cadastrado.");
       showMsg("Este CPF já está cadastrado.", "error");
       btnEnviar.disabled = false;
@@ -310,8 +292,7 @@ form?.addEventListener("submit", async (e) => {
       return;
     }
 
-    const emailExiste = await checkEmailExists(payloadAluno.email);
-    if (emailExiste) {
+    if (disponibilidade.email_existe) {
       setInvalid(emailEl, fb.email, "E-mail já cadastrado.");
       showMsg("Este e-mail já está cadastrado.", "error");
       btnEnviar.disabled = false;
@@ -320,31 +301,26 @@ form?.addEventListener("submit", async (e) => {
     }
 
     const { data: authData, error: authError } = await sb.auth.signUp({
-  email: payloadAluno.email,
-  password: senhaEl.value,
-  options: {
-    emailRedirectTo: "https://www.portalaltitude.com.br/Projeto/1-html/4-login.html"
-  }
-});
+      email: payloadAluno.email,
+      password: senhaEl.value,
+      options: {
+        emailRedirectTo: "https://www.portalaltitude.com.br/Projeto/1-html/4-login.html",
+        data: {
+          perfil: "ALUNO",
+          nome: payloadAluno.nome,
+          cpf: payloadAluno.cpf,
+          data_nascimento: payloadAluno.data_nascimento,
+          telefone: payloadAluno.telefone,
+          objetivo: payloadAluno.objetivo
+        }
+      }
+    });
 
     if (authError) throw authError;
+    if (!authData?.user?.id) throw new Error("Usuário criado sem ID.");
 
-    const userId = authData?.user?.id;
-    if (!userId) throw new Error("Usuário criado sem ID.");
-
-    const { data, error } = await sb
-      .from("alunos")
-      .insert({
-        user_id: userId,
-        ...payloadAluno
-      })
-      .select("user_id, nome, email")
-      .single();
-
-    if (error) throw error;
-
-    showMsg("Cadastro realizado com sucesso!", "ok");
-    alert("Cadastro realizado com sucesso!");
+    showMsg(authData.session ? "Cadastro realizado com sucesso!" : "Cadastro realizado. Confirme seu e-mail para entrar.", "ok");
+    alert(authData.session ? "Cadastro realizado com sucesso!" : "Cadastro realizado. Confira seu e-mail para confirmar a conta.");
     form.reset();
 
     [nomeEl, cpfEl, nascEl, emailEl, senhaEl, confEl, telEl, objetivoEl].forEach(el => {

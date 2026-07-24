@@ -37,9 +37,9 @@
 
   async function resolveEmail(ident) {
     if (ident.type === 'email') return ident.value;
-    const { data, error } = await sb.from('alunos').select('email').eq(ident.type, ident.value).single();
-    if (error || !data?.email) throw new Error(`${ident.type.toUpperCase()} não encontrado.`);
-    return String(data.email).toLowerCase();
+    const { data, error } = await sb.rpc('resolver_email_aluno', { p_identificador: ident.value });
+    if (error || !data) throw new Error(`${ident.type.toUpperCase()} não encontrado.`);
+    return String(data).toLowerCase();
   }
 
   document.addEventListener('DOMContentLoaded', () => {

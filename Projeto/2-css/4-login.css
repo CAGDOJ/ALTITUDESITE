@@ -679,3 +679,5 @@ h2 {
 
 /* Ensure sections with .forgot-pane are visible when not [hidden] */
 .forgot-pane:not([hidden]){ display:block !important; }
+
+.manager-login-link{display:block;margin-top:10px;color:#0a3d62;font-weight:700;text-decoration:none;text-align:center}.manager-login-link:hover{text-decoration:underline}

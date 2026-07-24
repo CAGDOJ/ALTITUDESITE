@@ -222,13 +222,10 @@
                   <option value="OUTRO">Outro</option>
                 </select>
               </label>
-              <label>Prioridade
-                <select id="chPrioridade">
-                  <option value="BAIXA">Baixa</option>
-                  <option value="MEDIA" selected>Média</option>
-                  <option value="ALTA">Alta</option>
-                </select>
-              </label>
+              <div class="support-priority-note">
+                <strong>Prioridade do chamado</strong>
+                <span>Será analisada e definida pela equipe de atendimento.</span>
+              </div>
               <label class="full">Mensagem<textarea id="chMensagem" rows="6" required></textarea></label>
               <button type="submit" class="primary-button full">Enviar chamado</button>
             </form>
@@ -330,6 +327,14 @@
             <button type="button" id="btnModuloAnterior" class="secondary-button">Anterior</button>
             <button type="button" id="btnConcluirModulo" class="primary-button">Marcar como concluído</button>
             <button type="button" id="btnProximoModulo" class="secondary-button">Próximo</button>
+          </div>
+          <div id="courseCompletionPanel" class="course-completion-panel" hidden>
+            <div>
+              <span class="eyebrow">Conteúdo finalizado</span>
+              <strong>Você concluiu os estudos deste curso.</strong>
+              <small>Agora faça a avaliação para liberar o certificado.</small>
+            </div>
+            <button type="button" id="btnIrParaProva" class="primary-button">Fazer prova agora</button>
           </div>
         </section>
       </div>

@@ -118,7 +118,7 @@ Deno.serve(async (req) => {
   try {
     const body = await req.json();
     const prompt = String(body.prompt || '').trim();
-    const carga = Math.max(1, Math.min(2000, Number(body.carga_horaria) || 20));
+    const carga = Math.max(5, Math.min(200, Math.round((Number(body.carga_horaria) || 20) / 5) * 5));
     const nivel = ['BASICO','INTERMEDIARIO','AVANCADO'].includes(body.nivel) ? body.nivel : 'BASICO';
     const moduleCount = Math.max(2, Math.min(12, Number(body.quantidade_modulos) || 5));
     const questionCount = Math.max(5, Math.min(30, Number(body.quantidade_questoes) || 10));

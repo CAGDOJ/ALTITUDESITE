@@ -1,0 +1,72 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta http-equiv="Content-Security-Policy" content="upgrade-insecure-requests; block-all-mixed-content">
+  <title>Acesso da Gestão - Altitude</title>
+  <link rel="icon" href="../3-img/favicon.ico">
+  <link rel="stylesheet" href="../2-css/14-login-gestor.css">
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2" defer></script>
+  <script src="../4-java/supabase-init.js" defer></script>
+  <script src="../4-java/login-gestor.js" defer></script>
+</head>
+<body>
+  <main class="manager-login-shell">
+    <section class="manager-brand-panel">
+      <a href="../../index.html" class="back-site">← Voltar ao site</a>
+      <img src="../3-img/LOGO.png" alt="Instituto Altitude">
+      <span>PORTAL DE GESTÃO</span>
+      <h1>Administre cursos, alunos e certificados em um só lugar.</h1>
+      <p>O acesso é exclusivo para usuários cadastrados na equipe da instituição.</p>
+      <div class="security-note"><b>Ambiente protegido</b><small>O perfil e o nível de acesso são conferidos no banco antes da entrada.</small></div>
+    </section>
+
+    <section class="manager-login-card">
+      <div id="loginGestorPane">
+        <span class="eyebrow">Acesso institucional</span>
+        <h2>Entrar como gestor</h2>
+        <p>Use seu ID de gestor e a senha cadastrada.</p>
+        <form id="formLoginGestor">
+          <label>ID de gestor
+            <input id="gestorIdLogin" type="text" autocomplete="username" placeholder="Ex.: GST-2026-0001" required>
+          </label>
+          <label>Senha
+            <div class="password-wrap">
+              <input id="gestorSenhaLogin" type="password" autocomplete="current-password" required>
+              <button type="button" class="toggle-password" data-target="gestorSenhaLogin" aria-label="Mostrar senha">◉</button>
+            </div>
+          </label>
+          <button type="submit" class="manager-primary">Entrar no portal</button>
+        </form>
+        <div id="gestorLoginMsg" class="form-message" aria-live="polite"></div>
+        <button type="button" class="manager-link" id="abrirPrimeiroAcesso">Configurar o primeiro gestor</button>
+        <a href="4-login.html" class="student-access">Sou aluno — acessar portal do aluno</a>
+      </div>
+
+      <div id="primeiroAcessoPane" hidden>
+        <span class="eyebrow">Configuração inicial</span>
+        <h2>Ativar primeiro gestor</h2>
+        <p>Disponível somente enquanto não existir nenhum gestor no banco. Use uma conta já criada no Supabase Auth.</p>
+        <form id="formPrimeiroGestor">
+          <label>Seu nome
+            <input id="bootstrapNome" type="text" required>
+          </label>
+          <label>ID de gestor desejado
+            <input id="bootstrapGestorId" type="text" placeholder="GST-2026-0001" required>
+          </label>
+          <label>E-mail da conta existente
+            <input id="bootstrapEmail" type="email" autocomplete="username" required>
+          </label>
+          <label>Senha atual
+            <input id="bootstrapSenha" type="password" autocomplete="current-password" required>
+          </label>
+          <button type="submit" class="manager-primary">Ativar acesso de gestão</button>
+        </form>
+        <div id="bootstrapMsg" class="form-message" aria-live="polite"></div>
+        <button type="button" class="manager-link" id="voltarLoginGestor">Voltar ao login</button>
+      </div>
+    </section>
+  </main>
+</body>
+</html>

@@ -14,7 +14,9 @@
   <script src="../4-java/12-portaldogestor.js" defer></script>
   <script src="../4-java/gestor-enhancements.js" defer></script>
   <script src="../4-java/gestor-acessos.js" defer></script>
+  <script src="../4-java/gestor-certificados.js" defer></script>
   <link rel="stylesheet" href="../2-css/base-portal.css">
+  <link rel="stylesheet" href="../2-css/06-responsive.css">
 </head>
 
 <body class="gestor-auth-pending">
@@ -30,6 +32,7 @@
         <button class="nav-item" data-min-level="2" data-tab="cursos" onclick="abrirAba('cursos')"><span>▣</span> Cursos e conteúdos</button>
         <button class="nav-item nav-ai" data-min-level="2" data-tab="curso-ia" onclick="abrirAba('curso-ia')"><span>✦</span> Criar curso com IA</button>
         <button class="nav-item" data-min-level="2" data-tab="alunos" onclick="abrirAba('alunos')"><span>♟</span> Alunos</button>
+        <button class="nav-item" data-min-level="2" data-tab="certificados-gestao" onclick="abrirAba('certificados-gestao')"><span>✓</span> Certificados</button>
         <button class="nav-item" data-min-level="4" data-tab="usuarios" onclick="abrirAba('usuarios')"><span>♙</span> Equipe e acessos</button>
         <button class="nav-item" data-min-level="1" data-tab="chamados" onclick="abrirAba('chamados')"><span>✉</span> Atendimento</button>
       </nav>
@@ -61,7 +64,7 @@
         <div class="dashboard-kpis">
           <article><span>Cursos publicados</span><strong id="dashCursos">0</strong><small>visíveis no catálogo</small></article>
           <article><span>Matrículas ativas</span><strong id="dashMatriculas">0</strong><small>alunos estudando</small></article>
-          <article><span>Certificados emitidos</span><strong id="dashCertificados">0</strong><small>documentos válidos</small></article>
+          <article><span>Certificados emitidos</span><strong id="dashCertificados">0</strong><small><b id="dashCertPendentes">0</b> aguardando liberação</small></article>
           <article><span>Chamados pendentes</span><strong id="dashChamados">0</strong><small>precisam de atenção</small></article>
         </div>
         <div class="workflow-panel">
@@ -597,6 +600,82 @@
         </div>
       </div>
 
+
+      <section id="certificados-gestao" class="aba" data-min-level="2">
+        <div class="page-heading">
+          <div><span>Controle acadêmico</span><h2>Certificados</h2><p>Libere, bloqueie, cancele e consulte o histórico completo de cada documento.</p></div>
+          <button type="button" class="primary-action" id="btnAtualizarCertificados">Atualizar lista</button>
+        </div>
+
+        <div class="certificate-admin-kpis">
+          <article><span>Aguardando liberação</span><strong id="certKpiPendente">0</strong></article>
+          <article><span>Emitidos</span><strong id="certKpiEmitido">0</strong></article>
+          <article><span>Bloqueados</span><strong id="certKpiBloqueado">0</strong></article>
+          <article><span>Cancelados</span><strong id="certKpiCancelado">0</strong></article>
+        </div>
+
+        <div class="toolbar certificate-admin-toolbar">
+          <input id="certBusca" type="search" placeholder="Buscar aluno, RA, curso ou número…">
+          <select id="certFiltroStatus">
+            <option value="TODOS">Todos os status</option>
+            <option value="PENDENTE">Aguardando liberação</option>
+            <option value="EMITIDO">Emitidos</option>
+            <option value="BLOQUEADO">Bloqueados</option>
+            <option value="CANCELADO">Cancelados</option>
+          </select>
+        </div>
+
+        <div class="section-heading certificate-hours-heading">
+          <div><span>Carteira acadêmica</span><h3>Gerência de horas dos alunos</h3><p>Defina o total que cada aluno poderá utilizar. O limite padrão considera 8h por dia útil desde a matrícula.</p></div>
+        </div>
+        <div class="card certificate-admin-table-wrap">
+          <table class="tabela" id="tabCarteirasHorasGestao">
+            <thead><tr><th>Aluno</th><th>Curso</th><th>Limite automático</th><th>Validadas</th><th>Reservadas</th><th>Utilizadas</th><th>Disponíveis</th><th>Ação</th></tr></thead>
+            <tbody></tbody>
+          </table>
+        </div>
+
+        <div class="section-heading certificate-requests-heading">
+          <div><span>Solicitações</span><h3>Certificados aguardando decisão</h3><p>O PDF só será disponibilizado ao aluno depois da liberação abaixo.</p></div>
+        </div>
+        <div class="card certificate-admin-table-wrap">
+          <table class="tabela" id="tabCertificadosGestao">
+            <thead><tr><th>Aluno</th><th>Curso</th><th>Horas solicitadas</th><th>Nota</th><th>Solicitação</th><th>Status</th><th>Ações</th></tr></thead>
+            <tbody></tbody>
+          </table>
+        </div>
+      </section>
+
+      <div class="modal" id="modalHorasGestao" aria-hidden="true">
+        <div class="modal__sheet certificate-hours-modal">
+          <div class="section-heading"><div><span>Carteira de horas</span><h3 id="horasModalTitulo">Gerenciar horas</h3></div><button type="button" id="horasFecharModal">Fechar</button></div>
+          <div id="horasModalResumo" class="certificate-admin-summary"></div>
+          <form id="formGerenciarHoras" class="hours-manager-form">
+            <label>Total de horas validadas
+              <select id="horasGestaoTotal" required></select>
+            </label>
+            <label class="exception-check"><input id="horasGestaoExcepcional" type="checkbox"> Autorizar liberação excepcional acima do limite automático</label>
+            <label>Justificativa da gestão
+              <textarea id="horasGestaoJustificativa" rows="4" placeholder="Obrigatória quando a carga ultrapassar o limite calculado pelo período."></textarea>
+            </label>
+            <div class="hours-manager-alert" id="horasGestaoAlerta"></div>
+            <div class="actions"><button type="button" class="ghost" id="horasCancelar">Cancelar</button><button type="submit">Salvar horas</button></div>
+          </form>
+        </div>
+      </div>
+
+      <div class="modal" id="modalCertificadoGestao" aria-hidden="true">
+        <div class="modal__sheet certificate-admin-modal">
+          <div class="section-heading"><div><span>Registro acadêmico</span><h3 id="certModalTitulo">Certificado</h3></div><button type="button" id="certFecharModal">Fechar</button></div>
+          <div id="certModalResumo" class="certificate-admin-summary"></div>
+          <div class="certificate-admin-actions" id="certModalAcoes"></div>
+          <div class="certificate-admin-history">
+            <h4>Histórico do registro</h4>
+            <div id="certModalHistorico"></div>
+          </div>
+        </div>
+      </div>
+
       <section id="chamados" class="aba" data-min-level="1">
         <h2>📨 Gestão de Chamados</h2>
         <div class="kpis-ch">
@@ -713,5 +792,6 @@
       </div>
     </main>
   </div>
+  <script src="../4-java/06-responsive.js"></script>
 </body>
 </html>

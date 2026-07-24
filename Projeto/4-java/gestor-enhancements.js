@@ -42,7 +42,7 @@
   function pageTitle(tab) {
     return ({
       dashboard: 'Visão geral', cursos: 'Cursos e conteúdos', 'curso-ia': 'Criar curso com IA',
-      alunos: 'Gestão de alunos', usuarios: 'Equipe e acessos', chamados: 'Atendimento'
+      alunos: 'Gestão de alunos', 'certificados-gestao': 'Certificados', usuarios: 'Equipe e acessos', chamados: 'Atendimento'
     })[tab] || 'Portal de Gestão';
   }
 
@@ -75,15 +75,17 @@
 
   async function carregarDashboard() {
     if (!window.sb) return;
-    const [cursos, matriculas, certificados, chamados] = await Promise.all([
+    const [cursos, matriculas, certificados, certPendentes, chamados] = await Promise.all([
       countRows('cursos', q => q.eq('publicado', true)),
       countRows('matriculas', q => q.eq('status', 'ATIVA')),
       countRows('certificados', q => q.eq('status', 'EMITIDO')),
+      countRows('certificados', q => q.eq('status', 'PENDENTE')),
       countRows('chamados', q => q.in('status', ['ABERTO', 'EM_ANDAMENTO']))
     ]);
     if ($('#dashCursos')) $('#dashCursos').textContent = cursos;
     if ($('#dashMatriculas')) $('#dashMatriculas').textContent = matriculas;
     if ($('#dashCertificados')) $('#dashCertificados').textContent = certificados;
+    if ($('#dashCertPendentes')) $('#dashCertPendentes').textContent = certPendentes;
     if ($('#dashChamados')) $('#dashChamados').textContent = chamados;
 
     try {

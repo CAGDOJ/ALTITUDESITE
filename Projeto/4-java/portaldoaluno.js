@@ -12,6 +12,9 @@ const state = {
   cursosDisponiveis: [],
   resultados: [],
   certificados: [],
+  certificadosHistorico: [],
+  carteirasHoras: [],
+  movimentacoesHoras: [],
   pagamentos: [],
   cursoAtual: null,
   modulos: [],
@@ -58,7 +61,10 @@ function dinheiro(value) {
 
 function dataBR(value, comHora = false) {
   if (!value) return "—";
-  const date = new Date(value);
+  const text = String(value);
+  const date = /^\d{4}-\d{2}-\d{2}$/.test(text)
+    ? new Date(`${text}T12:00:00`)
+    : new Date(value);
   if (Number.isNaN(date.getTime())) return "—";
   return date.toLocaleString("pt-BR", comHora
     ? { dateStyle: "short", timeStyle: "short" }
@@ -252,6 +258,55 @@ async function carregarCertificados() {
   state.certificados = data || [];
 }
 
+async function carregarHistoricoCertificados() {
+  const { data, error } = await sb
+    .from("certificados_historico")
+    .select("*")
+    .eq("aluno_id", state.aluno.user_id)
+    .order("criado_em", { ascending: false });
+  if (error) {
+    console.warn("Histórico de certificados indisponível:", error.message);
+    state.certificadosHistorico = [];
+    return;
+  }
+  state.certificadosHistorico = data || [];
+}
+
+async function carregarCarteirasHoras() {
+  const { data, error } = await sb.rpc("obter_minhas_carteiras_horas");
+  if (error) {
+    console.warn("Carteira de horas indisponível:", error.message);
+    state.carteirasHoras = [];
+    return;
+  }
+  state.carteirasHoras = data || [];
+}
+
+async function carregarMovimentacoesHoras() {
+  const { data, error } = await sb
+    .from("movimentacoes_horas")
+    .select("*")
+    .eq("aluno_id", state.aluno.user_id)
+    .order("criado_em", { ascending: false });
+  if (error) {
+    console.warn("Extrato de horas indisponível:", error.message);
+    state.movimentacoesHoras = [];
+    return;
+  }
+  state.movimentacoesHoras = data || [];
+}
+
+function carteiraHorasCurso(cursoId) {
+  return state.carteirasHoras.find((item) => Number(item.curso_id) === Number(cursoId)) || null;
+}
+
+function opcoesHorasDisponiveis(saldo) {
+  const limite = Math.max(0, Math.floor(Number(saldo || 0) / 5) * 5);
+  const values = [];
+  for (let horas = 5; horas <= limite; horas += 5) values.push(horas);
+  return values;
+}
+
 async function carregarPagamentos() {
   const { data, error } = await sb
     .from("pagamentos")
@@ -272,10 +327,18 @@ function melhorResultadoCurso(cursoId) {
   })[0];
 }
 
+function certificadosDoCurso(cursoId) {
+  return state.certificados
+    .filter((item) => Number(item.curso_id) === Number(cursoId))
+    .sort((a, b) => Number(b.id) - Number(a.id));
+}
+
 function certificadoCurso(cursoId) {
-  return state.certificados.find((item) =>
-    Number(item.curso_id) === Number(cursoId) && String(item.status).toUpperCase() === "EMITIDO"
-  ) || null;
+  return certificadosDoCurso(cursoId).find((item) => String(item.status).toUpperCase() === "EMITIDO") || null;
+}
+
+function certificadoAtualCurso(cursoId) {
+  return certificadosDoCurso(cursoId)[0] || null;
 }
 
 function renderDashboard() {
@@ -686,9 +749,9 @@ function mostrarResultadoProva(resultado) {
       <h3>${aprovado ? "Parabéns, você foi aprovado!" : "Continue estudando"}</h3>
       <strong>${Number(resultado.nota || 0)}%</strong>
       <p>${aprovado
-        ? "O certificado já pode ser emitido na aba Certificados."
+        ? "Você já pode solicitar o certificado na aba Certificados. Após a liberação da gestão, o PDF ficará disponível."
         : `Você acertou ${Number(resultado.acertos || 0)} de ${Number(resultado.total_questoes || 0)} questões. Revise o conteúdo e faça uma nova tentativa.`}</p>
-      <button class="primary-button" type="button" onclick="${aprovado ? "irParaCertificados()" : "refazerProva()"}">${aprovado ? "Emitir certificado" : "Tentar novamente"}</button>
+      <button class="primary-button" type="button" onclick="${aprovado ? "irParaCertificados()" : "refazerProva()"}">${aprovado ? "Solicitar certificado" : "Tentar novamente"}</button>
     </div>`;
   $("quizCounter").textContent = aprovado ? "Aprovado" : "Nova tentativa disponível";
   $("btnQuestaoAnterior").style.display = "none";
@@ -707,11 +770,136 @@ function irParaCertificados() {
   abrirAba("certificados");
 }
 
+function rotuloAcaoCertificado(acao) {
+  return ({
+    SOLICITADO: "Solicitação enviada", LIBERADO: "Certificado liberado", EMITIDO: "Certificado emitido",
+    BLOQUEADO: "Certificado bloqueado", CANCELADO: "Certificado cancelado", REABERTO: "Solicitação reaberta",
+    IMPORTADO: "Registro importado", CRIADO: "Registro criado", ATUALIZADO: "Registro atualizado"
+  })[String(acao || "").toUpperCase()] || String(acao || "Atualização").replaceAll("_", " ");
+}
+
+function renderHistoricoCertificados() {
+  const list = $("historicoCertificados");
+  if (!list) return;
+  const historico = [...state.certificadosHistorico].sort((a, b) => new Date(b.criado_em) - new Date(a.criado_em));
+  setText("contadorHistoricoCertificados", `${historico.length} ${historico.length === 1 ? "registro" : "registros"}`);
+  if (!historico.length) {
+    list.innerHTML = `<div class="empty-state">Nenhuma movimentação de certificado registrada.</div>`;
+    return;
+  }
+  list.innerHTML = historico.map((item) => {
+    const cert = state.certificados.find((c) => Number(c.id) === Number(item.certificado_id));
+    const curso = state.cursos.find((c) => Number(c.id) === Number(item.curso_id));
+    return `<article class="certificate-history-item">
+      <div class="history-icon">${String(item.status_novo).toUpperCase() === "EMITIDO" ? "✓" : "•"}</div>
+      <div><strong>${escapeHTML(rotuloAcaoCertificado(item.acao))}</strong><span>${escapeHTML(cert?.nome_curso || curso?.titulo || "Curso")}</span>${item.observacao ? `<small>${escapeHTML(item.observacao)}</small>` : ""}</div>
+      <div class="history-date">${dataBR(item.criado_em, true)}${item.status_novo ? statusPill(item.status_novo) : ""}</div>
+    </article>`;
+  }).join("");
+}
+
+function renderResumoCarteiraHoras() {
+  const box = $("resumoCarteiraHoras");
+  if (!box) return;
+  const totais = state.carteirasHoras.reduce((acc, item) => {
+    acc.validadas += Number(item.horas_validadas || 0);
+    acc.reservadas += Number(item.horas_reservadas || 0);
+    acc.utilizadas += Number(item.horas_utilizadas || 0);
+    acc.disponiveis += Number(item.saldo_disponivel || 0);
+    return acc;
+  }, { validadas: 0, reservadas: 0, utilizadas: 0, disponiveis: 0 });
+  box.innerHTML = `
+    <article><span>Horas validadas</span><strong>${totais.validadas}h</strong></article>
+    <article><span>Saldo disponível</span><strong>${totais.disponiveis}h</strong></article>
+    <article><span>Em análise</span><strong>${totais.reservadas}h</strong></article>
+    <article><span>Já certificadas</span><strong>${totais.utilizadas}h</strong></article>`;
+}
+
+function rotuloMovimentoHoras(tipo) {
+  return ({
+    CREDITO_GESTOR: "Horas liberadas pela gestão",
+    CREDITO_EXCEPCIONAL: "Liberação excepcional",
+    AJUSTE_GESTOR: "Ajuste de horas",
+    RESERVA_SOLICITACAO: "Horas reservadas para solicitação",
+    LIBERACAO_CERTIFICADO: "Certificado liberado",
+    ESTORNO_RESERVA: "Horas devolvidas ao saldo",
+    CANCELAMENTO: "Solicitação cancelada",
+    IMPORTACAO: "Saldo anterior importado"
+  })[String(tipo || "").toUpperCase()] || String(tipo || "Movimentação").replaceAll("_", " ");
+}
+
+function renderExtratoHoras() {
+  const list = $("extratoHoras");
+  if (!list) return;
+  const rows = state.movimentacoesHoras.slice(0, 30);
+  setText("contadorExtratoHoras", `${state.movimentacoesHoras.length} ${state.movimentacoesHoras.length === 1 ? "movimentação" : "movimentações"}`);
+  if (!rows.length) {
+    list.innerHTML = `<div class="empty-state">Nenhuma movimentação de horas registrada.</div>`;
+    return;
+  }
+  list.innerHTML = rows.map((item) => {
+    const curso = state.cursos.find((c) => Number(c.id) === Number(item.curso_id));
+    const sinal = Number(item.horas || 0) > 0 ? "+" : "";
+    return `<article class="hours-history-item">
+      <div><strong>${escapeHTML(rotuloMovimentoHoras(item.tipo))}</strong><span>${escapeHTML(curso?.titulo || "Curso")}</span>${item.observacao ? `<small>${escapeHTML(item.observacao)}</small>` : ""}</div>
+      <div class="hours-history-value"><b>${sinal}${Number(item.horas || 0)}h</b><small>${dataBR(item.criado_em, true)}</small></div>
+    </article>`;
+  }).join("");
+}
+
+function renderCertificadosEmitidos() {
+  const list = $("listaCertificadosEmitidos");
+  if (!list) return;
+  const emitidos = state.certificados
+    .filter((cert) => String(cert.status || "").toUpperCase() === "EMITIDO")
+    .sort((a, b) => new Date(b.emitido_em || b.atualizado_em || b.criado_em) - new Date(a.emitido_em || a.atualizado_em || a.criado_em));
+
+  setText("contadorCertificadosEmitidos", `${emitidos.length} ${emitidos.length === 1 ? "emitido" : "emitidos"}`);
+  if (!emitidos.length) {
+    list.innerHTML = `<div class="empty-state issued-empty">Nenhum certificado foi emitido ainda. O PDF será disponibilizado somente depois da liberação da gestão.</div>`;
+    return;
+  }
+
+  list.innerHTML = emitidos.map((cert) => {
+    const curso = state.cursos.find((item) => Number(item.id) === Number(cert.curso_id));
+    const titulo = cert.nome_curso || curso?.titulo || "Curso concluído";
+    const categoria = curso?.categoria || "Certificação profissional";
+    const codigo = cert.codigo_validacao || cert.numero_certificado || "";
+    const periodo = cert.periodo_inicio && cert.periodo_fim
+      ? `${dataBR(cert.periodo_inicio)} a ${dataBR(cert.periodo_fim)}`
+      : "Período registrado na emissão";
+    return `<article class="issued-certificate-card">
+      <div class="issued-certificate-mark">✓</div>
+      <div class="issued-certificate-content">
+        <span class="eyebrow">${escapeHTML(categoria)}</span>
+        <h3>${escapeHTML(titulo)}</h3>
+        <div class="issued-certificate-meta">
+          <span><b>${Number(cert.horas_emitidas || 0)}h</b> certificadas</span>
+          <span><b>${Number(cert.nota_final || 0)}%</b> de nota final</span>
+          <span>Período: <b>${escapeHTML(periodo)}</b></span>
+          <span>Emitido em <b>${dataBR(cert.emitido_em)}</b></span>
+        </div>
+        <small>Registro ${escapeHTML(cert.numero_certificado || "—")}</small>
+      </div>
+      <div class="issued-certificate-actions">
+        <button class="secondary-button" type="button" onclick="copiarCodigoCertificado(${Number(cert.id)})">Copiar código</button>
+        <a class="secondary-button certificate-validate-link" target="_blank" href="8-certificados.html?codigo=${encodeURIComponent(codigo)}">Validar</a>
+        <button class="primary-button" type="button" onclick="baixarCertificado(${Number(cert.id)})">Baixar PDF</button>
+      </div>
+    </article>`;
+  }).join("");
+}
+
 function renderCertificados() {
   const list = $("listaCertificados");
   if (!list) return;
+  renderResumoCarteiraHoras();
+  renderCertificadosEmitidos();
+  renderExtratoHoras();
+
   if (!state.cursos.length) {
     list.innerHTML = `<div class="empty-state">Nenhum curso matriculado.</div>`;
+    renderHistoricoCertificados();
     return;
   }
 
@@ -720,38 +908,67 @@ function renderCertificados() {
     const resultado = melhorResultadoCurso(curso.id);
     const notaMinima = Number(curso.nota_minima || 70);
     const provaOk = Boolean(resultado?.aprovado && Number(resultado.nota) >= notaMinima);
-    const cert = certificadoCurso(curso.id);
-    const certificadoOk = Boolean(cert);
+    const carteira = carteiraHorasCurso(curso.id);
+    const saldo = Number(carteira?.saldo_disponivel || 0);
+    const validadas = Number(carteira?.horas_validadas || 0);
+    const reservadas = Number(carteira?.horas_reservadas || 0);
+    const utilizadas = Number(carteira?.horas_utilizadas || 0);
+    const pendente = certificadosDoCurso(curso.id).find((item) => String(item.status).toUpperCase() === "PENDENTE");
+    const bloqueado = certificadosDoCurso(curso.id).find((item) => String(item.status).toUpperCase() === "BLOQUEADO");
+    const pronto = progressoOk && provaOk;
+    const options = opcoesHorasDisponiveis(saldo);
 
-    return `
-      <article class="certificate-card">
-        <div class="certificate-card-top">
-          <div>
-            <span class="eyebrow">${escapeHTML(curso.categoria || "Certificação")}</span>
-            <h3>${escapeHTML(curso.titulo || "Curso")}</h3>
-            <p>${Number(curso.carga_horaria || 0)} horas · ${resultado ? `melhor nota ${Number(resultado.nota || 0)}%` : "prova pendente"}</p>
-          </div>
-          ${certificadoOk ? statusPill(cert.status) : statusPill(progressoOk && provaOk ? "DISPONÍVEL" : "BLOQUEADO")}
-        </div>
+    let actions = `<button class="secondary-button" type="button" disabled>Conclua os requisitos</button>`;
+    let help = "Conclua o conteúdo e a prova para solicitar horas.";
+    let statusVisual = "BLOQUEADO";
 
-        <div class="certificate-requirements">
-          <div class="requirement ${progressoOk ? "ok" : ""}"><b>${progressoOk ? "✓" : "1"}</b><span>Conteúdo 100% concluído</span></div>
-          <div class="requirement ${provaOk ? "ok" : ""}"><b>${provaOk ? "✓" : "2"}</b><span>Prova com nota mínima de ${notaMinima}%</span></div>
-          <div class="requirement ${certificadoOk ? "ok" : ""}"><b>${certificadoOk ? "✓" : "3"}</b><span>Certificado emitido e verificável</span></div>
-        </div>
+    if (pendente) {
+      statusVisual = "PENDENTE";
+      help = `${Number(pendente.horas_solicitadas || 0)}h reservadas. Aguardando a liberação da gestão; o PDF ainda não está disponível.`;
+      actions = `<button class="secondary-button" type="button" disabled>Aguardando liberação</button>`;
+    } else if (pronto && saldo >= 5) {
+      statusVisual = "DISPONÍVEL";
+      help = `Você pode escolher de 5h até ${saldo}h. O restante permanecerá na carteira para outra emissão.`;
+      actions = `<div class="hours-request-control">
+        <label for="horasSolicitadas-${Number(curso.id)}">Horas deste certificado</label>
+        <select id="horasSolicitadas-${Number(curso.id)}">${options.map((h) => `<option value="${h}"${h === Math.min(20, saldo) ? " selected" : ""}>${h} horas</option>`).join("")}</select>
+        <button class="primary-button" type="button" onclick="solicitarCertificado(${Number(curso.id)})">Solicitar análise</button>
+      </div>`;
+    } else if (pronto && validadas === 0) {
+      statusVisual = "PENDENTE";
+      help = "Curso concluído e prova aprovada. Aguarde a gestão validar suas horas.";
+      actions = `<button class="secondary-button" type="button" disabled>Aguardando crédito de horas</button>`;
+    } else if (pronto && saldo < 5) {
+      statusVisual = utilizadas > 0 ? "CONCLUÍDO" : "PENDENTE";
+      help = reservadas > 0
+        ? `${reservadas}h estão reservadas em uma solicitação.`
+        : "Não há saldo disponível neste curso. As horas já foram utilizadas ou ainda dependem de ajuste da gestão.";
+      actions = `<button class="secondary-button" type="button" disabled>Sem saldo disponível</button>`;
+    } else if (bloqueado) {
+      statusVisual = "BLOQUEADO";
+      help = bloqueado.observacao_gestor || "Uma solicitação foi bloqueada. O saldo devolvido pode ser usado em nova solicitação quando disponível.";
+    }
 
-        <div class="certificate-card-footer">
-          <span class="certificate-code">${cert?.numero_certificado ? `Registro: ${escapeHTML(cert.numero_certificado)}` : "O número será criado no momento da emissão."}</span>
-          <div class="certificate-actions">
-            ${certificadoOk
-              ? `<button class="secondary-button" type="button" onclick="avaliarCurso(${Number(curso.id)})">Avaliar</button><button class="secondary-button" type="button" onclick="copiarCodigoCertificado(${Number(cert.id)})">Copiar código</button><button class="primary-button" type="button" onclick="baixarCertificado(${Number(cert.id)})">Baixar PDF</button>`
-              : progressoOk && provaOk
-                ? `<button class="primary-button" type="button" onclick="emitirCertificado(${Number(curso.id)})">Emitir certificado</button>`
-                : `<button class="secondary-button" type="button" disabled>Conclua os requisitos</button>`}
-          </div>
-        </div>
-      </article>`;
+    return `<article class="certificate-card hours-wallet-card">
+      <div class="certificate-card-top">
+        <div><span class="eyebrow">${escapeHTML(curso.categoria || "Certificação")}</span><h3>${escapeHTML(curso.titulo || "Curso")}</h3><p>Carga máxima do curso: ${Number(curso.carga_horaria || 0)}h · ${resultado ? `melhor nota ${Number(resultado.nota || 0)}%` : "prova pendente"}</p></div>
+        ${statusPill(statusVisual)}
+      </div>
+      <div class="wallet-balance-grid">
+        <div><span>Validadas</span><strong>${validadas}h</strong></div>
+        <div><span>Disponíveis</span><strong>${saldo}h</strong></div>
+        <div><span>Em análise</span><strong>${reservadas}h</strong></div>
+        <div><span>Já usadas</span><strong>${utilizadas}h</strong></div>
+      </div>
+      <div class="certificate-requirements">
+        <div class="requirement ${progressoOk ? "ok" : ""}"><b>${progressoOk ? "✓" : "1"}</b><span>Conteúdo 100% concluído</span></div>
+        <div class="requirement ${provaOk ? "ok" : ""}"><b>${provaOk ? "✓" : "2"}</b><span>Prova com nota mínima de ${notaMinima}%</span></div>
+        <div class="requirement ${validadas > 0 ? "ok" : ""}"><b>${validadas > 0 ? "✓" : "3"}</b><span>Horas validadas pela gestão</span></div>
+      </div>
+      <div class="certificate-card-footer"><span class="certificate-code">${escapeHTML(help)}</span><div class="certificate-actions">${actions}</div></div>
+    </article>`;
   }).join("");
+  renderHistoricoCertificados();
 }
 
 async function avaliarCurso(cursoId) {
@@ -775,28 +992,36 @@ async function avaliarCurso(cursoId) {
   }
 }
 
-async function emitirCertificado(cursoId) {
+async function solicitarCertificado(cursoId) {
+  const select = $(`horasSolicitadas-${Number(cursoId)}`);
+  const horas = Number(select?.value || 0);
+  if (!horas) return toast("Escolha a quantidade de horas do certificado.", "error");
+  const carteira = carteiraHorasCurso(cursoId);
+  const saldo = Number(carteira?.saldo_disponivel || 0);
+  if (horas > saldo) return toast(`Saldo insuficiente. Você possui ${saldo}h disponíveis.`, "error");
+  if (!window.confirm(`Solicitar um certificado de ${horas} horas? O saldo restante será de ${saldo - horas} horas. O PDF só será liberado após a aprovação da gestão.`)) return;
+
   const button = document.activeElement instanceof HTMLButtonElement ? document.activeElement : null;
-  if (button) {
-    button.disabled = true;
-    button.textContent = "Emitindo...";
-  }
+  if (button) { button.disabled = true; button.textContent = "Enviando..."; }
   try {
-    const { data, error } = await sb.rpc("emitir_certificado_curso", { p_curso_id: Number(cursoId) });
+    const { data, error } = await sb.rpc("solicitar_certificado_curso", {
+      p_curso_id: Number(cursoId),
+      p_horas: horas
+    });
     if (error) throw error;
-    await carregarCertificados();
+    await Promise.all([carregarCertificados(), carregarHistoricoCertificados(), carregarCarteirasHoras(), carregarMovimentacoesHoras()]);
     renderDashboard();
     renderCertificados();
-    const certificate = data?.id ? data : certificadoCurso(cursoId);
-    toast("Certificado emitido com sucesso.", "success");
-    if (certificate?.id) await baixarCertificado(Number(certificate.id));
+    toast(`Solicitação de ${horas}h enviada. Restam ${Number(data?.saldo_disponivel ?? saldo - horas)}h disponíveis.`, "success");
   } catch (error) {
-    toast(`Não foi possível emitir: ${error.message}`, "error");
-    if (button) {
-      button.disabled = false;
-      button.textContent = "Emitir certificado";
-    }
+    toast(`Não foi possível solicitar: ${error.message}`, "error");
+  } finally {
+    if (button) { button.disabled = false; button.textContent = "Solicitar análise"; }
   }
+}
+
+async function emitirCertificado(cursoId) {
+  return solicitarCertificado(cursoId);
 }
 
 async function imagemParaDataURL(src) {
@@ -836,85 +1061,196 @@ async function gerarQrDataUrl(texto) {
   }
 }
 
+async function carregarConteudoProgramatico(cursoId, totalHoras) {
+  let data = null;
+  let error = null;
+  ({ data, error } = await sb.from("modulos").select("id,titulo,ordem,carga_horaria").eq("curso_id", Number(cursoId)).order("ordem"));
+  if (error) ({ data, error } = await sb.from("modulos").select("id,titulo,ordem").eq("curso_id", Number(cursoId)).order("ordem"));
+  if (error) throw error;
+  const modules = data || [];
+  if (!modules.length) return [{ titulo: "Conteúdo programático do curso", horas: Number(totalHoras || 0) }];
+  const explicit = modules.reduce((sum, item) => sum + Math.max(0, Number(item.carga_horaria || 0)), 0);
+  const missing = modules.filter((item) => !Number(item.carga_horaria)).length;
+  let remaining = Math.max(0, Number(totalHoras || 0) - explicit);
+  const base = missing ? Math.floor(remaining / missing) : 0;
+  return modules.map((item, index) => {
+    let hours = Math.max(0, Number(item.carga_horaria || 0));
+    if (!hours && missing) {
+      hours = base;
+      remaining -= base;
+      const missingAfter = modules.slice(index + 1).filter((m) => !Number(m.carga_horaria)).length;
+      if (!missingAfter) hours += remaining;
+    }
+    return { titulo: item.titulo || `Módulo ${index + 1}`, horas };
+  });
+}
+
+function desenharMolduraCertificado(doc, pageWidth, pageHeight) {
+  doc.setFillColor(248, 250, 253);
+  doc.rect(0, 0, pageWidth, pageHeight, "F");
+  doc.setFillColor(7, 49, 79);
+  doc.triangle(0, 0, 86, 0, 0, 72, "F");
+  doc.setFillColor(55, 177, 203);
+  doc.triangle(0, 0, 62, 0, 0, 52, "F");
+  doc.setFillColor(7, 49, 79);
+  doc.triangle(pageWidth, pageHeight, pageWidth - 78, pageHeight, pageWidth, pageHeight - 66, "F");
+  doc.setFillColor(55, 177, 203);
+  doc.triangle(pageWidth, pageHeight, pageWidth - 55, pageHeight, pageWidth, pageHeight - 46, "F");
+  doc.setDrawColor(176, 143, 102);
+  doc.setLineWidth(.5);
+  doc.rect(10, 10, pageWidth - 20, pageHeight - 20);
+  doc.setDrawColor(215, 224, 233);
+  doc.setLineWidth(.25);
+  doc.rect(14, 14, pageWidth - 28, pageHeight - 28);
+}
+
 async function baixarCertificado(certificadoId) {
   const cert = state.certificados.find((item) => Number(item.id) === Number(certificadoId));
   if (!cert) return toast("Certificado não encontrado.", "error");
-  if (!cert.codigo_validacao) return toast("Execute a migração SQL para gerar o código de autenticação.", "error");
+  if (String(cert.status).toUpperCase() !== "EMITIDO") return toast("O certificado ainda não foi liberado pela gestão.", "error");
+  if (!cert.codigo_validacao) return toast("Código de autenticação não encontrado.", "error");
   if (!window.jspdf?.jsPDF || !window.QRCode) return toast("Bibliotecas de PDF ou QR Code não carregaram.", "error");
 
   try {
-    toast("Preparando certificado...", "success");
+    toast("Preparando certificado em duas páginas...", "success");
     const { jsPDF } = window.jspdf;
     const doc = new jsPDF({ orientation: "landscape", unit: "mm", format: "a4" });
     const pageWidth = doc.internal.pageSize.getWidth();
     const pageHeight = doc.internal.pageSize.getHeight();
     const nome = cert.nome_aluno || state.aluno.nome || "Aluno";
-    const curso = cert.nome_curso || state.cursos.find((item) => Number(item.id) === Number(cert.curso_id))?.titulo || "Curso";
-    const hours = Number(cert.horas_emitidas || state.cursos.find((item) => Number(item.id) === Number(cert.curso_id))?.carga_horaria || 0);
+    const courseData = state.cursos.find((item) => Number(item.id) === Number(cert.curso_id));
+    const curso = cert.nome_curso || courseData?.titulo || "Curso";
+    const hours = Number(cert.horas_emitidas || courseData?.carga_horaria || 0);
     const validationUrl = `${window.location.origin}/Projeto/1-html/8-certificados.html?codigo=${encodeURIComponent(cert.codigo_validacao)}`;
     const qr = await gerarQrDataUrl(validationUrl);
+    const modules = await carregarConteudoProgramatico(cert.curso_id, hours);
     if (!state.logoDataUrl) state.logoDataUrl = await imagemParaDataURL("../3-img/LOGO.png");
 
-    doc.setFillColor(250, 252, 253);
-    doc.rect(0, 0, pageWidth, pageHeight, "F");
-    doc.setDrawColor(10, 61, 98);
-    doc.setLineWidth(2.2);
-    doc.roundedRect(8, 8, pageWidth - 16, pageHeight - 16, 4, 4, "S");
-    doc.setDrawColor(82, 192, 217);
-    doc.setLineWidth(.7);
-    doc.roundedRect(12, 12, pageWidth - 24, pageHeight - 24, 3, 3, "S");
+    // PÁGINA 1 - FRENTE
+    desenharMolduraCertificado(doc, pageWidth, pageHeight);
+    doc.addImage(state.logoDataUrl, "PNG", pageWidth - 79, 23, 60, 9, undefined, "FAST");
+    doc.setTextColor(81, 58, 44);
+    doc.setFont("times", "bold");
+    doc.setFontSize(34);
+    doc.text("Certificado", pageWidth / 2, 39, { align: "center" });
+    doc.setFont("times", "normal");
+    doc.setFontSize(11);
+    doc.text("DE CONCLUSÃO E APROVEITAMENTO", pageWidth / 2, 48, { align: "center" });
 
-    doc.addImage(state.logoDataUrl, "PNG", 24, 20, 48, 22, undefined, "FAST");
-    doc.setTextColor(10, 61, 98);
-    doc.setFont("helvetica", "bold");
-    doc.setFontSize(28);
-    doc.text("CERTIFICADO", pageWidth / 2, 39, { align: "center" });
-    doc.setFontSize(10);
-    doc.setTextColor(91, 113, 127);
-    doc.text("INSTITUTO DE EDUCAÇÃO E TECNOLOGIA ALTITUDE", pageWidth / 2, 47, { align: "center" });
-
-    doc.setTextColor(23, 43, 58);
-    doc.setFont("helvetica", "normal");
-    doc.setFontSize(14);
-    doc.text("Certificamos que", pageWidth / 2, 68, { align: "center" });
-    doc.setFont("helvetica", "bold");
-    doc.setFontSize(24);
-    const nameLines = doc.splitTextToSize(nome.toUpperCase(), 190);
-    doc.text(nameLines, pageWidth / 2, 84, { align: "center" });
-
-    const afterName = 84 + (nameLines.length - 1) * 9;
-    doc.setFont("helvetica", "normal");
-    doc.setFontSize(13);
-    doc.text("concluiu com aproveitamento o curso", pageWidth / 2, afterName + 14, { align: "center" });
-    doc.setFont("helvetica", "bold");
-    doc.setTextColor(10, 61, 98);
-    doc.setFontSize(18);
-    const courseLines = doc.splitTextToSize(curso, 175);
-    doc.text(courseLines, pageWidth / 2, afterName + 27, { align: "center" });
-
-    const afterCourse = afterName + 27 + (courseLines.length - 1) * 7;
-    doc.setTextColor(23, 43, 58);
-    doc.setFont("helvetica", "normal");
+    doc.setTextColor(27, 42, 56);
+    doc.setFont("times", "normal");
     doc.setFontSize(12);
-    doc.text(`com carga horária de ${hours} horas e nota final de ${Number(cert.nota_final || 0)}%.`, pageWidth / 2, afterCourse + 14, { align: "center" });
-    doc.text(`Emitido em ${dataBR(cert.emitido_em || cert.criado_em)}.`, pageWidth / 2, afterCourse + 23, { align: "center" });
+    doc.text("O Instituto de Educação e Tecnologia Altitude certifica que", pageWidth / 2, 70, { align: "center" });
 
-    doc.addImage(qr, "PNG", pageWidth - 51, pageHeight - 51, 32, 32);
-    doc.setFontSize(8);
-    doc.setTextColor(91, 113, 127);
-    doc.text("Escaneie para validar", pageWidth - 35, pageHeight - 15, { align: "center" });
+    doc.setFont("times", "italic");
+    doc.setFontSize(nome.length > 48 ? 24 : 29);
+    const nameLines = doc.splitTextToSize(nome, 225);
+    doc.text(nameLines, pageWidth / 2, 91, { align: "center" });
+    const afterName = 91 + (nameLines.length - 1) * 10;
 
-    doc.setDrawColor(175, 193, 203);
-    doc.line(28, pageHeight - 35, 102, pageHeight - 35);
+    doc.setFont("times", "normal");
+    doc.setFontSize(12.5);
+    doc.text("concluiu com aproveitamento o curso", pageWidth / 2, afterName + 15, { align: "center" });
+    doc.setFont("times", "bold");
+    doc.setTextColor(7, 49, 79);
+    doc.setFontSize(20);
+    const courseLines = doc.splitTextToSize(curso, 200);
+    doc.text(courseLines, pageWidth / 2, afterName + 28, { align: "center" });
+    const afterCourse = afterName + 28 + (courseLines.length - 1) * 8;
+
+    const inicio = cert.periodo_inicio ? dataBR(cert.periodo_inicio) : (courseData?.matricula_criada_em ? dataBR(courseData.matricula_criada_em) : "data registrada na plataforma");
+    const fim = cert.periodo_fim ? dataBR(cert.periodo_fim) : dataBR(cert.emitido_em);
+    doc.setFont("times", "normal");
+    doc.setTextColor(27, 42, 56);
+    doc.setFontSize(11.5);
+    doc.text(`com carga horária total de ${hours} horas e nota final de ${Number(cert.nota_final || 0)}%.`, pageWidth / 2, afterCourse + 13, { align: "center" });
+    doc.text(`Período acadêmico: ${inicio} a ${fim}.`, pageWidth / 2, afterCourse + 21, { align: "center" });
+
+    const signY = pageHeight - 36;
+    doc.setDrawColor(92, 103, 112);
+    doc.line(34, signY, 102, signY);
+    doc.line(119, signY, 187, signY);
     doc.setFontSize(9);
-    doc.text("Instituto Altitude", 65, pageHeight - 29, { align: "center" });
+    doc.setTextColor(50, 60, 70);
+    doc.text("DIREÇÃO DO INSTITUTO ALTITUDE", 68, signY + 6, { align: "center" });
+    doc.text("CONCLUINTE", 153, signY + 6, { align: "center" });
 
+    doc.addImage(qr, "PNG", pageWidth - 52, pageHeight - 62, 25, 25);
     doc.setFont("helvetica", "bold");
-    doc.setTextColor(10, 61, 98);
-    doc.text(cert.numero_certificado || String(cert.codigo_validacao), pageWidth / 2, pageHeight - 23, { align: "center" });
+    doc.setFontSize(7.5);
+    doc.setTextColor(7, 49, 79);
+    doc.text("ESCANEIE PARA VALIDAR", pageWidth - 39.5, pageHeight - 66, { align: "center" });
     doc.setFont("helvetica", "normal");
-    doc.setTextColor(91, 113, 127);
-    doc.text("A autenticidade deste documento deve ser confirmada pelo QR Code ou pelo código acima.", pageWidth / 2, pageHeight - 16, { align: "center" });
+    doc.setFontSize(7.4);
+    doc.text(cert.numero_certificado || String(cert.codigo_validacao), pageWidth / 2, pageHeight - 16, { align: "center" });
+
+    // PÁGINA 2 - CONTEÚDO PROGRAMÁTICO
+    doc.addPage("a4", "landscape");
+    desenharMolduraCertificado(doc, pageWidth, pageHeight);
+    doc.addImage(state.logoDataUrl, "PNG", pageWidth - 79, 23, 60, 9, undefined, "FAST");
+    doc.setTextColor(27, 42, 56);
+    doc.setFont("times", "bold");
+    doc.setFontSize(25);
+    doc.text("CONTEÚDO PROGRAMÁTICO", 45, 39);
+    doc.setDrawColor(176, 143, 102);
+    doc.setLineWidth(.7);
+    doc.line(45, 44, 148, 44);
+
+    const half = Math.ceil(modules.length / 2);
+    const columns = [modules.slice(0, half), modules.slice(half)];
+    const xs = [28, 116];
+    columns.forEach((items, col) => {
+      let y = 60;
+      items.forEach((item, idx) => {
+        doc.setFont("times", "bold");
+        doc.setFontSize(9.4);
+        doc.setTextColor(7, 49, 79);
+        doc.text(`${col * half + idx + 1}.`, xs[col], y);
+        doc.setFont("times", "normal");
+        doc.setTextColor(30, 42, 54);
+        const label = `${item.titulo}${item.horas ? ` (${item.horas} horas)` : ""}`;
+        const lines = doc.splitTextToSize(label, 82);
+        doc.text(lines, xs[col] + 8, y);
+        y += 7.5 + (lines.length - 1) * 4.5;
+      });
+    });
+
+    doc.setFillColor(238, 247, 249);
+    doc.roundedRect(pageWidth - 77, 54, 56, 89, 3, 3, "F");
+    doc.setFont("helvetica", "bold");
+    doc.setTextColor(7, 49, 79);
+    doc.setFontSize(10);
+    doc.text("REGISTRO ACADÊMICO", pageWidth - 49, 67, { align: "center" });
+    doc.setFont("helvetica", "normal");
+    doc.setFontSize(8.5);
+    const legal = [
+      `RA: ${state.aluno?.ra || "—"}`,
+      `Carga horária certificada: ${hours} horas`,
+      `Nota final: ${Number(cert.nota_final || 0)}%`,
+      `Emissão: ${dataBR(cert.emitido_em)}`,
+      "Curso livre de qualificação e atualização.",
+      "Base legal institucional informada:",
+      "LDB nº 9.394/96, art. 41, e Decreto nº 5.154/04.",
+      "CNPJ: 45.628.030/0001-85"
+    ];
+    let legalY = 78;
+    legal.forEach((line) => {
+      const lines = doc.splitTextToSize(line, 48);
+      doc.text(lines, pageWidth - 49, legalY, { align: "center" });
+      legalY += 7 + (lines.length - 1) * 4;
+    });
+    doc.addImage(qr, "PNG", pageWidth - 60, 147, 23, 23);
+    doc.setFontSize(7);
+    doc.text("Autenticidade pelo QR Code", pageWidth - 49, 175, { align: "center" });
+
+    doc.setFont("times", "bold");
+    doc.setFontSize(13);
+    doc.setTextColor(27, 42, 56);
+    doc.text(`TOTAL CERTIFICADO: ${hours} HORAS`, 29, pageHeight - 27);
+    doc.setFont("helvetica", "normal");
+    doc.setFontSize(7.5);
+    doc.setTextColor(92, 103, 112);
+    doc.text(`Documento nº ${cert.numero_certificado || cert.codigo_validacao} - confirme a autenticidade no Portal Altitude.`, pageWidth / 2, pageHeight - 16, { align: "center" });
 
     doc.save(`certificado-${slug(curso)}-${slug(nome)}.pdf`);
   } catch (error) {
@@ -1046,8 +1382,11 @@ function renderCarteirinha() {
       <div class="digital-card-top"><img src="../3-img/LOGO.png" alt="Altitude"><span>${new Date().getFullYear()}</span></div>
       <div class="digital-card-body">
         <img src="${escapeHTML(imgAluno(state.aluno.foto_url))}" alt="Foto do aluno">
-        <div class="digital-card-data"><strong>${escapeHTML(state.aluno.nome || "Aluno")}</strong><span>Registro acadêmico: ${escapeHTML(state.aluno.ra || "—")}</span><span>Status: ${escapeHTML(state.aluno.status || "ATIVO")}</span><span>Instituto Altitude</span></div>
-        <div class="digital-card-qr"><div id="qrCarteirinha" aria-label="QR Code de validação da carteirinha"></div><small>Validar carteirinha</small></div>
+        <div class="digital-card-data"><strong class="student-card-name">${escapeHTML(state.aluno.nome || "Aluno")}</strong><span class="student-card-ra"><b>RA</b> ${escapeHTML(state.aluno.ra || "—")}</span><span>Status: ${escapeHTML(state.aluno.status || "ATIVO")}</span><span>Instituto de Educação e Tecnologia Altitude</span></div>
+      </div>
+      <div class="digital-card-footer">
+        <div><strong>CARTEIRINHA DIGITAL</strong><span>Documento verificável na base oficial</span></div>
+        <div class="digital-card-qr"><div id="qrCarteirinha" aria-label="QR Code de validação da carteirinha"></div><small>Validar</small></div>
       </div>
     </div>`;
 
@@ -1061,12 +1400,58 @@ function renderCarteirinha() {
   holder.innerHTML = "";
   new window.QRCode(holder, {
     text: validationUrl,
-    width: 96,
-    height: 96,
+    width: 78,
+    height: 78,
     colorDark: "#07314f",
     colorLight: "#ffffff",
     correctLevel: window.QRCode.CorrectLevel.H
   });
+}
+
+async function baixarCarteirinhaPDF() {
+  if (!state.aluno?.codigo_carteirinha) return toast("Código da carteirinha indisponível. Execute a atualização 04.", "error");
+  if (!window.jspdf?.jsPDF || !window.QRCode) return toast("Gerador de PDF ou QR Code não carregado.", "error");
+  try {
+    const { jsPDF } = window.jspdf;
+    const doc = new jsPDF({ orientation: "landscape", unit: "mm", format: [54, 85.6] });
+    const w = doc.internal.pageSize.getWidth();
+    const h = doc.internal.pageSize.getHeight();
+    const url = new URL(`13-validar-carteirinha.html?codigo=${encodeURIComponent(state.aluno.codigo_carteirinha)}`, window.location.href).href;
+    const qr = await gerarQrDataUrl(url);
+    if (!state.logoDataUrl) state.logoDataUrl = await imagemParaDataURL("../3-img/LOGO.png");
+    let photo = null;
+    try { photo = await imagemParaDataURL(imgAluno(state.aluno.foto_url)); } catch {}
+
+    doc.setFillColor(255, 255, 255); doc.rect(0, 0, w, h, "F");
+    doc.setFillColor(7, 49, 79); doc.roundedRect(1.5, 1.5, w - 3, h - 3, 3, 3, "F");
+    doc.setFillColor(255, 255, 255); doc.roundedRect(1.5, 1.5, w - 3, 14, 3, 3, "F");
+    doc.addImage(state.logoDataUrl, "PNG", 6, 5.3, 31, 4.8, undefined, "FAST");
+    doc.setFont("helvetica", "bold"); doc.setFontSize(6.8); doc.setTextColor(7, 49, 79);
+    doc.text(String(new Date().getFullYear()), w - 7, 8.6, { align: "right" });
+
+    if (photo) doc.addImage(photo, photo.includes("image/png") ? "PNG" : "JPEG", 6, 19, 18, 20, undefined, "FAST");
+    else { doc.setFillColor(82, 192, 217); doc.roundedRect(6, 19, 18, 20, 2, 2, "F"); }
+
+    doc.setTextColor(255,255,255); doc.setFont("helvetica","bold"); doc.setFontSize(7.2);
+    const nameLines = doc.splitTextToSize(String(state.aluno.nome || "Aluno").toUpperCase(), 38);
+    doc.text(nameLines.slice(0,3), 28, 21);
+    const infoY = 21 + Math.min(3,nameLines.length)*4.1 + 2;
+    doc.setFont("helvetica","normal"); doc.setFontSize(5.2); doc.setTextColor(210,228,241);
+    doc.text(`RA: ${state.aluno.ra || "—"}`, 28, infoY);
+    doc.text(`STATUS: ${state.aluno.status || "ATIVO"}`, 28, infoY + 4);
+    doc.text("INSTITUTO ALTITUDE", 28, infoY + 8);
+
+    doc.setFillColor(255,255,255); doc.roundedRect(w - 21, h - 21, 17, 17, 1.5, 1.5, "F");
+    doc.addImage(qr, "PNG", w - 20, h - 20, 15, 15);
+    doc.setFont("helvetica","bold"); doc.setFontSize(4.5); doc.setTextColor(255,255,255);
+    doc.text("CARTEIRINHA DIGITAL", 6, h - 12);
+    doc.setFont("helvetica","normal"); doc.setTextColor(190,218,235);
+    doc.text("Escaneie o QR Code para validar", 6, h - 8.2);
+    doc.save(`carteirinha-${slug(state.aluno.nome)}-${slug(state.aluno.ra)}.pdf`);
+  } catch (error) {
+    console.error(error);
+    toast(`Erro ao gerar carteirinha: ${error.message}`, "error");
+  }
 }
 
 function filtrarCursos(query) {
@@ -1078,7 +1463,7 @@ function filtrarCursos(query) {
 }
 
 async function atualizarDadosPrincipais() {
-  await Promise.all([carregarCursos(), carregarResultados(), carregarCertificados(), carregarPagamentos()]);
+  await Promise.all([carregarCursos(), carregarResultados(), carregarCertificados(), carregarHistoricoCertificados(), carregarCarteirasHoras(), carregarMovimentacoesHoras(), carregarPagamentos()]);
   renderDashboard();
   renderCursos();
   renderCertificados();
@@ -1094,6 +1479,7 @@ function configurarEventos() {
   $("buscaPortalAluno")?.addEventListener("input", (event) => filtrarCursos(event.target.value));
   $("formCadastroAluno")?.addEventListener("submit", salvarCadastro);
   $("formChamado")?.addEventListener("submit", abrirChamado);
+  $("btnBaixarCarteirinha")?.addEventListener("click", baixarCarteirinhaPDF);
   $("cadTelefone")?.addEventListener("input", (event) => { event.target.value = maskPhone(event.target.value); });
   $("fotoAlunoInput")?.addEventListener("change", (event) => {
     const file = event.target.files?.[0];
@@ -1142,9 +1528,11 @@ window.abrirCurso = abrirCurso;
 window.selecionarModulo = selecionarModulo;
 window.matricularCurso = matricularCurso;
 window.emitirCertificado = emitirCertificado;
+window.solicitarCertificado = solicitarCertificado;
 window.avaliarCurso = avaliarCurso;
 window.baixarCertificado = baixarCertificado;
 window.copiarCodigoCertificado = copiarCodigoCertificado;
+window.baixarCarteirinhaPDF = baixarCarteirinhaPDF;
 window.refazerProva = refazerProva;
 window.irParaCertificados = irParaCertificados;
 

@@ -33,30 +33,6 @@
     } finally { setBusy(button, false); }
   }
 
-  async function bootstrap(event) {
-    event.preventDefault();
-    const button = event.submitter;
-    setBusy(button, true, 'Ativando gestor...');
-    try {
-      const email = $('bootstrapEmail').value.trim().toLowerCase();
-      const password = $('bootstrapSenha').value;
-      const { data, error } = await sb.auth.signInWithPassword({ email, password });
-      if (error || !data?.session) throw new Error('E-mail ou senha da conta existente estão incorretos.');
-      const { data: result, error: fnError } = await sb.functions.invoke('gerenciar-gestor', {
-        body: {
-          acao: 'bootstrap',
-          gestor_id: $('bootstrapGestorId').value.trim().toUpperCase(),
-          nome: $('bootstrapNome').value.trim()
-        }
-      });
-      if (fnError) throw fnError;
-      if (!result?.ok) throw new Error(result?.error || 'Não foi possível ativar o primeiro gestor.');
-      show('bootstrapMsg', 'Primeiro gestor ativado. Abrindo o portal...');
-      setTimeout(() => { location.href = '12-portaldogestor.html'; }, 700);
-    } catch (error) {
-      show('bootstrapMsg', error.message || 'Falha na configuração inicial.', true);
-    } finally { setBusy(button, false); }
-  }
 
   document.addEventListener('DOMContentLoaded', async () => {
     const { data } = await sb.auth.getUser();
@@ -65,9 +41,6 @@
       if (Array.isArray(profile) && profile.length) location.href = '12-portaldogestor.html';
     }
     $('formLoginGestor')?.addEventListener('submit', login);
-    $('formPrimeiroGestor')?.addEventListener('submit', bootstrap);
-    $('abrirPrimeiroAcesso')?.addEventListener('click', () => { $('loginGestorPane').hidden = true; $('primeiroAcessoPane').hidden = false; });
-    $('voltarLoginGestor')?.addEventListener('click', () => { $('primeiroAcessoPane').hidden = true; $('loginGestorPane').hidden = false; });
     document.querySelectorAll('.toggle-password').forEach(btn => btn.addEventListener('click', () => {
       const input = $(btn.dataset.target); if (input) input.type = input.type === 'password' ? 'text' : 'password';
     }));

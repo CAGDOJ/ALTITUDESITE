@@ -12,9 +12,12 @@ function validarEscape(value = "") {
     .replaceAll("'", "&#039;");
 }
 
-function dataValidacaoBR(value) {
-  if (!value) return "Sem prazo de expiração";
-  const date = new Date(value);
+function dataValidacaoBR(value, fallback = "—") {
+  if (!value) return fallback;
+  const text = String(value);
+  const date = /^\d{4}-\d{2}-\d{2}$/.test(text)
+    ? new Date(`${text}T12:00:00`)
+    : new Date(value);
   return Number.isNaN(date.getTime()) ? "—" : date.toLocaleDateString("pt-BR");
 }
 
@@ -32,21 +35,31 @@ function exibirResultado(data) {
     return;
   }
 
+  const status = String(data.status || "—").toUpperCase();
+  const title = valido ? "Certificado autêntico e válido"
+    : status === "PENDENTE" ? "Certificado aguardando liberação"
+    : status === "BLOQUEADO" ? "Certificado bloqueado"
+    : status === "CANCELADO" ? "Certificado cancelado"
+    : "Certificado sem validade atual";
+  const emitido = status === "EMITIDO" && data.emitido_em;
+
   resultadoValidacao.innerHTML = `
     <div class="result-heading">
       <div class="result-icon">${valido ? "✓" : "!"}</div>
-      <div><h2>${valido ? "Certificado autêntico e válido" : "Certificado sem validade atual"}</h2><p>${validarEscape(data.mensagem || "Consulta concluída.")}</p></div>
+      <div><h2>${title}</h2><p>${validarEscape(data.mensagem || "Consulta concluída.")}</p></div>
     </div>
     <div class="result-grid">
       <div class="result-field wide"><span>Aluno</span><strong>${validarEscape(data.nome_aluno || "—")}</strong></div>
-      <div class="result-field"><span>Status</span><strong>${validarEscape(String(data.status || "—").replaceAll("_", " "))}</strong></div>
+      <div class="result-field"><span>Status</span><strong>${validarEscape(status.replaceAll("_", " "))}</strong></div>
       <div class="result-field wide"><span>Curso</span><strong>${validarEscape(data.nome_curso || "—")}</strong></div>
       <div class="result-field"><span>Carga horária</span><strong>${Number(data.horas_emitidas || 0)} horas</strong></div>
-      <div class="result-field"><span>Emissão</span><strong>${dataValidacaoBR(data.emitido_em)}</strong></div>
-      <div class="result-field"><span>Validade</span><strong>${data.valido_ate ? dataValidacaoBR(data.valido_ate) : "Permanente"}</strong></div>
+      <div class="result-field"><span>Emissão</span><strong>${emitido ? dataValidacaoBR(data.emitido_em) : "Ainda não emitido"}</strong></div>
+      <div class="result-field"><span>Período acadêmico</span><strong>${emitido && data.periodo_inicio ? `${dataValidacaoBR(data.periodo_inicio)} a ${dataValidacaoBR(data.periodo_fim)}` : "Definido na liberação"}</strong></div>
+      <div class="result-field"><span>Validade</span><strong>${emitido ? (data.valido_ate ? dataValidacaoBR(data.valido_ate) : "Permanente") : "Não se aplica"}</strong></div>
       <div class="result-field"><span>Nota final</span><strong>${Number(data.nota_final || 0)}%</strong></div>
-      <div class="result-field wide"><span>Número do certificado</span><strong>${validarEscape(data.numero_certificado || "—")}</strong></div>
-      <div class="result-field"><span>Código de autenticação</span><strong>${validarEscape(data.codigo_validacao || "—")}</strong></div>
+      <div class="result-field wide"><span>Número do certificado</span><strong>${validarEscape(data.numero_certificado || "Aguardando emissão")}</strong></div>
+      <div class="result-field"><span>Código de autenticação</span><strong>${validarEscape(data.codigo_validacao || "Aguardando emissão")}</strong></div>
+      ${data.observacao ? `<div class="result-field wide"><span>Observação da instituição</span><strong>${validarEscape(data.observacao)}</strong></div>` : ""}
     </div>`;
 }
 

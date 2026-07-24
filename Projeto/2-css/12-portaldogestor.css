@@ -848,3 +848,57 @@ body.gestor-auth-pending{visibility:hidden}
 }
 
 .access-hidden{display:none!important}
+
+/* =========================================================
+   ATUALIZAÇÃO 04 - gestão de certificados
+   ========================================================= */
+.certificate-admin-kpis{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:12px;margin:16px 0}
+.certificate-admin-kpis article{padding:17px;border:1px solid var(--alt-border);border-radius:14px;background:#fff;box-shadow:0 5px 18px rgba(26,48,76,.04)}
+.certificate-admin-kpis span,.certificate-admin-kpis strong{display:block}
+.certificate-admin-kpis span{color:var(--alt-muted);font-size:12px;font-weight:700}
+.certificate-admin-kpis strong{margin-top:7px;color:var(--alt-blue);font-size:28px}
+.certificate-admin-toolbar{display:grid;grid-template-columns:minmax(240px,1fr) 220px;margin-bottom:12px}
+.certificate-admin-table-wrap{overflow-x:auto}
+#tabCertificadosGestao{min-width:940px}
+.cert-admin-student strong,.cert-admin-student small,.cert-admin-course strong,.cert-admin-course small{display:block}
+.cert-admin-student small,.cert-admin-course small{margin-top:3px;color:var(--alt-muted);font-size:11px}
+.cert-admin-actions{display:flex;flex-wrap:wrap;gap:6px}
+.cert-admin-actions button{padding:7px 9px;border:1px solid var(--alt-border);border-radius:8px;background:#fff;color:var(--alt-blue);font-size:11px;font-weight:800;cursor:pointer}
+.cert-admin-actions button.release{border-color:#bfe6ce;background:#e8f7ef;color:#176b40}
+.cert-admin-actions button.block{border-color:#f3d1d1;background:#fff2f2;color:#972f35}
+.cert-admin-actions button.cancel{background:#f5f6f8;color:#596474}
+.certificate-admin-modal{width:min(880px,96vw)}
+.certificate-admin-summary{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:10px;margin:14px 0}
+.certificate-admin-summary article{padding:12px;border:1px solid var(--alt-border);border-radius:11px;background:#f8fafc}
+.certificate-admin-summary span,.certificate-admin-summary strong{display:block}
+.certificate-admin-summary span{color:var(--alt-muted);font-size:10px;text-transform:uppercase;letter-spacing:.06em}
+.certificate-admin-summary strong{margin-top:4px;overflow-wrap:anywhere}
+.certificate-admin-actions{margin:12px 0 18px}
+.certificate-admin-actions>button{padding:10px 13px;border:0;border-radius:9px;background:var(--alt-blue);color:#fff;font-weight:800;cursor:pointer}
+.certificate-admin-actions>button.release{background:#16835b}.certificate-admin-actions>button.block{background:#a2373c}.certificate-admin-actions>button.cancel{background:#687384}
+.certificate-admin-history h4{margin:0 0 10px}
+.cert-history-row{display:grid;grid-template-columns:12px minmax(0,1fr) auto;gap:10px;padding:11px 0;border-bottom:1px solid var(--alt-border)}
+.cert-history-row:last-child{border-bottom:0}.cert-history-dot{width:10px;height:10px;margin-top:5px;border-radius:50%;background:var(--alt-cyan)}
+.cert-history-row strong,.cert-history-row span,.cert-history-row small{display:block}.cert-history-row span{margin-top:3px;color:var(--alt-muted);font-size:11px}.cert-history-row small{color:var(--alt-muted);font-size:10px;text-align:right}
+@media(max-width:800px){.certificate-admin-kpis{grid-template-columns:1fr 1fr}.certificate-admin-toolbar{grid-template-columns:1fr}.certificate-admin-summary{grid-template-columns:1fr 1fr}}
+@media(max-width:520px){.certificate-admin-kpis,.certificate-admin-summary{grid-template-columns:1fr}.cert-history-row{grid-template-columns:12px minmax(0,1fr)}.cert-history-row small{grid-column:2;text-align:left}}
+
+/* =========================================================
+   ATUALIZAÇÃO 05 - gerência de horas e solicitações parciais
+   ========================================================= */
+.certificate-hours-heading,.certificate-requests-heading{margin:24px 0 10px}
+.certificate-hours-heading p,.certificate-requests-heading p{margin:4px 0 0;color:var(--alt-muted);font-size:12px}
+#tabCarteirasHorasGestao{min-width:1120px}
+.table-subline{display:block;margin-top:3px;color:var(--alt-muted);font-size:10px}
+.certificate-hours-modal{width:min(760px,96vw)}
+.hours-manager-form{display:grid;gap:13px}
+.hours-manager-form label{display:grid;gap:6px;color:var(--alt-text);font-size:12px;font-weight:800}
+.hours-manager-form select,.hours-manager-form textarea{width:100%;padding:11px 12px;border:1px solid var(--alt-border);border-radius:10px;background:#fff;color:var(--alt-text)}
+.hours-manager-form .exception-check{display:flex;align-items:flex-start;gap:9px;padding:12px;border:1px solid #cce8e7;border-radius:10px;background:#f2fbfa;font-weight:700}
+.hours-manager-form .exception-check input{width:18px;height:18px;flex:0 0 auto;margin-top:1px}
+.hours-manager-alert{padding:11px 12px;border-radius:10px;font-size:12px;line-height:1.45}
+.hours-manager-alert.ok{border:1px solid #bfe6ce;background:#edf9f2;color:#176b40}
+.hours-manager-alert.warning{border:1px solid #f0d59c;background:#fff8e8;color:#805b09}
+.hours-manager-alert.error{border:1px solid #efc4c4;background:#fff2f2;color:#972f35}
+#tabCarteirasHorasGestao button[data-wallet-manage]{padding:8px 10px;border:1px solid #b8dfe0;border-radius:8px;background:#edfafa;color:var(--alt-blue);font-size:11px;font-weight:800;cursor:pointer;white-space:nowrap}
+@media(max-width:800px){.certificate-hours-heading,.certificate-requests-heading{align-items:flex-start}.certificate-hours-modal{width:100%}}

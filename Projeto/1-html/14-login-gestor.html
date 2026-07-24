@@ -10,6 +10,7 @@
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2" defer></script>
   <script src="../4-java/supabase-init.js" defer></script>
   <script src="../4-java/login-gestor.js" defer></script>
+  <link rel="stylesheet" href="../2-css/06-responsive.css">
 </head>
 <body>
   <main class="manager-login-shell">
@@ -40,33 +41,14 @@
           <button type="submit" class="manager-primary">Entrar no portal</button>
         </form>
         <div id="gestorLoginMsg" class="form-message" aria-live="polite"></div>
-        <button type="button" class="manager-link" id="abrirPrimeiroAcesso">Configurar o primeiro gestor</button>
+        <div class="manager-access-note">
+          <strong>Acesso institucional</strong>
+          <span>Usuários e níveis são cadastrados pela administração da Altitude.</span>
+        </div>
         <a href="4-login.html" class="student-access">Sou aluno — acessar portal do aluno</a>
-      </div>
-
-      <div id="primeiroAcessoPane" hidden>
-        <span class="eyebrow">Configuração inicial</span>
-        <h2>Ativar primeiro gestor</h2>
-        <p>Disponível somente enquanto não existir nenhum gestor no banco. Use uma conta já criada no Supabase Auth.</p>
-        <form id="formPrimeiroGestor">
-          <label>Seu nome
-            <input id="bootstrapNome" type="text" required>
-          </label>
-          <label>ID de gestor desejado
-            <input id="bootstrapGestorId" type="text" placeholder="GST-2026-0001" required>
-          </label>
-          <label>E-mail da conta existente
-            <input id="bootstrapEmail" type="email" autocomplete="username" required>
-          </label>
-          <label>Senha atual
-            <input id="bootstrapSenha" type="password" autocomplete="current-password" required>
-          </label>
-          <button type="submit" class="manager-primary">Ativar acesso de gestão</button>
-        </form>
-        <div id="bootstrapMsg" class="form-message" aria-live="polite"></div>
-        <button type="button" class="manager-link" id="voltarLoginGestor">Voltar ao login</button>
       </div>
     </section>
   </main>
+  <script src="../4-java/06-responsive.js"></script>
 </body>
 </html>

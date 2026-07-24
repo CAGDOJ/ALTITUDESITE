@@ -1,49 +1,12 @@
-ALTITUDE — FLUXO COMPLETO DE CURSOS
+ALTITUDE — ATUALIZAÇÃO 06
 
-ORDEM PARA ATUALIZAR
+1) No Supabase SQL Editor, execute:
+   ATUALIZACAO_05_CORRIGIDA_CARTEIRA_HORAS.sql
 
-1. Supabase > SQL Editor:
-   a) Se ainda não executou, rode ATUALIZACAO_BANCO_PORTAL_ALUNO.sql.
-   b) Depois rode ATUALIZACAO_02_FLUXO_CURSOS.sql.
+2) Não use o arquivo antigo que gerou o erro da coluna liberado_em.
 
-2. Publique todos os arquivos deste ZIP na hospedagem.
+3) Publique todos os arquivos deste pacote no GitHub Pages.
 
-3. Para usar “Criar curso com IA”:
-   - publique a Edge Function supabase/functions/criar-curso-ia;
-   - configure OPENAI_API_KEY e GESTOR_EMAILS nos secrets do Supabase;
-   - consulte GUIA_CRIADOR_IA.md.
+4) Limpe o cache do navegador e teste em celular e tablet.
 
-4. Para corrigir o aviso de segurança do domínio:
-   - consulte GUIA_HTTPS_DOMINIO.md;
-   - o HTML já usa HTTPS e bloqueia conteúdo misto;
-   - o cadeado depende do DNS e do certificado HTTPS da hospedagem.
-
-FLUXO IMPLEMENTADO
-
-Gestor:
-Criar curso > organizar módulos > escrever conteúdo > gerar/anexar PDF > adicionar imagens/vídeos > criar prova e questões > revisar > publicar.
-
-Site público:
-O curso publicado aparece automaticamente em “Cursos Profissionais”, com capa, carga horária, estrelas, matrículas, cliques e destaque “Em alta”.
-
-Aluno:
-Inscrever-se > curso aparece no Portal do Aluno > estudar módulos > concluir conteúdo > fazer prova > ser aprovado > emitir certificado com QR Code.
-
-PUBLICAÇÃO SEGURA
-
-Antes de publicar, o gestor verifica automaticamente:
-- nome, descrição, carga horária e capa;
-- módulos;
-- conteúdo escrito ou PDF em cada módulo;
-- materiais;
-- prova vinculada;
-- questões cadastradas.
-
-O curso gerado por IA sempre nasce como RASCUNHO. Somente o gestor publica.
-
-ATUALIZAÇÃO 03 — OBRIGATÓRIA PARA OS AJUSTES MAIS RECENTES
-1. Execute ATUALIZACAO_03_ACESSOS_AJUSTES.sql no SQL Editor do Supabase.
-2. Publique a Edge Function supabase/functions/gerenciar-gestor.
-3. Acesse Projeto/1-html/14-login-gestor.html para configurar o primeiro gestor.
-4. Limpe o cache do navegador após publicar os novos arquivos.
-5. Consulte GUIA_ATUALIZACAO_03.md para o passo a passo completo.
+Guia completo: GUIA_ATUALIZACAO_06.md

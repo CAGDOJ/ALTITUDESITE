@@ -9,6 +9,7 @@
   <link rel="icon" href="../3-img/favicon.ico">
   <link rel="stylesheet" href="../2-css/base-portal.css">
   <link rel="stylesheet" href="../2-css/11-portaldoaluno.css">
+  <link rel="stylesheet" href="../2-css/06-responsive.css">
 </head>
 <body>
   <div class="portal-layout">
@@ -174,7 +175,7 @@
           <div>
             <span class="eyebrow">Conquistas</span>
             <h1>Meus certificados</h1>
-            <p>Após concluir o conteúdo e ser aprovado, o certificado é liberado para emissão.</p>
+            <p>Após concluir o conteúdo e a prova, escolha quantas horas deseja usar. O PDF será liberado somente após a aprovação da gestão.</p>
           </div>
           <a class="secondary-link" href="8-certificados.html" target="_blank">Validar um certificado</a>
         </div>
@@ -184,7 +185,43 @@
           <span>Cada documento possui um código único e QR Code conectado à base oficial da Altitude.</span>
         </div>
 
-        <div id="listaCertificados" class="certificate-list"></div>
+        <div class="section-block hours-wallet-overview">
+          <div class="section-title">
+            <div><h2>Minha carteira de horas</h2><p>Você escolhe quantas horas disponíveis deseja usar. O PDF só aparece depois da liberação da gestão.</p></div>
+          </div>
+          <div id="resumoCarteiraHoras" class="hours-wallet-summary"></div>
+        </div>
+
+        <div class="section-block issued-certificates-section">
+          <div class="section-title">
+            <div><h2>Certificados emitidos</h2><p>Documentos já liberados pela instituição e disponíveis para uso.</p></div>
+            <span id="contadorCertificadosEmitidos">0 emitidos</span>
+          </div>
+          <div id="listaCertificadosEmitidos" class="issued-certificate-grid"></div>
+        </div>
+
+        <div class="section-block certificate-request-section">
+          <div class="section-title">
+            <div><h2>Solicitações e liberações</h2><p>Acompanhe os cursos concluídos, solicitações pendentes e documentos bloqueados.</p></div>
+          </div>
+          <div id="listaCertificados" class="certificate-list"></div>
+        </div>
+
+        <div class="section-block hours-extract-section">
+          <div class="section-title">
+            <div><h2>Extrato de horas</h2><p>Créditos, reservas, emissões e devoluções ficam registrados.</p></div>
+            <span id="contadorExtratoHoras">0 movimentações</span>
+          </div>
+          <div id="extratoHoras" class="hours-history-list"></div>
+        </div>
+
+        <div class="section-block certificate-history-section">
+          <div class="section-title">
+            <div><h2>Histórico de certificados</h2><p>Acompanhe solicitações, liberações, bloqueios e emissões anteriores.</p></div>
+            <span id="contadorHistoricoCertificados">0 registros</span>
+          </div>
+          <div id="historicoCertificados" class="certificate-history-list"></div>
+        </div>
       </section>
 
       <section class="aba" id="pagamentos">
@@ -286,8 +323,11 @@
           </article>
 
           <article class="surface-card student-card-area">
-            <h2>Carteirinha digital</h2>
+            <div class="card-title-row">
+              <div><h2>Carteirinha digital</h2><p>Documento digital com QR Code de autenticação.</p></div>
+            </div>
             <div id="boxCarteirinha"></div>
+            <button type="button" id="btnBaixarCarteirinha" class="primary-button card-download-button">Baixar carteirinha em PDF</button>
           </article>
         </div>
       </section>
@@ -367,5 +407,6 @@
   <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
   <script src="../4-java/supabase-init.js"></script>
   <script src="../4-java/portaldoaluno.js"></script>
+  <script src="../4-java/06-responsive.js"></script>
 </body>
 </html>

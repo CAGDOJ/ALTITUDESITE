@@ -1,19 +1,42 @@
-ALTITUDE — PORTAL DO ALUNO E CERTIFICADOS
+ALTITUDE — FLUXO COMPLETO DE CURSOS
 
-1) Antes de testar o novo portal, abra o Supabase > SQL Editor.
-2) Execute o arquivo ATUALIZACAO_BANCO_PORTAL_ALUNO.sql por completo.
-3) Depois publique todos os arquivos deste projeto na hospedagem.
-4) Entre com um aluno matriculado e abra Projeto/1-html/11-portaldoaluno.html.
+ORDEM PARA ATUALIZAR
 
-Fluxo implementado:
-- estudo por módulos e materiais;
-- progresso salvo no banco;
-- prova com uma questão por tela;
-- correção segura dentro do Supabase;
-- novas tentativas quando houver reprovação;
-- certificado liberado após 100% do conteúdo e nota mínima de 70%;
-- PDF com nome do aluno, curso, carga horária, logo, número e QR Code;
-- validação pública em Projeto/1-html/8-certificados.html.
+1. Supabase > SQL Editor:
+   a) Se ainda não executou, rode ATUALIZACAO_BANCO_PORTAL_ALUNO.sql.
+   b) Depois rode ATUALIZACAO_02_FLUXO_CURSOS.sql.
 
-IMPORTANTE:
-Os arquivos do site já estão prontos, mas a alteração do banco não pode ser aplicada apenas enviando o ZIP para a hospedagem. O SQL precisa ser executado no Supabase.
+2. Publique todos os arquivos deste ZIP na hospedagem.
+
+3. Para usar “Criar curso com IA”:
+   - publique a Edge Function supabase/functions/criar-curso-ia;
+   - configure OPENAI_API_KEY e GESTOR_EMAILS nos secrets do Supabase;
+   - consulte GUIA_CRIADOR_IA.md.
+
+4. Para corrigir o aviso de segurança do domínio:
+   - consulte GUIA_HTTPS_DOMINIO.md;
+   - o HTML já usa HTTPS e bloqueia conteúdo misto;
+   - o cadeado depende do DNS e do certificado HTTPS da hospedagem.
+
+FLUXO IMPLEMENTADO
+
+Gestor:
+Criar curso > organizar módulos > escrever conteúdo > gerar/anexar PDF > adicionar imagens/vídeos > criar prova e questões > revisar > publicar.
+
+Site público:
+O curso publicado aparece automaticamente em “Cursos Profissionais”, com capa, carga horária, estrelas, matrículas, cliques e destaque “Em alta”.
+
+Aluno:
+Inscrever-se > curso aparece no Portal do Aluno > estudar módulos > concluir conteúdo > fazer prova > ser aprovado > emitir certificado com QR Code.
+
+PUBLICAÇÃO SEGURA
+
+Antes de publicar, o gestor verifica automaticamente:
+- nome, descrição, carga horária e capa;
+- módulos;
+- conteúdo escrito ou PDF em cada módulo;
+- materiais;
+- prova vinculada;
+- questões cadastradas.
+
+O curso gerado por IA sempre nasce como RASCUNHO. Somente o gestor publica.

@@ -376,16 +376,12 @@ async function matricularCurso(cursoId) {
   const button = document.activeElement instanceof HTMLButtonElement ? document.activeElement : null;
   if (button) button.disabled = true;
   try {
-    const { error } = await sb.from("matriculas").insert({
-      aluno_id: state.aluno.user_id,
-      curso_id: Number(cursoId),
-      status: "ATIVA",
-      progresso: 0
-    });
+    const { error } = await sb.rpc("matricular_em_curso", { p_curso_id: Number(cursoId) });
     if (error) throw error;
     toast("Matrícula realizada com sucesso.", "success");
     await atualizarDadosPrincipais();
     abrirAba("cursos");
+    await abrirCurso(Number(cursoId));
   } catch (error) {
     toast(`Não foi possível realizar a matrícula: ${error.message}`, "error");
   } finally {
@@ -481,10 +477,15 @@ function renderModuloAtual() {
   for (const material of modulo.materiais || []) recursos.push(material);
 
   const content = $("lessonContent");
-  if (!recursos.length) {
-    content.innerHTML = `<div class="empty-state">Este módulo ainda não possui arquivos. Leia a descrição e aguarde a publicação do material.</div>`;
+  const textoModulo = String(modulo.conteudo || "").trim();
+  const blocoTexto = textoModulo
+    ? `<article class="lesson-written-content"><h3>Conteúdo do módulo</h3>${textoModulo.split(/\n{2,}/).map((paragrafo) => `<p>${escapeHTML(paragrafo).replaceAll("\n", "<br>")}</p>`).join("")}</article>`
+    : "";
+
+  if (!recursos.length && !textoModulo) {
+    content.innerHTML = `<div class="empty-state">Este módulo ainda não possui conteúdo publicado.</div>`;
   } else {
-    content.innerHTML = recursos.map((resource) => {
+    content.innerHTML = blocoTexto + recursos.map((resource) => {
       const url = safeUrl(resource.url);
       const embed = String(resource.tipo).toUpperCase() === "VIDEO" ? youtubeEmbed(url) : "";
       if (embed && resource.destaque) {
@@ -710,7 +711,8 @@ function renderCertificados() {
   list.innerHTML = state.cursos.map((curso) => {
     const progressoOk = clamp(curso.progresso) >= 100;
     const resultado = melhorResultadoCurso(curso.id);
-    const provaOk = Boolean(resultado?.aprovado && Number(resultado.nota) >= 70);
+    const notaMinima = Number(curso.nota_minima || 70);
+    const provaOk = Boolean(resultado?.aprovado && Number(resultado.nota) >= notaMinima);
     const cert = certificadoCurso(curso.id);
     const certificadoOk = Boolean(cert);
 
@@ -727,7 +729,7 @@ function renderCertificados() {
 
         <div class="certificate-requirements">
           <div class="requirement ${progressoOk ? "ok" : ""}"><b>${progressoOk ? "✓" : "1"}</b><span>Conteúdo 100% concluído</span></div>
-          <div class="requirement ${provaOk ? "ok" : ""}"><b>${provaOk ? "✓" : "2"}</b><span>Prova com nota mínima de 70%</span></div>
+          <div class="requirement ${provaOk ? "ok" : ""}"><b>${provaOk ? "✓" : "2"}</b><span>Prova com nota mínima de ${notaMinima}%</span></div>
           <div class="requirement ${certificadoOk ? "ok" : ""}"><b>${certificadoOk ? "✓" : "3"}</b><span>Certificado emitido e verificável</span></div>
         </div>
 
@@ -735,7 +737,7 @@ function renderCertificados() {
           <span class="certificate-code">${cert?.numero_certificado ? `Registro: ${escapeHTML(cert.numero_certificado)}` : "O número será criado no momento da emissão."}</span>
           <div class="certificate-actions">
             ${certificadoOk
-              ? `<button class="secondary-button" type="button" onclick="copiarCodigoCertificado(${Number(cert.id)})">Copiar código</button><button class="primary-button" type="button" onclick="baixarCertificado(${Number(cert.id)})">Baixar PDF</button>`
+              ? `<button class="secondary-button" type="button" onclick="avaliarCurso(${Number(curso.id)})">Avaliar</button><button class="secondary-button" type="button" onclick="copiarCodigoCertificado(${Number(cert.id)})">Copiar código</button><button class="primary-button" type="button" onclick="baixarCertificado(${Number(cert.id)})">Baixar PDF</button>`
               : progressoOk && provaOk
                 ? `<button class="primary-button" type="button" onclick="emitirCertificado(${Number(curso.id)})">Emitir certificado</button>`
                 : `<button class="secondary-button" type="button" disabled>Conclua os requisitos</button>`}
@@ -743,6 +745,27 @@ function renderCertificados() {
         </div>
       </article>`;
   }).join("");
+}
+
+async function avaliarCurso(cursoId) {
+  const notaTexto = window.prompt("Qual nota você dá ao curso? Digite um número de 1 a 5.", "5");
+  if (notaTexto === null) return;
+  const nota = Number(notaTexto);
+  if (!Number.isInteger(nota) || nota < 1 || nota > 5) {
+    return toast("Informe uma nota inteira de 1 a 5.", "error");
+  }
+  const comentario = window.prompt("Comentário opcional sobre o curso:", "") || "";
+  try {
+    const { error } = await sb.rpc("avaliar_curso", {
+      p_curso_id: Number(cursoId),
+      p_nota: nota,
+      p_comentario: comentario
+    });
+    if (error) throw error;
+    toast("Avaliação registrada. Obrigado!", "success");
+  } catch (error) {
+    toast(`Não foi possível avaliar: ${error.message}`, "error");
+  }
 }
 
 async function emitirCertificado(cursoId) {
@@ -1072,6 +1095,11 @@ async function iniciarPortal() {
     await carregarAluno();
     await atualizarDadosPrincipais();
     await carregarChamados();
+    const cursoInicial = Number(new URLSearchParams(window.location.search).get("curso"));
+    if (cursoInicial && state.cursos.some((item) => Number(item.id) === cursoInicial)) {
+      abrirAba("cursos");
+      await abrirCurso(cursoInicial);
+    }
   } catch (error) {
     console.error(error);
     toast(`Erro ao carregar o portal: ${error.message}`, "error");
@@ -1082,6 +1110,7 @@ window.abrirCurso = abrirCurso;
 window.selecionarModulo = selecionarModulo;
 window.matricularCurso = matricularCurso;
 window.emitirCertificado = emitirCertificado;
+window.avaliarCurso = avaliarCurso;
 window.baixarCertificado = baixarCertificado;
 window.copiarCodigoCertificado = copiarCodigoCertificado;
 window.refazerProva = refazerProva;

@@ -70,7 +70,16 @@
         const email = await resolveEmail(ident);
         const { data, error } = await sb.auth.signInWithPassword({ email, password });
         if (error || !data?.session) throw error || new Error('Credenciais inválidas.');
-        window.location.href = '/Projeto/1-html/11-portaldoaluno.html';
+        const params = new URLSearchParams(window.location.search);
+        const cursoId = Number(params.get('curso') || localStorage.getItem('altitude_curso_pendente'));
+        if (cursoId) {
+          const { error: matriculaError } = await sb.rpc('matricular_em_curso', { p_curso_id: cursoId });
+          if (matriculaError) console.warn('Matrícula automática não concluída:', matriculaError);
+          localStorage.removeItem('altitude_curso_pendente');
+          window.location.href = `/Projeto/1-html/11-portaldoaluno.html?curso=${cursoId}`;
+        } else {
+          window.location.href = '/Projeto/1-html/11-portaldoaluno.html';
+        }
       } catch (err) {
         console.error(err);
         msgEl.textContent = traduz(err);

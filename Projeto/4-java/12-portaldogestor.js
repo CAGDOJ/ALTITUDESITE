@@ -435,7 +435,7 @@ function gerarRaLocal(){
 
   const toUp   = (t) => (t || '').trim().toUpperCase();
   const fmtBool = (b) => (b ? 'SIM' : 'NÃO');
-  const thumb   = (url) => url || 'https://via.placeholder.com/64x40?text=CAPA';
+  const thumb   = (url) => url || '../3-img/LOGO.png';
 
   async function uploadCapa(arquivo) {
     if (!arquivo) return null;
@@ -542,8 +542,9 @@ function gerarRaLocal(){
           </span>
         </td>
         <td class="col-acoes">
-          <button class="btn-mini gc-edit" title="Editar curso">✏️</button>
-          <button class="btn-mini gc-mods" title="Gerenciar módulos, materiais e provas">📦</button>
+          <button class="btn-mini gc-edit" title="Editar curso">✏️ Editar</button>
+          <button class="btn-mini gc-mods" title="Gerenciar módulos, materiais e provas">📚 Conteúdo</button>
+          <button class="btn-mini gc-publish ${c.publicado ? 'is-live' : ''}" title="${c.publicado ? 'Retirar do catálogo' : 'Revisar e publicar'}">${c.publicado ? '✓ Publicado' : 'Publicar'}</button>
           <button class="btn-mini gc-prev" title="Visualizar no portal do aluno">👁️</button>
           <button class="btn-mini gc-dup"  title="Duplicar curso">📋</button>
           <button class="btn-mini gc-del"  title="Excluir curso">🗑️</button>
@@ -579,6 +580,10 @@ function gerarRaLocal(){
       $('#fCursoDesc').value  = '';
       $('#fCursoPub').value   = 'NAO';
       $('#fCursoCapa').value  = '';
+      if ($('#fCursoNivel')) $('#fCursoNivel').value = 'BASICO';
+      if ($('#fCursoNotaMinima')) $('#fCursoNotaMinima').value = '70';
+      if ($('#fCursoDestaque')) $('#fCursoDestaque').checked = false;
+      const prev = $('#cursoCapaPreview'); if (prev) prev.innerHTML = '<span>A capa aparecerá aqui</span>';
 
       $('#modalCurso')?.setAttribute('aria-hidden', 'false');
       esconderCarregamento();
@@ -600,6 +605,11 @@ function gerarRaLocal(){
       $('#fCursoDesc').value  = c.descricao || '';
       $('#fCursoPub').value   = c.publicado ? 'SIM' : 'NAO';
       $('#fCursoCapa').value  = '';
+      if ($('#fCursoNivel')) $('#fCursoNivel').value = c.nivel || 'BASICO';
+      if ($('#fCursoNotaMinima')) $('#fCursoNotaMinima').value = c.nota_minima ?? 70;
+      if ($('#fCursoDestaque')) $('#fCursoDestaque').checked = Boolean(c.destaque);
+      const prev = $('#cursoCapaPreview');
+      if (prev) prev.innerHTML = c.capa_url ? `<img src="${c.capa_url}" alt="Capa atual">` : '<span>Curso sem capa</span>';
 
       $('#modalCurso')?.setAttribute('aria-hidden', 'false');
       esconderCarregamento();
@@ -614,8 +624,12 @@ function gerarRaLocal(){
     const area   = toUp($('#fCursoArea')?.value || 'TECNOLOGIA');
     const horas  = parseInt($('#fCursoHoras')?.value, 10) || 0;
     const desc   = $('#fCursoDesc')?.value?.trim() || '';
-    const publi  = $('#fCursoPub')?.value === 'SIM';
+    const cursoAtual = GC.editId ? GC.cursos.find(curso => curso.id === GC.editId) : null;
+    const publi = Boolean(cursoAtual?.publicado);
     const arquivo= $('#fCursoCapa')?.files[0] || null;
+    const nivel = $('#fCursoNivel')?.value || 'BASICO';
+    const notaMinima = Math.max(0, Math.min(100, parseInt($('#fCursoNotaMinima')?.value, 10) || 70));
+    const destaque = Boolean($('#fCursoDestaque')?.checked);
 
     if (!nome) {
       esconderCarregamento();
@@ -651,7 +665,11 @@ function gerarRaLocal(){
         categoria   : area,
         carga_horaria: horas,
         descricao   : desc,
-        publicado   : publi
+        publicado   : publi,
+        nivel       : nivel,
+        nota_minima : notaMinima,
+        destaque    : destaque,
+        publicado_em: publi ? new Date().toISOString() : null
       };
       if (urlCapa) payloadBase.capa_url = urlCapa;
 
@@ -677,7 +695,7 @@ function gerarRaLocal(){
       }
 
       esconderCarregamento();
-      alert(`✅ Curso "${salvo.titulo}" salvo com sucesso!`);
+      alert(GC.editId ? `✅ Curso "${salvo.titulo}" atualizado com sucesso!` : `✅ Curso "${salvo.titulo}" salvo como rascunho. Agora crie os módulos, materiais e a prova.`);
       $('#modalCurso')?.setAttribute('aria-hidden', 'true');
       $('#formCurso')?.reset();
       await carregarCursosCompleto();
@@ -865,6 +883,7 @@ function gerarRaLocal(){
                     <td>
                         <strong>${modulo.titulo}</strong>
                         ${modulo.descricao ? `<br><small style="color: #64748b;">${modulo.descricao}</small>` : ''}
+                        <div class="module-content-status ${modulo.conteudo ? 'ready' : ''}">${modulo.conteudo ? '✓ Conteúdo escrito' : 'Conteúdo pendente'}</div>
                     </td>
                     <td style="text-align: center;">${materiaisCount}</td>
                     <td style="text-align: center;">${questaoCount}</td>
@@ -877,9 +896,8 @@ function gerarRaLocal(){
                         <button class="btn-mini" onclick="alternarStatusModulo(${modulo.id})">
                             ${modulo.publicado ? '⏸️' : '▶️'}
                         </button>
-                        <button class="btn-mini" onclick="abrirEdicaoModulo(${modulo.id})">
-                            ✏️ Editar
-                        </button>
+                        <button class="btn-mini gc-gestao-modulo" data-modulo-id="${modulo.id}" data-modulo-titulo="${String(modulo.titulo).replace(/"/g, '&quot;')}">📚 Conteúdo e prova</button>
+                        <button class="btn-mini" onclick="abrirEdicaoModulo(${modulo.id})">✏️ Editar</button>
                         <button class="btn-mini" onclick="excluirModulo(${modulo.id})" style="color: #ef4444;">
                             🗑️ Excluir
                         </button>
@@ -914,6 +932,7 @@ function gerarRaLocal(){
     const tituloInput = $('#fModuloTitulo');
     const ordemInput = $('#fModuloOrdem');
     const descricaoInput = $('#fModuloDesc');
+    const conteudoInput = $('#fModuloConteudo');
 
     if (!tituloInput || !ordemInput) {
       esconderCarregamento();
@@ -924,6 +943,7 @@ function gerarRaLocal(){
     const titulo = tituloInput.value.trim();
     const ordem = parseInt(ordemInput.value) || 1;
     const descricao = descricaoInput ? descricaoInput.value.trim() : '';
+    const conteudo = conteudoInput ? conteudoInput.value.trim() : '';
 
     if (!titulo) {
       esconderCarregamento();
@@ -932,7 +952,7 @@ function gerarRaLocal(){
       return;
     }
 
-    debugModulos('Dados do formulário:', { titulo, ordem, descricao, cursoEditandoId });
+    debugModulos('Dados do formulário:', { titulo, ordem, descricao, conteudo, cursoEditandoId });
 
     try {
       debugModulos('Enviando para Supabase...');
@@ -944,6 +964,7 @@ function gerarRaLocal(){
           titulo: titulo,
           ordem: ordem,
           descricao: descricao,
+          conteudo: conteudo,
           publicado: false,
           created_at: new Date().toISOString()
         }])
@@ -958,6 +979,7 @@ function gerarRaLocal(){
 
       tituloInput.value = '';
       if (descricaoInput) descricaoInput.value = '';
+      if (conteudoInput) conteudoInput.value = '';
       ordemInput.value = '1';
 
       await carregarModulosCurso(cursoEditandoId);
@@ -1192,6 +1214,7 @@ function gerarRaLocal(){
       const { data, error } = await sb
         .from('provas')
         .insert([{
+          curso_id: GC.cursoAtual?.id || cursoEditandoId,
           modulo_id: moduloId,
           titulo: titulo,
           criado_em: new Date().toISOString()
@@ -1540,6 +1563,7 @@ function gerarRaLocal(){
       document.getElementById('editar-course-id').value = modulo.curso_id;
       document.getElementById('editar-titulo').value = modulo.titulo || '';
       document.getElementById('editar-descricao').value = modulo.descricao || '';
+      const editarConteudo = document.getElementById('editar-conteudo'); if (editarConteudo) editarConteudo.value = modulo.conteudo || '';
       document.getElementById('editar-order').value = modulo.ordem || 1;
       document.getElementById('editar-pdf-url').value = modulo.pdf_url || '';
       document.getElementById('editar-video-url').value = modulo.video_url || '';
@@ -1595,6 +1619,7 @@ function gerarRaLocal(){
       const dadosAtualizados = {
         titulo: document.getElementById('editar-titulo').value.trim(),
         descricao: document.getElementById('editar-descricao').value.trim(),
+        conteudo: document.getElementById('editar-conteudo')?.value.trim() || '',
         ordem: parseInt(document.getElementById('editar-order').value) || 1,
         pdf_url: document.getElementById('editar-pdf-url').value.trim(),
         video_url: document.getElementById('editar-video-url').value.trim(),

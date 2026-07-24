@@ -2,31 +2,82 @@
 <html lang="pt-BR">
 <head>
   <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta http-equiv="Content-Security-Policy" content="upgrade-insecure-requests; block-all-mixed-content">
   <title>Portal de Gestão - Altitude</title>
   <link rel="stylesheet" href="/Projeto/2-css/12-portaldogestor.css">
   <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/jspdf@2.5.2/dist/jspdf.umd.min.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
   <script src="../4-java/supabase-init.js" defer></script>
   <script src="../4-java/12-portaldogestor.js" defer></script>
+  <script src="../4-java/gestor-enhancements.js" defer></script>
   <link rel="stylesheet" href="../2-css/base-portal.css">
 </head>
 
 <body>
   <div class="container">
     <!-- Sidebar -->
-    <aside class="sidebar">
-      <h1 class="logo">Instituição Altitude</h1>
-      <nav>
-        <button onclick="abrirAba('alunos')">Gestão de Alunos</button>
-        <button onclick="abrirAba('cursos')">Gestão de Cursos</button>
-        <button onclick="abrirAba('usuarios')">Gestão de Usuários</button>
-        <button onclick="abrirAba('chamados')">Gestão de Chamados</button>
+    <aside class="sidebar" id="gestorSidebar">
+      <div class="brand-gestor">
+        <img src="../3-img/LOGO.png" alt="Altitude">
+        <div><strong>ALTITUDE</strong><span>Portal de Gestão</span></div>
+      </div>
+      <nav class="gestor-nav">
+        <button class="nav-item ativa" data-tab="dashboard" onclick="abrirAba('dashboard')"><span>⌂</span> Visão geral</button>
+        <button class="nav-item" data-tab="cursos" onclick="abrirAba('cursos')"><span>▣</span> Cursos e conteúdos</button>
+        <button class="nav-item nav-ai" data-tab="curso-ia" onclick="abrirAba('curso-ia')"><span>✦</span> Criar curso com IA</button>
+        <button class="nav-item" data-tab="alunos" onclick="abrirAba('alunos')"><span>♟</span> Alunos</button>
+        <button class="nav-item" data-tab="usuarios" onclick="abrirAba('usuarios')"><span>♙</span> Equipe e acessos</button>
+        <button class="nav-item" data-tab="chamados" onclick="abrirAba('chamados')"><span>✉</span> Atendimento</button>
       </nav>
+      <div class="sidebar-bottom">
+        <a href="2-profissional.html" target="_blank" rel="noopener">Ver catálogo público ↗</a>
+        <button type="button" id="btnSairGestor">Sair</button>
+      </div>
     </aside>
 
     <!-- Conteúdo -->
     <main class="conteudo">
-      <section id="alunos" class="aba ativa">
+      <header class="gestor-topbar">
+        <button class="mobile-menu" id="btnMenuGestor" type="button" aria-label="Abrir menu">☰</button>
+        <div><p class="eyebrow">Instituição Altitude</p><h1 id="gestorPageTitle">Visão geral</h1></div>
+        <div class="topbar-actions"><span id="gestorHoje"></span><a href="2-profissional.html" target="_blank" rel="noopener">Ver site</a></div>
+      </header>
+
+      <section id="dashboard" class="aba ativa">
+        <div class="welcome-panel">
+          <div><span class="status-dot"></span> Ambiente de produção</div>
+          <h2>Gerencie a jornada completa do aluno</h2>
+          <p>Crie o curso, organize os materiais, revise a avaliação e publique. Depois acompanhe matrículas, progresso e certificados.</p>
+          <div class="welcome-actions">
+            <button type="button" onclick="abrirAba('curso-ia')">✦ Criar curso com IA</button>
+            <button type="button" class="secondary" onclick="abrirAba('cursos')">Gerenciar cursos</button>
+          </div>
+        </div>
+        <div class="dashboard-kpis">
+          <article><span>Cursos publicados</span><strong id="dashCursos">0</strong><small>visíveis no catálogo</small></article>
+          <article><span>Matrículas ativas</span><strong id="dashMatriculas">0</strong><small>alunos estudando</small></article>
+          <article><span>Certificados emitidos</span><strong id="dashCertificados">0</strong><small>documentos válidos</small></article>
+          <article><span>Chamados pendentes</span><strong id="dashChamados">0</strong><small>precisam de atenção</small></article>
+        </div>
+        <div class="workflow-panel">
+          <div class="section-heading"><div><span>Fluxo recomendado</span><h3>Do rascunho ao certificado</h3></div></div>
+          <div class="workflow-grid">
+            <button onclick="abrirAba('curso-ia')"><b>1</b><span><strong>Criar</strong><small>IA ou formulário manual</small></span></button>
+            <button onclick="abrirAba('cursos')"><b>2</b><span><strong>Organizar</strong><small>Módulos, PDF, vídeos e imagens</small></span></button>
+            <button onclick="abrirAba('cursos')"><b>3</b><span><strong>Avaliar</strong><small>Prova vinculada ao curso</small></span></button>
+            <button onclick="abrirAba('cursos')"><b>4</b><span><strong>Publicar</strong><small>Exibir em Cursos Profissionais</small></span></button>
+            <button onclick="abrirAba('alunos')"><b>5</b><span><strong>Acompanhar</strong><small>Progresso e certificados</small></span></button>
+          </div>
+        </div>
+        <div class="dashboard-columns">
+          <div class="panel"><div class="section-heading"><div><span>Últimos cursos</span><h3>Produção recente</h3></div><button onclick="abrirAba('cursos')">Ver todos</button></div><div id="dashListaCursos" class="simple-list"></div></div>
+          <div class="panel"><div class="section-heading"><div><span>Atenção</span><h3>Próximas ações</h3></div></div><div id="dashPendencias" class="check-list"></div></div>
+        </div>
+      </section>
+
+      <section id="alunos" class="aba">
         <h2>👨‍🎓 Gestão de Alunos</h2>
         <div class="toolbar">
           <input id="alnBusca" type="search" placeholder="Buscar por nome ou RA…">
@@ -100,8 +151,8 @@
       </div>
 
       <section id="cursos" class="aba">
-        <h2>📚 Gestão de Cursos</h2>
-        <p class="sub">Cadastre cursos por área, suba materiais (PDF, vídeo, áudio, imagem) por módulo e crie avaliações com 10 perguntas.</p>
+        <div class="page-heading"><div><span>Conteúdo acadêmico</span><h2>Cursos e conteúdos</h2><p>Monte cada curso em etapas: informações, módulos, materiais, prova, revisão e publicação.</p></div><button type="button" class="primary-action" onclick="abrirAba('curso-ia')">✦ Criar com IA</button></div>
+        <div class="course-steps"><span class="done">1. Curso</span><span>2. Módulos</span><span>3. Materiais</span><span>4. Prova</span><span>5. Publicar</span></div>
         <div class="toolbar">
           <label>Área:
             <select id="curFiltroArea"></select>
@@ -152,25 +203,37 @@
               <label>Área
                 <select id="fCursoArea" required></select>
               </label>
-              <label>Publicado
-                <select id="fCursoPub">
-                  <option value="SIM">SIM</option>
-                  <option value="NAO" selected>NAO</option>
+              <label>Situação
+                <select id="fCursoPub" disabled>
+                  <option value="NAO" selected>Rascunho — revisar antes de publicar</option>
+                  <option value="SIM">Publicado no catálogo</option>
                 </select>
+                <small class="field-hint">A publicação é feita somente pelo botão “Publicar”, após a conferência automática.</small>
               </label>
             </div>
             <label>Nome do curso
               <input id="fCursoNome" type="text" required>
             </label>
-            <label>Carga horária (horas)
-              <input id="fCursoHoras" type="number" min="1" max="2000" step="1" required>
-            </label>
+            <div class="grid3">
+              <label>Carga horária (horas)
+                <input id="fCursoHoras" type="number" min="1" max="2000" step="1" required>
+              </label>
+              <label>Nível
+                <select id="fCursoNivel"><option value="BASICO">Básico</option><option value="INTERMEDIARIO">Intermediário</option><option value="AVANCADO">Avançado</option></select>
+              </label>
+              <label>Nota mínima (%)
+                <input id="fCursoNotaMinima" type="number" min="0" max="100" value="70">
+              </label>
+            </div>
+            <label class="check-row"><input id="fCursoDestaque" type="checkbox"> Destacar como curso em alta</label>
             <label>Descrição breve
               <input id="fCursoDesc" type="text" maxlength="160" placeholder="Até 160 caracteres">
             </label>
+            <div class="quick-hours"><span>Cargas mais usadas:</span><button type="button" data-hours="10">10h</button><button type="button" data-hours="20">20h</button><button type="button" data-hours="30">30h</button><button type="button" data-hours="40">40h</button><button type="button" data-hours="60">60h</button><button type="button" data-hours="80">80h</button></div>
             <label>Foto de capa
               <input id="fCursoCapa" type="file" accept="image/*">
             </label>
+            <div class="cover-preview" id="cursoCapaPreview"><span>A capa aparecerá aqui</span></div>
             <div class="actions">
               <button type="button" class="ghost" id="fecharCurso">Voltar</button>
               <button type="submit" id="salvarCurso">Salvar</button>
@@ -203,9 +266,13 @@
                 </div>
               </div>
               <div style="margin-bottom: 15px;">
-                <label style="display: block; margin-bottom: 5px; font-weight: 500; color: #475569;">Descrição (opcional)</label>
-                <textarea id="fModuloDesc" rows="2" placeholder="Breve descrição do módulo..." 
-                          style="width: 100%; padding: 10px; border: 1px solid #d1d5db; border-radius: 6px; resize: vertical;"></textarea>
+                <label>Descrição curta</label>
+                <textarea id="fModuloDesc" rows="2" placeholder="O que o aluno aprenderá neste módulo?"></textarea>
+              </div>
+              <div style="margin-bottom: 15px;">
+                <label>Conteúdo do módulo</label>
+                <textarea id="fModuloConteudo" rows="9" placeholder="Escreva aqui o conteúdo completo. Depois você poderá gerar o PDF automaticamente ou anexar um PDF pronto."></textarea>
+                <small class="field-hint">Use títulos e parágrafos curtos. O conteúdo aparecerá na plataforma e poderá virar um PDF.</small>
               </div>
               <div style="text-align: right;">
                 <button type="submit" style="padding: 10px 20px; background: #0ea5a3; color: white; border: none; border-radius: 6px; cursor: pointer;">
@@ -256,6 +323,11 @@
                   <label style="display: block; margin-bottom: 5px; font-weight: 500; color: #475569;">Descrição</label>
                   <textarea id="editar-descricao" rows="3" style="width: 100%; padding: 10px; border: 1px solid #d1d5db; border-radius: 6px; resize: vertical;"></textarea>
                 </div>
+                <div style="margin-bottom: 15px;">
+                  <label>Conteúdo completo</label>
+                  <textarea id="editar-conteudo" rows="10" placeholder="Conteúdo que será disponibilizado ao aluno"></textarea>
+                  <div class="inline-actions"><button type="button" id="btnGerarPdfModulo">Gerar PDF deste conteúdo</button></div>
+                </div>
                 <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 15px; margin-bottom: 15px;">
                   <div>
                     <label style="display: block; margin-bottom: 5px; font-weight: 500; color: #475569;">PDF URL</label>
@@ -303,6 +375,8 @@
                 <option value="VIDEO">Vídeo (URL)</option>
                 <option value="AUDIO">Áudio</option>
                 <option value="IMAGEM">Imagem</option>
+                <option value="LINK">Link externo</option>
+                <option value="OUTRO">Outro arquivo</option>
               </select>
             </label>
             <label>Nome / Título
@@ -377,6 +451,33 @@
           </div>
         </div>
       </div>
+
+      <section id="curso-ia" class="aba">
+        <div class="page-heading"><div><span>Assistente acadêmico</span><h2>Criar curso com IA</h2><p>A IA prepara um rascunho completo. Nada será publicado sem sua revisão.</p></div><span class="draft-badge">Sempre em rascunho</span></div>
+        <div class="ai-layout">
+          <form id="formCursoIA" class="panel ai-form">
+            <div class="ai-callout"><strong>Descreva o curso como falaria comigo</strong><p>Inclua tema, público, objetivo e qualquer regra importante.</p></div>
+            <label>Pedido do curso<textarea id="iaPrompt" rows="6" required placeholder="Ex.: Crie um curso de Informática Básica para iniciantes, com 20 horas, 5 módulos, linguagem simples e prova final de 10 questões."></textarea></label>
+            <div class="grid2">
+              <label>Carga horária<select id="iaCarga"><option>10</option><option selected>20</option><option>30</option><option>40</option><option>60</option><option>80</option></select></label>
+              <label>Nível<select id="iaNivel"><option value="BASICO">Básico</option><option value="INTERMEDIARIO">Intermediário</option><option value="AVANCADO">Avançado</option></select></label>
+            </div>
+            <div class="grid2">
+              <label>Quantidade de módulos<input id="iaModulos" type="number" min="2" max="12" value="5"></label>
+              <label>Questões da prova<input id="iaQuestoes" type="number" min="5" max="30" value="10"></label>
+            </div>
+            <label>Categoria<select id="iaCategoria"><option>TECNOLOGIA</option><option>ADMINISTRAÇÃO</option><option>HUMANAS</option><option>SAÚDE</option><option>ENGENHARIA</option></select></label>
+            <label class="check-row"><input id="iaGerarCapa" type="checkbox" checked> Gerar também a foto de capa do curso</label>
+            <div class="ai-actions"><button type="submit" id="btnGerarCursoIA">✦ Gerar curso em rascunho</button><small>Você poderá editar tudo antes de publicar.</small></div>
+          </form>
+          <aside class="panel ai-side">
+            <h3>O que será criado</h3>
+            <ul><li>Título, descrição e objetivos</li><li>Módulos em ordem</li><li>Conteúdo completo para leitura</li><li>PDFs gerados a partir do conteúdo</li><li>Prova com alternativas e explicações</li><li>Foto de capa alinhada ao curso</li></ul>
+            <div class="review-flow"><b>Seu papel</b><span>1. Revisar conteúdo</span><span>2. Conferir questões</span><span>3. Ajustar a capa</span><span>4. Publicar</span></div>
+            <div id="iaResultado" class="ia-result hidden"></div>
+          </aside>
+        </div>
+      </section>
 
       <section id="usuarios" class="aba">
         <h2>👥 Gestão de Usuários</h2>

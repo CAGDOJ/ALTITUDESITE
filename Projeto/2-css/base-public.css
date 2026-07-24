@@ -496,3 +496,194 @@ body {
     grid-template-columns: 1fr;
   }
 }
+
+/* --------------------------------------------------------------------------
+   Rodapé público único — usado em Cadastro, Termos, Privacidade e catálogo
+   -------------------------------------------------------------------------- */
+body {
+  display: flex;
+  flex-direction: column;
+  min-height: 100vh;
+  background-color: #f5f7fb;
+}
+
+body > main {
+  flex: 1 0 auto;
+}
+
+body > .rodape {
+  flex: 0 0 auto;
+  margin-top: auto;
+}
+
+.rodape {
+  display: block;
+  width: 100%;
+  padding: 48px 28px 20px;
+  color: #ffffff;
+  background: #0a3d62;
+  border-top: 4px solid #52c0d9;
+}
+
+.rodape .footer-container {
+  display: grid;
+  grid-template-columns: minmax(220px, 1.35fr) repeat(3, minmax(150px, 1fr));
+  gap: 28px;
+  width: min(1200px, 100%);
+  margin: 0 auto;
+  padding: 0;
+  align-items: start;
+}
+
+.rodape .footer-column,
+.rodape .footer-column.logo-info,
+.rodape .footer-column.redes-sociais,
+.rodape .footer-column.contato,
+.rodape .footer-column.links-rapidos {
+  width: auto;
+  min-width: 0;
+  margin: 0;
+  padding: 0;
+  text-align: left;
+}
+
+.rodape .footer-logo {
+  display: block;
+  width: 150px;
+  max-width: 100%;
+  height: auto;
+  margin: 0 0 12px;
+  object-fit: contain;
+}
+
+.rodape h3 {
+  margin: 0 0 12px;
+  color: #7ed4f2;
+  font-size: 1rem;
+  line-height: 1.25;
+}
+
+.rodape p,
+.rodape li,
+.rodape a {
+  margin: 0;
+  color: #eef6fb;
+  font-size: .88rem;
+  line-height: 1.65;
+  overflow-wrap: anywhere;
+}
+
+.rodape p + p {
+  margin-top: 4px;
+}
+
+.rodape ul {
+  display: grid;
+  gap: 7px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.rodape a {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  text-decoration: none;
+  transition: color .2s ease;
+}
+
+.rodape a:hover,
+.rodape a:focus-visible {
+  color: #7ed4f2;
+}
+
+.rodape .footer-payments {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-wrap: wrap;
+  gap: 18px;
+  width: min(1200px, 100%);
+  margin: 28px auto 0;
+  padding-top: 20px;
+  border-top: 1px solid rgba(255, 255, 255, .14);
+}
+
+.rodape .payment-icon {
+  display: block;
+  width: 72px;
+  height: 38px;
+  max-height: 38px;
+  object-fit: contain;
+  object-position: center;
+  filter: saturate(.92);
+}
+
+.rodape .footer-bottom {
+  width: min(1200px, 100%);
+  margin: 20px auto 0;
+  padding-top: 15px;
+  border-top: 1px solid rgba(255, 255, 255, .14);
+  text-align: center;
+}
+
+.rodape .footer-bottom p {
+  color: #c7dce8;
+  font-size: .8rem;
+  text-align: center;
+}
+
+@media (max-width: 900px) {
+  .rodape {
+    padding: 40px 22px 18px;
+  }
+
+  .rodape .footer-container {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 26px 22px;
+  }
+}
+
+@media (max-width: 600px) {
+  .rodape {
+    padding: 34px 18px 18px;
+  }
+
+  .rodape .footer-container {
+    grid-template-columns: 1fr;
+    gap: 22px;
+  }
+
+  .rodape .footer-column,
+  .rodape .footer-column.logo-info,
+  .rodape .footer-column.redes-sociais,
+  .rodape .footer-column.contato,
+  .rodape .footer-column.links-rapidos {
+    text-align: left;
+  }
+
+  .rodape .footer-payments {
+    justify-content: flex-start;
+    gap: 14px;
+  }
+
+  .rodape .payment-icon {
+    width: 64px;
+    height: 34px;
+  }
+}
+
+/* Páginas institucionais com o mesmo alinhamento e rodapé */
+.legal-page{
+  width:min(100% - 32px,1080px);
+  min-height:clamp(320px,52vh,620px);
+  margin:34px auto 54px;
+  padding:clamp(26px,5vw,52px);
+  border:1px solid #d9e4ec;
+  border-radius:18px;
+  background:#fff;
+  box-shadow:0 12px 34px rgba(10,61,98,.07);
+}
+.legal-page h1{margin:0;color:#0a3d62;font-size:clamp(1.8rem,4vw,2.6rem);line-height:1.2}
+@media(max-width:600px){.legal-page{width:min(100% - 22px,1080px);margin:22px auto 34px;padding:24px 18px;border-radius:14px}}

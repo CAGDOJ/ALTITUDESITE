@@ -1,0 +1,124 @@
+/* Correções estruturais dos portais — sem alterar cores ou identidade */
+html {
+  box-sizing: border-box;
+  width: 100%;
+  max-width: 100%;
+  overflow-x: hidden;
+}
+
+*, *::before, *::after {
+  box-sizing: inherit;
+}
+
+body {
+  width: 100%;
+  max-width: 100%;
+  overflow-x: hidden;
+}
+
+img, svg, video, canvas, iframe {
+  max-width: 100%;
+}
+
+input, select, textarea, button {
+  max-width: 100%;
+  min-width: 0;
+}
+
+.layout, .container, .content, .conteudo,
+.aba, .card, .grafico, .toolbar, .inline,
+.grid-2, .grid1, .grid2, .grid3 {
+  min-width: 0;
+  max-width: 100%;
+}
+
+.content, .conteudo {
+  overflow-x: hidden;
+}
+
+.card, .grafico, .topbar, .modal__sheet {
+  min-width: 0;
+}
+
+canvas {
+  width: 100% !important;
+  height: auto !important;
+}
+
+.modal__sheet {
+  max-width: calc(100vw - 24px) !important;
+  max-height: calc(100vh - 24px);
+  overflow-y: auto;
+}
+
+@media (max-width: 900px) {
+  table, .tabela {
+    display: block;
+    width: 100%;
+    max-width: 100%;
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+  }
+
+  .toolbar, .inline {
+    align-items: stretch;
+  }
+
+  .toolbar > *, .inline > * {
+    min-width: 0;
+  }
+
+  /* Portal do gestor */
+  body > .container {
+    flex-direction: column;
+  }
+
+  body > .container > .sidebar {
+    width: 100%;
+    max-width: 100%;
+    padding: 16px;
+  }
+
+  body > .container > .sidebar nav {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 6px;
+  }
+
+  body > .container > .conteudo {
+    width: 100%;
+    padding: 14px;
+  }
+
+  /* Portal do aluno */
+  .layout > .sidebar {
+    max-width: 100%;
+  }
+
+  .layout > .content {
+    width: 100%;
+    padding: 14px;
+  }
+
+  .topbar,
+  .user-box,
+  .search-input {
+    width: 100%;
+    min-width: 0;
+  }
+}
+
+@media (max-width: 560px) {
+  body > .container > .sidebar nav {
+    grid-template-columns: 1fr;
+  }
+
+  .topbar {
+    padding: 12px;
+  }
+
+  .content, .conteudo {
+    padding-left: 10px !important;
+    padding-right: 10px !important;
+  }
+}

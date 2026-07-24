@@ -1,5 +1,4 @@
-<script>
-    document.addEventListener('DOMContentLoaded', function() {
+document.addEventListener('DOMContentLoaded', function() {
         const menuIcon = document.getElementById('menu-icon');
         const dropdownMenu = document.getElementById('dropdown-menu');
 
@@ -14,4 +13,3 @@
             }
         });
     });
-</script>

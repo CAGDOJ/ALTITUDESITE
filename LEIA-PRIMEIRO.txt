@@ -1,0 +1,19 @@
+ALTITUDE — PORTAL DO ALUNO E CERTIFICADOS
+
+1) Antes de testar o novo portal, abra o Supabase > SQL Editor.
+2) Execute o arquivo ATUALIZACAO_BANCO_PORTAL_ALUNO.sql por completo.
+3) Depois publique todos os arquivos deste projeto na hospedagem.
+4) Entre com um aluno matriculado e abra Projeto/1-html/11-portaldoaluno.html.
+
+Fluxo implementado:
+- estudo por módulos e materiais;
+- progresso salvo no banco;
+- prova com uma questão por tela;
+- correção segura dentro do Supabase;
+- novas tentativas quando houver reprovação;
+- certificado liberado após 100% do conteúdo e nota mínima de 70%;
+- PDF com nome do aluno, curso, carga horária, logo, número e QR Code;
+- validação pública em Projeto/1-html/8-certificados.html.
+
+IMPORTANTE:
+Os arquivos do site já estão prontos, mas a alteração do banco não pode ser aplicada apenas enviando o ZIP para a hospedagem. O SQL precisa ser executado no Supabase.

@@ -717,6 +717,7 @@
             <option value="90">Últimos 90 dias</option>
             <option value="365">Últimos 12 meses</option>
           </select>
+          <button type="button" id="chAtualizarLista" class="btn-refresh-tickets">Atualizar chamados</button>
         </div>
         <div class="card">
           <table class="tabela" id="tabChamados">
@@ -739,9 +740,15 @@
       </section>
 
       <!-- MODAL: Chamado -->
-      <div class="modal" id="modalChamado" aria-hidden="true">
-        <div class="modal__sheet modal-chamado">
-          <h3 id="chModalTitulo">Chamado</h3>
+      <div class="modal" id="modalChamado" aria-hidden="true" inert>
+        <div class="modal__sheet modal-chamado" role="dialog" aria-modal="true" aria-labelledby="chModalTitulo">
+          <div class="modal-chamado-head">
+            <div>
+              <span>Atendimento ao aluno</span>
+              <h3 id="chModalTitulo">Chamado</h3>
+            </div>
+            <button type="button" id="chFecharModalTopo" class="modal-close-ticket" aria-label="Fechar chamado">×</button>
+          </div>
           <div class="grid2">
             <div class="card">
               <div class="meta">

@@ -694,3 +694,9 @@ a{color:inherit}
   .student-card-name{font-size:14px!important}
   .student-card-ra{font-size:11px!important}
 }
+
+/* ATUALIZAÇÃO 07 — apenas um QR Code na carteirinha */
+.digital-card-qr canvas{display:block!important}
+.digital-card-qr img{display:none!important}
+.digital-card-qr>div>canvas:not(:first-child),
+.digital-card-qr>div>img:not(:first-child){display:none!important}

@@ -895,7 +895,6 @@ function renderCertificados() {
   if (!list) return;
   renderResumoCarteiraHoras();
   renderCertificadosEmitidos();
-  renderExtratoHoras();
 
   if (!state.cursos.length) {
     list.innerHTML = `<div class="empty-state">Nenhum curso matriculado.</div>`;
@@ -1009,7 +1008,7 @@ async function solicitarCertificado(cursoId) {
       p_horas: horas
     });
     if (error) throw error;
-    await Promise.all([carregarCertificados(), carregarHistoricoCertificados(), carregarCarteirasHoras(), carregarMovimentacoesHoras()]);
+    await Promise.all([carregarCertificados(), carregarHistoricoCertificados(), carregarCarteirasHoras()]);
     renderDashboard();
     renderCertificados();
     toast(`Solicitação de ${horas}h enviada. Restam ${Number(data?.saldo_disponivel ?? saldo - horas)}h disponíveis.`, "success");
@@ -1406,6 +1405,17 @@ function renderCarteirinha() {
     colorLight: "#ffffff",
     correctLevel: window.QRCode.CorrectLevel.H
   });
+  // qrcodejs cria canvas e imagem de fallback. Mantemos somente um elemento visível.
+  requestAnimationFrame(() => {
+    const canvases = holder.querySelectorAll("canvas");
+    const images = holder.querySelectorAll("img");
+    if (canvases.length) {
+      images.forEach((img) => img.remove());
+      [...canvases].slice(1).forEach((canvas) => canvas.remove());
+    } else {
+      [...images].slice(1).forEach((img) => img.remove());
+    }
+  });
 }
 
 async function baixarCarteirinhaPDF() {
@@ -1463,7 +1473,7 @@ function filtrarCursos(query) {
 }
 
 async function atualizarDadosPrincipais() {
-  await Promise.all([carregarCursos(), carregarResultados(), carregarCertificados(), carregarHistoricoCertificados(), carregarCarteirasHoras(), carregarMovimentacoesHoras(), carregarPagamentos()]);
+  await Promise.all([carregarCursos(), carregarResultados(), carregarCertificados(), carregarHistoricoCertificados(), carregarCarteirasHoras(), carregarPagamentos()]);
   renderDashboard();
   renderCursos();
   renderCertificados();

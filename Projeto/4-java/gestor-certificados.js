@@ -177,12 +177,18 @@
       const release = status === 'PENDENTE'
         ? `<button class="release" data-cert-action="LIBERAR" data-id="${cert.id}">Liberar ${hours}h</button>`
         : '';
-      const block = status !== 'BLOQUEADO'
+      const block = status === 'EMITIDO' || status === 'PENDENTE'
         ? `<button class="block" data-cert-action="BLOQUEAR" data-id="${cert.id}">Bloquear</button>`
-        : `<button data-cert-action="REABRIR" data-id="${cert.id}">Reabrir</button>`;
+        : '';
+      const reopen = status === 'BLOQUEADO' || status === 'CANCELADO'
+        ? `<button data-cert-action="REABRIR" data-id="${cert.id}">Reabrir</button>`
+        : '';
       const cancel = status !== 'CANCELADO'
         ? `<button class="cancel" data-cert-action="CANCELAR" data-id="${cert.id}">Cancelar</button>`
-        : `<button data-cert-action="REABRIR" data-id="${cert.id}">Reabrir</button>`;
+        : '';
+      const remove = status !== 'EMITIDO'
+        ? `<button class="delete-request" data-cert-delete="${cert.id}">Excluir solicitação</button>`
+        : '';
       return `<tr>
         <td><div class="cert-admin-student"><strong>${esc(aluno.nome || cert.nome_aluno || 'Aluno')}</strong><small>RA ${esc(aluno.ra || '—')} · ${esc(aluno.email || '')}</small></div></td>
         <td><div class="cert-admin-course"><strong>${esc(curso.titulo || cert.nome_curso || 'Curso')}</strong><small>${esc(cert.numero_certificado || 'Número após a liberação')}</small></div></td>
@@ -190,7 +196,7 @@
         <td>${num(cert.nota_final)}%</td>
         <td>${dateBR(cert.solicitado_em || cert.criado_em)}</td>
         <td>${badge(status)}</td>
-        <td><div class="cert-admin-actions"><button data-cert-detail="${cert.id}">Detalhes</button>${release}${block}${cancel}</div></td>
+        <td><div class="cert-admin-actions"><button data-cert-detail="${cert.id}">Detalhes</button>${release}${block}${reopen}${cancel}${remove}</div></td>
       </tr>`;
     }).join('');
   }
@@ -302,6 +308,37 @@
     }
   }
 
+  async function excluirSolicitacao(id) {
+    const cert = store.certificados.find((item) => Number(item.id) === Number(id));
+    if (!cert) return;
+    if (String(cert.status || '').toUpperCase() === 'EMITIDO') {
+      return toast('Certificados já emitidos não podem ser excluídos. Use bloquear ou cancelar para manter o histórico.', true);
+    }
+
+    const aluno = store.alunos.get(cert.aluno_id) || {};
+    const curso = store.cursos.get(Number(cert.curso_id)) || {};
+    const horas = num(cert.horas_solicitadas || cert.horas_emitidas);
+    const nome = aluno.nome || cert.nome_aluno || 'Aluno';
+    const titulo = curso.titulo || cert.nome_curso || 'Curso';
+    const motivo = prompt(`Informe o motivo da exclusão da solicitação de ${horas}h de ${nome} no curso ${titulo}:`, 'Solicitação excluída pela gestão.');
+    if (motivo === null) return;
+    if (!motivo.trim()) return toast('Informe o motivo da exclusão para o registro administrativo.', true);
+    if (!confirm('Excluir definitivamente esta solicitação? Se houver horas reservadas, elas voltarão ao saldo do aluno.')) return;
+
+    try {
+      const { data, error } = await sb.rpc('gestor_excluir_solicitacao_certificado', {
+        p_certificado_id: Number(id),
+        p_motivo: motivo.trim()
+      });
+      if (error) throw error;
+      fecharModalCertificado();
+      toast(`${data?.horas_devolvidas || 0}h devolvidas ao saldo. Solicitação excluída.`);
+      await carregarCertificadosGestao();
+    } catch (error) {
+      toast(`Não foi possível excluir a solicitação: ${error.message}`, true);
+    }
+  }
+
   async function abrirDetalhesCertificado(id) {
     const cert = store.certificados.find((x) => Number(x.id) === Number(id));
     if (!cert) return;
@@ -328,8 +365,10 @@
     const status = String(cert.status).toUpperCase();
     byId('certModalAcoes').innerHTML = `
       ${status === 'PENDENTE' ? `<button class="release" data-cert-action="LIBERAR" data-id="${cert.id}">Liberar certificado de ${requested}h</button>` : ''}
-      ${status !== 'BLOQUEADO' ? `<button class="block" data-cert-action="BLOQUEAR" data-id="${cert.id}">Bloquear</button>` : `<button data-cert-action="REABRIR" data-id="${cert.id}">Reabrir</button>`}
+      ${status === 'PENDENTE' || status === 'EMITIDO' ? `<button class="block" data-cert-action="BLOQUEAR" data-id="${cert.id}">Bloquear</button>` : ''}
+      ${status === 'BLOQUEADO' || status === 'CANCELADO' ? `<button data-cert-action="REABRIR" data-id="${cert.id}">Reabrir</button>` : ''}
       ${status !== 'CANCELADO' ? `<button class="cancel" data-cert-action="CANCELAR" data-id="${cert.id}">Cancelar</button>` : ''}
+      ${status !== 'EMITIDO' ? `<button class="delete-request" data-cert-delete="${cert.id}">Excluir solicitação</button>` : ''}
       ${cert.codigo_validacao ? `<a class="topbar-link" href="8-certificados.html?codigo=${encodeURIComponent(cert.codigo_validacao)}" target="_blank">Abrir validação pública</a>` : ''}`;
 
     const { data, error } = await sb.from('certificados_historico').select('*').eq('certificado_id', Number(id)).order('criado_em', { ascending: false });
@@ -387,6 +426,8 @@
       if (detail) abrirDetalhesCertificado(Number(detail.dataset.certDetail));
       const action = event.target.closest('[data-cert-action]');
       if (action) decidirCertificado(Number(action.dataset.id), action.dataset.certAction);
+      const remove = event.target.closest('[data-cert-delete]');
+      if (remove) excluirSolicitacao(Number(remove.dataset.certDelete));
       const wallet = event.target.closest('[data-wallet-manage]');
       if (wallet) abrirGerenciaHoras(wallet.dataset.walletManage, Number(wallet.dataset.courseId));
     });

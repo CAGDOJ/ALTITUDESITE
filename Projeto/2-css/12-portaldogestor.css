@@ -902,3 +902,67 @@ body.gestor-auth-pending{visibility:hidden}
 .hours-manager-alert.error{border:1px solid #efc4c4;background:#fff2f2;color:#972f35}
 #tabCarteirasHorasGestao button[data-wallet-manage]{padding:8px 10px;border:1px solid #b8dfe0;border-radius:8px;background:#edfafa;color:var(--alt-blue);font-size:11px;font-weight:800;cursor:pointer;white-space:nowrap}
 @media(max-width:800px){.certificate-hours-heading,.certificate-requests-heading{align-items:flex-start}.certificate-hours-modal{width:100%}}
+
+/* ATUALIZAÇÃO 07 — exclusão segura de solicitações */
+.cert-admin-actions button.delete-request{border-color:#efb8b8;background:#fff0f0;color:#9a1f28}
+.certificate-admin-actions>button.delete-request{background:#8f1f28;color:#fff}
+@media(max-width:760px){
+  .cert-admin-actions{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));width:100%}
+  .cert-admin-actions button{width:100%;min-height:38px}
+  .certificate-admin-actions{display:grid!important;grid-template-columns:1fr 1fr;gap:8px}
+  .certificate-admin-actions>*{width:100%;min-width:0}
+}
+@media(max-width:430px){
+  .cert-admin-actions,.certificate-admin-actions{grid-template-columns:1fr}
+}
+
+/* =========================================================
+   ATUALIZAÇÃO 08 - atendimento do gestor
+   ========================================================= */
+body.gestor-modal-open{overflow:hidden}
+#chamados>.card{overflow-x:auto;-webkit-overflow-scrolling:touch}
+#tabChamados{min-width:1040px}
+#tabChamados .ticket-open,.btn-refresh-tickets{min-height:42px;padding:9px 12px;border:1px solid var(--alt-border);border-radius:9px;background:#fff;color:var(--alt-blue);font-weight:800;cursor:pointer;touch-action:manipulation}
+#tabChamados .ticket-open:hover,.btn-refresh-tickets:hover{border-color:var(--alt-cyan);background:#eefafb}
+#modalChamado{z-index:6000!important;align-items:center!important;justify-content:center!important;padding:20px;background:rgba(4,20,35,.64)!important;backdrop-filter:blur(3px)}
+#modalChamado[aria-hidden="false"],#modalChamado.is-open{display:flex!important}
+#modalChamado .modal__sheet{width:min(1120px,calc(100vw - 32px));max-height:calc(100dvh - 40px);overflow:auto;margin:auto;border-radius:18px!important;padding:20px;overscroll-behavior:contain}
+.modal-chamado-head{position:sticky;top:-20px;z-index:4;display:flex;align-items:center;justify-content:space-between;gap:16px;margin:-20px -20px 18px;padding:17px 20px;background:rgba(255,255,255,.97);border-bottom:1px solid var(--alt-border);backdrop-filter:blur(10px)}
+.modal-chamado-head span{display:block;color:var(--alt-cyan);font-size:11px;font-weight:900;letter-spacing:.08em;text-transform:uppercase}
+.modal-chamado-head h3{margin:3px 0 0!important;padding:0!important;border:0!important;overflow-wrap:anywhere}
+.modal-close-ticket{display:grid;place-items:center;flex:0 0 44px;width:44px;height:44px;border:1px solid var(--alt-border);border-radius:12px;background:#fff;color:var(--alt-blue);font-size:28px;line-height:1;cursor:pointer}
+#modalChamado .grid2{grid-template-columns:minmax(0,1fr) minmax(0,1fr);align-items:start}
+#modalChamado .card{min-width:0;margin:0}
+#modalChamado .descricao{margin-top:14px;padding:13px;border:1px solid var(--alt-border);border-radius:11px;background:#f8fafc;white-space:pre-wrap;overflow-wrap:anywhere}
+#modalChamado textarea{width:100%;min-height:120px;resize:vertical;padding:12px;border:1px solid var(--alt-border);border-radius:10px;font:inherit}
+#modalChamado .actions{flex-wrap:wrap}
+#modalChamado .actions select{min-width:220px;flex:1}
+#modalChamado .actions button{min-height:44px}
+#chHistorico{max-height:360px;overflow:auto}
+.error-state{color:#9c2f35!important}
+
+@media(max-width:800px){
+  #chamados>.card{padding:0;border:0;background:transparent;box-shadow:none;overflow:visible}
+  #tabChamados{display:block;min-width:0;width:100%}
+  #tabChamados thead{display:none}
+  #tabChamados tbody{display:grid;gap:12px}
+  #tabChamados tr{display:grid;grid-template-columns:1fr 1fr;gap:0;padding:14px;border:1px solid var(--alt-border);border-radius:14px;background:#fff;box-shadow:0 5px 18px rgba(26,48,76,.05)}
+  #tabChamados td{display:flex;min-width:0;align-items:flex-start;justify-content:space-between;gap:12px;padding:9px 6px;border-bottom:1px solid #edf1f5;text-align:right;overflow-wrap:anywhere}
+  #tabChamados td::before{content:attr(data-label);flex:0 0 92px;color:var(--alt-muted);font-size:11px;font-weight:800;text-align:left;text-transform:uppercase;letter-spacing:.04em}
+  #tabChamados td:nth-last-child(1){grid-column:1/-1;border-bottom:0;padding-top:13px}
+  #tabChamados td:nth-last-child(1)::before{display:none}
+  #tabChamados .ticket-open{width:100%;min-height:46px;background:var(--alt-blue);color:#fff;border-color:var(--alt-blue)}
+  #modalChamado{padding:0!important;align-items:stretch!important}
+  #modalChamado .modal__sheet{width:100vw;max-width:none;height:100dvh;max-height:100dvh;margin:0;border:0;border-radius:0!important;padding:16px;overflow:auto}
+  .modal-chamado-head{top:-16px;margin:-16px -16px 14px;padding:13px 16px}
+  #modalChamado .grid2{display:grid!important;grid-template-columns:1fr;gap:12px}
+  #modalChamado .actions{position:sticky;bottom:-16px;z-index:3;margin:14px -16px -16px;padding:12px 16px max(12px,env(safe-area-inset-bottom));background:rgba(255,255,255,.97);border-top:1px solid var(--alt-border);backdrop-filter:blur(10px)}
+  #modalChamado .actions select,#modalChamado .actions button{width:100%;min-width:0}
+  #chHistorico{max-height:none}
+}
+
+@media(max-width:520px){
+  #tabChamados tr{grid-template-columns:1fr}
+  #tabChamados td:nth-last-child(1){grid-column:auto}
+  .kpis-ch{grid-template-columns:1fr!important}
+}

@@ -110,7 +110,7 @@
                 <th style="width:200px">E-mail</th>
                 <th style="width:140px">Telefone</th>
                 <th style="width:90px">Status</th>
-                <th style="width:160px">Ações</th>
+                <th style="width:230px">Ações</th>
               </tr>
             </thead>
             <tbody></tbody>
@@ -248,125 +248,127 @@
         </div>
       </div>
 
-      <!-- MODAL: Módulos do Curso -->
+      <!-- MODAL: Construtor simples do curso -->
       <div class="modal" id="modalModulos" aria-hidden="true">
-        <div class="modal__sheet" style="max-width: 900px;">
-          <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; padding-bottom: 15px; border-bottom: 1px solid #e2e8f0;">
-            <h3 style="margin: 0;">Gerenciar Módulos — <span id="mmCursoNome"></span></h3>
-            <button type="button" class="btn-fechar" id="fecharModulos" style="background: none; border: none; font-size: 24px; cursor: pointer; color: #64748b;">×</button>
+        <div class="modal__sheet course-builder-modal">
+          <header class="course-builder-header">
+            <div>
+              <p class="builder-eyebrow">CONSTRUTOR DO CURSO</p>
+              <h3><span id="mmCursoNome"></span></h3>
+              <p>Cadastre um módulo por vez e complete conteúdo, materiais e prova pelos botões do próprio módulo.</p>
+            </div>
+            <button type="button" class="btn-fechar builder-close" id="fecharModulos" aria-label="Fechar">×</button>
+          </header>
+
+          <div class="builder-steps" aria-label="Etapas para preparar o curso">
+            <span class="active"><b>1</b> Módulos</span>
+            <span><b>2</b> Conteúdo e PDF</span>
+            <span><b>3</b> Materiais</span>
+            <span><b>4</b> Prova</span>
+            <span><b>5</b> Publicar</span>
           </div>
 
-          <div style="background: #f8fafc; padding: 20px; border-radius: 8px; margin-bottom: 20px;">
-            <h4 style="margin: 0 0 15px 0; color: #1e293b;">➕ Adicionar Novo Módulo</h4>
-            <form id="formModulo">
-              <div style="display: grid; grid-template-columns: 1fr 100px; gap: 10px; margin-bottom: 10px;">
-                <div>
-                  <label style="display: block; margin-bottom: 5px; font-weight: 500; color: #475569;">Título do Módulo</label>
-                  <input type="text" id="fModuloTitulo" placeholder="Ex: Introdução à Informática" required 
-                         style="width: 100%; padding: 10px; border: 1px solid #d1d5db; border-radius: 6px;">
-                </div>
-                <div>
-                  <label style="display: block; margin-bottom: 5px; font-weight: 500; color: #475569;">Ordem</label>
-                  <input type="number" id="fModuloOrdem" min="1" value="1" 
-                         style="width: 100%; padding: 10px; border: 1px solid #d1d5db; border-radius: 6px;">
-                </div>
+          <div class="course-builder-grid">
+            <aside class="builder-create-panel">
+              <div class="builder-panel-title">
+                <span>PASSO 1</span>
+                <h4>Adicionar módulo</h4>
+                <p>Para começar, informe apenas o nome. O restante pode ser preenchido depois.</p>
               </div>
-              <div style="margin-bottom: 15px;">
-                <label>Descrição curta</label>
-                <textarea id="fModuloDesc" rows="2" placeholder="O que o aluno aprenderá neste módulo?"></textarea>
-              </div>
-              <div style="margin-bottom: 15px;">
-                <label>Conteúdo do módulo</label>
-                <textarea id="fModuloConteudo" rows="9" placeholder="Escreva aqui o conteúdo completo. Depois você poderá gerar o PDF automaticamente ou anexar um PDF pronto."></textarea>
-                <small class="field-hint">Use títulos e parágrafos curtos. O conteúdo aparecerá na plataforma e poderá virar um PDF.</small>
-              </div>
-              <div style="text-align: right;">
-                <button type="submit" style="padding: 10px 20px; background: #0ea5a3; color: white; border: none; border-radius: 6px; cursor: pointer;">
-                  ➕ Adicionar Módulo
-                </button>
-              </div>
-            </form>
-          </div>
 
-          <div style="background: white; border-radius: 8px; padding: 20px; border: 1px solid #e2e8f0;">
-            <h4 style="margin: 0 0 15px 0; color: #1e293b;">📋 Módulos do Curso</h4>
-            <table style="width: 100%; border-collapse: collapse;">
-              <thead>
-                <tr style="background: #f8fafc;">
-                  <th style="padding: 12px; text-align: left; border-bottom: 1px solid #e2e8f0; width: 60px;">Ordem</th>
-                  <th style="padding: 12px; text-align: left; border-bottom: 1px solid #e2e8f0;">Título</th>
-                  <th style="padding: 12px; text-align: center; border-bottom: 1px solid #e2e8f0; width: 100px;">Materiais</th>
-                  <th style="padding: 12px; text-align: center; border-bottom: 1px solid #e2e8f0; width: 100px;">Questões</th>
-                  <th style="padding: 12px; text-align: center; border-bottom: 1px solid #e2e8f0; width: 100px;">Status</th>
-                  <th style="padding: 12px; text-align: center; border-bottom: 1px solid #e2e8f0; width: 200px;">Ações</th>
-                </tr>
-              </thead>
-              <tbody id="tabModulosBody">
-                <tr>
-                  <td colspan="6" style="padding: 20px; text-align: center; color: #64748b;">
-                    Nenhum módulo cadastrado ainda
-                  </td>
-                </tr>
-              </tbody>
-            </table>
-
-            <div id="form-edicao-modulo" style="display: none; margin-top: 30px; padding: 25px; background: #f8fafc; border-radius: 8px; border: 1px solid #e2e8f0;">
-              <h4 style="margin: 0 0 20px 0; color: #1e293b;">✏️ Editar Módulo</h4>
-              <form id="form-editar-modulo">
-                <input type="hidden" id="editar-id">
-                <input type="hidden" id="editar-course-id">
-                <div style="display: grid; grid-template-columns: 1fr 100px; gap: 15px; margin-bottom: 15px;">
-                  <div>
-                    <label style="display: block; margin-bottom: 5px; font-weight: 500; color: #475569;">Título do Módulo</label>
-                    <input type="text" id="editar-titulo" required style="width: 100%; padding: 10px; border: 1px solid #d1d5db; border-radius: 6px;">
-                  </div>
-                  <div>
-                    <label style="display: block; margin-bottom: 5px; font-weight: 500; color: #475569;">Ordem</label>
-                    <input type="number" id="editar-order" min="1" value="1" style="width: 100%; padding: 10px; border: 1px solid #d1d5db; border-radius: 6px;">
-                  </div>
-                </div>
-                <div style="margin-bottom: 15px;">
-                  <label style="display: block; margin-bottom: 5px; font-weight: 500; color: #475569;">Descrição</label>
-                  <textarea id="editar-descricao" rows="3" style="width: 100%; padding: 10px; border: 1px solid #d1d5db; border-radius: 6px; resize: vertical;"></textarea>
-                </div>
-                <div style="margin-bottom: 15px;">
-                  <label>Conteúdo completo</label>
-                  <textarea id="editar-conteudo" rows="10" placeholder="Conteúdo que será disponibilizado ao aluno"></textarea>
-                  <div class="inline-actions"><button type="button" id="btnGerarPdfModulo">Gerar PDF deste conteúdo</button></div>
-                </div>
-                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 15px; margin-bottom: 15px;">
-                  <div>
-                    <label style="display: block; margin-bottom: 5px; font-weight: 500; color: #475569;">PDF URL</label>
-                    <input type="text" id="editar-pdf-url" style="width: 100%; padding: 10px; border: 1px solid #d1d5db; border-radius: 6px;">
-                  </div>
-                  <div>
-                    <label style="display: block; margin-bottom: 5px; font-weight: 500; color: #475569;">Video URL</label>
-                    <input type="text" id="editar-video-url" style="width: 100%; padding: 10px; border: 1px solid #d1d5db; border-radius: 6px;">
-                  </div>
-                </div>
-                <div style="margin-bottom: 20px;">
-                  <label style="display: flex; align-items: center; gap: 8px; font-weight: 500; color: #475569;">
-                    <input type="checkbox" id="editar-publicado"> 
-                    Módulo publicado
+              <form id="formModulo" class="builder-module-form">
+                <label>Título do módulo
+                  <input type="text" id="fModuloTitulo" placeholder="Ex.: Introdução à Informática" required>
+                </label>
+                <div class="builder-two-fields">
+                  <label>Ordem
+                    <input type="number" id="fModuloOrdem" min="1" value="1">
+                  </label>
+                  <label>Descrição curta
+                    <input type="text" id="fModuloDesc" placeholder="O que será estudado?">
                   </label>
                 </div>
-                <div style="display: flex; gap: 10px;">
-                  <button type="submit" style="padding: 10px 20px; background: #0ea5a3; color: white; border: none; border-radius: 6px; cursor: pointer;">
-                    💾 Salvar Alterações
-                  </button>
-                  <button type="button" onclick="fecharEdicaoModulo()" style="padding: 10px 20px; background: #6b7280; color: white; border: none; border-radius: 6px; cursor: pointer;">
-                    ❌ Cancelar
-                  </button>
-                </div>
+                <details class="builder-optional-content">
+                  <summary>Adicionar conteúdo escrito agora <small>(opcional)</small></summary>
+                  <label>Conteúdo do módulo
+                    <textarea id="fModuloConteudo" rows="8" placeholder="Escreva ou cole o conteúdo. Depois será possível gerar um PDF."></textarea>
+                  </label>
+                </details>
+                <button type="submit" class="builder-main-button">+ Criar módulo</button>
               </form>
-            </div>
+
+              <div class="builder-help-card">
+                <strong>Fluxo mais fácil</strong>
+                <ol>
+                  <li>Crie o módulo.</li>
+                  <li>Clique em <b>Conteúdo</b> para escrever ou gerar o PDF.</li>
+                  <li>Use <b>Materiais</b> para anexar arquivos e vídeos.</li>
+                  <li>Use <b>Prova</b> para cadastrar as questões.</li>
+                </ol>
+              </div>
+            </aside>
+
+            <section class="builder-list-panel">
+              <div class="builder-list-heading">
+                <div>
+                  <span>ESTRUTURA DO CURSO</span>
+                  <h4>Módulos cadastrados</h4>
+                  <p id="builderModuleSummary">Carregando estrutura...</p>
+                </div>
+                <button type="button" class="builder-secondary-button" id="btnRecarregarModulos">Atualizar</button>
+              </div>
+
+              <div id="tabModulosBody" class="builder-module-list" aria-live="polite">
+                <div class="builder-empty-state">Nenhum módulo cadastrado ainda.</div>
+              </div>
+
+              <div id="form-edicao-modulo" class="builder-edit-panel" hidden>
+                <div class="builder-list-heading">
+                  <div><span>EDIÇÃO</span><h4>Editar conteúdo do módulo</h4></div>
+                  <button type="button" class="builder-secondary-button" onclick="fecharEdicaoModulo()">Fechar edição</button>
+                </div>
+                <form id="form-editar-modulo">
+                  <input type="hidden" id="editar-id">
+                  <input type="hidden" id="editar-course-id">
+                  <div class="builder-two-fields builder-title-order">
+                    <label>Título do módulo
+                      <input type="text" id="editar-titulo" required>
+                    </label>
+                    <label>Ordem
+                      <input type="number" id="editar-order" min="1" value="1">
+                    </label>
+                  </div>
+                  <label>Descrição
+                    <textarea id="editar-descricao" rows="3"></textarea>
+                  </label>
+                  <label>Conteúdo completo
+                    <textarea id="editar-conteudo" rows="11" placeholder="Conteúdo que será disponibilizado ao aluno"></textarea>
+                  </label>
+                  <div class="builder-inline-actions">
+                    <button type="button" id="btnGerarPdfModulo" class="builder-secondary-button">Gerar PDF deste conteúdo</button>
+                  </div>
+                  <div class="builder-two-fields">
+                    <label>PDF ou apostila (URL)
+                      <input type="url" id="editar-pdf-url" placeholder="https://...">
+                    </label>
+                    <label>Vídeo (URL)
+                      <input type="url" id="editar-video-url" placeholder="https://...">
+                    </label>
+                  </div>
+                  <label class="builder-check"><input type="checkbox" id="editar-publicado"> Liberar este módulo para os alunos</label>
+                  <div class="actions builder-form-actions">
+                    <button type="button" class="ghost" onclick="fecharEdicaoModulo()">Cancelar</button>
+                    <button type="submit">Salvar módulo</button>
+                  </div>
+                </form>
+              </div>
+            </section>
           </div>
 
-          <div style="margin-top: 20px; text-align: left;">
-            <button id="btnVoltarModulos" style="padding: 10px 20px; background: #f1f5f9; border: 1px solid #d1d5db; border-radius: 6px; cursor: pointer; color: #475569;">
-              ← Voltar para Cursos
-            </button>
-          </div>
+          <footer class="builder-footer">
+            <button id="btnVoltarModulos" type="button" class="builder-secondary-button">← Voltar para cursos</button>
+            <p>Depois de completar todos os módulos, volte à lista de cursos e clique em <b>Publicar</b>.</p>
+          </footer>
         </div>
       </div>
 
@@ -731,7 +733,7 @@
                 <th style="width:110px">Prazo</th>
                 <th style="width:120px">Status</th>
                 <th style="width:120px">SLA</th>
-                <th style="width:160px">Ações</th>
+                <th style="width:230px">Ações</th>
               </tr>
             </thead>
             <tbody></tbody>
@@ -747,7 +749,10 @@
               <span>Atendimento ao aluno</span>
               <h3 id="chModalTitulo">Chamado</h3>
             </div>
-            <button type="button" id="chFecharModalTopo" class="modal-close-ticket" aria-label="Fechar chamado">×</button>
+            <div class="modal-ticket-head-actions">
+              <button type="button" id="chExcluirChamado" class="ticket-delete-modal">Excluir chamado</button>
+              <button type="button" id="chFecharModalTopo" class="modal-close-ticket" aria-label="Fechar chamado">×</button>
+            </div>
           </div>
           <div class="grid2">
             <div class="card">

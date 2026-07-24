@@ -174,8 +174,8 @@
       const curso = store.cursos.get(Number(cert.curso_id)) || {};
       const status = String(cert.status || 'PENDENTE').toUpperCase();
       const hours = status === 'EMITIDO' ? num(cert.horas_emitidas) : num(cert.horas_solicitadas || cert.horas_emitidas);
-      const release = status === 'PENDENTE'
-        ? `<button class="release" data-cert-action="LIBERAR" data-id="${cert.id}">Liberar ${hours}h</button>`
+      const release = ['PENDENTE', 'BLOQUEADO'].includes(status)
+        ? `<button class="release" data-cert-action="LIBERAR" data-id="${cert.id}">${status === 'BLOQUEADO' ? 'Validar e liberar' : `Liberar ${hours}h`}</button>`
         : '';
       const block = status === 'EMITIDO' || status === 'PENDENTE'
         ? `<button class="block" data-cert-action="BLOQUEAR" data-id="${cert.id}">Bloquear</button>`
@@ -292,12 +292,36 @@
     let observation = '';
     if (action !== 'LIBERAR') observation = prompt('Informe o motivo ou observação para o histórico:', cert.observacao_gestor || '') || '';
     try {
-      const { error } = await sb.rpc('gestor_decidir_certificado', {
-        p_certificado_id: Number(id),
-        p_acao: action,
-        p_observacao: observation || null
-      });
-      if (error) throw error;
+      let result;
+      if (action === 'LIBERAR') {
+        result = await sb.rpc('gestor_liberar_certificado_direto', {
+          p_certificado_id: Number(id),
+          p_observacao: observation || null
+        });
+        // Compatibilidade enquanto a atualização 09 ainda não foi executada.
+        if (result.error && /gestor_liberar_certificado_direto|function/i.test(result.error.message || '')) {
+          if (String(cert.status || '').toUpperCase() !== 'PENDENTE') {
+            const reopened = await sb.rpc('gestor_decidir_certificado', {
+              p_certificado_id: Number(id),
+              p_acao: 'REABRIR',
+              p_observacao: observation || null
+            });
+            if (reopened.error) throw reopened.error;
+          }
+          result = await sb.rpc('gestor_decidir_certificado', {
+            p_certificado_id: Number(id),
+            p_acao: 'LIBERAR',
+            p_observacao: observation || null
+          });
+        }
+      } else {
+        result = await sb.rpc('gestor_decidir_certificado', {
+          p_certificado_id: Number(id),
+          p_acao: action,
+          p_observacao: observation || null
+        });
+      }
+      if (result.error) throw result.error;
       toast(action === 'LIBERAR'
         ? `Certificado de ${hours}h liberado. O PDF já está disponível para o aluno.`
         : `Certificado atualizado: ${verb}.`);
@@ -364,7 +388,7 @@
 
     const status = String(cert.status).toUpperCase();
     byId('certModalAcoes').innerHTML = `
-      ${status === 'PENDENTE' ? `<button class="release" data-cert-action="LIBERAR" data-id="${cert.id}">Liberar certificado de ${requested}h</button>` : ''}
+      ${['PENDENTE', 'BLOQUEADO'].includes(status) ? `<button class="release" data-cert-action="LIBERAR" data-id="${cert.id}">${status === 'BLOQUEADO' ? 'Validar e liberar certificado' : `Liberar certificado de ${requested}h`}</button>` : ''}
       ${status === 'PENDENTE' || status === 'EMITIDO' ? `<button class="block" data-cert-action="BLOQUEAR" data-id="${cert.id}">Bloquear</button>` : ''}
       ${status === 'BLOQUEADO' || status === 'CANCELADO' ? `<button data-cert-action="REABRIR" data-id="${cert.id}">Reabrir</button>` : ''}
       ${status !== 'CANCELADO' ? `<button class="cancel" data-cert-action="CANCELAR" data-id="${cert.id}">Cancelar</button>` : ''}

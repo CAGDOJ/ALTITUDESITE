@@ -337,9 +337,14 @@
           <td data-label="Status">${badge(item.status || 'ABERTO')}</td>
           <td data-label="SLA">${slaLabel(item)}</td>
           <td data-label="Ações">
-            <button type="button" class="btn-mini ticket-open" data-ticket-open-id="${escapeHtml(item.id)}" aria-label="Abrir chamado ${escapeHtml(item.protocolo || item.id)}">
-              Abrir chamado
-            </button>
+            <div class="ticket-row-actions">
+              <button type="button" class="btn-mini ticket-open" data-ticket-open-id="${escapeHtml(item.id)}" aria-label="Abrir chamado ${escapeHtml(item.protocolo || item.id)}">
+                Abrir chamado
+              </button>
+              <button type="button" class="btn-mini ticket-delete" data-ticket-delete-id="${escapeHtml(item.id)}" aria-label="Excluir chamado ${escapeHtml(item.protocolo || item.id)}">
+                Excluir
+              </button>
+            </div>
           </td>
         </tr>`;
     }).join('') : '<tr><td colspan="9" class="empty-state">Nenhum chamado encontrado no período selecionado.</td></tr>';
@@ -516,6 +521,34 @@
     }
   }
 
+  async function deleteTicket(item) {
+    if (!item) return;
+    const protocol = item.protocolo || `#${item.id}`;
+    const reason = prompt(`Informe o motivo para excluir o chamado ${protocol}:`, 'Chamado excluído pela gestão.');
+    if (reason === null) return;
+    if (reason.trim().length < 3) {
+      toast('Informe um motivo para manter o registro administrativo.', 'error');
+      return;
+    }
+    if (!confirm(`Excluir definitivamente o chamado ${protocol}? O histórico de mensagens também será removido da área ativa.`)) return;
+
+    try {
+      const rpc = await sb.rpc('gestor_excluir_chamado', {
+        p_chamado_id: Number(item.id),
+        p_motivo: reason.trim()
+      });
+      if (rpc.error) throw rpc.error;
+      if (state.chamadoAtual && Number(state.chamadoAtual.id) === Number(item.id)) {
+        showModal('#modalChamado', false);
+        state.chamadoAtual = null;
+      }
+      toast(`Chamado ${protocol} excluído.`);
+      await loadTickets();
+    } catch (error) {
+      toast(`Não foi possível excluir o chamado: ${error.message}`, 'error');
+    }
+  }
+
   function bindTicketEvents() {
     if (document.documentElement.dataset.ticketEventsBound === '1') return;
     document.documentElement.dataset.ticketEventsBound = '1';
@@ -527,6 +560,15 @@
         const id = Number(openButton.dataset.ticketOpenId || openButton.closest('tr[data-ticket-id]')?.dataset.ticketId);
         const item = state.chamados.find((ticket) => Number(ticket.id) === id);
         openTicket(item);
+        return;
+      }
+
+      const deleteButton = event.target.closest('[data-ticket-delete-id], .ticket-delete');
+      if (deleteButton) {
+        event.preventDefault();
+        const id = Number(deleteButton.dataset.ticketDeleteId || deleteButton.closest('tr[data-ticket-id]')?.dataset.ticketId);
+        const item = state.chamados.find((ticket) => Number(ticket.id) === id);
+        deleteTicket(item);
         return;
       }
 
@@ -574,6 +616,7 @@
     $('#chFecharModal')?.addEventListener('click', () => showModal('#modalChamado', false));
     $('#chFecharModalTopo')?.addEventListener('click', () => showModal('#modalChamado', false));
     $('#chAtualizarLista')?.addEventListener('click', loadTickets);
+    $('#chExcluirChamado')?.addEventListener('click', () => deleteTicket(state.chamadoAtual));
 
     await Promise.allSettled([loadManagers(), loadTickets()]);
   }

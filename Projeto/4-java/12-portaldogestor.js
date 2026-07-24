@@ -534,13 +534,18 @@ function gerarRaLocal(){
             ${fmtBool(c.publicado)}
           </span>
         </td>
-        <td class="col-acoes">
-          <button class="btn-mini gc-edit" title="Editar curso">✏️ Editar</button>
-          <button class="btn-mini gc-mods" title="Gerenciar módulos, materiais e provas">📚 Conteúdo</button>
+        <td class="col-acoes course-action-cell">
+          <button class="btn-mini gc-mods course-build-button" title="Cadastrar módulos, PDFs, materiais e prova">Montar curso</button>
           <button class="btn-mini gc-publish ${c.publicado ? 'is-live' : ''}" title="${c.publicado ? 'Retirar do catálogo' : 'Revisar e publicar'}">${c.publicado ? '✓ Publicado' : 'Publicar'}</button>
-          <button class="btn-mini gc-prev" title="Visualizar no portal do aluno">👁️</button>
-          <button class="btn-mini gc-dup"  title="Duplicar curso">📋</button>
-          <button class="btn-mini gc-del"  title="Excluir curso">🗑️</button>
+          <details class="course-more-actions">
+            <summary>Mais ações</summary>
+            <div>
+              <button class="btn-mini gc-edit" title="Editar dados do curso">Editar dados</button>
+              <button class="btn-mini gc-prev" title="Visualizar no portal do aluno">Pré-visualizar</button>
+              <button class="btn-mini gc-dup" title="Duplicar curso">Duplicar</button>
+              <button class="btn-mini gc-del danger" title="Excluir curso">Excluir</button>
+            </div>
+          </details>
         </td>
       </tr>
     `).join('');
@@ -848,72 +853,75 @@ function gerarRaLocal(){
   }
 
   async function carregarModulosCurso(cursoId) {
+    const list = $('#tabModulosBody');
+    const summary = $('#builderModuleSummary');
+    if (!list) return;
+    list.innerHTML = '<div class="builder-empty-state">Carregando módulos...</div>';
+
     try {
-        debugModulos('🎯 CARREGANDO MÓDULOS PARA CURSO:', cursoId);
-        
-        const { data: modulos, error } = await sb
-            .from('modulos')
-            .select('*')
-            .eq('curso_id', cursoId)
-            .order('ordem', { ascending: true });
+      const { data: modulos, error } = await sb
+        .from('modulos')
+        .select('*')
+        .eq('curso_id', cursoId)
+        .order('ordem', { ascending: true });
+      if (error) throw error;
 
-        if (error) throw error;
+      if (!modulos?.length) {
+        list.innerHTML = '<div class="builder-empty-state"><strong>O curso ainda não possui módulos.</strong><span>Use o formulário ao lado para criar o primeiro.</span></div>';
+        if (summary) summary.textContent = '0 módulos cadastrados';
+        return;
+      }
 
-        const tbody = $('#tabModulosBody');
-        console.log('📋 Elemento tbody encontrado:', !!tbody);
-        
-        if (!tbody) {
-            debugModulos('❌ Tabela de módulos não encontrada - ID: tabModulosBody');
-            return;
-        }
+      const cards = [];
+      let prontos = 0;
+      for (const modulo of modulos) {
+        const materiaisCount = await contarMateriaisModulo(modulo.id);
+        const questaoCount = await contarQuestoesModulo(modulo.id);
+        const temConteudo = Boolean(String(modulo.conteudo || '').trim() || String(modulo.pdf_url || '').trim());
+        const etapas = Number(temConteudo) + Number(materiaisCount > 0) + Number(questaoCount > 0) + Number(Boolean(modulo.publicado));
+        const percentual = Math.round((etapas / 4) * 100);
+        if (percentual === 100) prontos += 1;
 
-        tbody.innerHTML = '';
+        const safeTitle = String(modulo.titulo || 'Módulo').replaceAll('&', '&amp;').replaceAll('<', '&lt;').replaceAll('>', '&gt;').replaceAll('"', '&quot;');
+        cards.push(`
+          <article class="builder-module-card" data-module-id="${Number(modulo.id)}" data-module-title="${safeTitle}">
+            <div class="builder-module-top">
+              <div class="builder-module-order">${Number(modulo.ordem || 1)}</div>
+              <div class="builder-module-copy">
+                <h5>${safeTitle}</h5>
+                <p>${modulo.descricao ? String(modulo.descricao).replaceAll('&', '&amp;').replaceAll('<', '&lt;').replaceAll('>', '&gt;') : 'Sem descrição cadastrada.'}</p>
+              </div>
+              <span class="builder-status ${modulo.publicado ? 'live' : ''}">${modulo.publicado ? 'LIBERADO' : 'RASCUNHO'}</span>
+            </div>
 
-        if (modulos && modulos.length > 0) {
-            debugModulos(`✅ ${modulos.length} módulos encontrados`);
-            
-            for (const modulo of modulos) {
-                const materiaisCount = await contarMateriaisModulo(modulo.id);
-                const questaoCount = await contarQuestoesModulo(modulo.id);
-                
-                const tr = document.createElement('tr');
-                tr.innerHTML = `
-                    <td>${modulo.ordem}</td>
-                    <td>
-                        <strong>${modulo.titulo}</strong>
-                        ${modulo.descricao ? `<br><small style="color: #64748b;">${modulo.descricao}</small>` : ''}
-                        <div class="module-content-status ${modulo.conteudo ? 'ready' : ''}">${modulo.conteudo ? '✓ Conteúdo escrito' : 'Conteúdo pendente'}</div>
-                    </td>
-                    <td style="text-align: center;">${materiaisCount}</td>
-                    <td style="text-align: center;">${questaoCount}</td>
-                    <td>
-                        <span class="badge ${modulo.publicado ? 'ativo' : 'inativo'}">
-                            ${modulo.publicado ? 'ATIVO' : 'INATIVO'}
-                        </span>
-                    </td>
-                    <td>
-                        <button class="btn-mini" onclick="alternarStatusModulo(${modulo.id})">
-                            ${modulo.publicado ? '⏸️' : '▶️'}
-                        </button>
-                        <button class="btn-mini gc-gestao-modulo" data-modulo-id="${modulo.id}" data-modulo-titulo="${String(modulo.titulo).replace(/"/g, '&quot;')}">📚 Conteúdo e prova</button>
-                        <button class="btn-mini" onclick="abrirEdicaoModulo(${modulo.id})">✏️ Editar</button>
-                        <button class="btn-mini" onclick="excluirModulo(${modulo.id})" style="color: #ef4444;">
-                            🗑️ Excluir
-                        </button>
-                    </td>
-                `;
-                tbody.appendChild(tr);
-            }
-            
-            console.log('✅ Lista de módulos renderizada com sucesso');
-        } else {
-            tbody.innerHTML = '<tr><td colspan="6" style="text-align: center; color: #64748b;">Nenhum módulo cadastrado</td></tr>';
-            console.log('ℹ️ Nenhum módulo cadastrado ainda');
-        }
+            <div class="builder-progress-row">
+              <div class="builder-progress"><span style="width:${percentual}%"></span></div>
+              <strong>${percentual}% configurado</strong>
+            </div>
 
+            <div class="builder-checks">
+              <span class="${temConteudo ? 'done' : ''}">${temConteudo ? '✓' : '1'} Conteúdo/PDF</span>
+              <span class="${materiaisCount > 0 ? 'done' : ''}">${materiaisCount > 0 ? '✓' : '2'} Materiais (${materiaisCount})</span>
+              <span class="${questaoCount > 0 ? 'done' : ''}">${questaoCount > 0 ? '✓' : '3'} Prova (${questaoCount})</span>
+              <span class="${modulo.publicado ? 'done' : ''}">${modulo.publicado ? '✓' : '4'} Liberação</span>
+            </div>
+
+            <div class="builder-module-actions">
+              <button type="button" class="primary" data-module-action="content">Conteúdo</button>
+              <button type="button" data-module-action="materials">Materiais</button>
+              <button type="button" data-module-action="exam">Prova</button>
+              <button type="button" data-module-action="toggle">${modulo.publicado ? 'Desativar' : 'Liberar módulo'}</button>
+              <button type="button" class="danger" data-module-action="delete">Excluir</button>
+            </div>
+          </article>`);
+      }
+
+      list.innerHTML = cards.join('');
+      if (summary) summary.textContent = `${modulos.length} módulo${modulos.length === 1 ? '' : 's'} · ${prontos} totalmente configurado${prontos === 1 ? '' : 's'}`;
     } catch (error) {
-        console.error('❌ Erro ao carregar módulos:', error);
-        alert('Erro ao carregar módulos: ' + error.message);
+      console.error('Erro ao carregar módulos:', error);
+      list.innerHTML = `<div class="builder-empty-state error"><strong>Não foi possível carregar os módulos.</strong><span>${String(error.message || error)}</span></div>`;
+      if (summary) summary.textContent = 'Falha ao carregar a estrutura';
     }
   }
 
@@ -996,26 +1004,50 @@ function gerarRaLocal(){
   }
 
   function configurarEventListenersModulos() {
-    debugModulos('Configurando event listeners para módulos...');
-    
     const formModulo = $('#formModulo');
-    if (formModulo) {
-      debugModulos('Formulário de módulos encontrado');
-      
-      const newForm = formModulo.cloneNode(true);
-      formModulo.parentNode.replaceChild(newForm, formModulo);
-      
-      $('#formModulo').addEventListener('submit', function(e) {
-        debugModulos('Formulário submetido - PREVENINDO COMPORTAMENTO PADRÃO');
+    if (formModulo && formModulo.dataset.bound !== 'true') {
+      formModulo.dataset.bound = 'true';
+      formModulo.addEventListener('submit', function(e) {
         e.preventDefault();
         e.stopPropagation();
         adicionarModulo();
-        return false;
       });
     }
 
-    $('#fecharModulos')?.addEventListener('click', fecharPainelModulos);
-    $('#btnVoltarModulos')?.addEventListener('click', fecharPainelModulos);
+    const list = $('#tabModulosBody');
+    if (list && list.dataset.bound !== 'true') {
+      list.dataset.bound = 'true';
+      list.addEventListener('click', async (event) => {
+        const button = event.target.closest('[data-module-action]');
+        const card = event.target.closest('[data-module-id]');
+        if (!button || !card) return;
+        const id = Number(card.dataset.moduleId);
+        const title = card.dataset.moduleTitle || 'Módulo';
+        const action = button.dataset.moduleAction;
+        if (action === 'content') return window.abrirEdicaoModulo(id);
+        if (action === 'materials') return window.abrirGestaoMateriais(id, title);
+        if (action === 'exam') return window.abrirGestaoProvas(id, title);
+        if (action === 'toggle') return window.alternarStatusModulo(id);
+        if (action === 'delete') return window.excluirModulo(id);
+      });
+    }
+
+    const reload = $('#btnRecarregarModulos');
+    if (reload && reload.dataset.bound !== 'true') {
+      reload.dataset.bound = 'true';
+      reload.addEventListener('click', () => cursoEditandoId && carregarModulosCurso(cursoEditandoId));
+    }
+
+    const close = $('#fecharModulos');
+    if (close && close.dataset.bound !== 'true') {
+      close.dataset.bound = 'true';
+      close.addEventListener('click', fecharPainelModulos);
+    }
+    const back = $('#btnVoltarModulos');
+    if (back && back.dataset.bound !== 'true') {
+      back.dataset.bound = 'true';
+      back.addEventListener('click', fecharPainelModulos);
+    }
   }
 
   async function contarMateriaisModulo(moduloId) {
@@ -1126,59 +1158,52 @@ function gerarRaLocal(){
       }
 
       modalProvas.innerHTML = `
-        <div class="modal__sheet" style="max-width: 900px;">
-          <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
-            <h3>📝 Provas - ${moduloTitulo}</h3>
-            <button type="button" class="btn-fechar" onclick="fecharModalProvas()" style="background: none; border: none; font-size: 24px; cursor: pointer;">×</button>
-          </div>
-
-          <!-- Formulário para nova prova -->
-          <div style="background: #f8fafc; padding: 20px; border-radius: 8px; margin-bottom: 20px;">
-            <h4 style="margin: 0 0 15px 0;">➕ Nova Prova</h4>
-            <form id="formProva">
-              <div style="display: grid; grid-template-columns: 1fr auto; gap: 10px; align-items: end;">
-                <div>
-                  <label style="display: block; margin-bottom: 5px; font-weight: 500;">Título da Prova</label>
-                  <input type="text" id="fProvaTitulo" required 
-                         style="width: 100%; padding: 10px; border: 1px solid #d1d5db; border-radius: 6px;"
-                         placeholder="Ex: Avaliação do Módulo 1">
-                </div>
-                <button type="submit" style="padding: 10px 20px; background: #0ea5a3; color: white; border: none; border-radius: 6px; cursor: pointer;">
-                  Criar Prova
-                </button>
-              </div>
-            </form>
-          </div>
-
-          <!-- Lista de provas existentes -->
-          <div style="background: white; border-radius: 8px; padding: 20px; border: 1px solid #e2e8f0;">
-            <h4 style="margin: 0 0 15px 0;">📋 Provas do Módulo</h4>
-            <div id="listaProvas">
-              ${provas && provas.length > 0 ? 
-                provas.map(prova => `
-                  <div style="padding: 15px; border: 1px solid #e2e8f0; border-radius: 6px; margin-bottom: 10px; background: #f8fafc;">
-                    <div style="display: flex; justify-content: between; align-items: center;">
-                      <div style="flex: 1;">
-                        <strong>${prova.titulo}</strong>
-                        <div style="color: #64748b; font-size: 14px; margin-top: 5px;">
-                          ${prova.total_questoes || 0} questões • Criada em ${new Date(prova.criado_em).toLocaleDateString('pt-BR')}
-                        </div>
-                      </div>
-                      <div style="display: flex; gap: 8px;">
-                        <button class="btn-mini" onclick="editarProva(${prova.id})">✏️ Editar</button>
-                        <button class="btn-mini" onclick="excluirProva(${prova.id})" style="color: #ef4444;">🗑️ Excluir</button>
-                      </div>
-                    </div>
-                  </div>
-                `).join('') : 
-                '<p style="text-align: center; color: #64748b; padding: 20px;">Nenhuma prova cadastrada ainda</p>'
-              }
+        <div class="modal__sheet simple-exam-modal">
+          <header class="course-builder-header">
+            <div>
+              <p class="builder-eyebrow">PASSO 4 · AVALIAÇÃO</p>
+              <h3>Prova — ${moduloTitulo}</h3>
+              <p>Crie uma avaliação e depois adicione as questões. O aluno verá uma questão por vez.</p>
             </div>
-          </div>
+            <button type="button" class="btn-fechar builder-close" onclick="fecharModalProvas()" aria-label="Fechar">×</button>
+          </header>
 
-          <div style="margin-top: 20px; text-align: left;">
-            <button type="button" class="ghost" onclick="fecharModalProvas()">← Voltar</button>
+          <div class="simple-exam-layout">
+            <section class="simple-exam-create">
+              <span>NOVA PROVA</span>
+              <h4>Comece com o título</h4>
+              <form id="formProva">
+                <label>Título da prova
+                  <input type="text" id="fProvaTitulo" required value="Avaliação — ${moduloTitulo}" placeholder="Ex.: Avaliação do módulo">
+                </label>
+                <button type="submit" class="builder-main-button">Criar prova e adicionar questões</button>
+              </form>
+              <div class="builder-help-card">
+                <strong>Como funciona</strong>
+                <ol><li>Crie a prova.</li><li>Clique em <b>Adicionar questões</b>.</li><li>Cadastre enunciado, alternativas e resposta correta.</li></ol>
+              </div>
+            </section>
+
+            <section class="simple-exam-list">
+              <div class="builder-list-heading">
+                <div><span>PROVAS CADASTRADAS</span><h4>${provas?.length || 0} avaliação${provas?.length === 1 ? '' : 'ões'}</h4></div>
+              </div>
+              <div class="simple-exam-cards">
+                ${provas && provas.length > 0 ? provas.map(prova => `
+                  <article class="simple-exam-card">
+                    <div>
+                      <strong>${prova.titulo}</strong>
+                      <small>${prova.total_questoes || 0} questões · ${new Date(prova.criado_em).toLocaleDateString('pt-BR')}</small>
+                    </div>
+                    <div>
+                      <button type="button" class="primary" onclick="editarProva(${prova.id})">Adicionar questões</button>
+                      <button type="button" class="danger" onclick="excluirProva(${prova.id})">Excluir</button>
+                    </div>
+                  </article>`).join('') : '<div class="builder-empty-state"><strong>Nenhuma prova criada.</strong><span>Use o formulário ao lado para começar.</span></div>'}
+              </div>
+            </section>
           </div>
+          <footer class="builder-footer"><button type="button" class="builder-secondary-button" onclick="fecharModalProvas()">← Voltar aos módulos</button></footer>
         </div>
       `;
 
@@ -1568,7 +1593,12 @@ function gerarRaLocal(){
       document.getElementById('editar-video-url').value = modulo.video_url || '';
       document.getElementById('editar-publicado').checked = modulo.publicado || false;
 
-      document.getElementById('form-edicao-modulo').style.display = 'block';
+      const editPanel = document.getElementById('form-edicao-modulo');
+      if (editPanel) {
+        editPanel.hidden = false;
+        editPanel.style.display = 'block';
+        editPanel.scrollIntoView({ behavior: 'smooth', block: 'start' });
+      }
       esconderCarregamento();
       
     } catch (error) {
@@ -1655,8 +1685,9 @@ function gerarRaLocal(){
   }
 
   window.fecharEdicaoModulo = function() {
-    document.getElementById('form-edicao-modulo').style.display = 'none';
-    document.getElementById('form-editar-modulo').reset();
+    const panel = document.getElementById('form-edicao-modulo');
+    if (panel) { panel.hidden = true; panel.style.display = 'none'; }
+    document.getElementById('form-editar-modulo')?.reset();
   }
 
   // =====================================================================
@@ -1710,45 +1741,3 @@ function gerarRaLocal(){
 
   document.addEventListener('DOMContentLoaded', wireCursosUI);
 })();
-
-// Função para melhorar a renderização dos módulos
-function melhorarRenderizacaoModulos() {
-  const tbody = document.getElementById('tabModulosBody');
-  if (!tbody) return;
-  
-  // Adicionar classes para estilização
-  const rows = tbody.querySelectorAll('tr');
-  rows.forEach(row => {
-    if (!row.classList.contains('modulo-row')) {
-      row.classList.add('modulo-row');
-    }
-  });
-}
-
-// Modificar a função carregarModulosCurso para incluir a melhoria
-const originalCarregarModulosCurso = window.carregarModulosCurso;
-window.carregarModulosCurso = async function(cursoId) {
-  await originalCarregarModulosCurso(cursoId);
-  setTimeout(melhorarRenderizacaoModulos, 100);
-};
-
-// Adicionar estilos dinâmicos se necessário
-document.addEventListener('DOMContentLoaded', function() {
-  const style = document.createElement('style');
-  style.textContent = `
-    .modulo-row {
-      transition: all 0.2s ease;
-    }
-    .modulo-row:hover {
-      background-color: #f8fafc !important;
-      transform: translateX(2px);
-    }
-    .btn-mini {
-      transition: all 0.2s ease !important;
-    }
-  `;
-  document.head.appendChild(style);
-});
-
-
-

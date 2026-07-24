@@ -38,6 +38,9 @@
         <li><a href="/Projeto/1-html/8-certificados.html">Certificados</a></li>
         <li><a href="/Projeto/1-html/6-sobrenos.html">Sobre Nós</a></li>
         <li><a href="/Projeto/1-html/7-ajuda.html">Ajuda</a></li>
+        <li class="mobile-menu-divider" aria-hidden="true"></li>
+        <li class="mobile-auth-link"><a href="/Projeto/1-html/4-login.html">Entrar</a></li>
+        <li class="mobile-auth-link mobile-auth-primary"><a href="/Projeto/1-html/5-cadastro.html">Criar conta</a></li>
       </ul>
     </div>
   </div>
@@ -106,19 +109,23 @@
 
             <div class="form-group has-icon">
                 <label for="senha">Senha</label>
-                <input id="senha" name="password" type="password" autocomplete="new-password" placeholder="Mínimo 8 caracteres" minlength="8" required>
-                <button type="button" class="toggle-pass" data-target="senha" aria-label="Mostrar/ocultar senha">
-                    <i class="fa-regular fa-eye"></i>
-                </button>
+                <div class="password-input-wrap">
+                    <input id="senha" name="password" type="password" autocomplete="new-password" placeholder="Mínimo 8 caracteres" minlength="8" required>
+                    <button type="button" class="toggle-pass" data-target="senha" aria-label="Mostrar senha" aria-pressed="false">
+                        <i class="fa-regular fa-eye" aria-hidden="true"></i>
+                    </button>
+                </div>
                 <small class="feedback" id="fb-senha" aria-live="polite"></small>
             </div>
 
             <div class="form-group has-icon">
                 <label for="confirma">Confirme a senha</label>
-                <input id="confirma" name="confirm" type="password" autocomplete="new-password" placeholder="Repita a senha" minlength="8" required>
-                <button type="button" class="toggle-pass" data-target="confirma" aria-label="Mostrar/ocultar senha">
-                    <i class="fa-regular fa-eye"></i>
-                </button>
+                <div class="password-input-wrap">
+                    <input id="confirma" name="confirm" type="password" autocomplete="new-password" placeholder="Repita a senha" minlength="8" required>
+                    <button type="button" class="toggle-pass" data-target="confirma" aria-label="Mostrar senha" aria-pressed="false">
+                        <i class="fa-regular fa-eye" aria-hidden="true"></i>
+                    </button>
+                </div>
                 <small class="feedback" id="fb-confirma" aria-live="polite"></small>
             </div>
 

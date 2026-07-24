@@ -926,3 +926,116 @@ iframe {
     background: #fff !important;
   }
 }
+
+/* ==============================================================
+   ATUALIZAÇÃO 10 — TABLETS, GESTÃO SIMPLIFICADA E SIDEBAR
+   ============================================================== */
+@media (max-width: 1120px) {
+  body:has(.gestor-topbar) #gestorSidebar,
+  body:has(.gestor-topbar) .sidebar {
+    position: fixed !important;
+    inset: 0 auto 0 0 !important;
+    width: min(310px, 88vw) !important;
+    height: 100dvh !important;
+    margin: 0 !important;
+    transform: translateX(-105%) !important;
+    transition: transform .22s ease !important;
+    z-index: 130 !important;
+  }
+  body:has(.gestor-topbar) #gestorSidebar.open,
+  body:has(.gestor-topbar) .sidebar.open {
+    transform: translateX(0) !important;
+  }
+  body:has(.gestor-topbar) .conteudo {
+    width: 100% !important;
+    margin-left: 0 !important;
+    padding: 0 clamp(12px, 3vw, 24px) 34px !important;
+  }
+  body:has(.gestor-topbar) .mobile-menu { display: grid !important; }
+  .course-builder-modal,
+  .simple-exam-modal {
+    width: 100% !important;
+    max-width: 100% !important;
+    height: 100dvh !important;
+    max-height: 100dvh !important;
+    border-radius: 0 !important;
+  }
+  .course-builder-grid,
+  .simple-exam-layout {
+    max-height: none;
+    min-height: 0;
+    height: calc(100dvh - 207px);
+  }
+}
+
+@media (max-width: 820px) {
+  .builder-steps {
+    display: flex;
+    overflow-x: auto;
+    padding: 10px 14px;
+    scroll-snap-type: x proximity;
+  }
+  .builder-steps span {
+    flex: 0 0 auto;
+    min-width: 145px;
+    scroll-snap-align: start;
+  }
+  .course-builder-grid,
+  .simple-exam-layout {
+    display: block !important;
+    height: calc(100dvh - 205px);
+    overflow-y: auto;
+  }
+  .builder-create-panel,
+  .builder-list-panel,
+  .simple-exam-create,
+  .simple-exam-list {
+    overflow: visible;
+    border: 0;
+  }
+  .builder-create-panel,
+  .simple-exam-create {
+    border-bottom: 1px solid #dce6ef;
+  }
+  .builder-help-card { display: none; }
+  .builder-footer {
+    position: sticky;
+    bottom: 0;
+    z-index: 5;
+  }
+  .course-action-cell { min-width: 220px; }
+}
+
+@media (max-width: 620px) {
+  .course-builder-header {
+    position: sticky;
+    top: 0;
+    z-index: 8;
+    padding: 14px;
+  }
+  .course-builder-header h3 { font-size: 18px; }
+  .course-builder-header p:not(.builder-eyebrow) { display: none; }
+  .builder-steps { padding: 8px 10px; }
+  .builder-steps span { min-width: 128px; padding: 7px 8px; }
+  .builder-create-panel,
+  .builder-list-panel,
+  .simple-exam-create,
+  .simple-exam-list { padding: 15px 12px; }
+  .builder-two-fields,
+  .builder-title-order { grid-template-columns: 1fr !important; }
+  .builder-list-heading { align-items: stretch; flex-direction: column; }
+  .builder-list-heading > button { width: 100%; }
+  .builder-module-top { grid-template-columns: 34px minmax(0, 1fr); }
+  .builder-status { grid-column: 2; justify-self: start; }
+  .builder-progress-row { align-items: stretch; flex-direction: column; gap: 5px; }
+  .builder-module-actions { display: grid; grid-template-columns: 1fr 1fr; }
+  .builder-module-actions button { width: 100%; min-height: 44px; }
+  .builder-module-actions button.primary { grid-column: 1 / -1; }
+  .builder-footer { align-items: stretch; flex-direction: column; padding: 10px 12px max(10px, env(safe-area-inset-bottom)); }
+  .builder-footer button { width: 100%; }
+  .builder-footer p { display: none; }
+  .simple-exam-card { align-items: stretch; flex-direction: column; }
+  .simple-exam-card > div:last-child { display: grid; grid-template-columns: 1fr; }
+  .simple-exam-card button { width: 100%; min-height: 44px; }
+  .course-more-actions > div { position: fixed; left: 12px; right: 12px; bottom: 12px; top: auto; width: auto; z-index: 250; }
+}

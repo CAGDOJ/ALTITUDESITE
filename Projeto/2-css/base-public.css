@@ -717,3 +717,93 @@ body > .rodape {
     transform: none;
   }
 }
+
+
+/* ALTITUDE 09 — acessos no menu móvel */
+.new-header .dropdown-menu .mobile-menu-divider {
+  height: 1px;
+  margin: 7px 6px;
+  background: #dbe7ef;
+  pointer-events: none;
+}
+
+.new-header .dropdown-menu .mobile-auth-link a {
+  border: 1px solid #c9dbe7;
+  justify-content: center;
+  text-align: center;
+}
+
+.new-header .dropdown-menu .mobile-auth-primary a {
+  border-color: #0d4b73;
+  background: #0d4b73;
+  color: #fff;
+}
+
+.new-header .dropdown-menu .mobile-auth-primary a:hover,
+.new-header .dropdown-menu .mobile-auth-primary a:focus {
+  border-color: #168fa8;
+  background: #168fa8;
+}
+
+/* Botão de senha discreto e acessível (login/cadastro). */
+.form-group.has-icon,
+.password-input-wrap {
+  position: relative;
+}
+
+.password-input-wrap {
+  width: 100%;
+}
+
+.password-input-wrap input,
+.form-group.has-icon > input {
+  padding-right: 52px !important;
+}
+
+.password-input-wrap .toggle-pass,
+.form-group.has-icon > .toggle-pass {
+  position: absolute !important;
+  right: 7px !important;
+  top: 50% !important;
+  transform: translateY(-50%) !important;
+  display: inline-grid !important;
+  place-items: center !important;
+  width: 38px !important;
+  min-width: 38px !important;
+  height: 38px !important;
+  min-height: 38px !important;
+  margin: 0 !important;
+  padding: 0 !important;
+  border: 1px solid transparent !important;
+  border-radius: 10px !important;
+  background: transparent !important;
+  color: #587087 !important;
+  box-shadow: none !important;
+  cursor: pointer;
+  z-index: 2;
+}
+
+.form-group.has-icon > .toggle-pass {
+  top: 35px !important;
+  transform: none !important;
+}
+
+.password-input-wrap .toggle-pass:hover,
+.form-group.has-icon > .toggle-pass:hover {
+  border-color: #c6dce8 !important;
+  background: #eef7fa !important;
+  color: #0d4b73 !important;
+}
+
+.password-input-wrap .toggle-pass:focus-visible,
+.form-group.has-icon > .toggle-pass:focus-visible {
+  outline: 3px solid rgba(26, 168, 183, .22) !important;
+  outline-offset: 1px;
+}
+
+.password-input-wrap .toggle-pass i,
+.form-group.has-icon > .toggle-pass i {
+  font-size: 17px;
+  line-height: 1;
+  pointer-events: none;
+}

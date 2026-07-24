@@ -163,4 +163,45 @@ document.addEventListener('DOMContentLoaded', () => {
       }
     });
   });
+
+  /*
+   * Acesso móvel: garante que Entrar e Criar conta apareçam em todas as
+   * páginas públicas, inclusive em versões antigas que ficaram no cache.
+   */
+  const mobileList = document.querySelector('.new-header #dropdown-menu ul');
+  if (mobileList && !mobileList.querySelector('a[href="/Projeto/1-html/4-login.html"]')) {
+    const divider = document.createElement('li');
+    divider.className = 'mobile-menu-divider';
+    divider.setAttribute('aria-hidden', 'true');
+    const loginItem = document.createElement('li');
+    loginItem.className = 'mobile-auth-link';
+    loginItem.innerHTML = '<a href="/Projeto/1-html/4-login.html">Entrar</a>';
+    const registerItem = document.createElement('li');
+    registerItem.className = 'mobile-auth-link mobile-auth-primary';
+    registerItem.innerHTML = '<a href="/Projeto/1-html/5-cadastro.html">Criar conta</a>';
+    mobileList.append(divider, loginItem, registerItem);
+  }
+
+  /* Mostrar/ocultar senha: um único botão discreto dentro do campo. */
+  document.querySelectorAll('.toggle-pass[data-target]').forEach((button) => {
+    if (button.dataset.passwordToggleReady === '1') return;
+    const input = document.getElementById(button.dataset.target);
+    if (!input) return;
+    button.dataset.passwordToggleReady = '1';
+    button.setAttribute('aria-pressed', 'false');
+    button.addEventListener('click', () => {
+      const show = input.type === 'password';
+      input.type = show ? 'text' : 'password';
+      button.setAttribute('aria-pressed', String(show));
+      button.setAttribute('aria-label', show ? 'Ocultar senha' : 'Mostrar senha');
+      const icon = button.querySelector('i');
+      if (icon) {
+        icon.classList.toggle('fa-eye', !show);
+        icon.classList.toggle('fa-eye-slash', show);
+      }
+      input.focus({ preventScroll: true });
+      try { input.setSelectionRange(input.value.length, input.value.length); } catch (_) {}
+    });
+  });
+
 });

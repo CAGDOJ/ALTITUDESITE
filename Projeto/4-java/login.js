@@ -68,6 +68,7 @@
 
       try {
         const email = await resolveEmail(ident);
+        await sb.auth.signOut({ scope: 'local' }).catch(() => {});
         const { data, error } = await sb.auth.signInWithPassword({ email, password });
         if (error || !data?.session) throw error || new Error('Credenciais inválidas.');
         const params = new URLSearchParams(window.location.search);

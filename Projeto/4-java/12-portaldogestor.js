@@ -1781,5 +1781,5 @@ function gerarRaLocal(){
 
   window.carregarCursosCompleto = carregarCursosCompleto;
   window.carregarModulosCursoAtual = () => cursoEditandoId ? carregarModulosCurso(cursoEditandoId) : Promise.resolve();
-  document.addEventListener('DOMContentLoaded', wireCursosUI);
+  document.addEventListener('DOMContentLoaded', async () => { const profile = await window.GESTOR_AUTH_READY; if (profile) wireCursosUI(); });
 })();

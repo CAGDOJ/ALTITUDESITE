@@ -35,6 +35,41 @@ const TITULOS_ABAS = {
   cadastro: "Meu cadastro"
 };
 
+const esperar = (ms) => new Promise((resolve) => window.setTimeout(resolve, ms));
+
+async function tentarNovamente(operacao, tentativas = 4, atrasoInicial = 250) {
+  let ultimoErro;
+  for (let tentativa = 1; tentativa <= tentativas; tentativa += 1) {
+    try {
+      return await operacao(tentativa);
+    } catch (error) {
+      ultimoErro = error;
+      if (tentativa < tentativas) await esperar(atrasoInicial * tentativa);
+    }
+  }
+  throw ultimoErro;
+}
+
+function mensagemDeSincronizacao(message, error = false) {
+  let box = document.getElementById('portalSyncNotice');
+  if (!box) {
+    box = document.createElement('div');
+    box.id = 'portalSyncNotice';
+    box.className = 'portal-sync-notice';
+    box.innerHTML = '<span></span><button type="button">Tentar novamente</button>';
+    document.body.appendChild(box);
+    box.querySelector('button')?.addEventListener('click', async () => {
+      box.classList.remove('show');
+      try { await atualizarDadosPrincipais(); } catch (_) {}
+    });
+  }
+  box.querySelector('span').textContent = message;
+  box.classList.toggle('error', Boolean(error));
+  box.classList.add('show');
+  clearTimeout(box._timer);
+  box._timer = setTimeout(() => box.classList.remove('show'), error ? 7000 : 3500);
+}
+
 function escapeHTML(value = "") {
   return String(value)
     .replaceAll("&", "&amp;")
@@ -156,9 +191,21 @@ function fecharMenuMobile() {
 }
 
 async function obterUsuarioLogado() {
+  const session = await tentarNovamente(async () => {
+    const { data, error } = await sb.auth.getSession();
+    if (error) throw error;
+    return data?.session || null;
+  }, 4, 300);
+
+  if (!session?.user) {
+    window.location.replace('4-login.html');
+    return null;
+  }
+
   const { data, error } = await sb.auth.getUser();
   if (error || !data?.user) {
-    window.location.href = "4-login.html";
+    await sb.auth.signOut({ scope: 'local' }).catch(() => {});
+    window.location.replace('4-login.html');
     return null;
   }
   return data.user;
@@ -170,35 +217,51 @@ async function sair() {
 }
 
 async function carregarAluno() {
-  const { data, error } = await sb
-    .from("alunos")
-    .select("*")
-    .eq("user_id", state.user.id)
-    .maybeSingle();
+  const data = await tentarNovamente(async () => {
+    const { data: aluno, error } = await sb
+      .from('alunos')
+      .select('*')
+      .eq('user_id', state.user.id)
+      .limit(1);
+    if (error) throw error;
+    if (!Array.isArray(aluno) || !aluno.length) {
+      const erro = new Error('PROFILE_NOT_FOUND');
+      erro.code = 'PROFILE_NOT_FOUND';
+      throw erro;
+    }
+    return aluno[0];
+  }, 5, 350).catch(async (error) => {
+    if (error?.code === 'PROFILE_NOT_FOUND' || error?.message === 'PROFILE_NOT_FOUND') {
+      sessionStorage.setItem('altitude_login_aviso', 'Sua sessão anterior foi encerrada para proteger os dados. Entre novamente.');
+      await sb.auth.signOut({ scope: 'local' }).catch(() => {});
+      window.location.replace('4-login.html?motivo=sessao');
+      return null;
+    }
+    throw error;
+  });
 
-  if (error) throw new Error(error.message || "Não foi possível carregar o cadastro do aluno.");
-  if (!data) throw new Error("Cadastro do aluno não encontrado. Entre novamente ou procure o atendimento.");
+  if (!data) return;
   state.aluno = data;
 
-  const primeiroNome = String(data.nome || "Aluno").trim().split(/\s+/)[0].toUpperCase();
-  setText("nomeAluno", primeiroNome);
-  setText("nomeTopoAluno", primeiroNome);
-  setText("infoRA", data.ra || "—");
-  setText("infoRA2", data.ra || "—");
-  setText("infoCPF", maskCpf(data.cpf));
-  setText("infoEmail", data.email || state.user.email || "—");
-  setText("infoCelular", maskPhone(data.telefone) || "—");
+  const primeiroNome = String(data.nome || 'Aluno').trim().split(/\s+/)[0].toUpperCase();
+  setText('nomeAluno', primeiroNome);
+  setText('nomeTopoAluno', primeiroNome);
+  setText('infoRA', data.ra || '—');
+  setText('infoRA2', data.ra || '—');
+  setText('infoCPF', maskCpf(data.cpf));
+  setText('infoEmail', data.email || state.user.email || '—');
+  setText('infoCelular', maskPhone(data.telefone) || '—');
 
   const photo = imgAluno(data.foto_url);
-  if ($("avatarTopo")) $("avatarTopo").src = photo;
-  if ($("previewFotoAluno")) $("previewFotoAluno").src = photo;
+  if ($('avatarTopo')) $('avatarTopo').src = photo;
+  if ($('previewFotoAluno')) $('previewFotoAluno').src = photo;
 
-  if ($("cadNome")) $("cadNome").value = data.nome || "";
-  if ($("cadEmail")) $("cadEmail").value = data.email || state.user.email || "";
-  if ($("cadTelefone")) $("cadTelefone").value = maskPhone(data.telefone);
-  if ($("cadNascimento")) $("cadNascimento").value = data.data_nascimento || "";
-  if ($("cadObjetivo")) $("cadObjetivo").value = data.objetivo || "";
-  setText("cadCpfTexto", maskCpf(data.cpf));
+  if ($('cadNome')) $('cadNome').value = data.nome || '';
+  if ($('cadEmail')) $('cadEmail').value = data.email || state.user.email || '';
+  if ($('cadTelefone')) $('cadTelefone').value = maskPhone(data.telefone);
+  if ($('cadNascimento')) $('cadNascimento').value = data.data_nascimento || '';
+  if ($('cadObjetivo')) $('cadObjetivo').value = data.objetivo || '';
+  setText('cadCpfTexto', maskCpf(data.cpf));
   renderCarteirinha();
 }
 
@@ -1611,12 +1674,40 @@ function filtrarCursos(query) {
 }
 
 async function atualizarDadosPrincipais() {
-  await Promise.all([carregarCursos(), carregarResultados(), carregarAvaliacoes(), carregarCertificados(), carregarHistoricoCertificados(), carregarCarteirasHoras(), carregarPagamentos()]);
+  if (!state.aluno?.user_id) return;
+  const tarefas = [
+    ['cursos', carregarCursos],
+    ['resultados', carregarResultados],
+    ['avaliações', carregarAvaliacoes],
+    ['certificados', carregarCertificados],
+    ['histórico', carregarHistoricoCertificados],
+    ['carteira de horas', carregarCarteirasHoras],
+    ['pagamentos', carregarPagamentos]
+  ];
+
+  const resultados = await Promise.allSettled(
+    tarefas.map(([, fn]) => tentarNovamente(() => fn(), 3, 220))
+  );
+  const falhas = resultados
+    .map((resultado, index) => ({ resultado, nome: tarefas[index][0] }))
+    .filter(({ resultado }) => resultado.status === 'rejected');
+
+  falhas.forEach(({ resultado, nome }) => console.warn(`Falha temporária em ${nome}:`, resultado.reason?.message || resultado.reason));
+
   renderCarteirinha();
   renderDashboard();
   renderCursos();
   renderCertificados();
   renderPagamentos();
+
+  if (falhas.length && falhas.length < tarefas.length) {
+    mensagemDeSincronizacao('Algumas informações estão sendo sincronizadas. A atualização continuará automaticamente.');
+  }
+  if (falhas.length === tarefas.length) {
+    const erro = new Error('Não foi possível sincronizar os dados agora.');
+    erro.code = 'SYNC_FAILED';
+    throw erro;
+  }
 }
 
 function configurarEventos() {
@@ -1724,7 +1815,17 @@ async function iniciarPortal() {
     }
   } catch (error) {
     console.error(error);
-    toast(`Erro ao carregar o portal: ${error.message}`, "error");
+    if (error?.code === 'PROFILE_NOT_FOUND') return;
+    mensagemDeSincronizacao('Não foi possível concluir a sincronização. O portal tentará novamente automaticamente.', true);
+    window.setTimeout(async () => {
+      try {
+        if (!state.user) state.user = await obterUsuarioLogado();
+        if (state.user && !state.aluno) await carregarAluno();
+        if (state.aluno) await atualizarDadosPrincipais();
+      } catch (retryError) {
+        console.warn('Nova tentativa do portal:', retryError.message);
+      }
+    }, 2500);
   }
 }
 

@@ -20,6 +20,7 @@
       const password = $('gestorSenhaLogin').value;
       const { data: email, error: resolveError } = await sb.rpc('resolver_email_gestor', { p_gestor_id: gestorId });
       if (resolveError || !email) throw new Error('ID de gestor não encontrado ou inativo.');
+      await sb.auth.signOut({ scope: 'local' }).catch(() => {});
       const { data, error } = await sb.auth.signInWithPassword({ email, password });
       if (error || !data?.session) throw new Error('ID de gestor ou senha inválidos.');
       const { data: profile, error: profileError } = await sb.rpc('obter_meu_perfil_gestor');

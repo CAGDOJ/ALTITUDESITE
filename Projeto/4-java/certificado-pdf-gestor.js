@@ -12,6 +12,69 @@
     .normalize('NFD').replace(/[\u0300-\u036f]/g, '')
     .replace(/[^a-zA-Z0-9]+/g, '-').replace(/^-|-$/g, '').toLowerCase();
 
+  function cleanTitle(value) {
+    return String(value || '')
+      .replace(/<[^>]+>/g, ' ')
+      .replace(/\\(?:textbf|textit|emph)\{([^{}]*)\}/g, '$1')
+      .replace(/[{}]/g, '')
+      .replace(/\s+/g, ' ')
+      .trim();
+  }
+
+  function uniqueTitles(values) {
+    const used = new Set();
+    return values.map(cleanTitle).filter((value) => {
+      if (!value || value.length < 3) return false;
+      const key = value.toLocaleLowerCase('pt-BR');
+      if (used.has(key)) return false;
+      used.add(key);
+      return true;
+    });
+  }
+
+  function extractHeadings(module) {
+    const source = [module?.conteudo_latex, module?.conteudo, module?.descricao].filter(Boolean).join('\n');
+    const found = [];
+    const latex = /\\(?:section|subsection)\*?\{([^{}]+)\}/g;
+    const html = /<h[1-4][^>]*>([\s\S]*?)<\/h[1-4]>/gi;
+    const numbered = /(?:^|\n)\s*\d+(?:\.\d+)*[.)]?\s+([^\n]{5,100})/g;
+    let match;
+    while ((match = latex.exec(source))) found.push(match[1]);
+    while ((match = html.exec(source))) found.push(match[1]);
+    if (!found.length) while ((match = numbered.exec(source))) found.push(match[1]);
+    return uniqueTitles(found).slice(0, 8);
+  }
+
+  function groupTitles(titles, targetCount) {
+    const clean = uniqueTitles(titles);
+    if (clean.length <= targetCount) return clean;
+    const groups = [];
+    for (let i = 0; i < targetCount; i += 1) {
+      const start = Math.floor((i * clean.length) / targetCount);
+      const end = Math.floor(((i + 1) * clean.length) / targetCount);
+      const chunk = clean.slice(start, end);
+      groups.push(chunk.length === 1 ? chunk[0] : chunk.join('; '));
+    }
+    return groups;
+  }
+
+  function distributeHours(items, totalHours) {
+    const total = Math.max(0, Math.round(Number(totalHours || 0)));
+    if (!items.length) return [];
+    const weights = items.map((item) => Math.max(0, Number(item.horasBase || 0)));
+    const weightTotal = weights.reduce((sum, value) => sum + value, 0);
+    const effective = weightTotal > 0 ? weights : items.map(() => 1);
+    const effectiveTotal = effective.reduce((sum, value) => sum + value, 0) || items.length;
+    const raw = effective.map((weight) => (total * weight) / effectiveTotal);
+    const hours = raw.map((value) => Math.floor(value));
+    let remaining = total - hours.reduce((sum, value) => sum + value, 0);
+    const order = raw
+      .map((value, index) => ({ index, fraction: value - Math.floor(value) }))
+      .sort((a, b) => b.fraction - a.fraction || a.index - b.index);
+    for (let i = 0; i < remaining; i += 1) hours[order[i % order.length].index] += 1;
+    return items.map((item, index) => ({ titulo: item.titulo, horas: hours[index] }));
+  }
+
   async function imageToDataUrl(url) {
     const response = await fetch(url, { cache: 'force-cache' });
     if (!response.ok) throw new Error('Não foi possível carregar a logomarca.');
@@ -50,6 +113,8 @@
   }
 
   function frame(doc, width, height) {
+    doc.setFillColor(248, 250, 253);
+    doc.rect(0, 0, width, height, 'F');
     doc.setFillColor(55, 177, 203);
     doc.triangle(0, 0, 78, 0, 0, 66, 'F');
     doc.setFillColor(7, 49, 79);
@@ -66,33 +131,121 @@
     doc.rect(14, 14, width - 28, height - 28);
   }
 
-  async function loadModules(sb, courseId, totalHours) {
+  async function queryModules(sb, courseId) {
     if (!sb || !courseId) return [];
-    const { data, error } = await sb
-      .from('modulos')
-      .select('id,titulo,ordem,carga_horaria')
-      .eq('curso_id', Number(courseId))
-      .order('ordem', { ascending: true });
-    if (error) throw error;
-    const modules = data || [];
-    if (!modules.length) return [];
-    const explicit = modules.reduce((sum, item) => sum + Number(item.carga_horaria || 0), 0);
-    const defaultHours = explicit ? 0 : Math.floor(Number(totalHours || 0) / modules.length);
-    let remaining = Number(totalHours || 0);
-    return modules.map((item, index) => {
-      let hours = Number(item.carga_horaria || defaultHours || 0);
-      if (!explicit && index === modules.length - 1) hours = Math.max(0, remaining);
-      remaining -= hours;
-      return { titulo: item.titulo || `Módulo ${index + 1}`, horas: hours };
+    const selections = [
+      'id,titulo,descricao,conteudo,conteudo_latex,ordem,carga_horaria',
+      'id,titulo,descricao,conteudo,conteudo_latex,ordem',
+      'id,titulo,descricao,conteudo,ordem',
+      'id,titulo,ordem'
+    ];
+    let lastError = null;
+    for (const select of selections) {
+      const result = await sb.from('modulos').select(select).eq('curso_id', Number(courseId)).order('ordem', { ascending: true });
+      if (!result.error) return result.data || [];
+      lastError = result.error;
+    }
+    throw lastError || new Error('Não foi possível carregar o conteúdo programático.');
+  }
+
+  async function loadProgram(sb, courseId, totalHours, course, certificateId = null) {
+    let modules = [];
+    if (sb && certificateId) {
+      try {
+        const rpc = await sb.rpc('obter_conteudo_programatico_certificado', { p_certificado_id: Number(certificateId) });
+        if (!rpc.error && Array.isArray(rpc.data) && rpc.data.length) modules = rpc.data;
+      } catch (error) {
+        console.warn('RPC do conteúdo programático indisponível:', error);
+      }
+    }
+    if (!modules.length) modules = await queryModules(sb, courseId);
+    let items = [];
+
+    if (modules.length >= 2) {
+      items = modules.map((module, index) => ({
+        titulo: cleanTitle(module.titulo) || `Módulo ${index + 1}`,
+        horasBase: Number(module.carga_horaria || 0)
+      }));
+    } else if (modules.length === 1) {
+      const module = modules[0];
+      const headings = extractHeadings(module);
+      if (headings.length >= 2) {
+        const target = headings.length >= 6 ? 3 : 2;
+        items = groupTitles(headings, target).map((titulo) => ({ titulo, horasBase: 1 }));
+      } else {
+        const title = cleanTitle(module.titulo) || cleanTitle(course?.titulo) || 'Conteúdo programático';
+        const desc = cleanTitle(module.descricao || course?.descricao);
+        items = desc
+          ? [
+              { titulo: `${title} - fundamentos e conceitos`, horasBase: 1 },
+              { titulo: `${title} - procedimentos e aplicações`, horasBase: 1 },
+              { titulo: `${title} - consolidação e avaliação`, horasBase: 1 }
+            ]
+          : [{ titulo: title, horasBase: 1 }];
+      }
+    }
+
+    if (!items.length) {
+      const courseName = cleanTitle(course?.titulo) || 'Conteúdo programático do curso';
+      items = [
+        { titulo: `${courseName} - fundamentos`, horasBase: 1 },
+        { titulo: `${courseName} - aplicações práticas`, horasBase: 1 },
+        { titulo: `${courseName} - revisão e avaliação`, horasBase: 1 }
+      ];
+    }
+
+    // Mantém a página legível e garante uma divisão clara em pelo menos 2 blocos quando possível.
+    if (items.length > 10) items = groupTitles(items.map((item) => item.titulo), 10).map((titulo) => ({ titulo, horasBase: 1 }));
+    if (items.length === 1 && Number(totalHours || 0) >= 2) {
+      const base = items[0].titulo;
+      items = [
+        { titulo: `${base} - fundamentos`, horasBase: 1 },
+        { titulo: `${base} - aplicações`, horasBase: 1 }
+      ];
+    }
+    return distributeHours(items, totalHours);
+  }
+
+  function drawProgramItems(doc, items, width, height) {
+    const contentWidth = width - 115;
+    const columnsCount = items.length > 6 ? 2 : 1;
+    const columnWidth = columnsCount === 2 ? (contentWidth - 14) / 2 : contentWidth;
+    const columns = columnsCount === 2
+      ? [items.slice(0, Math.ceil(items.length / 2)), items.slice(Math.ceil(items.length / 2))]
+      : [items];
+    const xs = columnsCount === 2 ? [28, 28 + columnWidth + 14] : [28];
+
+    columns.forEach((column, col) => {
+      let y = 59;
+      column.forEach((item, index) => {
+        const absoluteIndex = columns.slice(0, col).reduce((sum, current) => sum + current.length, 0) + index + 1;
+        doc.setFillColor(238, 247, 249);
+        doc.roundedRect(xs[col], y - 4.4, 9, 9, 2, 2, 'F');
+        doc.setFont('helvetica', 'bold');
+        doc.setFontSize(8.5);
+        doc.setTextColor(7, 49, 79);
+        doc.text(String(absoluteIndex), xs[col] + 4.5, y + 1.5, { align: 'center' });
+
+        doc.setFont('times', 'normal');
+        doc.setFontSize(9.7);
+        doc.setTextColor(30, 42, 54);
+        const label = `${item.titulo} (${Number(item.horas || 0)} horas)`;
+        const lines = doc.splitTextToSize(label, columnWidth - 14);
+        doc.text(lines, xs[col] + 13, y);
+        y += Math.max(11, lines.length * 4.6 + 5);
+      });
     });
+
+    doc.setFont('times', 'bold');
+    doc.setFontSize(13);
+    doc.setTextColor(27, 42, 56);
+    doc.text(`TOTAL CERTIFICADO: ${items.reduce((sum, item) => sum + Number(item.horas || 0), 0)} HORAS`, 29, height - 27);
   }
 
   async function build({ sb, cert, aluno, curso, logoUrl, validationUrl }) {
     if (!window.jspdf?.jsPDF) throw new Error('Gerador de PDF não carregado.');
     if (!cert) throw new Error('Certificado não informado.');
-    if (String(cert.status || '').toUpperCase() !== 'EMITIDO') {
-      throw new Error('O PDF só pode ser gerado quando o certificado estiver EMITIDO.');
-    }
+    if (String(cert.status || '').toUpperCase() !== 'EMITIDO') throw new Error('O PDF só pode ser gerado quando o certificado estiver EMITIDO.');
 
     const { jsPDF } = window.jspdf;
     const doc = new jsPDF({ orientation: 'landscape', unit: 'mm', format: 'a4' });
@@ -102,8 +255,8 @@
     const courseName = escText(cert.nome_curso || curso?.titulo, 'Curso');
     const title = escText(cert.titulo_documento, 'CERTIFICADO').toUpperCase();
     const subtitle = escText(cert.subtitulo_documento, 'DE CONCLUSÃO E APROVEITAMENTO').toUpperCase();
-    const hours = Number(cert.horas_emitidas || cert.horas_solicitadas || curso?.carga_horaria || 0);
-    const modules = await loadModules(sb, cert.curso_id, hours);
+    const hours = Math.max(0, Number(cert.horas_emitidas || cert.horas_solicitadas || curso?.carga_horaria || 0));
+    const program = await loadProgram(sb, cert.curso_id, hours, { ...curso, titulo: courseName }, cert.id);
     const logo = await imageToDataUrl(logoUrl || '../3-img/LOGO.png');
     const qr = await qrDataUrl(validationUrl);
 
@@ -167,28 +320,12 @@
     doc.setTextColor(27, 42, 56);
     doc.setFont('times', 'bold');
     doc.setFontSize(25);
-    doc.text('CONTEÚDO PROGRAMÁTICO', 45, 39);
+    doc.text('CONTEÚDO PROGRAMÁTICO', 28, 38);
     doc.setDrawColor(176, 143, 102);
     doc.setLineWidth(0.7);
-    doc.line(45, 44, 148, 44);
+    doc.line(28, 44, 145, 44);
 
-    const items = modules.length ? modules : [{ titulo: courseName, horas: hours }];
-    const half = Math.ceil(items.length / 2);
-    [items.slice(0, half), items.slice(half)].forEach((column, col) => {
-      let y = 60;
-      column.forEach((item, index) => {
-        doc.setFont('times', 'bold');
-        doc.setFontSize(9.4);
-        doc.setTextColor(7, 49, 79);
-        doc.text(`${col * half + index + 1}.`, [28, 116][col], y);
-        doc.setFont('times', 'normal');
-        doc.setTextColor(30, 42, 54);
-        const label = `${item.titulo}${item.horas ? ` (${item.horas} horas)` : ''}`;
-        const lines = doc.splitTextToSize(label, 82);
-        doc.text(lines, [36, 124][col], y);
-        y += 7.5 + (lines.length - 1) * 4.5;
-      });
-    });
+    drawProgramItems(doc, program, width, height);
 
     doc.setFillColor(238, 247, 249);
     doc.roundedRect(width - 77, 54, 56, 89, 3, 3, 'F');
@@ -218,28 +355,24 @@
     doc.setFontSize(7);
     doc.text('Autenticidade pelo QR Code', width - 49, 175, { align: 'center' });
 
-    doc.setFont('times', 'bold');
-    doc.setFontSize(13);
-    doc.setTextColor(27, 42, 56);
-    doc.text(`TOTAL CERTIFICADO: ${hours} HORAS`, 29, height - 27);
     doc.setFont('helvetica', 'normal');
     doc.setFontSize(7.5);
     doc.setTextColor(92, 103, 112);
     doc.text(`Documento nº ${cert.numero_certificado || cert.codigo_validacao} - confirme a autenticidade no Portal Altitude.`, width / 2, height - 16, { align: 'center' });
 
-    return { doc, filename: `certificado-${slug(courseName)}-${slug(studentName)}.pdf` };
+    return { doc, filename: `certificado-${slug(courseName)}-${slug(studentName)}.pdf`, program };
   }
 
   window.AltitudeCertificatePDF = {
+    build,
+    loadProgram,
     async download(options) {
       const { doc, filename } = await build(options);
       doc.save(filename);
     },
     async preview(options) {
       const previewWindow = window.open('', '_blank');
-      if (previewWindow) {
-        previewWindow.document.write('<!doctype html><title>Preparando certificado...</title><p style="font-family:Arial;padding:24px">Preparando certificado...</p>');
-      }
+      if (previewWindow) previewWindow.document.write('<!doctype html><title>Preparando certificado...</title><p style="font-family:Arial;padding:24px">Preparando certificado...</p>');
       try {
         const { doc } = await build(options);
         const blob = doc.output('blob');

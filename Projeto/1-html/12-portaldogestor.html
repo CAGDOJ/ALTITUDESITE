@@ -7,9 +7,9 @@
   <title>Portal de Gestão - Altitude</title>
   <link rel="icon" type="image/png" sizes="512x512" href="/Projeto/3-img/favicon-cloud.png?v=14">
 
-  <link rel="stylesheet" href="/Projeto/2-css/12-portaldogestor.css?v=22">
+  <link rel="stylesheet" href="/Projeto/2-css/12-portaldogestor.css?v=25">
   <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.11/dist/katex.min.css">
-  <link rel="stylesheet" href="../2-css/16-latex-importer.css?v=22">
+  <link rel="stylesheet" href="../2-css/16-latex-importer.css?v=25">
   <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/jspdf@2.5.2/dist/jspdf.umd.min.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/katex@0.16.11/dist/katex.min.js"></script>
@@ -19,12 +19,12 @@
   <script src="../4-java/altitude-dialogs.js?v=17"></script>
   <script src="../4-java/supabase-init.js?v=17" defer></script>
   <script src="../4-java/gestor-guard.js?v=17" defer></script>
-  <script src="../4-java/12-portaldogestor.js?v=22" defer></script>
-  <script src="../4-java/latex-importer.js?v=22" defer></script>
+  <script src="../4-java/12-portaldogestor.js?v=26" defer></script>
+  <script src="../4-java/latex-importer.js?v=25" defer></script>
   <script src="../4-java/gestor-enhancements.js?v=19" defer></script>
   <script src="../4-java/gestor-acessos.js?v=17" defer></script>
-  <script src="../4-java/certificado-pdf-gestor.js?v=18" defer></script>
-  <script src="../4-java/gestor-certificados.js?v=22" defer></script>
+  <script src="../4-java/certificado-pdf-gestor.js?v=26" defer></script>
+  <script src="../4-java/gestor-certificados.js?v=25" defer></script>
   <link rel="stylesheet" href="../2-css/base-portal.css?v=17">
   <link rel="stylesheet" href="../2-css/06-responsive.css?v=17">
   <link rel="stylesheet" href="../2-css/15-ajustes-finais.css?v=19">
@@ -272,22 +272,19 @@
         <div class="modal__sheet course-builder-modal">
           <header class="course-builder-header">
             <div>
-              <p class="builder-eyebrow">CONSTRUTOR DO CURSO</p>
+              <p class="builder-eyebrow">MONTAGEM DO CURSO</p>
               <h3><span id="mmCursoNome"></span></h3>
-              <p>Preencha o módulo completo em uma única tela: título, conteúdo, PDF, vídeo e depois a prova.</p>
+              <p>Escolha apenas uma forma de trabalho. O cadastro normal e o LaTeX ficam na mesma tela, sempre com pré-visualização.</p>
             </div>
             <button type="button" class="btn-fechar builder-close" id="fecharModulos" aria-label="Fechar">×</button>
           </header>
 
-          <div class="builder-steps" aria-label="Etapas para preparar o curso">
-            <span class="active"><b>1</b> Módulos</span>
-            <span><b>2</b> Conteúdo e PDF</span>
-            <span><b>3</b> Materiais</span>
-            <span><b>4</b> Prova</span>
-            <span><b>5</b> Publicar</span>
+          <div class="builder-mode-switch" role="tablist" aria-label="Forma de inserir o curso">
+            <button type="button" class="active" id="builderModeNormal" data-builder-mode="normal" role="tab" aria-selected="true">Inserir normalmente</button>
+            <button type="button" id="builderModeLatex" data-builder-mode="latex" role="tab" aria-selected="false">Inserir em LaTeX</button>
           </div>
 
-          <div class="course-builder-grid">
+          <div class="course-builder-grid" id="normalBuilderPanel">
             <aside class="builder-create-panel">
               <div class="builder-panel-title">
                 <span>PASSO 1</span>
@@ -302,6 +299,9 @@
                   </label>
                   <label>Ordem
                     <input type="number" id="fModuloOrdem" min="1" value="1">
+                  </label>
+                  <label>Horas do módulo
+                    <input type="number" id="fModuloHoras" min="0" step="1" value="0" placeholder="Ex.: 20">
                   </label>
                 </div>
                 <label>Descrição curta
@@ -344,6 +344,16 @@
                 <button type="button" class="builder-secondary-button" id="btnRecarregarModulos">Atualizar</button>
               </div>
 
+              <section class="normal-live-preview" aria-label="Pré-visualização do módulo">
+                <div class="builder-list-heading compact">
+                  <div><span>PRÉ-VISUALIZAÇÃO</span><h4>Como o material ficará</h4></div>
+                  <button type="button" class="builder-secondary-button" id="btnPreviewNormalPdf">Abrir prévia em PDF</button>
+                </div>
+                <div id="normalMaterialPreview" class="normal-material-preview">
+                  <span>Preencha o módulo ao lado para visualizar o título, a carga horária e o conteúdo antes de salvar.</span>
+                </div>
+              </section>
+
               <div id="tabModulosBody" class="builder-module-list" aria-live="polite">
                 <div class="builder-empty-state">Nenhum módulo cadastrado ainda.</div>
               </div>
@@ -362,6 +372,9 @@
                     </label>
                     <label>Ordem
                       <input type="number" id="editar-order" min="1" value="1">
+                    </label>
+                    <label>Horas do módulo
+                      <input type="number" id="editar-carga-horaria" min="0" step="1" value="0">
                     </label>
                   </div>
                   <label>Descrição
@@ -391,9 +404,50 @@
             </section>
           </div>
 
-          <footer class="builder-footer">
+          <section id="latexBuilderPanel" class="latex-builder-panel" hidden>
+            <div class="latex-builder-workspace">
+              <section class="latex-builder-editors">
+                <div class="latex-editor-card">
+                  <header><div><span>1 · MATERIAL DE ESTUDO</span><h4>LaTeX do conteúdo</h4><p>Use o padrão institucional. O portal divide o conteúdo em módulos e gera o PDF.</p></div><label class="latex-file-button">Abrir .tex<input id="latexContentFile" type="file" accept=".tex,text/plain,text/x-tex"></label></header>
+                  <div class="latex-editor-toolbar"><button type="button" id="latexContentTemplate">Carregar modelo de conteúdo</button><button type="button" id="latexValidateContent">Atualizar prévia</button></div>
+                  <textarea id="latexContentSource" spellcheck="false" aria-label="LaTeX do conteúdo"></textarea>
+                </div>
+                <div class="latex-editor-card proof-editor-card">
+                  <header><div><span>2 · AVALIAÇÃO</span><h4>LaTeX das questões</h4><p>As questões ficam separadas do material. O aluno continuará selecionando alternativas normalmente.</p></div><label class="latex-file-button">Abrir .tex<input id="latexProofFile" type="file" accept=".tex,text/plain,text/x-tex"></label></header>
+                  <div class="latex-editor-toolbar"><button type="button" id="latexProofTemplate">Carregar modelo de prova</button><button type="button" id="latexValidateProof">Visualizar questões</button></div>
+                  <textarea id="latexProofSource" spellcheck="false" aria-label="LaTeX da prova"></textarea>
+                </div>
+              </section>
+
+              <aside class="latex-builder-preview">
+                <div class="latex-preview-tabs" role="tablist">
+                  <button type="button" class="active" data-latex-preview="pdf">Prévia do PDF</button>
+                  <button type="button" data-latex-preview="questions">Prévia da prova</button>
+                </div>
+                <div id="latexPreviewPdfPane" class="latex-preview-pane">
+                  <div id="latexPreviewSummary" class="latex-preview-summary"></div>
+                  <iframe id="latexPdfPreviewFrame" title="Pré-visualização do PDF do conteúdo"></iframe>
+                  <div id="latexPdfPlaceholder" class="latex-preview-placeholder">Clique em <b>Atualizar prévia</b> para visualizar o PDF antes de importar.</div>
+                </div>
+                <div id="latexPreviewQuestionsPane" class="latex-preview-pane" hidden>
+                  <div id="latexQuestionsPreview" class="latex-questions-preview"><div class="latex-preview-placeholder">Clique em <b>Visualizar questões</b>.</div></div>
+                </div>
+              </aside>
+            </div>
+            <footer class="latex-builder-footer">
+              <div class="latex-import-options">
+                <label><input id="latexReplaceExisting" type="checkbox" checked> Substituir conteúdo e prova atuais</label>
+                <label><input id="latexPublishModules" type="checkbox"> Liberar módulos após importar</label>
+                <label><input id="latexUpdateCourse" type="checkbox" checked> Atualizar título, área, nota e carga horária</label>
+              </div>
+              <span id="latexImportProgress" aria-live="polite"></span>
+              <button type="button" id="latexImportConfirm" class="builder-main-button">Importar como rascunho</button>
+            </footer>
+          </section>
+
+          <footer class="builder-footer" id="normalBuilderFooter">
             <button id="btnVoltarModulos" type="button" class="builder-secondary-button">← Voltar para cursos</button>
-            <p>Depois de completar todos os módulos, volte à lista de cursos e clique em <b>Publicar</b>.</p>
+            <p>Revise a prévia. A publicação continua sendo feita somente pelo botão <b>Publicar</b> na lista de cursos.</p>
           </footer>
         </div>
       </div>

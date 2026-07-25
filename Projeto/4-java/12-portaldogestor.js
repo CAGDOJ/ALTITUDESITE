@@ -902,7 +902,7 @@ function gerarRaLocal(){
               <div class="builder-module-order">${Number(modulo.ordem || 1)}</div>
               <div class="builder-module-copy">
                 <h5>${safeTitle}</h5>
-                <p>${modulo.descricao ? String(modulo.descricao).replaceAll('&', '&amp;').replaceAll('<', '&lt;').replaceAll('>', '&gt;') : 'Sem descrição cadastrada.'}</p>
+                <p><strong>${Math.max(0, Number(modulo.carga_horaria || 0))}h</strong> · ${modulo.descricao ? String(modulo.descricao).replaceAll('&', '&amp;').replaceAll('<', '&lt;').replaceAll('>', '&gt;') : 'Sem descrição cadastrada.'}</p>
                 <small class="builder-content-preview">${String(modulo.conteudo || '').trim() ? String(modulo.conteudo).trim().slice(0, 150).replaceAll('&', '&amp;').replaceAll('<', '&lt;').replaceAll('>', '&gt;') + (String(modulo.conteudo).trim().length > 150 ? '…' : '') : (modulo.pdf_url ? 'Apostila em PDF anexada.' : 'Nenhum conteúdo inserido ainda.')}</small>
               </div>
               <span class="builder-status ${modulo.publicado ? 'live' : ''}">${modulo.publicado ? 'LIBERADO' : 'RASCUNHO'}</span>
@@ -963,6 +963,7 @@ function gerarRaLocal(){
     const tituloInput = $('#fModuloTitulo');
     const ordemInput = $('#fModuloOrdem');
     const descricaoInput = $('#fModuloDesc');
+    const horasInput = $('#fModuloHoras');
     const conteudoInput = $('#fModuloConteudo');
     const pdfInput = $('#fModuloPdfArquivo');
     const videoInput = $('#fModuloVideo');
@@ -977,6 +978,7 @@ function gerarRaLocal(){
     const titulo = tituloInput.value.trim();
     const ordem = parseInt(ordemInput.value) || 1;
     const descricao = descricaoInput ? descricaoInput.value.trim() : '';
+    const cargaHoraria = Math.max(0, parseInt(horasInput?.value || '0', 10) || 0);
     const conteudo = conteudoInput ? conteudoInput.value.trim() : '';
     const pdfFile = pdfInput?.files?.[0] || null;
     const videoUrl = videoInput?.value?.trim() || '';
@@ -1002,6 +1004,7 @@ function gerarRaLocal(){
           titulo: titulo,
           ordem: ordem,
           descricao: descricao,
+          carga_horaria: cargaHoraria,
           conteudo: conteudo,
           pdf_url: pdfUrl,
           video_url: videoUrl || null,
@@ -1032,6 +1035,7 @@ function gerarRaLocal(){
 
       tituloInput.value = '';
       if (descricaoInput) descricaoInput.value = '';
+      if (horasInput) horasInput.value = '0';
       if (conteudoInput) conteudoInput.value = '';
       if (pdfInput) pdfInput.value = '';
       if (videoInput) videoInput.value = '';
@@ -1638,6 +1642,8 @@ function gerarRaLocal(){
       document.getElementById('editar-descricao').value = modulo.descricao || '';
       const editarConteudo = document.getElementById('editar-conteudo'); if (editarConteudo) editarConteudo.value = modulo.conteudo || '';
       document.getElementById('editar-order').value = modulo.ordem || 1;
+      const editarHoras = document.getElementById('editar-carga-horaria');
+      if (editarHoras) editarHoras.value = Math.max(0, Number(modulo.carga_horaria || 0));
       document.getElementById('editar-pdf-url').value = modulo.pdf_url || '';
       document.getElementById('editar-video-url').value = modulo.video_url || '';
       document.getElementById('editar-publicado').checked = modulo.publicado || false;
@@ -1699,6 +1705,7 @@ function gerarRaLocal(){
         descricao: document.getElementById('editar-descricao').value.trim(),
         conteudo: document.getElementById('editar-conteudo')?.value.trim() || '',
         ordem: parseInt(document.getElementById('editar-order').value) || 1,
+        carga_horaria: Math.max(0, parseInt(document.getElementById('editar-carga-horaria')?.value || '0', 10) || 0),
         pdf_url: document.getElementById('editar-pdf-url').value.trim(),
         video_url: document.getElementById('editar-video-url').value.trim(),
         publicado: document.getElementById('editar-publicado').checked,

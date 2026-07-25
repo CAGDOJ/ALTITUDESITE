@@ -1,75 +1,96 @@
-/* ALTITUDE V22+ — importador LaTeX e ajustes do construtor */
-.builder-header-actions{margin-left:auto;display:flex;align-items:center;gap:10px}
-.latex-import-open{border:0;border-radius:10px;background:#0ea5a3;color:#fff;padding:11px 17px;font-weight:800;cursor:pointer;box-shadow:0 8px 18px rgba(14,165,163,.18)}
-.latex-import-open:hover{background:#087f7d}
-.course-builder-header>.builder-close{flex:0 0 auto}
+/* ALTITUDE V25 - construtor normal/LaTeX em uma única tela */
+.course-builder-modal{width:min(1500px,calc(100vw - 20px))!important;max-width:1500px!important;height:min(960px,calc(100vh - 20px))!important;max-height:calc(100vh - 20px)!important;border-radius:12px!important;overflow:hidden!important;display:flex!important;flex-direction:column!important}
+.course-builder-header{padding:18px 22px!important;gap:18px!important;flex:0 0 auto}
+.course-builder-header h3{margin:4px 0!important}
+.course-builder-header>div>p:last-child{margin:0;max-width:900px}
+.builder-mode-switch{display:flex;gap:8px;padding:10px 18px;border-top:1px solid #dce7ef;border-bottom:1px solid #dce7ef;background:#f7fafc;flex:0 0 auto}
+.builder-mode-switch button{min-height:42px;padding:0 20px;border:1px solid #cddbe6;border-radius:8px;background:#fff;color:#254b67;font-weight:900;cursor:pointer}
+.builder-mode-switch button.active{background:#073a61;border-color:#073a61;color:#fff;box-shadow:0 8px 18px rgba(7,58,97,.16)}
+#normalBuilderPanel{flex:1!important;min-height:0!important;overflow:auto!important}
+#normalBuilderFooter{flex:0 0 auto}
+.builder-title-order{grid-template-columns:minmax(0,1fr) 92px 125px!important}
+.normal-live-preview{margin-bottom:16px;padding:15px;border:1px solid #d8e5ee;border-radius:10px;background:#f9fbfd}
+.builder-list-heading.compact{margin-bottom:10px}
+.normal-material-preview{min-height:130px;padding:18px;border:1px solid #dce7ef;border-radius:9px;background:#fff;color:#425e73;line-height:1.6}
+.normal-material-preview .preview-header{padding-bottom:12px;margin-bottom:12px;border-bottom:2px solid #38b1cb}
+.normal-material-preview h3{margin:0;color:#07314f;font-size:20px}
+.normal-material-preview small{display:block;color:#6c8090;margin-top:4px}
+.normal-material-preview p{margin:10px 0 0;white-space:pre-wrap}
 
-.latex-import-modal{width:min(1220px,calc(100vw - 34px));max-width:1220px;height:min(880px,calc(100vh - 34px));padding:0;overflow:hidden;display:flex;flex-direction:column;border-radius:22px}
-.latex-import-head{display:flex;align-items:flex-start;gap:20px;justify-content:space-between;padding:22px 25px;border-bottom:1px solid #dbe6ef;background:#f8fbfd}
-.latex-import-head>div:first-child{min-width:0}
-.latex-import-head span{display:block;color:#008f95;font-size:11px;font-weight:900;letter-spacing:.12em}
-.latex-import-head h3{margin:5px 0 4px;color:#193248;font-size:24px}
-.latex-import-head p{margin:0;color:#65798c;font-size:13px}
-.latex-import-head .builder-close{width:44px;height:44px;border:1px solid #d5e2ed;border-radius:12px;background:#fff;color:#173a57;font-size:26px;cursor:pointer}
-.latex-import-body{min-height:0;flex:1;display:grid;grid-template-columns:minmax(0,1.35fr) minmax(320px,.65fr);gap:0;overflow:hidden}
-.latex-import-editor{min-width:0;padding:20px;border-right:1px solid #dbe6ef;display:flex;flex-direction:column;gap:13px;overflow:hidden}
-.latex-import-toolbar{display:flex;align-items:center;gap:9px;flex-wrap:wrap}
-.latex-import-toolbar button,.latex-file-button{min-height:39px;border:1px solid #cad9e5;border-radius:9px;background:#fff;color:#254a68;padding:9px 13px;font-size:12px;font-weight:800;cursor:pointer}
+.latex-builder-panel{flex:1;min-height:0;overflow:hidden;background:#eef4f8}
+.latex-builder-panel[hidden]{display:none!important}
+.latex-builder-workspace{height:100%;display:grid;grid-template-columns:minmax(520px,.95fr) minmax(520px,1.05fr);gap:0;min-height:0}
+.latex-builder-editors{min-width:0;min-height:0;padding:14px;display:grid;grid-template-rows:minmax(0,1.15fr) minmax(250px,.85fr);gap:12px;overflow:auto;border-right:1px solid #d4e0e9;background:#f8fbfd}
+.latex-editor-card{min-height:0;display:flex;flex-direction:column;border:1px solid #d5e3ed;border-radius:10px;background:#fff;overflow:hidden}
+.latex-editor-card>header{display:flex;align-items:flex-start;justify-content:space-between;gap:14px;padding:13px 14px;border-bottom:1px solid #e1e9ef;background:#fbfdfe}
+.latex-editor-card>header span{display:block;color:#008f95;font-size:10px;font-weight:900;letter-spacing:.12em}
+.latex-editor-card>header h4{margin:3px 0;color:#173a57;font-size:17px}
+.latex-editor-card>header p{margin:0;color:#6b7d8d;font-size:11px;line-height:1.4}
+.latex-editor-toolbar{display:flex;gap:8px;padding:9px 12px;border-bottom:1px solid #e2eaf0;background:#f7fafc}
+.latex-editor-toolbar button,.latex-file-button{display:inline-flex;align-items:center;justify-content:center;min-height:34px;padding:0 11px;border:1px solid #c9d8e4;border-radius:7px;background:#fff;color:#244c69;font-size:11px;font-weight:800;cursor:pointer}
 .latex-file-button input{display:none}
-#latexImportSource{width:100%;min-height:0;flex:1;resize:none;border:1px solid #bed0df;border-radius:13px;padding:16px;background:#0c1d2b;color:#e7f8ff;font:13px/1.55 Consolas,"Courier New",monospace;outline:none;tab-size:2;box-sizing:border-box}
-#latexImportSource:focus{border-color:#0ea5a3;box-shadow:0 0 0 3px rgba(14,165,163,.13)}
-.latex-import-options{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:9px}
-.latex-import-options label{display:flex;align-items:flex-start;gap:8px;border:1px solid #dbe6ef;border-radius:10px;padding:10px;background:#f8fbfd;color:#38546b;font-size:11px;font-weight:700;line-height:1.35}
-.latex-import-options input{margin-top:2px}
-.latex-import-preview{min-width:0;padding:20px;background:#f7fafc;overflow:auto}
-.latex-import-preview>h4{margin:0 0 12px;color:#193248}
-.latex-preview-summary{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:9px;margin-bottom:14px}
-.latex-preview-summary article{border:1px solid #dce7ef;border-radius:11px;background:#fff;padding:11px;display:grid;gap:4px}
-.latex-preview-summary span{font-size:10px;color:#6b7e90;text-transform:uppercase;font-weight:800;letter-spacing:.05em}
-.latex-preview-summary strong{color:#173a57;font-size:14px;overflow-wrap:anywhere}
-.latex-preview-modules{display:grid;gap:10px}
-.latex-preview-modules article{border:1px solid #dce7ef;border-radius:12px;background:#fff;padding:12px}
-.latex-preview-modules article>div{display:flex;gap:10px;align-items:flex-start}
-.latex-preview-modules b{width:30px;height:30px;display:grid;place-items:center;border-radius:9px;background:#e1f5f6;color:#028a90}
-.latex-preview-modules span{display:grid;gap:2px;min-width:0}
-.latex-preview-modules small{color:#728496;font-size:10px}
-.latex-preview-modules p{margin:9px 0 0;color:#536b7f;font-size:11px;line-height:1.45}
-.latex-import-error{padding:14px;border:1px solid #fecaca;border-radius:12px;background:#fff1f2;color:#9f1239;display:grid;gap:5px}
-.latex-import-error span{font-size:12px;line-height:1.45}
-.latex-import-footer{display:flex;justify-content:space-between;align-items:center;gap:16px;padding:15px 20px;border-top:1px solid #dbe6ef;background:#fff}
-.latex-import-footer>span{color:#0b777d;font-size:12px;font-weight:800}
-.latex-import-footer>div{display:flex;gap:9px}
-.latex-import-footer button{min-height:42px;padding:0 16px;border-radius:9px}
+.latex-editor-card textarea{width:100%;min-height:0;flex:1;resize:none;border:0;padding:14px;background:#0d1d2b;color:#e9f8ff;font:12.5px/1.55 Consolas,"Courier New",monospace;outline:none;tab-size:2}
+.proof-editor-card textarea{min-height:210px}
+.latex-builder-preview{min-width:0;min-height:0;display:flex;flex-direction:column;padding:14px;background:#eef4f8;overflow:hidden}
+.latex-preview-tabs{display:flex;gap:7px;margin-bottom:10px;flex:0 0 auto}
+.latex-preview-tabs button{min-height:38px;padding:0 16px;border:1px solid #cbd9e4;border-radius:8px;background:#fff;color:#31546d;font-weight:800;cursor:pointer}
+.latex-preview-tabs button.active{background:#0ea5a3;border-color:#0ea5a3;color:#fff}
+.latex-preview-pane{position:relative;flex:1;min-height:0;display:flex;flex-direction:column;border:1px solid #d3e0e9;border-radius:10px;background:#fff;overflow:hidden}
+.latex-preview-pane[hidden]{display:none!important}
+.latex-preview-summary{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:7px;padding:9px;border-bottom:1px solid #e2eaf0;background:#f8fbfd;flex:0 0 auto}
+.latex-preview-summary article{min-width:0;padding:8px;border:1px solid #dce7ef;border-radius:7px;background:#fff}
+.latex-preview-summary span{display:block;color:#6b7e90;font-size:9px;text-transform:uppercase;font-weight:900;letter-spacing:.05em}
+.latex-preview-summary strong{display:block;margin-top:2px;color:#173a57;font-size:12px;overflow-wrap:anywhere}
+#latexPdfPreviewFrame{width:100%;height:100%;min-height:0;flex:1;border:0;background:#dce3e8}
+.latex-preview-placeholder{display:grid;place-items:center;min-height:160px;padding:30px;color:#708292;text-align:center;background:#f8fbfd}
+#latexPdfPlaceholder{position:absolute;inset:58px 0 0;z-index:2}
+.latex-questions-preview{height:100%;overflow:auto;padding:14px;display:grid;gap:10px;align-content:start}
+.latex-question-card{padding:14px;border:1px solid #d9e5ed;border-radius:9px;background:#fff}
+.latex-question-card header{display:flex;justify-content:space-between;gap:12px;margin-bottom:9px;color:#173a57}
+.latex-question-card p{margin:0 0 9px;color:#344f64;font-size:13px;line-height:1.45}
+.latex-question-card ul{display:grid;gap:5px;margin:0;padding:0;list-style:none}
+.latex-question-card li{padding:7px 9px;border-radius:6px;background:#f5f8fa;color:#526b7e;font-size:12px}
+.latex-question-card li.correct{background:#e6f7f2;color:#08705b;font-weight:800}
+.latex-question-card .resolution{margin-top:9px;padding:8px;border-left:3px solid #38b1cb;background:#f1f8fb;color:#4b6679;font-size:11px}
+.latex-builder-footer{display:grid;grid-template-columns:minmax(0,1fr) auto auto;gap:12px;align-items:center;padding:11px 15px;border-top:1px solid #d7e3eb;background:#fff;flex:0 0 auto}
+.latex-import-options{display:flex;gap:9px;flex-wrap:wrap}
+.latex-import-options label{display:flex;align-items:center;gap:6px;color:#425f74;font-size:10.5px;font-weight:700}
+#latexImportProgress{color:#087a80;font-size:11px;font-weight:800}
+#latexImportConfirm{min-height:42px;padding:0 18px;white-space:nowrap}
 
-/* Documento temporário usado pelo html2pdf. */
-.altitude-latex-pdf{position:fixed;left:-12000px;top:0;width:760px;background:#fff;color:#20384c;padding:40px 48px;font-family:Arial,sans-serif;line-height:1.55;box-sizing:border-box}
-.altitude-latex-pdf header{padding-bottom:20px;border-bottom:3px solid #0ea5a3;margin-bottom:25px}
-.altitude-latex-pdf header span{color:#008e94;font-size:11px;font-weight:800;letter-spacing:.12em}
-.altitude-latex-pdf h1{font-size:22px;color:#0a3d62;margin:7px 0 2px}
-.altitude-latex-pdf h2{font-size:19px;color:#173a57;margin:5px 0 16px;break-after:avoid}
-.altitude-latex-pdf h3{font-size:16px;color:#165b7c;margin:18px 0 8px;break-after:avoid}
-.altitude-latex-pdf h4,.altitude-latex-pdf h5{color:#254a68;break-after:avoid}
-.altitude-latex-pdf p{font-size:13px;text-align:justify;margin:0 0 12px;orphans:3;widows:3}
-.altitude-latex-pdf li{font-size:13px;margin:4px 0}
-.altitude-latex-pdf ul,.altitude-latex-pdf ol{margin:8px 0 14px;padding-left:24px}
-.altitude-latex-pdf .katex-display,.altitude-latex-pdf .latex-equation{margin:16px 0;text-align:center;break-inside:avoid}
-.altitude-latex-pdf footer{margin-top:30px;padding-top:10px;border-top:1px solid #cbd9e4;color:#718396;font-size:10px;text-align:center}
+/* Documento de apostila, baseado no modelo institucional enviado. */
+.altitude-material-pdf{position:fixed;left:-12000px;top:0;width:794px;background:#fff;color:#262626;padding:42px 56px 52px;font-family:Georgia,"Times New Roman",serif;line-height:1.55;box-sizing:border-box}
+.altitude-material-pdf .pdf-running-head{display:flex;justify-content:space-between;gap:20px;padding-bottom:6px;border-bottom:1px solid #555;color:#555;font-size:12px}
+.altitude-material-pdf .pdf-cover{text-align:center;padding-top:36px}
+.altitude-material-pdf .pdf-cover img{width:220px;height:auto;margin:0 auto 22px}
+.altitude-material-pdf .pdf-cover .institution{font-size:25px;font-weight:700;color:#0d0a3c}
+.altitude-material-pdf .pdf-cover .material{font-size:21px;font-weight:700;color:#1f70ab}
+.altitude-material-pdf .pdf-cover h1{margin:5px 0 28px;color:#111;font-size:30px;line-height:1.2}
+.altitude-material-pdf .pdf-info-box{display:grid;grid-template-columns:190px 1fr;gap:5px 14px;margin:0 0 34px;padding:17px 20px;border:1px solid #1f70ab;border-radius:9px;background:#eaf4fb;text-align:left;font-size:14px}
+.altitude-material-pdf .pdf-info-box b{color:#111}
+.altitude-material-pdf .pdf-module{page-break-before:always}
+.altitude-material-pdf .pdf-module.first{page-break-before:auto}
+.altitude-material-pdf h2{margin:25px 0 12px;color:#1f70ab;font-size:23px;line-height:1.2}
+.altitude-material-pdf h3{margin:20px 0 9px;color:#0d0a3c;font-size:17px}
+.altitude-material-pdf h4{margin:15px 0 7px;color:#0d0a3c;font-size:14px}
+.altitude-material-pdf p{margin:0 0 12px;text-align:justify;text-indent:24px}
+.altitude-material-pdf ul,.altitude-material-pdf ol{margin:8px 0 14px;padding-left:28px}
+.altitude-material-pdf li{margin:4px 0}
+.altitude-material-pdf .latex-equation{text-align:center;margin:18px 0}
+.altitude-material-pdf .pdf-orientation{margin-top:24px;padding:13px 16px;border:1px solid #1f70ab;border-radius:8px;background:#eaf4fb}
+.altitude-material-pdf .pdf-footer{margin-top:34px;padding-top:8px;border-top:1px solid #d9d9d9;text-align:center;color:#666;font-size:11px}
 
-/* Evita o título do curso ficar letra por letra na tabela. */
-#tabCursos{min-width:980px;table-layout:auto}
-#tabCursos .col-curso{min-width:285px;width:auto}
-#tabCursos .curso-info{display:grid;grid-template-columns:54px minmax(190px,1fr);align-items:center;gap:12px;min-width:260px}
-#tabCursos .curso-textos,#tabCursos .curso-titulo{min-width:0;white-space:normal;overflow-wrap:break-word;word-break:normal}
-#tabCursos .col-area{min-width:145px;white-space:normal}
-#tabCursos .course-action-cell{min-width:300px;width:340px;display:grid;grid-template-columns:repeat(2,minmax(120px,1fr));gap:8px}
-#tabCursos .course-action-cell button{width:100%;min-width:0;white-space:nowrap}
-
-@media(max-width:900px){
-  .latex-import-modal{width:calc(100vw - 16px);height:calc(100vh - 16px)}
-  .latex-import-body{grid-template-columns:1fr;overflow:auto}
-  .latex-import-editor{min-height:620px;border-right:0;border-bottom:1px solid #dbe6ef}
-  .latex-import-preview{overflow:visible}
-  .latex-import-options{grid-template-columns:1fr}
-  .latex-import-footer{align-items:flex-start;flex-direction:column}
-  .latex-import-footer>div{width:100%;justify-content:flex-end}
+@media(max-width:1100px){
+  .latex-builder-workspace{grid-template-columns:1fr}
+  .latex-builder-editors{grid-template-rows:auto;border-right:0;border-bottom:1px solid #d4e0e9;max-height:52%}
+  .latex-builder-preview{min-height:48%}
+}
+@media(max-width:760px){
+  .course-builder-modal{width:100vw!important;height:100vh!important;max-height:100vh!important;border-radius:0!important}
+  .builder-mode-switch{padding:8px}
+  .builder-mode-switch button{flex:1;padding:0 8px;font-size:12px}
+  .builder-title-order{grid-template-columns:1fr!important}
+  .latex-builder-footer{grid-template-columns:1fr}
+  .latex-preview-summary{grid-template-columns:repeat(2,minmax(0,1fr))}
+  .latex-import-options{display:grid}
 }

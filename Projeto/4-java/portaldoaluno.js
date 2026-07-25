@@ -1358,156 +1358,25 @@ async function baixarCertificado(certificadoId) {
   if (!cert) return toast("Certificado não encontrado.", "error");
   if (!certificadoEstaLiberado(cert)) return toast("O certificado ainda está aguardando liberação.", "error");
   if (!cert.codigo_validacao) return toast("Código de autenticação não encontrado.", "error");
-  if (!window.jspdf?.jsPDF || !window.QRCode) return toast("Bibliotecas de PDF ou QR Code não carregaram.", "error");
+  if (!window.AltitudeCertificatePDF) return toast("Gerador do certificado não carregou.", "error");
+
+  const courseData = state.cursos.find((item) => Number(item.id) === Number(cert.curso_id)) || {};
+  const codigo = cert.codigo_validacao || cert.numero_certificado;
+  const validationUrl = `${window.location.origin}/Projeto/1-html/8-certificados.html?codigo=${encodeURIComponent(codigo)}`;
 
   try {
-    toast("Preparando certificado em duas páginas...", "success");
-    const { jsPDF } = window.jspdf;
-    const doc = new jsPDF({ orientation: "landscape", unit: "mm", format: "a4" });
-    const pageWidth = doc.internal.pageSize.getWidth();
-    const pageHeight = doc.internal.pageSize.getHeight();
-    const nome = cert.nome_aluno || state.aluno.nome || "Aluno";
-    const courseData = state.cursos.find((item) => Number(item.id) === Number(cert.curso_id));
-    const curso = cert.nome_curso || courseData?.titulo || "Curso";
-    const hours = Number(cert.horas_emitidas || courseData?.carga_horaria || 0);
-    const validationUrl = `${window.location.origin}/Projeto/1-html/8-certificados.html?codigo=${encodeURIComponent(cert.codigo_validacao)}`;
-    const qr = await gerarQrDataUrl(validationUrl);
-    const modules = await carregarConteudoProgramatico(cert.curso_id, hours);
-    if (!state.logoDataUrl) state.logoDataUrl = await imagemParaDataURL("../3-img/LOGO.png");
-
-    // PÁGINA 1 - FRENTE
-    desenharMolduraCertificado(doc, pageWidth, pageHeight);
-    doc.addImage(state.logoDataUrl, "PNG", pageWidth - 79, 23, 60, 9, undefined, "FAST");
-    doc.setTextColor(81, 58, 44);
-    doc.setFont("times", "bold");
-    const tituloDocumento = String(cert.titulo_documento || "CERTIFICADO").toUpperCase();
-    const subtituloDocumento = String(cert.subtitulo_documento || "DE CONCLUSÃO E APROVEITAMENTO").toUpperCase();
-    doc.setFontSize(tituloDocumento.length > 20 ? 28 : 34);
-    doc.text(tituloDocumento, pageWidth / 2, 39, { align: "center" });
-    doc.setFont("times", "normal");
-    doc.setFontSize(11);
-    doc.text(subtituloDocumento, pageWidth / 2, 48, { align: "center" });
-
-    doc.setTextColor(27, 42, 56);
-    doc.setFont("times", "normal");
-    doc.setFontSize(12);
-    doc.text("O Instituto de Educação e Tecnologia Altitude certifica que", pageWidth / 2, 70, { align: "center" });
-
-    doc.setFont("times", "italic");
-    doc.setFontSize(nome.length > 48 ? 24 : 29);
-    const nameLines = doc.splitTextToSize(nome, 225);
-    doc.text(nameLines, pageWidth / 2, 91, { align: "center" });
-    const afterName = 91 + (nameLines.length - 1) * 10;
-
-    doc.setFont("times", "normal");
-    doc.setFontSize(12.5);
-    doc.text("concluiu com aproveitamento o curso", pageWidth / 2, afterName + 15, { align: "center" });
-    doc.setFont("times", "bold");
-    doc.setTextColor(7, 49, 79);
-    doc.setFontSize(20);
-    const courseLines = doc.splitTextToSize(curso, 200);
-    doc.text(courseLines, pageWidth / 2, afterName + 28, { align: "center" });
-    const afterCourse = afterName + 28 + (courseLines.length - 1) * 8;
-
-    const inicio = cert.periodo_inicio ? dataBR(cert.periodo_inicio) : (courseData?.matricula_criada_em ? dataBR(courseData.matricula_criada_em) : "data registrada na plataforma");
-    const fim = cert.periodo_fim ? dataBR(cert.periodo_fim) : dataBR(cert.emitido_em);
-    doc.setFont("times", "normal");
-    doc.setTextColor(27, 42, 56);
-    doc.setFontSize(11.5);
-    doc.text(`com carga horária total de ${hours} horas e nota final de ${Number(cert.nota_final || 0)}%.`, pageWidth / 2, afterCourse + 13, { align: "center" });
-    doc.text(`Período acadêmico: ${inicio} a ${fim}.`, pageWidth / 2, afterCourse + 21, { align: "center" });
-
-    const signY = pageHeight - 36;
-    doc.setDrawColor(92, 103, 112);
-    doc.line(34, signY, 102, signY);
-    doc.line(119, signY, 187, signY);
-    doc.setFontSize(9);
-    doc.setTextColor(50, 60, 70);
-    doc.text("DIREÇÃO DO INSTITUTO ALTITUDE", 68, signY + 6, { align: "center" });
-    doc.text("CONCLUINTE", 153, signY + 6, { align: "center" });
-
-    doc.addImage(qr, "PNG", pageWidth - 52, pageHeight - 62, 25, 25);
-    doc.setFont("helvetica", "bold");
-    doc.setFontSize(7.5);
-    doc.setTextColor(7, 49, 79);
-    doc.text("ESCANEIE PARA VALIDAR", pageWidth - 39.5, pageHeight - 66, { align: "center" });
-    doc.setFont("helvetica", "normal");
-    doc.setFontSize(7.4);
-    doc.text(cert.numero_certificado || String(cert.codigo_validacao), pageWidth / 2, pageHeight - 16, { align: "center" });
-
-    // PÁGINA 2 - CONTEÚDO PROGRAMÁTICO
-    doc.addPage("a4", "landscape");
-    desenharMolduraCertificado(doc, pageWidth, pageHeight);
-    doc.addImage(state.logoDataUrl, "PNG", pageWidth - 79, 23, 60, 9, undefined, "FAST");
-    doc.setTextColor(27, 42, 56);
-    doc.setFont("times", "bold");
-    doc.setFontSize(25);
-    doc.text("CONTEÚDO PROGRAMÁTICO", 45, 39);
-    doc.setDrawColor(176, 143, 102);
-    doc.setLineWidth(.7);
-    doc.line(45, 44, 148, 44);
-
-    const half = Math.ceil(modules.length / 2);
-    const columns = [modules.slice(0, half), modules.slice(half)];
-    const xs = [28, 116];
-    columns.forEach((items, col) => {
-      let y = 60;
-      items.forEach((item, idx) => {
-        doc.setFont("times", "bold");
-        doc.setFontSize(9.4);
-        doc.setTextColor(7, 49, 79);
-        doc.text(`${col * half + idx + 1}.`, xs[col], y);
-        doc.setFont("times", "normal");
-        doc.setTextColor(30, 42, 54);
-        const label = `${item.titulo}${item.horas ? ` (${item.horas} horas)` : ""}`;
-        const lines = doc.splitTextToSize(label, 82);
-        doc.text(lines, xs[col] + 8, y);
-        y += 7.5 + (lines.length - 1) * 4.5;
-      });
+    toast("Preparando certificado e conteúdo programático...", "success");
+    await window.AltitudeCertificatePDF.download({
+      sb,
+      cert,
+      aluno: state.aluno || {},
+      curso: courseData,
+      logoUrl: "../3-img/LOGO.png",
+      validationUrl
     });
-
-    doc.setFillColor(238, 247, 249);
-    doc.roundedRect(pageWidth - 77, 54, 56, 89, 3, 3, "F");
-    doc.setFont("helvetica", "bold");
-    doc.setTextColor(7, 49, 79);
-    doc.setFontSize(10);
-    doc.text("REGISTRO ACADÊMICO", pageWidth - 49, 67, { align: "center" });
-    doc.setFont("helvetica", "normal");
-    doc.setFontSize(8.5);
-    const legal = [
-      `RA: ${state.aluno?.ra || "—"}`,
-      `Carga horária certificada: ${hours} horas`,
-      `Nota final: ${Number(cert.nota_final || 0)}%`,
-      `Emissão: ${dataBR(cert.emitido_em)}`,
-      `Versão do PDF: ${Number(cert.versao_pdf || 1)}`,
-      "Curso livre de qualificação e atualização.",
-      "Base legal institucional informada:",
-      "LDB nº 9.394/96, art. 41, e Decreto nº 5.154/04.",
-      "CNPJ: 45.628.030/0001-85"
-    ];
-    let legalY = 78;
-    legal.forEach((line) => {
-      const lines = doc.splitTextToSize(line, 48);
-      doc.text(lines, pageWidth - 49, legalY, { align: "center" });
-      legalY += 7 + (lines.length - 1) * 4;
-    });
-    doc.addImage(qr, "PNG", pageWidth - 60, 147, 23, 23);
-    doc.setFontSize(7);
-    doc.text("Autenticidade pelo QR Code", pageWidth - 49, 175, { align: "center" });
-
-    doc.setFont("times", "bold");
-    doc.setFontSize(13);
-    doc.setTextColor(27, 42, 56);
-    doc.text(`TOTAL CERTIFICADO: ${hours} HORAS`, 29, pageHeight - 27);
-    doc.setFont("helvetica", "normal");
-    doc.setFontSize(7.5);
-    doc.setTextColor(92, 103, 112);
-    doc.text(`Documento nº ${cert.numero_certificado || cert.codigo_validacao} - confirme a autenticidade no Portal Altitude.`, pageWidth / 2, pageHeight - 16, { align: "center" });
-
-    doc.save(`certificado-${slug(curso)}-${slug(nome)}.pdf`);
   } catch (error) {
-    console.error(error);
-    toast(`Erro ao gerar PDF: ${error.message}`, "error");
+    console.error("Certificado do aluno:", error);
+    toast(`Não foi possível gerar o certificado: ${error.message}`, "error");
   }
 }
 

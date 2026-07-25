@@ -158,7 +158,7 @@ function statusPill(status) {
   const danger = ["CANCELADA", "CANCELADO", "BLOQUEADO", "INATIVO", "REPROVADO", "ESTORNADO"].includes(normalized);
   const warning = ["PENDENTE", "AGUARDANDO_HORAS", "ABERTO", "EM_ANDAMENTO", "TRANCADA"].includes(normalized);
   const cls = success ? "success" : danger ? "danger" : warning ? "warning" : "neutral";
-  const label = normalized === "AGUARDANDO_HORAS" ? "EM CONTAGEM" : normalized.replaceAll("_", " ");
+  const label = normalized === "AGUARDANDO_HORAS" ? "AGUARDANDO LIBERAÇÃO" : normalized.replaceAll("_", " ");
   return `<span class="status-pill ${cls}">${escapeHTML(label)}</span>`;
 }
 
@@ -422,8 +422,27 @@ function certificadosDoCurso(cursoId) {
     .sort((a, b) => Number(b.id) - Number(a.id));
 }
 
+function certificadoEstaLiberado(certificado) {
+  if (!certificado || String(certificado.status || "").toUpperCase() !== "EMITIDO") return false;
+
+  const liberarEm = certificado.liberar_em ? new Date(certificado.liberar_em).getTime() : null;
+  const horarioValido = liberarEm !== null && Number.isFinite(liberarEm);
+
+  if (certificado.liberado_em) return true;
+  if (String(certificado.modo_liberacao || "").toUpperCase() === "IMEDIATO") return true;
+  if (horarioValido && Date.now() < liberarEm) return false;
+
+  // Registros antigos podem não possuir modo_liberacao/liberado_em.
+  return !horarioValido || Date.now() >= liberarEm;
+}
+
+function certificadoAguardandoPrazo(certificado) {
+  const status = String(certificado?.status || "").toUpperCase();
+  return status === "AGUARDANDO_HORAS" || (status === "EMITIDO" && !certificadoEstaLiberado(certificado));
+}
+
 function certificadoCurso(cursoId) {
-  return certificadosDoCurso(cursoId).find((item) => String(item.status).toUpperCase() === "EMITIDO") || null;
+  return certificadosDoCurso(cursoId).find(certificadoEstaLiberado) || null;
 }
 
 function certificadoAtualCurso(cursoId) {
@@ -433,7 +452,7 @@ function certificadoAtualCurso(cursoId) {
 function renderDashboard() {
   const cursosAtivos = state.cursos.filter((item) => !["CANCELADA", "TRANCADA"].includes(String(item.matricula_status).toUpperCase()));
   const aprovadas = new Set(state.resultados.filter((item) => item.aprovado).map((item) => Number(item.curso_id))).size;
-  const emitidos = state.certificados.filter((item) => String(item.status).toUpperCase() === "EMITIDO");
+  const emitidos = state.certificados.filter(certificadoEstaLiberado);
   const horas = emitidos.reduce((total, item) => total + Number(item.horas_emitidas || 0), 0);
   const progressoGeral = cursosAtivos.length
     ? Math.round(cursosAtivos.reduce((total, item) => total + clamp(item.progresso), 0) / cursosAtivos.length)
@@ -865,9 +884,25 @@ function irParaCertificados() {
 function rotuloAcaoCertificado(acao) {
   return ({
     SOLICITADO: "Solicitação enviada", LIBERADO: "Certificado liberado", EMITIDO: "Certificado emitido",
-    BLOQUEADO: "Certificado bloqueado", AGUARDANDO_HORAS: "Certificado em contagem", CANCELADO: "Certificado cancelado", REABERTO: "Solicitação reaberta",
+    BLOQUEADO: "Certificado bloqueado", AGUARDANDO_HORAS: "Certificado aguardando liberação", CANCELADO: "Certificado cancelado", REABERTO: "Solicitação reaberta",
     IMPORTADO: "Registro importado", CRIADO: "Registro criado", ATUALIZADO: "Registro atualizado"
   })[String(acao || "").toUpperCase()] || String(acao || "Atualização").replaceAll("_", " ");
+}
+
+function mensagemPublicaHistoricoCertificado(item, certificado) {
+  const status = String(item?.status_novo || certificado?.status || "").toUpperCase();
+
+  if (status === "AGUARDANDO_HORAS" || certificadoAguardandoPrazo(certificado)) {
+    return certificado?.liberar_em
+      ? `Aguardando o prazo para liberação. Previsão: ${dataBR(certificado.liberar_em, true)}.`
+      : "Aguardando o prazo para liberação do certificado.";
+  }
+  if (status === "PENDENTE") return "Solicitação aguardando análise.";
+  if (status === "BLOQUEADO") return "Certificado temporariamente indisponível.";
+  if (status === "CANCELADO") return "Solicitação cancelada.";
+
+  // Para EMITIDO, não mostramos justificativas ou observações internas da gestão.
+  return "";
 }
 
 function renderHistoricoCertificados() {
@@ -882,9 +917,10 @@ function renderHistoricoCertificados() {
   list.innerHTML = historico.map((item) => {
     const cert = state.certificados.find((c) => Number(c.id) === Number(item.certificado_id));
     const curso = state.cursos.find((c) => Number(c.id) === Number(item.curso_id));
+    const mensagemPublica = mensagemPublicaHistoricoCertificado(item, cert);
     return `<article class="certificate-history-item">
       <div class="history-icon">${String(item.status_novo).toUpperCase() === "EMITIDO" ? "✓" : "•"}</div>
-      <div><strong>${escapeHTML(rotuloAcaoCertificado(item.acao))}</strong><span>${escapeHTML(cert?.nome_curso || curso?.titulo || "Curso")}</span>${item.observacao ? `<small>${escapeHTML(item.observacao)}</small>` : ""}</div>
+      <div><strong>${escapeHTML(rotuloAcaoCertificado(item.acao))}</strong><span>${escapeHTML(cert?.nome_curso || curso?.titulo || "Curso")}</span>${mensagemPublica ? `<small>${escapeHTML(mensagemPublica)}</small>` : ""}</div>
       <div class="history-date">${dataBR(item.criado_em, true)}${item.status_novo ? statusPill(item.status_novo) : ""}</div>
     </article>`;
   }).join("");
@@ -933,7 +969,7 @@ function renderExtratoHoras() {
     const curso = state.cursos.find((c) => Number(c.id) === Number(item.curso_id));
     const sinal = Number(item.horas || 0) > 0 ? "+" : "";
     return `<article class="hours-history-item">
-      <div><strong>${escapeHTML(rotuloMovimentoHoras(item.tipo))}</strong><span>${escapeHTML(curso?.titulo || "Curso")}</span>${item.observacao ? `<small>${escapeHTML(item.observacao)}</small>` : ""}</div>
+      <div><strong>${escapeHTML(rotuloMovimentoHoras(item.tipo))}</strong><span>${escapeHTML(curso?.titulo || "Curso")}</span></div>
       <div class="hours-history-value"><b>${sinal}${Number(item.horas || 0)}h</b><small>${dataBR(item.criado_em, true)}</small></div>
     </article>`;
   }).join("");
@@ -943,7 +979,7 @@ function renderCertificadosEmitidos() {
   const list = $("listaCertificadosEmitidos");
   if (!list) return;
   const emitidos = state.certificados
-    .filter((cert) => String(cert.status || "").toUpperCase() === "EMITIDO")
+    .filter(certificadoEstaLiberado)
     .sort((a, b) => new Date(b.emitido_em || b.atualizado_em || b.criado_em) - new Date(a.emitido_em || a.atualizado_em || a.criado_em));
 
   setText("contadorCertificadosEmitidos", `${emitidos.length} ${emitidos.length === 1 ? "emitido" : "emitidos"}`);
@@ -1006,7 +1042,7 @@ function renderCertificados() {
     const utilizadas = Number(carteira?.horas_utilizadas || 0);
     const pendente = certificadosDoCurso(curso.id).find((item) => String(item.status).toUpperCase() === "PENDENTE");
     const bloqueado = certificadosDoCurso(curso.id).find((item) => String(item.status).toUpperCase() === "BLOQUEADO");
-    const emContagem = certificadosDoCurso(curso.id).find((item) => String(item.status).toUpperCase() === "AGUARDANDO_HORAS");
+    const emContagem = certificadosDoCurso(curso.id).find(certificadoAguardandoPrazo);
     const pronto = progressoOk && provaOk;
     const options = opcoesHorasDisponiveis(saldo);
 
@@ -1016,15 +1052,17 @@ function renderCertificados() {
 
     if (emContagem) {
       statusVisual = "AGUARDANDO_HORAS";
-      help = `${Number(emContagem.horas_solicitadas || 0)}h em contagem automática de 8h por dia útil.${emContagem.liberar_em ? ` Previsão de emissão: ${dataBR(emContagem.liberar_em, true)}.` : ""}`;
-      actions = `<button class="secondary-button" type="button" disabled>Em contagem</button>`;
+      help = emContagem.liberar_em
+        ? `Certificado aguardando o prazo para liberação. Previsão: ${dataBR(emContagem.liberar_em, true)}.`
+        : "Certificado aguardando o prazo para liberação.";
+      actions = `<button class="secondary-button" type="button" disabled>Aguardando liberação</button>`;
     } else if (pendente) {
       statusVisual = "PENDENTE";
       help = `${Number(pendente.horas_solicitadas || 0)}h reservadas. Aguardando a decisão da gestão; o PDF ainda não está disponível.`;
       actions = `<button class="secondary-button" type="button" disabled>Aguardando decisão</button>`;
     } else if (bloqueado) {
       statusVisual = "BLOQUEADO";
-      help = bloqueado.observacao_gestor || "A solicitação foi bloqueada pela gestão. Excluindo a solicitação, as horas reservadas retornam ao saldo disponível.";
+      help = "A solicitação está temporariamente indisponível. Ao excluir a solicitação, as horas reservadas retornam ao saldo disponível.";
       actions = `<button class="secondary-button" type="button" disabled>Solicitação bloqueada</button>`;
     } else if (pronto && saldo >= 5) {
       statusVisual = "DISPONÍVEL";
@@ -1293,7 +1331,7 @@ function desenharMolduraCertificado(doc, pageWidth, pageHeight) {
 async function baixarCertificado(certificadoId) {
   const cert = state.certificados.find((item) => Number(item.id) === Number(certificadoId));
   if (!cert) return toast("Certificado não encontrado.", "error");
-  if (String(cert.status).toUpperCase() !== "EMITIDO") return toast("O certificado ainda não foi liberado pela gestão.", "error");
+  if (!certificadoEstaLiberado(cert)) return toast("O certificado ainda está aguardando liberação.", "error");
   if (!cert.codigo_validacao) return toast("Código de autenticação não encontrado.", "error");
   if (!window.jspdf?.jsPDF || !window.QRCode) return toast("Bibliotecas de PDF ou QR Code não carregaram.", "error");
 
@@ -1774,7 +1812,7 @@ function configurarAtualizacaoPeriodicaAluno() {
     if (document.hidden || emExecucao || !state.aluno?.user_id) return;
     emExecucao = true;
     try {
-      try { await sb.rpc("processar_certificados_automaticos_v15"); } catch (_) {}
+      // A liberação automática é processada exclusivamente pelo Cron do Supabase.
       await atualizarDadosPrincipais();
       await carregarChamados();
       renderCarteirinha();
@@ -1784,7 +1822,8 @@ function configurarAtualizacaoPeriodicaAluno() {
       emExecucao = false;
     }
   };
-  window.setInterval(atualizar, 20000);
+  // Realtime cuida das mudanças imediatas; este intervalo é apenas contingência.
+  window.setInterval(atualizar, 60000);
   document.addEventListener("visibilitychange", () => {
     if (!document.hidden) atualizar();
   });
@@ -1808,7 +1847,7 @@ function configurarTempoRealAluno() {
     }, 700);
   };
   const channel = sb.channel(`altitude-aluno-${state.aluno.user_id}`);
-  ['cursos','modulos','materiais','provas','questoes','matriculas','resultados_provas','certificados','certificados_historico','carteiras_horas_curso','chamados','chamado_interacoes','avaliacoes_cursos']
+  ['cursos','matriculas','resultados_provas','certificados','certificados_historico','carteiras_horas_curso','chamados','chamado_interacoes','avaliacoes_cursos']
     .forEach((table) => channel.on('postgres_changes', { event: '*', schema: 'public', table }, refresh));
   channel.subscribe();
 }
@@ -1819,7 +1858,7 @@ async function iniciarPortal() {
     state.user = await obterUsuarioLogado();
     if (!state.user) return;
     await carregarAluno();
-    try { await sb.rpc("processar_certificados_automaticos_v15"); } catch (_) {}
+    // A liberação automática é processada exclusivamente pelo Cron do Supabase.
     await atualizarDadosPrincipais();
     await carregarChamados();
     configurarTempoRealAluno();

@@ -1,0 +1,18 @@
+ALTITUDE — CORREÇÕES V19
+
+1. Portal do gestor
+- Adicionado botão “+ Novo curso” também no topo da página de cursos.
+- A tabela de cursos foi compactada para manter todas as ações visíveis em 100% de zoom.
+- O botão “Publicar” fica amarelo enquanto o curso é rascunho.
+- O botão fica verde somente quando o curso já está publicado.
+
+2. Portal do aluno
+- Observações internas da gestão não são mais exibidas no histórico do aluno.
+- “Emissão imediata autorizada pela gestão” não aparece mais.
+- Certificado emitido mostra apenas o estado de emissão.
+- Certificados em prazo mostram “Aguardando o prazo para liberação” e a previsão, quando existente.
+- O download só é liberado quando o certificado estiver efetivamente disponível.
+- Observações administrativas também foram removidas do extrato de horas e de solicitações bloqueadas.
+
+3. Cache
+- Referências dos arquivos alterados atualizadas para a versão 19.

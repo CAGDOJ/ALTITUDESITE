@@ -1743,6 +1743,7 @@ function gerarRaLocal(){
     $('#curFiltroArea')?.addEventListener('change', carregarCursosCompleto);
 
     $('#btnNovoCurso')?.addEventListener('click', abrirModalCursoNovo);
+    $('#btnNovoCursoTopo')?.addEventListener('click', abrirModalCursoNovo);
     $('#fecharCurso')?.addEventListener('click', () =>
       $('#modalCurso')?.setAttribute('aria-hidden', 'true')
     );

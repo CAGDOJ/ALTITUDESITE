@@ -146,23 +146,44 @@ html.alt-dialog-open body { overflow: hidden !important; }
 .alt-dialog-options.shake { animation: alt-dialog-shake .3s linear; }
 @keyframes alt-dialog-shake { 25% { transform: translateX(-5px); } 75% { transform: translateX(5px); } }
 
-/* Tabela de cursos sem textos sobrepostos */
+/* Tabela de cursos: todas as ações ficam visíveis também em 100% de zoom */
+#cursos > .card {
+  max-width: 100%;
+  overflow-x: auto;
+  scrollbar-gutter: stable;
+  -webkit-overflow-scrolling: touch;
+}
 #tabCursos {
   width: 100%;
-  min-width: 1080px !important;
+  min-width: 920px !important;
   table-layout: fixed;
 }
-#tabCursos .col-id { width: 70px; }
-#tabCursos .col-curso { width: 330px; }
-#tabCursos .col-area { width: 150px; overflow-wrap: anywhere; }
-#tabCursos .col-modulos { width: 100px; }
-#tabCursos .col-pub { width: 110px; }
-#tabCursos .col-acoes { width: 360px; }
-#tabCursos .curso-info { min-width: 0; }
+#tabCursos .col-id { width: 60px; }
+#tabCursos .col-curso { width: 270px; }
+#tabCursos .col-area { width: 120px; overflow-wrap: anywhere; }
+#tabCursos .col-modulos { width: 82px; }
+#tabCursos .col-pub { width: 98px; }
+#tabCursos .col-acoes { width: 300px; }
+#tabCursos .curso-info,
 #tabCursos .curso-textos { min-width: 0; }
 #tabCursos .curso-titulo,
 #tabCursos .curso-sub { overflow-wrap: anywhere; word-break: normal; }
-#tabCursos td { overflow: hidden; }
+#tabCursos td:not(.col-acoes) { overflow: hidden; }
+#tabCursos td.col-acoes { overflow: visible; }
+#tabCursos .course-action-cell {
+  display: grid !important;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  width: 100%;
+  min-width: 0;
+  gap: 7px;
+}
+#tabCursos .course-action-cell .btn-mini {
+  width: 100%;
+  min-width: 0;
+  min-height: 38px;
+  margin: 0 !important;
+  padding: 7px 8px !important;
+}
 
 @media (max-width: 640px) {
   .alt-dialog-overlay { padding: 10px; }
@@ -178,4 +199,87 @@ html.alt-dialog-open body { overflow: hidden !important; }
   .alt-dialog-copy { padding-right: 0; }
   .alt-dialog-actions { flex-direction: column-reverse; }
   .alt-dialog-actions button { width: 100%; }
+}
+
+
+/* =========================================================
+   V19 — criação visível, publicação com estado real e zoom 100%
+   ========================================================= */
+.page-heading-actions {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  flex-wrap: wrap;
+  gap: 9px;
+  flex: 0 0 auto;
+}
+.page-heading-actions button {
+  min-height: 42px;
+  padding: 10px 15px;
+  border-radius: 10px;
+  font-weight: 850;
+  cursor: pointer;
+}
+.page-heading-actions .secondary-action {
+  border: 1px solid #bfd1df;
+  background: #fff;
+  color: #123f63;
+}
+.page-heading-actions .primary-action {
+  border: 1px solid #0b8792;
+  background: #0b8792;
+  color: #fff;
+}
+
+/* O botão só usa verde quando o registro já está publicado. */
+#tabCursos .btn-mini.gc-publish:not(.is-live) {
+  border-color: #e3b85e !important;
+  background: #fff4d6 !important;
+  color: #855500 !important;
+}
+#tabCursos .btn-mini.gc-publish.is-live {
+  border-color: #9fd4b4 !important;
+  background: #e4f5ea !important;
+  color: #17683e !important;
+}
+
+@media (min-width: 981px) and (max-width: 1380px) {
+  #tabCursos {
+    min-width: 860px !important;
+  }
+  #tabCursos .col-id { width: 52px; }
+  #tabCursos .col-curso { width: 235px; }
+  #tabCursos .col-area { width: 105px; }
+  #tabCursos .col-modulos { width: 72px; }
+  #tabCursos .col-pub { width: 90px; }
+  #tabCursos .col-acoes { width: 286px; }
+  #tabCursos th,
+  #tabCursos td { padding-left: 7px; padding-right: 7px; }
+}
+
+@media (max-width: 800px) {
+  .page-heading-actions {
+    width: 100%;
+    justify-content: stretch;
+  }
+  .page-heading-actions button {
+    flex: 1 1 180px;
+  }
+}
+
+@media (min-width: 981px) and (max-width: 1250px) {
+  /* Em notebooks menores, preserva as ações sem exigir redução do zoom. */
+  #tabCursos th:nth-child(1),
+  #tabCursos td:nth-child(1),
+  #tabCursos th:nth-child(3),
+  #tabCursos td:nth-child(3) {
+    display: none;
+  }
+  #tabCursos {
+    min-width: 0 !important;
+  }
+  #tabCursos .col-curso { width: 260px; }
+  #tabCursos .col-modulos { width: 76px; }
+  #tabCursos .col-pub { width: 92px; }
+  #tabCursos .col-acoes { width: 286px; }
 }

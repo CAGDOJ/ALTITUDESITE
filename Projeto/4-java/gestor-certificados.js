@@ -76,11 +76,12 @@
     const walletBody = byId('tabCarteirasHorasGestao')?.querySelector('tbody');
     if (!store.certificados.length && !silent && certBody) certBody.innerHTML = '<tr><td colspan="7">Carregando solicitações...</td></tr>';
     if (!store.carteiras.length && !silent && walletBody) walletBody.innerHTML = '<tr><td colspan="8">Carregando carteiras...</td></tr>';
-    certWrap?.classList.add('is-refreshing');
-    walletWrap?.classList.add('is-refreshing');
+    // Mantém os dados atuais visíveis durante a atualização silenciosa.
+    if (!store.certificados.length) certWrap?.classList.add('is-refreshing');
+    if (!store.carteiras.length) walletWrap?.classList.add('is-refreshing');
 
     try {
-      try { await sb.rpc('processar_certificados_automaticos_v15'); } catch (_) {}
+      // A liberação automática é processada exclusivamente pelo Cron do Supabase.
       const [certRes, walletRes] = await Promise.all([
         sb.from('certificados').select('*').order('id', { ascending: false }),
         sb.rpc('obter_carteiras_horas_gestao')
@@ -393,7 +394,7 @@
         const verb = labels[action] || action.toLowerCase();
         const observation = await window.AltitudeDialog?.prompt({
           title: `${verb.charAt(0).toUpperCase()}${verb.slice(1)} certificado`,
-          message: 'A observação ficará registrada no histórico do aluno e da gestão.',
+          message: 'A observação ficará registrada somente no histórico administrativo da gestão.',
           label: 'Motivo ou observação',
           value: cert.observacao_gestor || '',
           required: true,

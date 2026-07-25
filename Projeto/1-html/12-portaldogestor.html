@@ -7,7 +7,7 @@
   <title>Portal de Gestão - Altitude</title>
   <link rel="icon" type="image/png" sizes="512x512" href="/Projeto/3-img/favicon-cloud.png?v=14">
 
-  <link rel="stylesheet" href="/Projeto/2-css/12-portaldogestor.css?v=18">
+  <link rel="stylesheet" href="/Projeto/2-css/12-portaldogestor.css?v=21">
   <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/jspdf@2.5.2/dist/jspdf.umd.min.js"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
@@ -15,14 +15,14 @@
   <script src="../4-java/altitude-dialogs.js?v=17"></script>
   <script src="../4-java/supabase-init.js?v=17" defer></script>
   <script src="../4-java/gestor-guard.js?v=17" defer></script>
-  <script src="../4-java/12-portaldogestor.js?v=18" defer></script>
-  <script src="../4-java/gestor-enhancements.js?v=17" defer></script>
+  <script src="../4-java/12-portaldogestor.js?v=19" defer></script>
+  <script src="../4-java/gestor-enhancements.js?v=19" defer></script>
   <script src="../4-java/gestor-acessos.js?v=17" defer></script>
   <script src="../4-java/certificado-pdf-gestor.js?v=18" defer></script>
-  <script src="../4-java/gestor-certificados.js?v=18" defer></script>
+  <script src="../4-java/gestor-certificados.js?v=21" defer></script>
   <link rel="stylesheet" href="../2-css/base-portal.css?v=17">
   <link rel="stylesheet" href="../2-css/06-responsive.css?v=17">
-  <link rel="stylesheet" href="../2-css/15-ajustes-finais.css?v=18">
+  <link rel="stylesheet" href="../2-css/15-ajustes-finais.css?v=19">
 </head>
 
 <body class="gestor-auth-pending">
@@ -164,7 +164,7 @@
       </div>
 
       <section id="cursos" class="aba" data-min-level="2">
-        <div class="page-heading"><div><span>Conteúdo acadêmico</span><h2>Cursos e conteúdos</h2><p>Monte cada curso em etapas: informações, módulos, materiais, prova, revisão e publicação.</p></div><button type="button" class="primary-action" onclick="abrirAba('curso-ia')">✦ Criar com IA</button></div>
+        <div class="page-heading"><div><span>Conteúdo acadêmico</span><h2>Cursos e conteúdos</h2><p>Monte cada curso em etapas: informações, módulos, materiais, prova, revisão e publicação.</p></div><div class="page-heading-actions"><button type="button" class="secondary-action" id="btnNovoCursoTopo">+ Novo curso</button><button type="button" class="primary-action" onclick="abrirAba('curso-ia')">✦ Criar com IA</button></div></div>
         <div class="course-steps"><span class="done">1. Curso</span><span>2. Módulos</span><span>3. Materiais</span><span>4. Prova</span><span>5. Publicar</span></div>
         <div class="toolbar">
           <label>Área:

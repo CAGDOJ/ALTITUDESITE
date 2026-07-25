@@ -119,9 +119,10 @@ function statusPill(status) {
   const normalized = String(status || "PENDENTE").toUpperCase();
   const success = ["ATIVA", "CONCLUIDA", "PAGO", "EMITIDO", "RESOLVIDO", "APROVADO", "VÁLIDO"].includes(normalized);
   const danger = ["CANCELADA", "CANCELADO", "BLOQUEADO", "INATIVO", "REPROVADO", "ESTORNADO"].includes(normalized);
-  const warning = ["PENDENTE", "ABERTO", "EM_ANDAMENTO", "TRANCADA"].includes(normalized);
+  const warning = ["PENDENTE", "AGUARDANDO_HORAS", "ABERTO", "EM_ANDAMENTO", "TRANCADA"].includes(normalized);
   const cls = success ? "success" : danger ? "danger" : warning ? "warning" : "neutral";
-  return `<span class="status-pill ${cls}">${escapeHTML(normalized.replaceAll("_", " "))}</span>`;
+  const label = normalized === "AGUARDANDO_HORAS" ? "EM CONTAGEM" : normalized.replaceAll("_", " ");
+  return `<span class="status-pill ${cls}">${escapeHTML(label)}</span>`;
 }
 
 let toastTimer;
@@ -803,7 +804,7 @@ function irParaCertificados() {
 function rotuloAcaoCertificado(acao) {
   return ({
     SOLICITADO: "Solicitação enviada", LIBERADO: "Certificado liberado", EMITIDO: "Certificado emitido",
-    BLOQUEADO: "Certificado bloqueado", CANCELADO: "Certificado cancelado", REABERTO: "Solicitação reaberta",
+    BLOQUEADO: "Certificado bloqueado", AGUARDANDO_HORAS: "Certificado em contagem", CANCELADO: "Certificado cancelado", REABERTO: "Solicitação reaberta",
     IMPORTADO: "Registro importado", CRIADO: "Registro criado", ATUALIZADO: "Registro atualizado"
   })[String(acao || "").toUpperCase()] || String(acao || "Atualização").replaceAll("_", " ");
 }
@@ -944,6 +945,7 @@ function renderCertificados() {
     const utilizadas = Number(carteira?.horas_utilizadas || 0);
     const pendente = certificadosDoCurso(curso.id).find((item) => String(item.status).toUpperCase() === "PENDENTE");
     const bloqueado = certificadosDoCurso(curso.id).find((item) => String(item.status).toUpperCase() === "BLOQUEADO");
+    const emContagem = certificadosDoCurso(curso.id).find((item) => String(item.status).toUpperCase() === "AGUARDANDO_HORAS");
     const pronto = progressoOk && provaOk;
     const options = opcoesHorasDisponiveis(saldo);
 
@@ -951,10 +953,18 @@ function renderCertificados() {
     let help = "Conclua o conteúdo e a prova para solicitar horas.";
     let statusVisual = "BLOQUEADO";
 
-    if (pendente) {
+    if (emContagem) {
+      statusVisual = "AGUARDANDO_HORAS";
+      help = `${Number(emContagem.horas_solicitadas || 0)}h em contagem automática de 8h por dia útil.${emContagem.liberar_em ? ` Previsão de emissão: ${dataBR(emContagem.liberar_em, true)}.` : ""}`;
+      actions = `<button class="secondary-button" type="button" disabled>Em contagem</button>`;
+    } else if (pendente) {
       statusVisual = "PENDENTE";
-      help = `${Number(pendente.horas_solicitadas || 0)}h reservadas. Aguardando a liberação da gestão; o PDF ainda não está disponível.`;
-      actions = `<button class="secondary-button" type="button" disabled>Aguardando liberação</button>`;
+      help = `${Number(pendente.horas_solicitadas || 0)}h reservadas. Aguardando a decisão da gestão; o PDF ainda não está disponível.`;
+      actions = `<button class="secondary-button" type="button" disabled>Aguardando decisão</button>`;
+    } else if (bloqueado) {
+      statusVisual = "BLOQUEADO";
+      help = bloqueado.observacao_gestor || "A solicitação foi bloqueada pela gestão. Excluindo a solicitação, as horas reservadas retornam ao saldo disponível.";
+      actions = `<button class="secondary-button" type="button" disabled>Solicitação bloqueada</button>`;
     } else if (pronto && saldo >= 5) {
       statusVisual = "DISPONÍVEL";
       help = `Você pode escolher de 5h até ${saldo}h. O restante permanecerá na carteira para outra emissão.`;
@@ -973,9 +983,6 @@ function renderCertificados() {
         ? `${reservadas}h estão reservadas em uma solicitação.`
         : "Não há saldo disponível neste curso. As horas já foram utilizadas ou ainda dependem de ajuste da gestão.";
       actions = `<button class="secondary-button" type="button" disabled>Sem saldo disponível</button>`;
-    } else if (bloqueado) {
-      statusVisual = "BLOQUEADO";
-      help = bloqueado.observacao_gestor || "Uma solicitação foi bloqueada. O saldo devolvido pode ser usado em nova solicitação quando disponível.";
     }
 
     const avaliacao = avaliacaoDoCurso(curso.id);
@@ -1085,7 +1092,14 @@ async function solicitarCertificado(cursoId) {
   const carteira = carteiraHorasCurso(cursoId);
   const saldo = Number(carteira?.saldo_disponivel || 0);
   if (horas > saldo) return toast(`Saldo insuficiente. Você possui ${saldo}h disponíveis.`, "error");
-  if (!window.confirm(`Solicitar um certificado de ${horas} horas? O saldo restante será de ${saldo - horas} horas. O PDF só será liberado após a aprovação da gestão.`)) return;
+  const confirmou = window.AltitudeDialog
+    ? await window.AltitudeDialog.confirm({
+        title: `Solicitar certificado de ${horas}h`,
+        message: `Serão reservadas ${horas}h da sua carteira. O saldo restante será de ${saldo - horas}h. O PDF será liberado somente após a decisão da gestão.`,
+        confirmText: "Enviar solicitação"
+      })
+    : window.confirm(`Solicitar um certificado de ${horas} horas? O saldo restante será de ${saldo - horas} horas.`);
+  if (!confirmou) return;
 
   const button = document.activeElement instanceof HTMLButtonElement ? document.activeElement : null;
   if (button) { button.disabled = true; button.textContent = "Enviando..."; }
@@ -1653,6 +1667,7 @@ function configurarAtualizacaoPeriodicaAluno() {
     if (document.hidden || emExecucao || !state.aluno?.user_id) return;
     emExecucao = true;
     try {
+      try { await sb.rpc("processar_certificados_automaticos_v15"); } catch (_) {}
       await atualizarDadosPrincipais();
       await carregarChamados();
       renderCarteirinha();
@@ -1697,6 +1712,7 @@ async function iniciarPortal() {
     state.user = await obterUsuarioLogado();
     if (!state.user) return;
     await carregarAluno();
+    try { await sb.rpc("processar_certificados_automaticos_v15"); } catch (_) {}
     await atualizarDadosPrincipais();
     await carregarChamados();
     configurarTempoRealAluno();

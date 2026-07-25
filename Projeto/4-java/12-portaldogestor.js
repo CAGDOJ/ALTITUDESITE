@@ -524,7 +524,7 @@ function gerarRaLocal(){
             <img src="${thumb(c.capa_url)}" class="curso-thumb" alt="Capa do curso">
             <div class="curso-textos">
               <div class="curso-titulo">${c.titulo}</div>
-              <div class="curso-sub">${c.carga_horaria || 0}h · ${c.categoria || '-'}</div>
+              <div class="curso-sub">${c.carga_horaria || 0}h · ${(c.tipo_curso || 'PROFISSIONAL') === 'TECNICO' ? 'TÉCNICO' : 'PROFISSIONAL'} · ${c.categoria || '-'}</div>
             </div>
           </div>
         </td>
@@ -577,6 +577,7 @@ function gerarRaLocal(){
       $('#fCursoPub').value   = 'NAO';
       $('#fCursoCapa').value  = '';
       if ($('#fCursoNivel')) $('#fCursoNivel').value = 'BASICO';
+      if ($('#fCursoTipo')) $('#fCursoTipo').value = 'PROFISSIONAL';
       if ($('#fCursoNotaMinima')) $('#fCursoNotaMinima').value = '70';
       if ($('#fCursoDestaque')) $('#fCursoDestaque').checked = false;
       const prev = $('#cursoCapaPreview'); if (prev) prev.innerHTML = '<span>A capa aparecerá aqui</span>';
@@ -603,6 +604,7 @@ function gerarRaLocal(){
       $('#fCursoPub').value   = c.publicado ? 'SIM' : 'NAO';
       $('#fCursoCapa').value  = '';
       if ($('#fCursoNivel')) $('#fCursoNivel').value = c.nivel || 'BASICO';
+      if ($('#fCursoTipo')) $('#fCursoTipo').value = c.tipo_curso || 'PROFISSIONAL';
       if ($('#fCursoNotaMinima')) $('#fCursoNotaMinima').value = c.nota_minima ?? 70;
       if ($('#fCursoDestaque')) $('#fCursoDestaque').checked = Boolean(c.destaque);
       const prev = $('#cursoCapaPreview');
@@ -626,6 +628,7 @@ function gerarRaLocal(){
     const publi = Boolean(cursoAtual?.publicado);
     const arquivo= $('#fCursoCapa')?.files[0] || null;
     const nivel = $('#fCursoNivel')?.value || 'BASICO';
+    const tipoCurso = $('#fCursoTipo')?.value || 'PROFISSIONAL';
     const notaMinima = Math.max(0, Math.min(100, parseInt($('#fCursoNotaMinima')?.value, 10) || 70));
     const destaque = Boolean($('#fCursoDestaque')?.checked);
 
@@ -671,6 +674,7 @@ function gerarRaLocal(){
         descricao   : desc,
         publicado   : publi,
         nivel       : nivel,
+        tipo_curso  : tipoCurso,
         nota_minima : notaMinima,
         destaque    : destaque,
         publicado_em: publi ? new Date().toISOString() : null

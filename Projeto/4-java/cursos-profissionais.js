@@ -9,7 +9,8 @@
     horas: "TODAS",
     categoria: "",
     busca: "",
-    ordem: "ALTA"
+    ordem: "ALTA",
+    tipo: "PROFISSIONAL"
   };
 
   function escapeHTML(value = "") {
@@ -39,7 +40,12 @@
   }
 
   function isHot(curso) {
-    const top = [...state.cursos].sort((a, b) => score(b) - score(a)).slice(0, 3).map((item) => Number(item.id));
+    const tipo = String(curso.tipo_curso || "PROFISSIONAL").toUpperCase();
+    const top = state.cursos
+      .filter((item) => String(item.tipo_curso || "PROFISSIONAL").toUpperCase() === tipo)
+      .sort((a, b) => score(b) - score(a))
+      .slice(0, 3)
+      .map((item) => Number(item.id));
     return Boolean(curso.destaque) || (score(curso) > 0 && top.includes(Number(curso.id)));
   }
 
@@ -82,7 +88,8 @@
       avaliacoes_total: curso.avaliacoes_total || 0,
       total_modulos: 0,
       total_materiais: 0,
-      total_questoes: 0
+      total_questoes: 0,
+      tipo_curso: curso.tipo_curso || "PROFISSIONAL"
     }));
   }
 
@@ -90,14 +97,14 @@
     const wrap = $("filtrosCarga");
     if (!wrap) return;
     const counts = new Map();
-    state.cursos.forEach((curso) => {
+    state.cursos.filter((curso) => String(curso.tipo_curso || "PROFISSIONAL").toUpperCase() === state.tipo).forEach((curso) => {
       const h = Number(curso.carga_horaria || 0);
       counts.set(h, (counts.get(h) || 0) + 1);
     });
     const cargas = [...counts.keys()].sort((a, b) => a - b);
     wrap.innerHTML = `
       <button class="workload-box ${state.horas === "TODAS" ? "active" : ""}" type="button" data-horas="TODAS">
-        <strong>Todas</strong><span>${state.cursos.length} ${state.cursos.length === 1 ? "curso" : "cursos"}</span>
+        <strong>Todas</strong><span>${state.cursos.filter((curso) => String(curso.tipo_curso || "PROFISSIONAL").toUpperCase() === state.tipo).length} ${state.cursos.filter((curso) => String(curso.tipo_curso || "PROFISSIONAL").toUpperCase() === state.tipo).length === 1 ? "curso" : "cursos"}</span>
       </button>
       ${cargas.map((h) => `
         <button class="workload-box ${String(state.horas) === String(h) ? "active" : ""}" type="button" data-horas="${h}">
@@ -109,7 +116,7 @@
     const select = $("filtroCategoriaPublica");
     if (!select) return;
     const atual = state.categoria;
-    const categorias = [...new Set(state.cursos.map((item) => item.categoria).filter(Boolean))].sort((a, b) => a.localeCompare(b, "pt-BR"));
+    const categorias = [...new Set(state.cursos.filter((item) => String(item.tipo_curso || "PROFISSIONAL").toUpperCase() === state.tipo).map((item) => item.categoria).filter(Boolean))].sort((a, b) => a.localeCompare(b, "pt-BR"));
     select.innerHTML = `<option value="">Todas as áreas</option>${categorias.map((cat) => `<option value="${escapeHTML(cat)}">${escapeHTML(cat)}</option>`).join("")}`;
     select.value = atual;
   }
@@ -117,10 +124,11 @@
   function cursosFiltrados() {
     let lista = state.cursos.filter((curso) => {
       const search = `${curso.titulo || ""} ${curso.descricao || ""} ${curso.categoria || ""}`.toLowerCase();
+      const tipoOk = String(curso.tipo_curso || "PROFISSIONAL").toUpperCase() === state.tipo;
       const buscaOk = !state.busca || search.includes(state.busca);
       const categoriaOk = !state.categoria || curso.categoria === state.categoria;
       const horasOk = state.horas === "TODAS" || Number(curso.carga_horaria) === Number(state.horas);
-      return buscaOk && categoriaOk && horasOk;
+      return buscaOk && categoriaOk && horasOk && tipoOk;
     });
 
     const sorters = {
@@ -177,7 +185,10 @@
 
     if (!lista.length) {
       status.hidden = false;
-      status.textContent = "Nenhum curso corresponde aos filtros escolhidos.";
+      const possuiTipo = state.cursos.some((curso) => String(curso.tipo_curso || "PROFISSIONAL").toUpperCase() === state.tipo);
+      status.textContent = possuiTipo
+        ? "Nenhum curso corresponde aos filtros escolhidos."
+        : (state.tipo === "TECNICO" ? "Ainda não há cursos técnicos publicados." : "Ainda não há cursos profissionais publicados.");
       grid.innerHTML = "";
       return;
     }
@@ -198,7 +209,7 @@
     $("modalCursoCapa").src = capa(curso.capa_url);
     $("modalCursoCapa").alt = `Capa do curso ${curso.titulo || ""}`;
     $("modalCursoCategoria").textContent = curso.categoria || "Curso";
-    $("modalCursoTitulo").textContent = curso.titulo || "Curso profissional";
+    $("modalCursoTitulo").textContent = curso.titulo || (state.tipo === "TECNICO" ? "Curso técnico" : "Curso profissional");
     $("modalCursoDescricao").textContent = curso.descricao || "Conteúdo profissional organizado por módulos.";
     $("modalCursoHoras").textContent = `${Number(curso.carga_horaria || 0)} horas`;
     $("modalCursoNivel").textContent = nivel(curso.nivel);
@@ -245,6 +256,18 @@
   }
 
   function wire() {
+    $("filtrosTipoCurso")?.addEventListener("click", (event) => {
+      const button = event.target.closest("[data-tipo]");
+      if (!button) return;
+      state.tipo = button.dataset.tipo;
+      state.horas = "TODAS";
+      document.querySelectorAll(".course-type-tab").forEach((tab) => tab.classList.toggle("active", tab === button));
+      const title = $("tituloCursos");
+      if (title) title.textContent = state.tipo === "TECNICO" ? "Cursos Técnicos" : "Cursos Profissionais";
+      renderCategorias();
+      renderCargas();
+      renderCursos();
+    });
     $("buscaCursosPublicos")?.addEventListener("input", (event) => { state.busca = event.target.value.trim().toLowerCase(); renderCursos(); });
     $("filtroCategoriaPublica")?.addEventListener("change", (event) => { state.categoria = event.target.value; renderCursos(); });
     $("ordenarCursosPublicos")?.addEventListener("change", (event) => { state.ordem = event.target.value; renderCursos(); });
@@ -293,10 +316,25 @@
   }
 
   async function start() {
+    const queryType = String(new URLSearchParams(location.search).get("tipo") || "").toUpperCase();
+    if (["PROFISSIONAL", "TECNICO"].includes(queryType)) {
+      state.tipo = queryType;
+      document.querySelectorAll(".course-type-tab").forEach((tab) => tab.classList.toggle("active", tab.dataset.tipo === state.tipo));
+      const title = $("tituloCursos");
+      if (title) title.textContent = state.tipo === "TECNICO" ? "Cursos Técnicos" : "Cursos Profissionais";
+    }
     wire();
     try {
       state.cursos = await carregarCursos();
       configurarTempoRealCatalogo();
+      if (!window.__altitudeCatalogPolling) {
+        window.__altitudeCatalogPolling = true;
+        window.setInterval(async () => {
+          if (document.hidden) return;
+          try { state.cursos = await carregarCursos(); renderCategorias(); renderCargas(); renderCursos(); }
+          catch (error) { console.warn("Atualização periódica do catálogo:", error.message); }
+        }, 15000);
+      }
       renderCategorias();
       renderCargas();
       renderCursos();

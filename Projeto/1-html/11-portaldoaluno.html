@@ -6,7 +6,9 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <meta name="theme-color" content="#0a3d62">
   <title>Portal do Aluno - Altitude</title>
-  <link rel="icon" href="../3-img/favicon.ico">
+  <link rel="icon" type="image/png" sizes="512x512" href="/Projeto/3-img/favicon-cloud.png?v=14">
+
+  <link rel="icon" href="../3-img/favicon.ico?v=14">
   <link rel="stylesheet" href="../2-css/base-portal.css">
   <link rel="stylesheet" href="../2-css/11-portaldoaluno.css">
   <link rel="stylesheet" href="../2-css/06-responsive.css">
@@ -92,11 +94,12 @@
             <strong id="kpiProvasAprovadas">0</strong>
             <small>Nota mínima de 70%</small>
           </article>
-          <article class="summary-card">
+          <button type="button" class="summary-card summary-card-button" data-abrir-aba="certificados">
             <span>Certificados emitidos</span>
             <strong id="kpiCertEmitidos">0</strong>
             <small id="kpiHorasEmitidas">0 horas certificadas</small>
-          </article>
+            <em>Ver certificados</em>
+          </button>
         </div>
 
         <div class="dashboard-grid">

@@ -5,6 +5,8 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <meta http-equiv="Content-Security-Policy" content="upgrade-insecure-requests; block-all-mixed-content">
   <title>Portal de Gestão - Altitude</title>
+  <link rel="icon" type="image/png" sizes="512x512" href="/Projeto/3-img/favicon-cloud.png?v=14">
+
   <link rel="stylesheet" href="/Projeto/2-css/12-portaldogestor.css">
   <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/jspdf@2.5.2/dist/jspdf.umd.min.js"></script>
@@ -223,6 +225,9 @@
               <input id="fCursoNome" type="text" required>
             </label>
             <div class="grid3">
+              <label>Tipo de formação
+                <select id="fCursoTipo"><option value="PROFISSIONAL">Curso profissional</option><option value="TECNICO">Curso técnico</option></select>
+              </label>
               <label>Carga horária (horas)
                 <select id="fCursoHoras" required><option value="5">5 horas</option><option value="10">10 horas</option><option value="15">15 horas</option><option value="20" selected>20 horas</option><option value="25">25 horas</option><option value="30">30 horas</option><option value="35">35 horas</option><option value="40">40 horas</option><option value="45">45 horas</option><option value="50">50 horas</option><option value="55">55 horas</option><option value="60">60 horas</option><option value="65">65 horas</option><option value="70">70 horas</option><option value="75">75 horas</option><option value="80">80 horas</option><option value="85">85 horas</option><option value="90">90 horas</option><option value="95">95 horas</option><option value="100">100 horas</option><option value="105">105 horas</option><option value="110">110 horas</option><option value="115">115 horas</option><option value="120">120 horas</option><option value="125">125 horas</option><option value="130">130 horas</option><option value="135">135 horas</option><option value="140">140 horas</option><option value="145">145 horas</option><option value="150">150 horas</option><option value="155">155 horas</option><option value="160">160 horas</option><option value="165">165 horas</option><option value="170">170 horas</option><option value="175">175 horas</option><option value="180">180 horas</option><option value="185">185 horas</option><option value="190">190 horas</option><option value="195">195 horas</option><option value="200">200 horas</option></select>
               </label>
@@ -480,6 +485,7 @@
             <div class="ai-callout"><strong>Descreva o curso como falaria comigo</strong><p>Inclua tema, público, objetivo e qualquer regra importante.</p></div>
             <label>Pedido do curso<textarea id="iaPrompt" rows="6" required placeholder="Ex.: Crie um curso de Informática Básica para iniciantes, com 20 horas, 5 módulos, linguagem simples e prova final de 10 questões."></textarea></label>
             <div class="grid2">
+              <label>Tipo de formação<select id="iaTipoCurso"><option value="PROFISSIONAL">Curso profissional</option><option value="TECNICO">Curso técnico</option></select></label>
               <label>Carga horária<select id="iaCarga"><option value="5">5 horas</option><option value="10">10 horas</option><option value="15">15 horas</option><option value="20" selected>20 horas</option><option value="25">25 horas</option><option value="30">30 horas</option><option value="35">35 horas</option><option value="40">40 horas</option><option value="45">45 horas</option><option value="50">50 horas</option><option value="55">55 horas</option><option value="60">60 horas</option><option value="65">65 horas</option><option value="70">70 horas</option><option value="75">75 horas</option><option value="80">80 horas</option><option value="85">85 horas</option><option value="90">90 horas</option><option value="95">95 horas</option><option value="100">100 horas</option><option value="105">105 horas</option><option value="110">110 horas</option><option value="115">115 horas</option><option value="120">120 horas</option><option value="125">125 horas</option><option value="130">130 horas</option><option value="135">135 horas</option><option value="140">140 horas</option><option value="145">145 horas</option><option value="150">150 horas</option><option value="155">155 horas</option><option value="160">160 horas</option><option value="165">165 horas</option><option value="170">170 horas</option><option value="175">175 horas</option><option value="180">180 horas</option><option value="185">185 horas</option><option value="190">190 horas</option><option value="195">195 horas</option><option value="200">200 horas</option></select></label>
               <label>Nível<select id="iaNivel"><option value="BASICO">Básico</option><option value="INTERMEDIARIO">Intermediário</option><option value="AVANCADO">Avançado</option></select></label>
             </div>

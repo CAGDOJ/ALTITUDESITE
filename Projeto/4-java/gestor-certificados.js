@@ -294,18 +294,30 @@
     try {
       let result;
       if (action === 'LIBERAR') {
-        result = await sb.rpc('gestor_liberar_certificado_v13', {
+        const wallet = mapaCarteiras().get(carteiraKey(cert.aluno_id, cert.curso_id));
+        if (wallet) {
+          const automatic = num(wallet.horas_automaticas);
+          const requiredTotal = num(wallet.horas_utilizadas) + Math.max(num(wallet.horas_reservadas), hours);
+          if (requiredTotal > automatic && !wallet.liberacao_excepcional) {
+            if (!confirm(`A carga solicitada ultrapassa o limite automático atual de ${automatic}h. Deseja credenciar excepcionalmente ${requiredTotal}h e liberar este certificado?`)) return;
+            const justification = prompt('Informe a justificativa para a liberação excepcional (mínimo 10 caracteres):', 'Carga horária credenciada pela gestão da instituição.') || '';
+            if (justification.trim().length < 10) throw new Error('Informe uma justificativa com pelo menos 10 caracteres.');
+            const credit = await sb.rpc('gestor_definir_horas_curso', {
+              p_aluno_id: cert.aluno_id,
+              p_curso_id: Number(cert.curso_id),
+              p_horas_validadas: requiredTotal,
+              p_excepcional: true,
+              p_justificativa: justification.trim()
+            });
+            if (credit.error) throw credit.error;
+          }
+        }
+        result = await sb.rpc('gestor_liberar_certificado_v14', {
           p_certificado_id: Number(id),
           p_observacao: observation || null
         });
-        if (result.error && /gestor_liberar_certificado_v13|function/i.test(result.error.message || '')) {
-          result = await sb.rpc('gestor_liberar_certificado_v12', {
-            p_certificado_id: Number(id),
-            p_observacao: observation || null
-          });
-        }
-        if (result.error && /gestor_liberar_certificado_v12|function/i.test(result.error.message || '')) {
-          result = await sb.rpc('gestor_liberar_certificado_direto', {
+        if (result.error && /gestor_liberar_certificado_v14|function/i.test(result.error.message || '')) {
+          result = await sb.rpc('gestor_liberar_certificado_v13', {
             p_certificado_id: Number(id),
             p_observacao: observation || null
           });
@@ -318,10 +330,22 @@
         });
       }
       if (result.error) throw result.error;
+      if (action === 'LIBERAR') {
+        const updated = Array.isArray(result.data) ? result.data[0] : result.data;
+        if (!updated || String(updated.status || '').toUpperCase() !== 'EMITIDO') {
+          throw new Error('A liberação não confirmou o status EMITIDO no banco. Execute o SQL da V14 e tente novamente.');
+        }
+        const position = store.certificados.findIndex((item) => Number(item.id) === Number(id));
+        if (position >= 0) {
+          store.certificados[position] = { ...store.certificados[position], ...updated, status: 'EMITIDO' };
+          renderCertificadosGestao();
+        }
+      }
       toast(action === 'LIBERAR'
         ? `Certificado de ${hours}h liberado. O PDF já está disponível para o aluno.`
         : `Certificado atualizado: ${verb}.`);
       await carregarCertificadosGestao();
+      if (action === 'LIBERAR') setTimeout(carregarCertificadosGestao, 900);
       if (byId('modalCertificadoGestao')?.getAttribute('aria-hidden') === 'false') await abrirDetalhesCertificado(id);
     } catch (error) {
       const message = String(error.message || error);

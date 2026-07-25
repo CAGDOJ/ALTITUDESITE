@@ -981,7 +981,7 @@ function renderCertificados() {
     const avaliacao = avaliacaoDoCurso(curso.id);
     const avaliacaoHtml = pronto
       ? (avaliacao
-        ? `<div class="course-review-done"><span>★★★★★</span><strong>Sua avaliação: ${Number(avaliacao.nota || 0)}/5</strong></div>`
+        ? `<div class="course-review-done"><span class="review-stars-static">${"★".repeat(Number(avaliacao.nota || 0))}${"☆".repeat(5 - Number(avaliacao.nota || 0))}</span><strong>Sua avaliação</strong></div>`
         : `<button class="course-review-button" type="button" onclick="avaliarCurso(${Number(curso.id)})">Avaliar este curso</button>`)
       : "";
 
@@ -1008,27 +1008,74 @@ function renderCertificados() {
   renderHistoricoCertificados();
 }
 
-async function avaliarCurso(cursoId) {
-  const notaTexto = window.prompt("Qual nota você dá ao curso? Digite um número de 1 a 5.", "5");
-  if (notaTexto === null) return;
-  const nota = Number(notaTexto);
-  if (!Number.isInteger(nota) || nota < 1 || nota > 5) {
-    return toast("Informe uma nota inteira de 1 a 5.", "error");
-  }
-  const comentario = window.prompt("Comentário opcional sobre o curso:", "") || "";
-  try {
-    const { error } = await sb.rpc("avaliar_curso", {
-      p_curso_id: Number(cursoId),
-      p_nota: nota,
-      p_comentario: comentario
+function garantirModalAvaliacao() {
+  let modal = document.getElementById("modalAvaliacaoCurso");
+  if (modal) return modal;
+  modal = document.createElement("div");
+  modal.id = "modalAvaliacaoCurso";
+  modal.className = "review-modal";
+  modal.setAttribute("aria-hidden", "true");
+  modal.innerHTML = `
+    <div class="review-modal-card" role="dialog" aria-modal="true" aria-labelledby="reviewModalTitle">
+      <button type="button" class="review-modal-close" aria-label="Fechar">×</button>
+      <span class="eyebrow">Avaliação do curso</span>
+      <h3 id="reviewModalTitle">Como foi sua experiência?</h3>
+      <p>Selecione de 1 a 5 estrelas.</p>
+      <div class="review-star-picker" role="radiogroup" aria-label="Nota do curso">
+        ${[1,2,3,4,5].map((n) => `<button type="button" data-review-star="${n}" role="radio" aria-checked="false" aria-label="${n} estrela${n > 1 ? "s" : ""}">★</button>`).join("")}
+      </div>
+      <textarea id="reviewComment" rows="4" maxlength="500" placeholder="Comentário opcional"></textarea>
+      <div class="review-modal-actions"><button type="button" class="secondary-button review-cancel">Cancelar</button><button type="button" class="primary-button review-save" disabled>Enviar avaliação</button></div>
+    </div>`;
+  document.body.appendChild(modal);
+  const close = () => { modal.setAttribute("aria-hidden", "true"); document.body.style.overflow = ""; };
+  modal.querySelector(".review-modal-close").addEventListener("click", close);
+  modal.querySelector(".review-cancel").addEventListener("click", close);
+  modal.addEventListener("click", (event) => { if (event.target === modal) close(); });
+  modal.querySelectorAll("[data-review-star]").forEach((button) => button.addEventListener("click", () => {
+    modal.dataset.nota = button.dataset.reviewStar;
+    const selected = Number(button.dataset.reviewStar);
+    modal.querySelectorAll("[data-review-star]").forEach((star) => {
+      const active = Number(star.dataset.reviewStar) <= selected;
+      star.classList.toggle("selected", active);
+      star.setAttribute("aria-checked", String(Number(star.dataset.reviewStar) === selected));
     });
-    if (error) throw error;
-    await carregarAvaliacoes();
-    renderCertificados();
-    toast("Avaliação registrada. Obrigado!", "success");
-  } catch (error) {
-    toast(`Não foi possível avaliar: ${error.message}`, "error");
-  }
+    modal.querySelector(".review-save").disabled = false;
+  }));
+  modal.querySelector(".review-save").addEventListener("click", async () => {
+    const nota = Number(modal.dataset.nota || 0);
+    const cursoId = Number(modal.dataset.cursoId || 0);
+    const comentario = modal.querySelector("#reviewComment").value.trim();
+    if (!nota || !cursoId) return;
+    const button = modal.querySelector(".review-save");
+    button.disabled = true; button.textContent = "Enviando...";
+    try {
+      const { error } = await sb.rpc("avaliar_curso", { p_curso_id: cursoId, p_nota: nota, p_comentario: comentario || null });
+      if (error) throw error;
+      await carregarAvaliacoes();
+      renderCertificados();
+      close();
+      toast("Avaliação registrada. Obrigado!", "success");
+    } catch (error) {
+      toast(`Não foi possível avaliar: ${error.message}`, "error");
+    } finally {
+      button.disabled = false; button.textContent = "Enviar avaliação";
+    }
+  });
+  return modal;
+}
+
+async function avaliarCurso(cursoId) {
+  const modal = garantirModalAvaliacao();
+  const curso = state.cursos.find((item) => Number(item.id) === Number(cursoId));
+  modal.dataset.cursoId = String(cursoId);
+  modal.dataset.nota = "";
+  modal.querySelector("#reviewModalTitle").textContent = curso?.titulo || "Como foi sua experiência?";
+  modal.querySelector("#reviewComment").value = "";
+  modal.querySelector(".review-save").disabled = true;
+  modal.querySelectorAll("[data-review-star]").forEach((star) => { star.classList.remove("selected"); star.setAttribute("aria-checked", "false"); });
+  modal.setAttribute("aria-hidden", "false");
+  document.body.style.overflow = "hidden";
 }
 
 async function solicitarCertificado(cursoId) {
@@ -1559,7 +1606,12 @@ async function atualizarDadosPrincipais() {
 }
 
 function configurarEventos() {
-  document.querySelectorAll(".menu-link[data-aba]").forEach((button) => button.addEventListener("click", () => abrirAba(button.dataset.aba)));
+  document.querySelectorAll(".menu-link[data-aba]").forEach((button) => button.addEventListener("click", async () => {
+    abrirAba(button.dataset.aba);
+    if (["inicio", "certificados"].includes(button.dataset.aba)) {
+      try { await atualizarDadosPrincipais(); } catch (error) { console.warn("Atualização da aba:", error.message); }
+    }
+  }));
   document.querySelectorAll("[data-abrir-aba]").forEach((button) => button.addEventListener("click", () => abrirAba(button.dataset.abrirAba)));
   $("btnMenuMobile")?.addEventListener("click", abrirMenuMobile);
   $("sidebarOverlay")?.addEventListener("click", fecharMenuMobile);
@@ -1610,7 +1662,7 @@ function configurarAtualizacaoPeriodicaAluno() {
       emExecucao = false;
     }
   };
-  window.setInterval(atualizar, 12000);
+  window.setInterval(atualizar, 5000);
   document.addEventListener("visibilitychange", () => {
     if (!document.hidden) atualizar();
   });

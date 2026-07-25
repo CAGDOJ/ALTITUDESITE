@@ -133,3 +133,6 @@ button, input, select { font: inherit; }
   padding:6px 8px;border-radius:9px;background:rgba(255,255,255,.90);
   box-shadow:0 4px 14px rgba(7,49,79,.16)
 }
+
+/* V14 — abas de formação */
+.course-type-section{max-width:1180px;margin:0 auto 22px;padding:0 22px}.course-type-tabs{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:14px}.course-type-tab{display:flex;flex-direction:column;align-items:flex-start;gap:4px;padding:17px 20px;border:1px solid #d8e5ee;border-radius:16px;background:#fff;color:#17324a;text-align:left;cursor:pointer;box-shadow:0 8px 24px rgba(14,54,84,.06)}.course-type-tab strong{font-size:17px}.course-type-tab span{font-size:13px;color:#60758a}.course-type-tab.active{border-color:#17b6c7;background:#effbfd;box-shadow:0 0 0 2px rgba(23,182,199,.12)}@media(max-width:640px){.course-type-tabs{grid-template-columns:1fr}.course-type-section{padding:0 14px}}

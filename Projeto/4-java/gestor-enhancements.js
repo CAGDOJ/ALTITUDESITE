@@ -380,6 +380,7 @@
           quantidade_modulos: Number($('#iaModulos').value),
           quantidade_questoes: Number($('#iaQuestoes').value),
           categoria: $('#iaCategoria').value,
+          tipo_curso: $('#iaTipoCurso')?.value || 'PROFISSIONAL',
           gerar_capa: $('#iaGerarCapa').checked
         }
       });
@@ -457,6 +458,7 @@
         titulo: String(payload.titulo).trim(),
         descricao: String(payload.descricao || '').trim(),
         categoria: String(payload.categoria || 'FORMAÇÃO').trim().toUpperCase(),
+        tipo_curso: String(payload.tipo_curso || 'PROFISSIONAL').trim().toUpperCase(),
         carga_horaria: carga,
         nivel: String(payload.nivel || 'BASICO').toUpperCase(),
         nota_minima: Number(payload.nota_minima || 70),
@@ -538,7 +540,7 @@
         running = false;
       }
     };
-    window.setInterval(refresh, 12000);
+    window.setInterval(refresh, 5000);
     document.addEventListener('visibilitychange', () => { if (!document.hidden) refresh(); });
     window.addEventListener('focus', refresh);
   }

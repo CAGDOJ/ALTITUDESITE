@@ -7,10 +7,12 @@
 
 <meta content="width=device-width, initial-scale=1.0" name="viewport"/>
 <title>Login - Altitude</title>
+  <link rel="icon" type="image/png" sizes="512x512" href="/Projeto/3-img/favicon-cloud.png?v=14">
+
 <!-- faveicon-->
-<link href="/Projeto/3-img/apple-touch-icon.png" rel="apple-touch-icon" sizes="180x180"/>
-<link href="/Projeto/3-img/favicon-32x32.png" rel="icon" sizes="32x32" type="image/png"/>
-<link href="/Projeto/3-img/favicon-16x16.png" rel="icon" sizes="16x16" type="image/png"/>
+<link href="/Projeto/3-img/apple-touch-icon.png?v=14" rel="apple-touch-icon" sizes="180x180"/>
+<link href="/Projeto/3-img/favicon-32x32.png?v=14" rel="icon" sizes="32x32" type="image/png"/>
+<link href="/Projeto/3-img/favicon-16x16.png?v=14" rel="icon" sizes="16x16" type="image/png"/>
 <link href="/Projeto/3-img/site.webmanifest" rel="manifest"/>
 <!--Links para outros arquivos-->
 <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css" rel="stylesheet"/>
@@ -97,51 +99,20 @@
 <button class="btn-login" type="submit">ENTRAR</button>
 </form>
 </div>
-<!-- Painel de recuperação dentro da mesma caixa -->
-<section class="forgot-pane" hidden="" id="forgotPane">
-<div class="tabs">
-<button class="tab-btn active" data-tab="ra" type="button">Descobrir RA</button>
-<button class="tab-btn" data-tab="cpf" type="button">Redefinir por CPF</button>
-</div>
-<div class="tab" id="tab-ra">
-<div class="form-group">
-<label for="fullNameRecovery">Nome completo</label>
-<input id="fullNameRecovery" placeholder="Digite seu nome completo" type="text"/>
-</div>
-<button class="btn-login" id="btnFindRA" style="margin-top:8px;" type="button">Buscar RA</button>
-<small class="msg" id="raResult"></small>
-</div>
-<div class="tab" hidden="" id="tab-cpf">
-<div class="form-group">
-<label for="cpfRecovery">CPF</label>
-<input id="cpfRecovery" placeholder="000.000.000-00" type="text"/>
-</div>
-<div class="forgot-actions">
-<button class="link-back" id="backToLogin" type="button">Voltar ao login</button>
-</div>
-<button class="btn-login" id="btnResetByCpf" style="margin-top:8px;" type="button">Enviar link de redefinição</button>
-<small class="msg" id="cpfResult"></small>
-</div>
-</section>
-<section class="forgot-pane" hidden="" id="resetStep1">
-<div class="form-group">
-<label for="cpfReset">CPF</label>
-<input autocomplete="off" id="cpfReset" inputmode="numeric" placeholder="000.000.000-00" type="text"/>
-</div>
-<div class="form-group">
-<label for="dobReset">Data de nascimento</label>
-<input id="dobReset" placeholder="dd/mm/aaaa" type="date"/>
-</div>
-<div class="forgot-actions" style="justify-content: space-between;">
-<button class="link-back" id="btnResetCancel" type="button">Voltar ao login</button>
-<button class="btn-login" id="btnResetConfirm" type="button">Confirmar</button>
-</div>
-<small class="msg" id="resetStep1Msg"></small>
+<!-- Recuperação de senha -->
+<section class="forgot-pane" hidden id="forgotPane">
+  <p class="recovery-intro">Informe seu RA, CPF ou e-mail. Enviaremos um link seguro para o e-mail cadastrado.</p>
+  <div class="form-group">
+    <label for="recoveryIdentifier">RA, CPF ou e-mail</label>
+    <input id="recoveryIdentifier" type="text" autocomplete="username" placeholder="Digite seu RA, CPF ou e-mail">
+  </div>
+  <button class="btn-login" id="btnSendRecovery" type="button">Enviar link de redefinição</button>
+  <small class="msg" id="recoveryMessage" aria-live="polite"></small>
 </section>
 
 <div class="login-options">
 <a class="forgot" href="#" id="linkForgot">Esqueci minha senha</a>
-<a class="manager-login-link" href="14-login-gestor.html">Acesso da gestão</a>
+
 </div>
 
 </section>
@@ -188,31 +159,24 @@
   </div>
 </footer>
 
-<div class="modal-overlay" hidden="" id="resetOverlay">
-<div class="modal-box">
-<button aria-label="Fechar" class="modal-close" id="resetClose" type="button">×</button>
-<h3 class="modal-title"><span id="helloName">Olá</span></h3>
-<p class="modal-sub">Defina sua nova senha de acesso.</p>
-<div class="form-group has-icon">
-<label for="newPass">Senha</label>
-<input autocomplete="new-password" id="newPass" minlength="6" placeholder="Insira sua nova senha" type="password"/>
-<button aria-label="Mostrar/ocultar senha" class="toggle-pass" data-target="newPass" type="button">
-<i class="fa-regular fa-eye"></i>
-</button>
-</div>
-<div class="form-group has-icon">
-<label for="newPass2">Confirmar senha</label>
-<input autocomplete="new-password" id="newPass2" minlength="6" placeholder="Confirme sua nova senha" type="password"/>
-<button aria-label="Mostrar/ocultar senha" class="toggle-pass" data-target="newPass2" type="button">
-<i class="fa-regular fa-eye"></i>
-</button>
-</div>
-<small class="msg" id="match-ok"></small>
-<div class="forgot-actions" style="justify-content: flex-end;">
-<button class="btn-login" id="btnDoReset" type="button">Salvar nova senha</button>
-</div>
-<small class="msg" id="resetFinalMsg"></small>
-</div>
+<div class="modal-overlay" hidden id="resetOverlay">
+  <div class="modal-box" role="dialog" aria-modal="true" aria-labelledby="resetPasswordTitle">
+    <button aria-label="Fechar" class="modal-close" id="resetClose" type="button">×</button>
+    <h3 class="modal-title" id="resetPasswordTitle">Criar nova senha</h3>
+    <p class="modal-sub">Digite uma senha com no mínimo 8 caracteres.</p>
+    <div class="form-group has-icon">
+      <label for="newPass">Nova senha</label>
+      <input autocomplete="new-password" id="newPass" minlength="8" placeholder="Mínimo 8 caracteres" type="password">
+      <button aria-label="Mostrar senha" class="toggle-pass" data-target="newPass" type="button"><i class="fa-regular fa-eye"></i></button>
+    </div>
+    <div class="form-group has-icon">
+      <label for="newPass2">Confirmar senha</label>
+      <input autocomplete="new-password" id="newPass2" minlength="8" placeholder="Repita a senha" type="password">
+      <button aria-label="Mostrar senha" class="toggle-pass" data-target="newPass2" type="button"><i class="fa-regular fa-eye"></i></button>
+    </div>
+    <small class="msg" id="resetFinalMsg" aria-live="polite"></small>
+    <button class="btn-login" id="btnDoReset" type="button">Salvar nova senha</button>
+  </div>
 </div>
   <script src="/Projeto/4-java/layout-public.js" defer></script>
   <script src="../4-java/06-responsive.js"></script>

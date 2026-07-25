@@ -169,6 +169,7 @@ Deno.serve(async (req) => {
     const moduleCount = Math.max(2, Math.min(12, Number(body.quantidade_modulos) || 5));
     const questionCount = Math.max(5, Math.min(30, Number(body.quantidade_questoes) || 10));
     const categoria = String(body.categoria || 'TECNOLOGIA').toUpperCase();
+    const tipoCurso = String(body.tipo_curso || 'PROFISSIONAL').toUpperCase() === 'TECNICO' ? 'TECNICO' : 'PROFISSIONAL';
     const generateCover = body.gerar_capa !== false;
     if (prompt.length < 20) return json({ error: 'Descreva melhor o curso desejado.' }, 400);
 
@@ -202,7 +203,7 @@ Deno.serve(async (req) => {
         model: Deno.env.get('OPENAI_TEXT_MODEL') || 'gpt-5-mini',
         input: [
           { role: 'system', content: 'Voce e um designer instrucional brasileiro. Crie cursos corretos, didaticos, inclusivos e adequados ao nivel solicitado. O conteudo de cada modulo deve ser substancial, claro, em portugues do Brasil, pronto para leitura e sem inventar leis, normas ou dados. Inclua explicacoes uteis nas questoes. Nao inclua texto de certificado.' },
-          { role: 'user', content: `Pedido: ${prompt}\nCarga horaria: ${carga} horas. Nivel: ${nivel}. Categoria: ${categoria}. Modulos: ${moduleCount}. Questoes: ${questionCount}.` }
+          { role: 'user', content: `Pedido: ${prompt}\nCarga horaria: ${carga} horas. Nivel: ${nivel}. Categoria: ${categoria}. Tipo de formacao: ${tipoCurso}. Modulos: ${moduleCount}. Questoes: ${questionCount}.` }
         ],
         text: { format: { type: 'json_schema', name: 'curso_altitude', strict: true, schema } }
       })
@@ -223,7 +224,7 @@ Deno.serve(async (req) => {
 
     const courseDescription = `${generated.descricao}\n\nPublico-alvo: ${generated.publico_alvo}\nObjetivos: ${generated.objetivos.join('; ')}`;
     const { data: course, error: courseError } = await admin.from('cursos').insert({
-      titulo: generated.titulo, descricao: courseDescription, categoria, carga_horaria: carga,
+      titulo: generated.titulo, descricao: courseDescription, categoria, tipo_curso: tipoCurso, carga_horaria: carga,
       capa_url: coverUrl, publicado: false, nivel, nota_minima: 70, gerado_por_ia: true,
       slug: `${slugify(generated.titulo)}-${Date.now().toString().slice(-6)}`
     }).select('id,titulo').single();

@@ -838,6 +838,11 @@ function gerarRaLocal(){
 
     cursoEditandoId = id;
     GC.cursoAtual = curso;
+    const modalModulos = $('#modalModulos');
+    if (modalModulos) {
+      modalModulos.dataset.courseId = String(id);
+      modalModulos.dataset.courseTitle = curso.titulo || 'Curso Altitude';
+    }
     
     $('#mmCursoNome').textContent = `${curso.titulo} · ${curso.categoria || 'SEM ÁREA'}`;
 
@@ -851,6 +856,10 @@ function gerarRaLocal(){
 
   function fecharPainelModulos() {
     $('#modalModulos').setAttribute('aria-hidden', 'true');
+    if ($('#modalModulos')) {
+      delete $('#modalModulos').dataset.courseId;
+      delete $('#modalModulos').dataset.courseTitle;
+    }
     GC.cursoAtual = null;
     cursoEditandoId = null;
     moduloEditandoId = null;

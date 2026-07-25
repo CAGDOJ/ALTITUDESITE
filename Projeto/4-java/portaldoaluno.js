@@ -17,6 +17,8 @@ const state = {
   carteirasHoras: [],
   movimentacoesHoras: [],
   pagamentos: [],
+  chamados: [],
+  chamadoAtual: null,
   cursoAtual: null,
   modulos: [],
   moduloIndex: 0,
@@ -722,9 +724,14 @@ async function concluirModuloAtual() {
 }
 
 function fecharModal(tipo) {
-  const modal = tipo === "prova" ? $("modalProva") : $("modalCurso");
+  const modal = tipo === "prova" ? $("modalProva")
+    : tipo === "chamado" ? $("modalChamadoAluno")
+    : $("modalCurso");
   modal?.setAttribute("aria-hidden", "true");
-  if ($("modalCurso")?.getAttribute("aria-hidden") === "true" && $("modalProva")?.getAttribute("aria-hidden") === "true") {
+  if (tipo === "chamado") state.chamadoAtual = null;
+  if ($("modalCurso")?.getAttribute("aria-hidden") === "true"
+      && $("modalProva")?.getAttribute("aria-hidden") === "true"
+      && $("modalChamadoAluno")?.getAttribute("aria-hidden") === "true") {
     document.body.style.overflow = "";
   }
 }
@@ -733,7 +740,12 @@ async function abrirProva() {
   if (!state.cursoAtual) return;
   const resultado = melhorResultadoCurso(state.cursoAtual.id);
   if (resultado?.aprovado) {
-    mostrarResultadoProva(resultado);
+    try {
+      const { data, error } = await sb.rpc("obter_correcao_resultado_prova", { p_resultado_id: Number(resultado.id) });
+      mostrarResultadoProva(error ? resultado : { ...resultado, ...(data || {}) });
+    } catch (_) {
+      mostrarResultadoProva(resultado);
+    }
     return;
   }
 
@@ -766,7 +778,9 @@ function renderQuestao() {
   if ($("quizProgressBar")) $("quizProgressBar").style.width = `${progress}%`;
   setText("quizCounter", `Questão ${state.questaoIndex + 1} de ${total}`);
 
-  const options = ["A", "B", "C", "D"].map((letter) => ({ letter, text: questao[letter.toLowerCase()] }));
+  const options = ["A", "B", "C", "D", "E"]
+    .map((letter) => ({ letter, text: questao[letter.toLowerCase()] }))
+    .filter((option) => String(option.text || "").trim());
   const selected = state.respostas[questao.id];
   $("quizBody").innerHTML = `
     <div class="quiz-question">
@@ -863,7 +877,18 @@ function mostrarResultadoProva(resultado) {
         ? "Você já pode solicitar o certificado na aba Certificados. Após a liberação da gestão, o PDF ficará disponível."
         : `Você acertou ${Number(resultado.acertos || 0)} de ${Number(resultado.total_questoes || 0)} questões. Revise o conteúdo e faça uma nova tentativa.`}</p>
       <button class="primary-button" type="button" onclick="${aprovado ? "irParaCertificados()" : "refazerProva()"}">${aprovado ? "Solicitar certificado" : "Tentar novamente"}</button>
-    </div>`;
+    </div>
+    ${Array.isArray(resultado.correcao) && resultado.correcao.length ? `
+      <section class="quiz-corrections">
+        <div class="quiz-corrections-title"><span>Correção comentada</span><h3>Resoluções das questões</h3></div>
+        ${resultado.correcao.map((item, index) => `
+          <article class="quiz-correction ${item.correto ? "correct" : "incorrect"}">
+            <header><strong>Questão ${index + 1}</strong><span>${item.correto ? "Acertou" : "Revisar"}</span></header>
+            <p class="quiz-correction-question">${escapeHTML(item.enunciado || "")}</p>
+            <div class="quiz-correction-answer"><b>Sua resposta:</b> ${escapeHTML(item.resposta_aluno || "—")} · <b>Correta:</b> ${escapeHTML(item.resposta_correta || "—")} — ${escapeHTML(item.alternativa_correta || "")}</div>
+            <p class="quiz-correction-resolution"><b>Resolução:</b> ${escapeHTML(item.resolucao || "Resolução não cadastrada.")}</p>
+          </article>`).join("")}
+      </section>` : ""}`;
   $("quizCounter").textContent = aprovado ? "Aprovado" : "Nova tentativa disponível";
   $("btnQuestaoAnterior").style.display = "none";
   $("btnQuestaoProxima").style.display = "none";
@@ -1517,16 +1542,167 @@ async function carregarChamados() {
   if (error) throw error;
 
   const chamados = data || [];
+  state.chamados = chamados;
   setText("chAbertos", chamados.filter((item) => item.status === "ABERTO").length);
   setText("chAndamento", chamados.filter((item) => item.status === "EM_ANDAMENTO").length);
   setText("chResolvidos", chamados.filter((item) => item.status === "RESOLVIDO").length);
 
   const list = $("listaChamados");
-  list.innerHTML = chamados.length ? chamados.map((item) => `
-    <article class="ticket-card">
-      <div><span class="eyebrow">${escapeHTML(item.protocolo || `Chamado ${item.id}`)}</span><h3>${escapeHTML(item.assunto)}</h3><p>${escapeHTML(item.mensagem || "")}</p><small>${dataBR(item.criado_em, true)}</small></div>
-      ${statusPill(item.status)}
-    </article>`).join("") : `<div class="empty-state">Nenhum chamado aberto.</div>`;
+  if (!list) return;
+  list.innerHTML = chamados.length ? chamados.map((item) => {
+    const ultima = String(item.ultima_resposta || item.mensagem || "").trim();
+    const temResposta = Boolean(String(item.ultima_resposta || "").trim());
+    return `
+      <article class="ticket-card ${temResposta ? "has-reply" : ""}" data-ticket-student-id="${Number(item.id)}">
+        <div class="ticket-card-main">
+          <div class="ticket-card-heading">
+            <span class="eyebrow">${escapeHTML(item.protocolo || `Chamado ${item.id}`)}</span>
+            ${statusPill(item.status)}
+          </div>
+          <h3>${escapeHTML(item.assunto || "Chamado")}</h3>
+          <p>${escapeHTML(ultima).slice(0, 240)}${ultima.length > 240 ? "…" : ""}</p>
+          <div class="ticket-card-meta">
+            <small>${dataBR(item.atualizado_em || item.criado_em, true)}</small>
+            ${temResposta ? '<b>Nova resposta da Equipe Altitude</b>' : '<span>Aguardando interação</span>'}
+          </div>
+        </div>
+        <button type="button" class="secondary-button ticket-open-student" data-ticket-student-open="${Number(item.id)}">Ver conversa</button>
+      </article>`;
+  }).join("") : `<div class="empty-state">Nenhum chamado aberto.</div>`;
+
+  if (state.chamadoAtual && $("modalChamadoAluno")?.getAttribute("aria-hidden") === "false") {
+    const atual = chamados.find((item) => Number(item.id) === Number(state.chamadoAtual.id));
+    if (atual) {
+      state.chamadoAtual = atual;
+      await carregarHistoricoChamadoAluno(atual.id, { silencioso: true });
+    }
+  }
+}
+
+function rotuloStatusChamado(status) {
+  return ({ ABERTO: "Aberto", EM_ANDAMENTO: "Em andamento", RESOLVIDO: "Resolvido", CANCELADO: "Cancelado" })[String(status || "").toUpperCase()] || String(status || "—").replaceAll("_", " ");
+}
+
+function rotuloPrioridadeChamado(prioridade) {
+  return ({ BAIXA: "Baixa", MEDIA: "Média", ALTA: "Alta", URGENTE: "Urgente" })[String(prioridade || "").toUpperCase()] || "Média";
+}
+
+function preencherCabecalhoChamadoAluno(item) {
+  setText("alunoChamadoTitulo", item.assunto || "Chamado");
+  setText("alunoChamadoProtocolo", item.protocolo || `#${item.id}`);
+  setText("alunoChamadoCategoria", item.categoria || "OUTRO");
+  setText("alunoChamadoPrioridade", rotuloPrioridadeChamado(item.prioridade));
+  setText("alunoChamadoCriado", dataBR(item.criado_em, true));
+  setText("alunoChamadoAtualizado", dataBR(item.atualizado_em || item.criado_em, true));
+  const status = $("alunoChamadoStatus");
+  if (status) status.innerHTML = statusPill(item.status);
+  const form = $("formRespostaChamadoAluno");
+  const encerrado = String(item.status || "").toUpperCase() === "CANCELADO";
+  if (form) form.hidden = encerrado;
+  const note = $("alunoChamadoReplyNote");
+  if (note) note.textContent = String(item.status || "").toUpperCase() === "RESOLVIDO"
+    ? "Ao enviar uma nova mensagem, o chamado volta para Em andamento."
+    : "A Equipe Altitude receberá sua mensagem neste mesmo protocolo.";
+}
+
+function renderHistoricoChamadoAluno(item, interacoes = []) {
+  const box = $("alunoChamadoHistorico");
+  if (!box) return;
+  const messages = [{
+    id: `initial-${item.id}`,
+    autor_tipo: "ALUNO",
+    mensagem: item.mensagem || "",
+    criado_em: item.criado_em,
+    inicial: true
+  }, ...interacoes];
+
+  const temRespostaGestor = interacoes.some((interaction) => String(interaction.autor_tipo).toUpperCase() === "GESTOR");
+  if (!temRespostaGestor && String(item.ultima_resposta || "").trim()) {
+    messages.push({
+      id: `fallback-${item.id}`,
+      autor_tipo: "GESTOR",
+      mensagem: item.ultima_resposta,
+      criado_em: item.respondido_em || item.atualizado_em
+    });
+  }
+
+  box.innerHTML = messages.map((message) => {
+    const gestor = String(message.autor_tipo || "ALUNO").toUpperCase() === "GESTOR";
+    return `
+      <article class="student-ticket-message ${gestor ? "team" : "student"}">
+        <header><strong>${gestor ? "Equipe Altitude" : "Você"}</strong><span>${dataBR(message.criado_em, true)}</span></header>
+        <p>${escapeHTML(message.mensagem || "").replaceAll("\n", "<br>")}</p>
+        ${message.inicial ? '<small>Mensagem de abertura do chamado</small>' : ""}
+      </article>`;
+  }).join("");
+  box.scrollTop = box.scrollHeight;
+}
+
+async function carregarHistoricoChamadoAluno(chamadoId, options = {}) {
+  const box = $("alunoChamadoHistorico");
+  if (!box) return;
+  if (!options.silencioso) box.innerHTML = '<div class="empty-state">Carregando conversa...</div>';
+  try {
+    let item = state.chamados.find((ticket) => Number(ticket.id) === Number(chamadoId));
+    const rpc = await sb.rpc("aluno_detalhar_chamado", { p_chamado_id: Number(chamadoId) });
+    let interacoes = [];
+    if (!rpc.error && rpc.data) {
+      item = { ...(item || {}), ...(rpc.data.chamado || {}) };
+      interacoes = rpc.data.interacoes || [];
+    } else {
+      const direct = await sb.from("chamado_interacoes").select("*").eq("chamado_id", Number(chamadoId)).order("criado_em");
+      if (direct.error) throw rpc.error || direct.error;
+      interacoes = direct.data || [];
+    }
+    if (!item) throw new Error("Chamado não encontrado.");
+    state.chamadoAtual = item;
+    preencherCabecalhoChamadoAluno(item);
+    renderHistoricoChamadoAluno(item, interacoes);
+  } catch (error) {
+    box.innerHTML = `<div class="empty-state error-state">Não foi possível carregar as respostas: ${escapeHTML(error.message)}. Execute a atualização SQL 012 no Supabase.</div>`;
+  }
+}
+
+async function abrirDetalhesChamadoAluno(chamadoId) {
+  const item = state.chamados.find((ticket) => Number(ticket.id) === Number(chamadoId));
+  if (!item) return toast("Chamado não encontrado. Atualize a página.", "error");
+  state.chamadoAtual = item;
+  preencherCabecalhoChamadoAluno(item);
+  $("modalChamadoAluno")?.setAttribute("aria-hidden", "false");
+  document.body.style.overflow = "hidden";
+  await carregarHistoricoChamadoAluno(item.id);
+}
+
+function fecharChamadoAluno() {
+  $("modalChamadoAluno")?.setAttribute("aria-hidden", "true");
+  state.chamadoAtual = null;
+  document.body.style.overflow = "";
+}
+
+async function responderChamadoAluno(event) {
+  event.preventDefault();
+  if (!state.chamadoAtual) return;
+  const textarea = $("alunoChamadoResposta");
+  const mensagem = textarea?.value?.trim() || "";
+  if (mensagem.length < 2) return toast("Escreva uma mensagem.", "error");
+  const button = event.submitter || event.currentTarget.querySelector('button[type="submit"]');
+  if (button) { button.disabled = true; button.textContent = "Enviando..."; }
+  try {
+    const { data, error } = await sb.rpc("aluno_responder_chamado", {
+      p_chamado_id: Number(state.chamadoAtual.id),
+      p_mensagem: mensagem
+    });
+    if (error) throw error;
+    if (textarea) textarea.value = "";
+    if (data?.chamado) state.chamadoAtual = { ...state.chamadoAtual, ...data.chamado };
+    toast("Mensagem enviada para a Equipe Altitude.", "success");
+    await carregarChamados();
+    await carregarHistoricoChamadoAluno(state.chamadoAtual.id);
+  } catch (error) {
+    toast(`Não foi possível enviar: ${error.message}`, "error");
+  } finally {
+    if (button) { button.disabled = false; button.textContent = "Enviar mensagem"; }
+  }
 }
 
 async function abrirChamado(event) {
@@ -1778,6 +1954,14 @@ function configurarEventos() {
   $("buscaPortalAluno")?.addEventListener("input", (event) => filtrarCursos(event.target.value));
   $("formCadastroAluno")?.addEventListener("submit", salvarCadastro);
   $("formChamado")?.addEventListener("submit", abrirChamado);
+  $("formRespostaChamadoAluno")?.addEventListener("submit", responderChamadoAluno);
+  $("fecharChamadoAluno")?.addEventListener("click", fecharChamadoAluno);
+  $("listaChamados")?.addEventListener("click", (event) => {
+    const button = event.target.closest("[data-ticket-student-open]");
+    const card = event.target.closest("[data-ticket-student-id]");
+    const id = Number(button?.dataset.ticketStudentOpen || card?.dataset.ticketStudentId || 0);
+    if (id) abrirDetalhesChamadoAluno(id);
+  });
   $("btnBaixarCarteirinha")?.addEventListener("click", baixarCarteirinhaPDF);
   $("cadTelefone")?.addEventListener("input", (event) => { event.target.value = maskPhone(event.target.value); });
   $("fotoAlunoInput")?.addEventListener("change", (event) => {
@@ -1793,12 +1977,15 @@ function configurarEventos() {
   $("btnQuestaoProxima")?.addEventListener("click", questaoProxima);
   document.querySelectorAll("[data-fechar-modal]").forEach((button) => button.addEventListener("click", () => fecharModal(button.dataset.fecharModal)));
   document.querySelectorAll(".modal").forEach((modal) => modal.addEventListener("click", (event) => {
-    if (event.target === modal) fecharModal(modal.id === "modalProva" ? "prova" : "curso");
+    if (event.target !== modal) return;
+    const tipo = modal.id === "modalProva" ? "prova" : modal.id === "modalChamadoAluno" ? "chamado" : "curso";
+    fecharModal(tipo);
   }));
   document.addEventListener("keydown", (event) => {
     if (event.key === "Escape") {
       fecharModal("prova");
       fecharModal("curso");
+      fecharModal("chamado");
       fecharMenuMobile();
     }
   });

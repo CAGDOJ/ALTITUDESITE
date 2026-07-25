@@ -10,7 +10,7 @@
 
   <link rel="icon" href="../3-img/favicon.ico?v=14">
   <link rel="stylesheet" href="../2-css/base-portal.css?v=17">
-  <link rel="stylesheet" href="../2-css/11-portaldoaluno.css?v=17">
+  <link rel="stylesheet" href="../2-css/11-portaldoaluno.css?v=22">
   <link rel="stylesheet" href="../2-css/06-responsive.css?v=17">
   <link rel="stylesheet" href="../2-css/15-ajustes-finais.css?v=19">
 </head>
@@ -381,6 +381,46 @@
     </div>
   </div>
 
+  <div id="modalChamadoAluno" class="modal" aria-hidden="true">
+    <div class="student-ticket-modal" role="dialog" aria-modal="true" aria-labelledby="alunoChamadoTitulo">
+      <header class="student-ticket-modal-head">
+        <div>
+          <span class="eyebrow">Atendimento ao aluno</span>
+          <h2 id="alunoChamadoTitulo">Chamado</h2>
+          <p>Acompanhe as respostas da Equipe Altitude neste mesmo protocolo.</p>
+        </div>
+        <button type="button" id="fecharChamadoAluno" class="modal-close" aria-label="Fechar">×</button>
+      </header>
+      <div class="student-ticket-modal-body">
+        <aside class="student-ticket-details">
+          <div class="student-ticket-status-row">
+            <span id="alunoChamadoStatus"></span>
+          </div>
+          <dl>
+            <div><dt>Protocolo</dt><dd id="alunoChamadoProtocolo">—</dd></div>
+            <div><dt>Categoria</dt><dd id="alunoChamadoCategoria">—</dd></div>
+            <div><dt>Prioridade</dt><dd id="alunoChamadoPrioridade">—</dd></div>
+            <div><dt>Criado em</dt><dd id="alunoChamadoCriado">—</dd></div>
+            <div><dt>Última atualização</dt><dd id="alunoChamadoAtualizado">—</dd></div>
+          </dl>
+          <div class="student-ticket-help">
+            <strong>Como funciona</strong>
+            <p>Todas as mensagens ficam registradas. Quando a gestão responder ou alterar o status, esta conversa será atualizada automaticamente.</p>
+          </div>
+        </aside>
+        <section class="student-ticket-conversation">
+          <div class="student-ticket-conversation-title"><strong>Conversa</strong><span>Você e a Equipe Altitude</span></div>
+          <div id="alunoChamadoHistorico" class="student-ticket-history" aria-live="polite"></div>
+          <form id="formRespostaChamadoAluno" class="student-ticket-reply">
+            <label for="alunoChamadoResposta">Enviar nova mensagem</label>
+            <textarea id="alunoChamadoResposta" rows="4" placeholder="Escreva sua mensagem para a equipe..." required></textarea>
+            <div><small id="alunoChamadoReplyNote">A Equipe Altitude receberá sua mensagem neste mesmo protocolo.</small><button type="submit" class="primary-button">Enviar mensagem</button></div>
+          </form>
+        </section>
+      </div>
+    </div>
+  </div>
+
   <div id="modalProva" class="modal" aria-hidden="true">
     <div class="quiz-modal">
       <header class="quiz-header">
@@ -407,7 +447,7 @@
   <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
   <script src="../4-java/altitude-dialogs.js?v=17"></script>
   <script src="../4-java/supabase-init.js?v=17"></script>
-  <script src="../4-java/portaldoaluno.js?v=21"></script>
+  <script src="../4-java/portaldoaluno.js?v=22"></script>
   <script src="../4-java/06-responsive.js?v=17"></script>
   <script src="../4-java/15-ajustes-finais.js?v=17" defer></script>
 </body>

@@ -1,0 +1,75 @@
+/* ALTITUDE V22+ — importador LaTeX e ajustes do construtor */
+.builder-header-actions{margin-left:auto;display:flex;align-items:center;gap:10px}
+.latex-import-open{border:0;border-radius:10px;background:#0ea5a3;color:#fff;padding:11px 17px;font-weight:800;cursor:pointer;box-shadow:0 8px 18px rgba(14,165,163,.18)}
+.latex-import-open:hover{background:#087f7d}
+.course-builder-header>.builder-close{flex:0 0 auto}
+
+.latex-import-modal{width:min(1220px,calc(100vw - 34px));max-width:1220px;height:min(880px,calc(100vh - 34px));padding:0;overflow:hidden;display:flex;flex-direction:column;border-radius:22px}
+.latex-import-head{display:flex;align-items:flex-start;gap:20px;justify-content:space-between;padding:22px 25px;border-bottom:1px solid #dbe6ef;background:#f8fbfd}
+.latex-import-head>div:first-child{min-width:0}
+.latex-import-head span{display:block;color:#008f95;font-size:11px;font-weight:900;letter-spacing:.12em}
+.latex-import-head h3{margin:5px 0 4px;color:#193248;font-size:24px}
+.latex-import-head p{margin:0;color:#65798c;font-size:13px}
+.latex-import-head .builder-close{width:44px;height:44px;border:1px solid #d5e2ed;border-radius:12px;background:#fff;color:#173a57;font-size:26px;cursor:pointer}
+.latex-import-body{min-height:0;flex:1;display:grid;grid-template-columns:minmax(0,1.35fr) minmax(320px,.65fr);gap:0;overflow:hidden}
+.latex-import-editor{min-width:0;padding:20px;border-right:1px solid #dbe6ef;display:flex;flex-direction:column;gap:13px;overflow:hidden}
+.latex-import-toolbar{display:flex;align-items:center;gap:9px;flex-wrap:wrap}
+.latex-import-toolbar button,.latex-file-button{min-height:39px;border:1px solid #cad9e5;border-radius:9px;background:#fff;color:#254a68;padding:9px 13px;font-size:12px;font-weight:800;cursor:pointer}
+.latex-file-button input{display:none}
+#latexImportSource{width:100%;min-height:0;flex:1;resize:none;border:1px solid #bed0df;border-radius:13px;padding:16px;background:#0c1d2b;color:#e7f8ff;font:13px/1.55 Consolas,"Courier New",monospace;outline:none;tab-size:2;box-sizing:border-box}
+#latexImportSource:focus{border-color:#0ea5a3;box-shadow:0 0 0 3px rgba(14,165,163,.13)}
+.latex-import-options{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:9px}
+.latex-import-options label{display:flex;align-items:flex-start;gap:8px;border:1px solid #dbe6ef;border-radius:10px;padding:10px;background:#f8fbfd;color:#38546b;font-size:11px;font-weight:700;line-height:1.35}
+.latex-import-options input{margin-top:2px}
+.latex-import-preview{min-width:0;padding:20px;background:#f7fafc;overflow:auto}
+.latex-import-preview>h4{margin:0 0 12px;color:#193248}
+.latex-preview-summary{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:9px;margin-bottom:14px}
+.latex-preview-summary article{border:1px solid #dce7ef;border-radius:11px;background:#fff;padding:11px;display:grid;gap:4px}
+.latex-preview-summary span{font-size:10px;color:#6b7e90;text-transform:uppercase;font-weight:800;letter-spacing:.05em}
+.latex-preview-summary strong{color:#173a57;font-size:14px;overflow-wrap:anywhere}
+.latex-preview-modules{display:grid;gap:10px}
+.latex-preview-modules article{border:1px solid #dce7ef;border-radius:12px;background:#fff;padding:12px}
+.latex-preview-modules article>div{display:flex;gap:10px;align-items:flex-start}
+.latex-preview-modules b{width:30px;height:30px;display:grid;place-items:center;border-radius:9px;background:#e1f5f6;color:#028a90}
+.latex-preview-modules span{display:grid;gap:2px;min-width:0}
+.latex-preview-modules small{color:#728496;font-size:10px}
+.latex-preview-modules p{margin:9px 0 0;color:#536b7f;font-size:11px;line-height:1.45}
+.latex-import-error{padding:14px;border:1px solid #fecaca;border-radius:12px;background:#fff1f2;color:#9f1239;display:grid;gap:5px}
+.latex-import-error span{font-size:12px;line-height:1.45}
+.latex-import-footer{display:flex;justify-content:space-between;align-items:center;gap:16px;padding:15px 20px;border-top:1px solid #dbe6ef;background:#fff}
+.latex-import-footer>span{color:#0b777d;font-size:12px;font-weight:800}
+.latex-import-footer>div{display:flex;gap:9px}
+.latex-import-footer button{min-height:42px;padding:0 16px;border-radius:9px}
+
+/* Documento temporário usado pelo html2pdf. */
+.altitude-latex-pdf{position:fixed;left:-12000px;top:0;width:760px;background:#fff;color:#20384c;padding:40px 48px;font-family:Arial,sans-serif;line-height:1.55;box-sizing:border-box}
+.altitude-latex-pdf header{padding-bottom:20px;border-bottom:3px solid #0ea5a3;margin-bottom:25px}
+.altitude-latex-pdf header span{color:#008e94;font-size:11px;font-weight:800;letter-spacing:.12em}
+.altitude-latex-pdf h1{font-size:22px;color:#0a3d62;margin:7px 0 2px}
+.altitude-latex-pdf h2{font-size:19px;color:#173a57;margin:5px 0 16px;break-after:avoid}
+.altitude-latex-pdf h3{font-size:16px;color:#165b7c;margin:18px 0 8px;break-after:avoid}
+.altitude-latex-pdf h4,.altitude-latex-pdf h5{color:#254a68;break-after:avoid}
+.altitude-latex-pdf p{font-size:13px;text-align:justify;margin:0 0 12px;orphans:3;widows:3}
+.altitude-latex-pdf li{font-size:13px;margin:4px 0}
+.altitude-latex-pdf ul,.altitude-latex-pdf ol{margin:8px 0 14px;padding-left:24px}
+.altitude-latex-pdf .katex-display,.altitude-latex-pdf .latex-equation{margin:16px 0;text-align:center;break-inside:avoid}
+.altitude-latex-pdf footer{margin-top:30px;padding-top:10px;border-top:1px solid #cbd9e4;color:#718396;font-size:10px;text-align:center}
+
+/* Evita o título do curso ficar letra por letra na tabela. */
+#tabCursos{min-width:980px;table-layout:auto}
+#tabCursos .col-curso{min-width:285px;width:auto}
+#tabCursos .curso-info{display:grid;grid-template-columns:54px minmax(190px,1fr);align-items:center;gap:12px;min-width:260px}
+#tabCursos .curso-textos,#tabCursos .curso-titulo{min-width:0;white-space:normal;overflow-wrap:break-word;word-break:normal}
+#tabCursos .col-area{min-width:145px;white-space:normal}
+#tabCursos .course-action-cell{min-width:300px;width:340px;display:grid;grid-template-columns:repeat(2,minmax(120px,1fr));gap:8px}
+#tabCursos .course-action-cell button{width:100%;min-width:0;white-space:nowrap}
+
+@media(max-width:900px){
+  .latex-import-modal{width:calc(100vw - 16px);height:calc(100vh - 16px)}
+  .latex-import-body{grid-template-columns:1fr;overflow:auto}
+  .latex-import-editor{min-height:620px;border-right:0;border-bottom:1px solid #dbe6ef}
+  .latex-import-preview{overflow:visible}
+  .latex-import-options{grid-template-columns:1fr}
+  .latex-import-footer{align-items:flex-start;flex-direction:column}
+  .latex-import-footer>div{width:100%;justify-content:flex-end}
+}

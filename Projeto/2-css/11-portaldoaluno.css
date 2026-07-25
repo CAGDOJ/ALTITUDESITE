@@ -734,3 +734,81 @@ a{color:inherit}
 
 /* V17 — aviso de sincronização não bloqueante */
 .portal-sync-notice{position:fixed;left:50%;bottom:24px;transform:translate(-50%,24px);z-index:9999;display:flex;align-items:center;gap:14px;max-width:min(92vw,680px);padding:14px 16px;border:1px solid #b9dfe8;border-radius:14px;background:#effbfe;color:#123c55;box-shadow:0 18px 45px rgba(15,47,72,.18);opacity:0;pointer-events:none;transition:.2s ease}.portal-sync-notice.show{opacity:1;transform:translate(-50%,0);pointer-events:auto}.portal-sync-notice.error{background:#fff6f6;border-color:#f0b8b8;color:#8f2424}.portal-sync-notice button{border:0;border-radius:10px;padding:9px 12px;background:#0b4b73;color:#fff;font-weight:700;white-space:nowrap}@media(max-width:640px){.portal-sync-notice{bottom:12px;flex-direction:column;align-items:stretch}.portal-sync-notice button{width:100%}}
+
+/* =========================================================
+   ALTITUDE V22 — chamados em formato de conversa
+   ========================================================= */
+.ticket-card{align-items:stretch;cursor:pointer;transition:transform .18s ease,border-color .18s ease,box-shadow .18s ease}
+.ticket-card:hover{transform:translateY(-1px);border-color:#9fdbe3;box-shadow:0 10px 24px rgba(23,58,87,.08)}
+.ticket-card.has-reply{border-left:4px solid #0ea5a3}
+.ticket-card-main{min-width:0;flex:1}
+.ticket-card-heading{display:flex;align-items:center;justify-content:space-between;gap:12px;margin-bottom:6px}
+.ticket-card-heading .status-pill{flex:0 0 auto}
+.ticket-card h3{font-size:16px;color:#173a57}
+.ticket-card p{font-size:13px;line-height:1.5;overflow-wrap:anywhere}
+.ticket-card-meta{display:flex;align-items:center;gap:10px;flex-wrap:wrap;margin-top:10px}
+.ticket-card-meta b{color:#087f7d;font-size:11px}
+.ticket-card-meta span{color:#7c8d9d;font-size:11px}
+.ticket-open-student{align-self:center;flex:0 0 auto;white-space:nowrap}
+
+.student-ticket-modal{width:min(1120px,calc(100vw - 32px));height:min(760px,calc(100vh - 32px));background:#fff;border-radius:22px;box-shadow:0 30px 90px rgba(3,24,41,.28);overflow:hidden;display:flex;flex-direction:column}
+.student-ticket-modal-head{display:flex;align-items:flex-start;justify-content:space-between;gap:20px;padding:22px 25px;border-bottom:1px solid var(--line);background:#f8fbfd}
+.student-ticket-modal-head h2{margin:4px 0;color:#173a57;font-size:24px}
+.student-ticket-modal-head p{margin:0;color:var(--muted);font-size:13px}
+.student-ticket-modal-body{min-height:0;flex:1;display:grid;grid-template-columns:320px minmax(0,1fr)}
+.student-ticket-details{padding:22px;border-right:1px solid var(--line);background:#fbfdfe;overflow:auto}
+.student-ticket-status-row{margin-bottom:16px}
+.student-ticket-details dl{display:grid;gap:10px;margin:0}
+.student-ticket-details dl>div{border:1px solid var(--line);border-radius:11px;background:#fff;padding:10px 12px}
+.student-ticket-details dt{color:var(--muted);font-size:10px;font-weight:800;text-transform:uppercase;letter-spacing:.05em}
+.student-ticket-details dd{margin:4px 0 0;color:var(--text);font-size:13px;font-weight:800;overflow-wrap:anywhere}
+.student-ticket-help{margin-top:16px;padding:14px;border-radius:12px;background:#eaf8fa;color:#28576b}
+.student-ticket-help strong{font-size:13px}
+.student-ticket-help p{margin:6px 0 0;font-size:11px;line-height:1.5}
+.student-ticket-conversation{min-width:0;display:flex;flex-direction:column;padding:20px;overflow:hidden}
+.student-ticket-conversation-title{display:flex;justify-content:space-between;align-items:center;gap:14px;padding-bottom:12px;border-bottom:1px solid var(--line)}
+.student-ticket-conversation-title strong{color:#173a57;font-size:15px}
+.student-ticket-conversation-title span{color:var(--muted);font-size:11px}
+.student-ticket-history{min-height:0;flex:1;overflow:auto;padding:18px 4px;display:flex;flex-direction:column;gap:12px;scroll-behavior:smooth}
+.student-ticket-message{max-width:min(82%,650px);border-radius:15px;padding:12px 14px;box-shadow:0 5px 13px rgba(26,56,80,.05)}
+.student-ticket-message.student{align-self:flex-end;background:#0a3d62;color:#fff;border-bottom-right-radius:4px}
+.student-ticket-message.team{align-self:flex-start;background:#eef7f9;color:#19384f;border:1px solid #cfe7ea;border-bottom-left-radius:4px}
+.student-ticket-message header{display:flex;justify-content:space-between;align-items:center;gap:14px;margin-bottom:6px}
+.student-ticket-message header strong{font-size:12px}
+.student-ticket-message header span{font-size:9px;opacity:.75}
+.student-ticket-message p{margin:0;font-size:13px;line-height:1.55;overflow-wrap:anywhere}
+.student-ticket-message small{display:block;margin-top:7px;font-size:9px;opacity:.72}
+.student-ticket-reply{border-top:1px solid var(--line);padding-top:13px;display:grid;gap:7px}
+.student-ticket-reply>label{color:#294a63;font-size:12px;font-weight:800}
+.student-ticket-reply textarea{width:100%;resize:vertical;min-height:86px;border:1px solid var(--line);border-radius:11px;padding:11px 12px;box-sizing:border-box;outline:0}
+.student-ticket-reply textarea:focus{border-color:#0ea5a3;box-shadow:0 0 0 3px rgba(14,165,163,.12)}
+.student-ticket-reply>div{display:flex;align-items:center;justify-content:space-between;gap:15px}
+.student-ticket-reply small{color:var(--muted);font-size:10px;line-height:1.4}
+.student-ticket-reply button{white-space:nowrap}
+
+/* Correção comentada da prova — exibida somente após finalizar. */
+.quiz-corrections{margin-top:22px;display:grid;gap:11px}
+.quiz-corrections-title span{color:#008f95;font-size:10px;font-weight:900;letter-spacing:.08em;text-transform:uppercase}
+.quiz-corrections-title h3{margin:4px 0 2px;color:#173a57}
+.quiz-correction{border:1px solid var(--line);border-radius:13px;padding:14px;background:#fff}
+.quiz-correction.correct{border-left:4px solid #16a34a}
+.quiz-correction.incorrect{border-left:4px solid #e88b19}
+.quiz-correction header{display:flex;justify-content:space-between;gap:12px;align-items:center}
+.quiz-correction header strong{color:#173a57}
+.quiz-correction header span{font-size:10px;font-weight:900;text-transform:uppercase;color:#5e7487}
+.quiz-correction-question{margin:9px 0;color:#2d465b;font-weight:700}
+.quiz-correction-answer{border-radius:9px;background:#f3f7fa;padding:9px;color:#40596e;font-size:12px;line-height:1.45}
+.quiz-correction-resolution{margin:9px 0 0;color:#4c6173;font-size:12px;line-height:1.55}
+
+@media(max-width:760px){
+  .ticket-card{flex-direction:column}
+  .ticket-open-student{width:100%}
+  .student-ticket-modal{width:calc(100vw - 12px);height:calc(100vh - 12px);border-radius:16px}
+  .student-ticket-modal-head{padding:17px}
+  .student-ticket-modal-body{grid-template-columns:1fr;overflow:auto}
+  .student-ticket-details{border-right:0;border-bottom:1px solid var(--line);overflow:visible}
+  .student-ticket-conversation{min-height:560px;overflow:visible}
+  .student-ticket-history{min-height:300px;overflow:visible}
+  .student-ticket-message{max-width:92%}
+  .student-ticket-reply>div{align-items:stretch;flex-direction:column}
+}

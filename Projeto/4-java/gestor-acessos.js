@@ -113,7 +113,7 @@
     tbody.innerHTML = rows.length ? rows.map((item) => `
       <tr data-user-id="${escapeHtml(item.user_id)}">
         <td><strong>${escapeHtml(item.gestor_id)}</strong></td>
-        <td>${escapeHtml(item.nome)}</td>
+        <td class="manager-name-cell">${escapeHtml(String(item.nome || "").toUpperCase())}</td>
         <td>${escapeHtml(item.email)}</td>
         <td>${escapeHtml(item.cargo)}</td>
         <td>${Number(item.nivel_acesso)}</td>
@@ -141,7 +141,7 @@
   function openEditManager(item) {
     state.gestorEditando = item;
     if ($('#guTitulo')) $('#guTitulo').textContent = `Editar ${item.gestor_id}`;
-    $('#guNome').value = item.nome || '';
+    $('#guNome').value = String(item.nome || '').toUpperCase();
     $('#guEmail').value = item.email || '';
     $('#guGestorId').value = item.gestor_id || '';
     $('#guSenha').value = '';
@@ -170,7 +170,7 @@
         acao: state.gestorEditando ? 'atualizar' : 'criar',
         user_id: state.gestorEditando?.user_id,
         gestor_id: $('#guGestorId').value.trim().toUpperCase(),
-        nome: $('#guNome').value.trim(),
+        nome: $('#guNome').value.trim().toUpperCase(),
         email: $('#guEmail').value.trim().toLowerCase(),
         senha: $('#guSenha').value,
         telefone: $('#guTel').value.trim() || null,
@@ -595,6 +595,7 @@
     $('#guCancelar')?.addEventListener('click', () => showModal('#modalUsuario', false));
     $('#formUsuario')?.addEventListener('submit', saveManager);
     $('#guNivel')?.addEventListener('change', updatePermissions);
+    $('#guNome')?.addEventListener('input', (event) => { event.target.value = event.target.value.toUpperCase(); });
     ['guBusca', 'guFiltroCargo', 'guFiltroStatus'].forEach((id) => {
       $(id)?.addEventListener(id === 'guBusca' ? 'input' : 'change', renderManagers);
     });

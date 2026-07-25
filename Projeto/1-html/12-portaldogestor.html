@@ -17,6 +17,7 @@
   <script src="../4-java/gestor-certificados.js" defer></script>
   <link rel="stylesheet" href="../2-css/base-portal.css">
   <link rel="stylesheet" href="../2-css/06-responsive.css">
+  <link rel="stylesheet" href="../2-css/15-ajustes-finais.css">
 </head>
 
 <body class="gestor-auth-pending">
@@ -30,13 +31,14 @@
       <nav class="gestor-nav">
         <button class="nav-item ativa" data-min-level="1" data-tab="dashboard" onclick="abrirAba('dashboard')"><span>⌂</span> Visão geral</button>
         <button class="nav-item" data-min-level="2" data-tab="cursos" onclick="abrirAba('cursos')"><span>▣</span> Cursos e conteúdos</button>
-        <button class="nav-item nav-ai" data-min-level="2" data-tab="curso-ia" onclick="abrirAba('curso-ia')"><span>✦</span> Criar curso com IA</button>
+        <button class="nav-item nav-ai" data-min-level="2" data-tab="curso-ia" onclick="abrirAba('curso-ia')"><span>✦</span> Criador de cursos</button>
         <button class="nav-item" data-min-level="2" data-tab="alunos" onclick="abrirAba('alunos')"><span>♟</span> Alunos</button>
         <button class="nav-item" data-min-level="2" data-tab="certificados-gestao" onclick="abrirAba('certificados-gestao')"><span>✓</span> Certificados</button>
         <button class="nav-item" data-min-level="4" data-tab="usuarios" onclick="abrirAba('usuarios')"><span>♙</span> Equipe e acessos</button>
         <button class="nav-item" data-min-level="1" data-tab="chamados" onclick="abrirAba('chamados')"><span>✉</span> Atendimento</button>
       </nav>
       <div class="sidebar-bottom">
+        <div class="manager-identity"><span>GESTOR LOGADO</span><strong id="gestorNomeAtual">GESTOR ALTITUDE</strong><small id="gestorIdAtual">—</small></div>
         <a href="2-profissional.html" target="_blank" rel="noopener">Ver catálogo público ↗</a>
         <button type="button" id="btnSairGestor">Sair</button>
       </div>
@@ -57,7 +59,7 @@
           <h2>Gerencie a jornada completa do aluno</h2>
           <p>Crie o curso, organize os materiais, revise a avaliação e publique. Depois acompanhe matrículas, progresso e certificados.</p>
           <div class="welcome-actions">
-            <button type="button" onclick="abrirAba('curso-ia')">✦ Criar curso com IA</button>
+            <button type="button" onclick="abrirAba('curso-ia')">✦ Criador de cursos</button>
             <button type="button" class="secondary" onclick="abrirAba('cursos')">Gerenciar cursos</button>
           </div>
         </div>
@@ -110,7 +112,7 @@
                 <th style="width:200px">E-mail</th>
                 <th style="width:140px">Telefone</th>
                 <th style="width:90px">Status</th>
-                <th style="width:230px">Ações</th>
+                <th style="width:250px">Ações</th>
               </tr>
             </thead>
             <tbody></tbody>
@@ -176,7 +178,7 @@
                 <th style="width:180px">Área</th>
                 <th style="width:100px">Módulos</th>
                 <th style="width:100px">Publicado</th>
-                <th style="width:260px">Ações</th>
+                <th style="width:390px">Ações</th>
               </tr>
             </thead>
             <tbody></tbody>
@@ -240,6 +242,10 @@
               <input id="fCursoCapa" type="file" accept="image/*">
             </label>
             <div class="cover-preview" id="cursoCapaPreview"><span>A capa aparecerá aqui</span></div>
+            <div class="cover-ai-tools">
+              <div><strong>Capa do curso</strong><small>Você pode enviar sua imagem ou pedir somente uma capa à IA, mantendo as cores e a logo da Altitude.</small></div>
+              <button type="button" id="btnGerarSomenteCapaIA" class="ghost">✦ Gerar somente a capa com IA</button>
+            </div>
             <div class="actions">
               <button type="button" class="ghost" id="fecharCurso">Voltar</button>
               <button type="submit" id="salvarCurso">Salvar</button>
@@ -255,7 +261,7 @@
             <div>
               <p class="builder-eyebrow">CONSTRUTOR DO CURSO</p>
               <h3><span id="mmCursoNome"></span></h3>
-              <p>Cadastre um módulo por vez e complete conteúdo, materiais e prova pelos botões do próprio módulo.</p>
+              <p>Preencha o módulo completo em uma única tela: título, conteúdo, PDF, vídeo e depois a prova.</p>
             </div>
             <button type="button" class="btn-fechar builder-close" id="fecharModulos" aria-label="Fechar">×</button>
           </header>
@@ -276,34 +282,41 @@
                 <p>Para começar, informe apenas o nome. O restante pode ser preenchido depois.</p>
               </div>
 
-              <form id="formModulo" class="builder-module-form">
-                <label>Título do módulo
-                  <input type="text" id="fModuloTitulo" placeholder="Ex.: Introdução à Informática" required>
-                </label>
-                <div class="builder-two-fields">
+              <form id="formModulo" class="builder-module-form module-one-screen-form">
+                <div class="builder-two-fields builder-title-order">
+                  <label>Título do módulo
+                    <input type="text" id="fModuloTitulo" placeholder="Ex.: Introdução à Informática" required>
+                  </label>
                   <label>Ordem
                     <input type="number" id="fModuloOrdem" min="1" value="1">
                   </label>
-                  <label>Descrição curta
-                    <input type="text" id="fModuloDesc" placeholder="O que será estudado?">
+                </div>
+                <label>Descrição curta
+                  <input type="text" id="fModuloDesc" placeholder="Explique brevemente o que será estudado.">
+                </label>
+                <label>Conteúdo para leitura
+                  <textarea id="fModuloConteudo" rows="10" placeholder="Escreva ou cole aqui o conteúdo completo que aparecerá para o aluno."></textarea>
+                  <small class="field-hint">O aluno poderá ler este texto na plataforma. Você também pode anexar uma apostila em PDF.</small>
+                </label>
+                <div class="builder-two-fields">
+                  <label>Apostila em PDF
+                    <input type="file" id="fModuloPdfArquivo" accept="application/pdf,.pdf">
+                  </label>
+                  <label>Vídeo complementar (URL)
+                    <input type="url" id="fModuloVideo" placeholder="https://...">
                   </label>
                 </div>
-                <details class="builder-optional-content">
-                  <summary>Adicionar conteúdo escrito agora <small>(opcional)</small></summary>
-                  <label>Conteúdo do módulo
-                    <textarea id="fModuloConteudo" rows="8" placeholder="Escreva ou cole o conteúdo. Depois será possível gerar um PDF."></textarea>
-                  </label>
-                </details>
-                <button type="submit" class="builder-main-button">+ Criar módulo</button>
+                <label class="builder-check"><input type="checkbox" id="fModuloPublicado"> Liberar o módulo assim que salvar</label>
+                <button type="submit" class="builder-main-button">Salvar módulo completo</button>
               </form>
 
               <div class="builder-help-card">
-                <strong>Fluxo mais fácil</strong>
+                <strong>Como funciona</strong>
                 <ol>
-                  <li>Crie o módulo.</li>
-                  <li>Clique em <b>Conteúdo</b> para escrever ou gerar o PDF.</li>
-                  <li>Use <b>Materiais</b> para anexar arquivos e vídeos.</li>
-                  <li>Use <b>Prova</b> para cadastrar as questões.</li>
+                  <li>Preencha o conteúdo e, se desejar, envie um PDF.</li>
+                  <li>Salve o módulo e confira a prévia ao lado.</li>
+                  <li>Use <b>Materiais</b> apenas para arquivos extras.</li>
+                  <li>Use <b>Prova</b> para adicionar as perguntas.</li>
                 </ol>
               </div>
             </aside>
@@ -461,7 +474,7 @@
       </div>
 
       <section id="curso-ia" class="aba" data-min-level="2">
-        <div class="page-heading"><div><span>Assistente acadêmico</span><h2>Criar curso com IA</h2><p>A IA prepara um rascunho completo. Nada será publicado sem sua revisão.</p></div><span class="draft-badge">Sempre em rascunho</span></div>
+        <div class="page-heading"><div><span>Assistente acadêmico</span><h2>Criador de cursos</h2><p>Monte manualmente, importe um JSON gratuito ou use a IA apenas para criar o rascunho ou a capa. Nada será publicado sem sua revisão.</p></div><span class="draft-badge">Sempre em rascunho</span></div>
         <div class="ai-layout">
           <form id="formCursoIA" class="panel ai-form">
             <div class="ai-callout"><strong>Descreva o curso como falaria comigo</strong><p>Inclua tema, público, objetivo e qualquer regra importante.</p></div>
@@ -476,6 +489,10 @@
             </div>
             <label>Categoria<select id="iaCategoria"><option>TECNOLOGIA</option><option>ADMINISTRAÇÃO</option><option>HUMANAS</option><option>SAÚDE</option><option>ENGENHARIA</option></select></label>
             <label class="check-row"><input id="iaGerarCapa" type="checkbox" checked> Gerar também a foto de capa do curso</label>
+            <div class="ai-mode-actions">
+              <button type="button" id="btnGerarCapaIAAvulsa" class="secondary-ai-button">✦ Gerar somente a imagem do curso</button>
+              <button type="button" id="btnImportarCursoJson" class="secondary-ai-button">Importar curso por JSON (gratuito)</button>
+            </div>
             <div class="ai-actions"><button type="submit" id="btnGerarCursoIA">✦ Gerar curso em rascunho</button><small>Você poderá editar tudo antes de publicar.</small></div>
           </form>
           <aside class="panel ai-side">
@@ -486,6 +503,19 @@
           </aside>
         </div>
       </section>
+
+      <div class="modal" id="modalImportarCursoJson" aria-hidden="true">
+        <div class="modal__sheet json-import-sheet">
+          <h3>Importar curso gerado por IA</h3>
+          <p class="sub">Cole o JSON produzido no ChatGPT/Claude gratuito. O curso será salvo como rascunho para revisão.</p>
+          <textarea id="cursoJsonInput" rows="18" placeholder='{"titulo":"Informática Básica","carga_horaria":20,"modulos":[...],"prova":{"questoes":[...]}}'></textarea>
+          <div id="cursoJsonMensagem" class="form-review-note" hidden></div>
+          <div class="actions">
+            <button type="button" class="ghost" id="fecharImportarCursoJson">Cancelar</button>
+            <button type="button" id="confirmarImportarCursoJson">Validar e importar</button>
+          </div>
+        </div>
+      </div>
 
       <section id="usuarios" class="aba" data-min-level="4">
         <h2>👥 Gestão de Usuários</h2>
@@ -805,5 +835,6 @@
     </main>
   </div>
   <script src="../4-java/06-responsive.js"></script>
+  <script src="../4-java/15-ajustes-finais.js" defer></script>
 </body>
 </html>

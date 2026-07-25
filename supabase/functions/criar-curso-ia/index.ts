@@ -96,6 +96,38 @@ function extractOutputText(response: any): string {
   throw new Error('A OpenAI nao retornou o JSON do curso.');
 }
 
+
+async function generateCourseCover(
+  apiKey: string,
+  admin: any,
+  title: string,
+  category: string,
+): Promise<string> {
+  const imageResponse = await fetch('https://api.openai.com/v1/images/generations', {
+    method: 'POST',
+    headers: { Authorization: `Bearer ${apiKey}`, 'Content-Type': 'application/json' },
+    body: JSON.stringify({
+      model: Deno.env.get('OPENAI_IMAGE_MODEL') || 'gpt-image-1-mini',
+      prompt: `Capa horizontal profissional para curso educacional da Instituicao Altitude. Curso: ${title}. Categoria: ${category}. Identidade visual em azul marinho, azul profundo, branco e ciano. Composicao moderna, limpa, didatica, confiavel e apropriada para ambiente educacional. Sem logotipos inventados, sem marcas de terceiros, sem texto pequeno e sem certificado. Deixe uma area visual limpa para a sobreposicao da logomarca oficial da Altitude pelo portal.`,
+      size: '1536x1024',
+      quality: 'medium',
+      output_format: 'png',
+    }),
+  });
+  const imageJson = await imageResponse.json();
+  if (!imageResponse.ok) throw new Error(imageJson?.error?.message || 'Falha ao gerar a imagem do curso.');
+  const encoded = imageJson?.data?.[0]?.b64_json;
+  if (!encoded) throw new Error('A API não retornou a imagem da capa.');
+  const bytes = Uint8Array.from(atob(encoded), c => c.charCodeAt(0));
+  const path = `ia/${Date.now()}-${slugify(title || 'curso-altitude')}.png`;
+  const { error } = await admin.storage.from('capas_cursos').upload(path, bytes, {
+    contentType: 'image/png',
+    upsert: false,
+  });
+  if (error) throw error;
+  return admin.storage.from('capas_cursos').getPublicUrl(path).data.publicUrl;
+}
+
 Deno.serve(async (req) => {
   if (req.method === 'OPTIONS') return new Response('ok', { headers: corsHeaders });
   if (req.method !== 'POST') return json({ error: 'Metodo nao permitido.' }, 405);
@@ -117,6 +149,20 @@ Deno.serve(async (req) => {
   let createdCourseId: number | null = null;
   try {
     const body = await req.json();
+
+    if (String(body.modo || '').toUpperCase() === 'CAPA_APENAS') {
+      const title = String(body.titulo || '').trim();
+      const category = String(body.categoria || 'CURSO PROFISSIONAL').trim().toUpperCase();
+      const courseId = Number(body.curso_id || 0) || null;
+      if (title.length < 3) return json({ error: 'Informe o título do curso para gerar a capa.' }, 400);
+      const coverUrl = await generateCourseCover(OPENAI_API_KEY, admin, title, category);
+      if (courseId) {
+        const { error: updateError } = await admin.from('cursos').update({ capa_url: coverUrl }).eq('id', courseId);
+        if (updateError) throw updateError;
+      }
+      return json({ ok: true, capa_url: coverUrl, curso_id: courseId });
+    }
+
     const prompt = String(body.prompt || '').trim();
     const carga = Math.max(5, Math.min(200, Math.round((Number(body.carga_horaria) || 20) / 5) * 5));
     const nivel = ['BASICO','INTERMEDIARIO','AVANCADO'].includes(body.nivel) ? body.nivel : 'BASICO';
@@ -167,21 +213,12 @@ Deno.serve(async (req) => {
 
     let coverUrl: string | null = null;
     if (generateCover) {
-      const imageResponse = await fetch('https://api.openai.com/v1/images/generations', {
-        method: 'POST', headers: { Authorization: `Bearer ${OPENAI_API_KEY}`, 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          model: Deno.env.get('OPENAI_IMAGE_MODEL') || 'gpt-image-1-mini',
-          prompt: `Capa horizontal profissional para curso educacional da Instituicao Altitude. Tema: ${generated.prompt_capa}. Sem logotipos, sem marcas, sem texto pequeno, sem certificado. Composicao limpa, moderna, confiavel, azul profundo e ciano como acentos, espaco visual para titulo.`,
-          size: '1536x1024', quality: 'medium', output_format: 'png'
-        })
-      });
-      const imageJson = await imageResponse.json();
-      if (imageResponse.ok && imageJson?.data?.[0]?.b64_json) {
-        const bytes = Uint8Array.from(atob(imageJson.data[0].b64_json), c => c.charCodeAt(0));
-        const path = `ia/${Date.now()}-${slugify(generated.titulo)}.png`;
-        const { error } = await admin.storage.from('capas_cursos').upload(path, bytes, { contentType: 'image/png', upsert: false });
-        if (!error) coverUrl = admin.storage.from('capas_cursos').getPublicUrl(path).data.publicUrl;
-      }
+      coverUrl = await generateCourseCover(
+        OPENAI_API_KEY,
+        admin,
+        generated.prompt_capa || generated.titulo,
+        categoria,
+      );
     }
 
     const courseDescription = `${generated.descricao}\n\nPublico-alvo: ${generated.publico_alvo}\nObjetivos: ${generated.objetivos.join('; ')}`;

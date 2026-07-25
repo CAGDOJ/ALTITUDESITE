@@ -1,0 +1,14 @@
+/* ALTITUDE — ajustes finais compartilhados */
+html,body{max-width:100%;overflow-x:hidden}
+img,video,iframe,canvas{max-width:100%}
+button,input,select,textarea{font:inherit}
+.table-card,.card:has(table){max-width:100%;overflow-x:auto;-webkit-overflow-scrolling:touch}
+.modal[aria-hidden="false"]{display:grid}
+@media(max-width:900px){
+  .modal{padding:8px!important}
+  .modal__sheet{width:100%!important;max-width:100%!important;max-height:calc(100dvh - 16px)!important}
+}
+@media(max-width:600px){
+  .mobile-menu-button,.mobile-menu{display:grid!important;place-items:center!important}
+  .toast,.gestor-toast{right:10px!important;left:10px!important;max-width:none!important}
+}

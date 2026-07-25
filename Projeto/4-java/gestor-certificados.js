@@ -294,23 +294,19 @@
     try {
       let result;
       if (action === 'LIBERAR') {
-        result = await sb.rpc('gestor_liberar_certificado_direto', {
+        result = await sb.rpc('gestor_liberar_certificado_v13', {
           p_certificado_id: Number(id),
           p_observacao: observation || null
         });
-        // Compatibilidade enquanto a atualização 09 ainda não foi executada.
-        if (result.error && /gestor_liberar_certificado_direto|function/i.test(result.error.message || '')) {
-          if (String(cert.status || '').toUpperCase() !== 'PENDENTE') {
-            const reopened = await sb.rpc('gestor_decidir_certificado', {
-              p_certificado_id: Number(id),
-              p_acao: 'REABRIR',
-              p_observacao: observation || null
-            });
-            if (reopened.error) throw reopened.error;
-          }
-          result = await sb.rpc('gestor_decidir_certificado', {
+        if (result.error && /gestor_liberar_certificado_v13|function/i.test(result.error.message || '')) {
+          result = await sb.rpc('gestor_liberar_certificado_v12', {
             p_certificado_id: Number(id),
-            p_acao: 'LIBERAR',
+            p_observacao: observation || null
+          });
+        }
+        if (result.error && /gestor_liberar_certificado_v12|function/i.test(result.error.message || '')) {
+          result = await sb.rpc('gestor_liberar_certificado_direto', {
+            p_certificado_id: Number(id),
             p_observacao: observation || null
           });
         }
@@ -328,7 +324,11 @@
       await carregarCertificadosGestao();
       if (byId('modalCertificadoGestao')?.getAttribute('aria-hidden') === 'false') await abrirDetalhesCertificado(id);
     } catch (error) {
-      toast(`Não foi possível ${verb}: ${error.message}`, true);
+      const message = String(error.message || error);
+      toast(`Não foi possível ${verb}: ${message}`, true);
+      if (/valide primeiro as horas|saldo insuficiente|limite automático|período disponível/i.test(message)) {
+        abrirGerenciaHoras(cert.aluno_id, cert.curso_id);
+      }
     }
   }
 

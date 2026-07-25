@@ -700,3 +700,28 @@ a{color:inherit}
 .digital-card-qr img{display:none!important}
 .digital-card-qr>div>canvas:not(:first-child),
 .digital-card-qr>div>img:not(:first-child){display:none!important}
+
+/* =========================================================
+   ATUALIZAÇÃO 13 — acabamento final da carteirinha
+   ========================================================= */
+.digital-card-body > img,
+#previewFotoAluno,
+#avatarTopo {
+  border-radius: 50% !important;
+  object-fit: cover !important;
+  object-position: center !important;
+}
+.digital-card-body > img {
+  border: 3px solid rgba(255,255,255,.82);
+  box-shadow: 0 4px 14px rgba(0,0,0,.16);
+  aspect-ratio: 1 / 1;
+}
+.student-card-name { text-transform: uppercase; }
+
+@media (max-width: 700px) {
+  .student-sidebar { height: 100dvh; max-height: 100dvh; overflow-y: auto; }
+  .student-content { min-width: 0; }
+  .surface-card, .welcome-panel, .student-topbar { max-width: 100%; }
+  .portal-table { min-width: 660px; }
+  .table-card { overflow-x: auto; -webkit-overflow-scrolling: touch; }
+}

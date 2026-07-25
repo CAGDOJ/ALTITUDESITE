@@ -102,7 +102,7 @@ function abrirAba(id) {
 -----------------------------------------------------------*/
 let alunos = [];
 const pageAln = { idx:1, size:10 };
-let editIndexAln = -1;
+let editAlunoId = null;
 const $ = s => document.querySelector(s);
 
 function up(t){
@@ -141,7 +141,7 @@ async function carregarAlunosDoSupabase() {
     alunos = data.map(aluno => ({
       id: aluno.user_id,
       ra: aluno.ra || '',
-      nome: aluno.nome || '',
+      nome: String(aluno.nome || '').toUpperCase(),
       email: aluno.email || '',
       telefone: aluno.telefone || '',
       status: aluno.status || 'ATIVO',
@@ -206,49 +206,50 @@ function renderAlunos(){
   const start = (pageAln.idx-1)*pageAln.size;
   const rows = data.slice(start, start+pageAln.size);
 
-  tbody.innerHTML = rows.map((a,i)=>`
-    <tr>
-      <td>${a.ra}</td>
-      <td>${a.nome}</td>
+  tbody.innerHTML = rows.map((a)=>`
+    <tr data-aluno-id="${a.id}">
+      <td><strong>${a.ra}</strong></td>
+      <td class="student-name-cell">${String(a.nome || '').toUpperCase()}</td>
       <td>${a.email}</td>
       <td>${maskPhone(a.telefone)}</td>
       <td><span class="badge ${a.status==='ATIVO'?'ativo':'inativo'}">${a.status}</span></td>
-      <td>
-        <button class="btn-mini" data-act="edit" data-id="${a.id}" data-i="${start+i}">Editar</button>
-        <button class="btn-mini" data-act="toggle" data-id="${a.id}" data-i="${start+i}">${a.status==='ATIVO'?'Inativar':'Ativar'}</button>
+      <td class="student-actions">
+        <button class="btn-mini primary-action-mini" data-act="edit" data-id="${a.id}">Editar dados</button>
+        <button class="btn-mini" data-act="toggle" data-id="${a.id}">${a.status==='ATIVO'?'Inativar':'Ativar'}</button>
       </td>
     </tr>`).join('');
   $('#pgInfo') && ($('#pgInfo').textContent = `${pageAln.idx} / ${totalPages}`);
 }
 
-function openModalAln(idx=-1){
+function openModalAln(alunoId = null){
   mostrarCarregamento('Preparando formulário...');
-  
+
   setTimeout(() => {
-    editIndexAln = idx;
-    $('#modalTitulo').textContent = idx>=0 ? 'Editar aluno' : 'Novo aluno';
-    
-    if (idx >= 0) {
-      const a = alunos[idx];
-      $('#fRa').value = a.ra || '';
-      $('#fStatus').value = a.status || 'ATIVO';
-      $('#fNome').value = a.nome || '';
-      $('#fEmail').value = a.email || '';
-      $('#fTel').value = maskPhone(a.telefone||'');
-    } else {
-      $('#fRa').value = gerarRaLocal();
-      $('#fStatus').value = 'ATIVO';
-      $('#fNome').value = '';
-      $('#fEmail').value = '';
-      $('#fTel').value = '';
+    editAlunoId = alunoId ? String(alunoId) : null;
+    const aluno = editAlunoId
+      ? alunos.find((item) => String(item.id) === editAlunoId || String(item.user_id) === editAlunoId)
+      : null;
+
+    if (editAlunoId && !aluno) {
+      esconderCarregamento();
+      alert('Aluno não encontrado. Atualize a lista e tente novamente.');
+      return;
     }
-    
+
+    $('#modalTitulo').textContent = aluno ? 'Editar aluno' : 'Novo aluno';
+    $('#fRa').value = aluno?.ra || gerarRaLocal();
+    $('#fStatus').value = aluno?.status || 'ATIVO';
+    $('#fNome').value = String(aluno?.nome || '').toUpperCase();
+    $('#fEmail').value = aluno?.email || '';
+    $('#fTel').value = maskPhone(aluno?.telefone || '');
+
     $('#modalAluno').setAttribute('aria-hidden','false');
     esconderCarregamento();
-  }, 200);
+  }, 120);
 }
 
 function closeModalAln(){ 
+  editAlunoId = null;
   $('#modalAluno')?.setAttribute('aria-hidden','true'); 
 }
 
@@ -339,14 +340,16 @@ function carregarAlunos(){
       const btn = ev.target.closest('button'); 
       if(!btn) return;
       
-      const idx = parseInt(btn.dataset.i,10); 
       const alunoId = btn.dataset.id;
       const act = btn.dataset.act;
+      const idx = alunos.findIndex((aluno) => String(aluno.id) === String(alunoId));
+      if(idx < 0) {
+        alert('Aluno não encontrado. Atualize a lista e tente novamente.');
+        return;
+      }
       
-      if(Number.isNaN(idx)) return;
-      
-      if(act==='edit'){ 
-        openModalAln(idx); 
+      if(act==='edit'){
+        openModalAln(alunoId);
       }
       
       if(act==='toggle'){ 
@@ -378,13 +381,13 @@ function carregarAlunos(){
       };
 
       try {
-        if(editIndexAln>=0){ 
-          const alunoId = alunos[editIndexAln].id;
+        if(editAlunoId){ 
+          const alunoId = editAlunoId;
           await salvarAluno(payload, true, alunoId);
-          alunos[editIndexAln] = { ...payload, id: alunoId };
+          const idxAtual = alunos.findIndex((aluno) => String(aluno.id) === String(alunoId));
+          if (idxAtual >= 0) alunos[idxAtual] = { ...alunos[idxAtual], ...payload, nome: up(payload.nome), id: alunoId, user_id: alunoId };
         } else { 
-          const novoAluno = await salvarAluno(payload, false);
-          alunos.push({ ...payload, id: novoAluno.id });
+          throw new Error('Novos alunos devem usar o cadastro público.');
         }
         
         closeModalAln(); 
@@ -535,17 +538,12 @@ function gerarRaLocal(){
           </span>
         </td>
         <td class="col-acoes course-action-cell">
-          <button class="btn-mini gc-mods course-build-button" title="Cadastrar módulos, PDFs, materiais e prova">Montar curso</button>
+          <button class="btn-mini gc-edit" title="Editar nome, carga, capa e descrição">Editar dados</button>
+          <button class="btn-mini gc-mods course-build-button" title="Cadastrar módulos, conteúdo, PDFs e prova">Montar curso</button>
+          <button class="btn-mini gc-prev" title="Visualizar o curso">Pré-visualizar</button>
           <button class="btn-mini gc-publish ${c.publicado ? 'is-live' : ''}" title="${c.publicado ? 'Retirar do catálogo' : 'Revisar e publicar'}">${c.publicado ? '✓ Publicado' : 'Publicar'}</button>
-          <details class="course-more-actions">
-            <summary>Mais ações</summary>
-            <div>
-              <button class="btn-mini gc-edit" title="Editar dados do curso">Editar dados</button>
-              <button class="btn-mini gc-prev" title="Visualizar no portal do aluno">Pré-visualizar</button>
-              <button class="btn-mini gc-dup" title="Duplicar curso">Duplicar</button>
-              <button class="btn-mini gc-del danger" title="Excluir curso">Excluir</button>
-            </div>
-          </details>
+          <button class="btn-mini gc-dup" title="Duplicar curso">Duplicar</button>
+          <button class="btn-mini gc-del danger" title="Excluir curso">Excluir</button>
         </td>
       </tr>
     `).join('');
@@ -583,6 +581,7 @@ function gerarRaLocal(){
       if ($('#fCursoDestaque')) $('#fCursoDestaque').checked = false;
       const prev = $('#cursoCapaPreview'); if (prev) prev.innerHTML = '<span>A capa aparecerá aqui</span>';
 
+      if ($('#modalCurso')) $('#modalCurso').dataset.courseId = '';
       $('#modalCurso')?.setAttribute('aria-hidden', 'false');
       esconderCarregamento();
     }, 300);
@@ -609,6 +608,7 @@ function gerarRaLocal(){
       const prev = $('#cursoCapaPreview');
       if (prev) prev.innerHTML = c.capa_url ? `<img src="${c.capa_url}" alt="Capa atual">` : '<span>Curso sem capa</span>';
 
+      if ($('#modalCurso')) $('#modalCurso').dataset.courseId = String(id);
       $('#modalCurso')?.setAttribute('aria-hidden', 'false');
       esconderCarregamento();
     }, 300);
@@ -890,6 +890,7 @@ function gerarRaLocal(){
               <div class="builder-module-copy">
                 <h5>${safeTitle}</h5>
                 <p>${modulo.descricao ? String(modulo.descricao).replaceAll('&', '&amp;').replaceAll('<', '&lt;').replaceAll('>', '&gt;') : 'Sem descrição cadastrada.'}</p>
+                <small class="builder-content-preview">${String(modulo.conteudo || '').trim() ? String(modulo.conteudo).trim().slice(0, 150).replaceAll('&', '&amp;').replaceAll('<', '&lt;').replaceAll('>', '&gt;') + (String(modulo.conteudo).trim().length > 150 ? '…' : '') : (modulo.pdf_url ? 'Apostila em PDF anexada.' : 'Nenhum conteúdo inserido ainda.')}</small>
               </div>
               <span class="builder-status ${modulo.publicado ? 'live' : ''}">${modulo.publicado ? 'LIBERADO' : 'RASCUNHO'}</span>
             </div>
@@ -907,7 +908,7 @@ function gerarRaLocal(){
             </div>
 
             <div class="builder-module-actions">
-              <button type="button" class="primary" data-module-action="content">Conteúdo</button>
+              <button type="button" class="primary" data-module-action="content">Editar módulo</button>
               <button type="button" data-module-action="materials">Materiais</button>
               <button type="button" data-module-action="exam">Prova</button>
               <button type="button" data-module-action="toggle">${modulo.publicado ? 'Desativar' : 'Liberar módulo'}</button>
@@ -925,6 +926,16 @@ function gerarRaLocal(){
     }
   }
 
+  async function uploadPdfModulo(file, cursoId) {
+    if (!file) return null;
+    if (file.type && file.type !== 'application/pdf') throw new Error('Selecione um arquivo PDF válido.');
+    const safeName = String(file.name || 'apostila.pdf').normalize('NFD').replace(/[\u0300-\u036f]/g, '').replace(/[^a-zA-Z0-9._-]/g, '_');
+    const path = `${cursoId}/modulos/${Date.now()}-${safeName}`;
+    const { error } = await sb.storage.from('materiais_cursos').upload(path, file, { upsert: false, contentType: 'application/pdf' });
+    if (error) throw error;
+    return sb.storage.from('materiais_cursos').getPublicUrl(path).data.publicUrl;
+  }
+
   async function adicionarModulo() {
     debugModulos('=== INICIANDO ADIÇÃO DE MÓDULO ===');
     mostrarCarregamento('Adicionando módulo...');
@@ -940,6 +951,9 @@ function gerarRaLocal(){
     const ordemInput = $('#fModuloOrdem');
     const descricaoInput = $('#fModuloDesc');
     const conteudoInput = $('#fModuloConteudo');
+    const pdfInput = $('#fModuloPdfArquivo');
+    const videoInput = $('#fModuloVideo');
+    const publicadoInput = $('#fModuloPublicado');
 
     if (!tituloInput || !ordemInput) {
       esconderCarregamento();
@@ -951,6 +965,9 @@ function gerarRaLocal(){
     const ordem = parseInt(ordemInput.value) || 1;
     const descricao = descricaoInput ? descricaoInput.value.trim() : '';
     const conteudo = conteudoInput ? conteudoInput.value.trim() : '';
+    const pdfFile = pdfInput?.files?.[0] || null;
+    const videoUrl = videoInput?.value?.trim() || '';
+    const publicado = Boolean(publicadoInput?.checked);
 
     if (!titulo) {
       esconderCarregamento();
@@ -964,6 +981,7 @@ function gerarRaLocal(){
     try {
       debugModulos('Enviando para Supabase...');
       
+      const pdfUrl = await uploadPdfModulo(pdfFile, cursoEditandoId);
       const { data, error } = await sb
         .from('modulos')
         .insert([{
@@ -972,7 +990,9 @@ function gerarRaLocal(){
           ordem: ordem,
           descricao: descricao,
           conteudo: conteudo,
-          publicado: false,
+          pdf_url: pdfUrl,
+          video_url: videoUrl || null,
+          publicado: publicado,
           created_at: new Date().toISOString()
         }])
         .select();
@@ -982,12 +1002,28 @@ function gerarRaLocal(){
         throw error;
       }
 
+      const moduloCriado = data?.[0];
+      if (pdfUrl && moduloCriado?.id) {
+        const { error: materialError } = await sb.from('materiais').insert({
+          curso_id: cursoEditandoId,
+          modulo_id: moduloCriado.id,
+          tipo: 'PDF',
+          titulo: `Apostila — ${titulo}`,
+          url: pdfUrl,
+          criado_em: new Date().toISOString()
+        });
+        if (materialError) console.warn('Módulo salvo, mas o material PDF não foi indexado:', materialError.message);
+      }
+
       debugModulos('✅ Módulo salvo com sucesso no Supabase:', data);
 
       tituloInput.value = '';
       if (descricaoInput) descricaoInput.value = '';
       if (conteudoInput) conteudoInput.value = '';
-      ordemInput.value = '1';
+      if (pdfInput) pdfInput.value = '';
+      if (videoInput) videoInput.value = '';
+      if (publicadoInput) publicadoInput.checked = false;
+      ordemInput.value = String((data?.[0]?.ordem || ordem) + 1);
 
       await carregarModulosCurso(cursoEditandoId);
       
@@ -1739,5 +1775,7 @@ function gerarRaLocal(){
     carregarCursosCompleto();
   }
 
+  window.carregarCursosCompleto = carregarCursosCompleto;
+  window.carregarModulosCursoAtual = () => cursoEditandoId ? carregarModulosCurso(cursoEditandoId) : Promise.resolve();
   document.addEventListener('DOMContentLoaded', wireCursosUI);
 })();

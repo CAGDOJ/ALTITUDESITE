@@ -41,7 +41,7 @@
 
   function pageTitle(tab) {
     return ({
-      dashboard: 'Visão geral', cursos: 'Cursos e conteúdos', 'curso-ia': 'Criar curso com IA',
+      dashboard: 'Visão geral', cursos: 'Cursos e conteúdos', 'curso-ia': 'Assistente acadêmico',
       alunos: 'Gestão de alunos', 'certificados-gestao': 'Certificados', usuarios: 'Equipe e acessos', chamados: 'Atendimento'
     })[tab] || 'Portal de Gestão';
   }
@@ -404,18 +404,175 @@
       console.error(error);
       const message = error?.message || 'Falha ao gerar o curso.';
       if (resultBox) {
-        resultBox.innerHTML = `<strong>Configuração necessária</strong><p>${escapeHtml(message)}</p><small>Confira o arquivo GUIA_CRIADOR_IA.md antes do primeiro uso.</small>`;
+        resultBox.innerHTML = `<strong>Não foi possível usar a IA agora</strong><p>${escapeHtml(message)}</p><small>Você pode continuar sem custo usando “Importar curso por JSON” ou criar o curso manualmente.</small>`;
         resultBox.classList.remove('hidden');
       }
-      toast('O criador com IA precisa ser publicado no Supabase.', 'error');
+      toast(`IA indisponível: ${message}`, 'error');
     } finally {
       setLoading(button, false);
     }
   }
 
+  async function gerarSomenteCapaIA(courseId = null) {
+    const cursoId = Number(courseId || document.querySelector('#modalCurso')?.dataset?.courseId || 0);
+    const titulo = document.querySelector('#fCursoNome')?.value?.trim() || document.querySelector('#iaPrompt')?.value?.trim();
+    const categoria = document.querySelector('#fCursoArea')?.value || document.querySelector('#iaCategoria')?.value || 'FORMAÇÃO';
+    if (!titulo) return toast('Informe primeiro o nome ou tema do curso.', 'error');
+    const button = document.activeElement instanceof HTMLButtonElement ? document.activeElement : null;
+    setLoading(button, true, 'Gerando capa...');
+    try {
+      const { data, error } = await sb.functions.invoke('criar-curso-ia', {
+        body: { modo: 'CAPA_APENAS', curso_id: cursoId || null, titulo, categoria, usar_logo_altitude: true }
+      });
+      if (error) throw error;
+      if (!data?.capa_url) throw new Error(data?.error || 'A função não retornou a imagem da capa.');
+      if (document.querySelector('#cursoCapaPreview')) document.querySelector('#cursoCapaPreview').innerHTML = `<img src="${escapeHtml(data.capa_url)}" alt="Capa gerada pela IA">`;
+      if (cursoId) await sb.from('cursos').update({ capa_url: data.capa_url }).eq('id', cursoId);
+      toast('Capa gerada. Revise a imagem antes de publicar.');
+      if (typeof window.carregarCursosCompleto === 'function') await window.carregarCursosCompleto();
+    } catch (error) {
+      toast(`Não foi possível gerar a capa: ${error.message}. Você pode continuar enviando uma imagem manual.`, 'error');
+    } finally {
+      setLoading(button, false);
+    }
+  }
+
+  function validarCursoJson(raw) {
+    const data = JSON.parse(raw);
+    if (!data || typeof data !== 'object') throw new Error('JSON inválido.');
+    if (!String(data.titulo || '').trim()) throw new Error('O JSON precisa conter o campo titulo.');
+    if (!Array.isArray(data.modulos) || !data.modulos.length) throw new Error('O JSON precisa conter ao menos um módulo.');
+    return data;
+  }
+
+  async function importarCursoJson() {
+    const input = document.querySelector('#cursoJsonInput');
+    const message = document.querySelector('#cursoJsonMensagem');
+    const button = document.querySelector('#confirmarImportarCursoJson');
+    setLoading(button, true, 'Importando...');
+    try {
+      const payload = validarCursoJson(input?.value || '');
+      const carga = Math.max(5, Math.min(200, Math.round(Number(payload.carga_horaria || 20) / 5) * 5));
+      const { data: course, error: courseError } = await sb.from('cursos').insert({
+        titulo: String(payload.titulo).trim(),
+        descricao: String(payload.descricao || '').trim(),
+        categoria: String(payload.categoria || 'FORMAÇÃO').trim().toUpperCase(),
+        carga_horaria: carga,
+        nivel: String(payload.nivel || 'BASICO').toUpperCase(),
+        nota_minima: Number(payload.nota_minima || 70),
+        capa_url: payload.capa_url || null,
+        publicado: false,
+        criado_em: new Date().toISOString()
+      }).select().single();
+      if (courseError) throw courseError;
+
+      const moduleIdMap = [];
+      for (let index = 0; index < payload.modulos.length; index += 1) {
+        const module = payload.modulos[index] || {};
+        const { data: created, error } = await sb.from('modulos').insert({
+          curso_id: course.id,
+          titulo: String(module.titulo || `Módulo ${index + 1}`).trim(),
+          descricao: String(module.descricao || '').trim(),
+          conteudo: String(module.conteudo || '').trim(),
+          ordem: Number(module.ordem || index + 1),
+          pdf_url: module.pdf_url || null,
+          video_url: module.video_url || null,
+          publicado: false,
+          created_at: new Date().toISOString()
+        }).select().single();
+        if (error) throw error;
+        moduleIdMap.push(created.id);
+      }
+
+      const prova = payload.prova || {};
+      if (Array.isArray(prova.questoes) && prova.questoes.length) {
+        const { data: test, error: testError } = await sb.from('provas').insert({
+          curso_id: course.id,
+          modulo_id: moduleIdMap[moduleIdMap.length - 1] || null,
+          titulo: String(prova.titulo || `Avaliação final — ${course.titulo}`),
+          criado_em: new Date().toISOString()
+        }).select().single();
+        if (testError) throw testError;
+        const questions = prova.questoes.slice(0, 30).map((q) => ({
+          prova_id: test.id,
+          enunciado: String(q.enunciado || q.pergunta || '').trim(),
+          a: String(q.a || '').trim(), b: String(q.b || '').trim(), c: String(q.c || '').trim(), d: String(q.d || '').trim(),
+          correta: String(q.correta || 'A').trim().toUpperCase(),
+          explicacao: String(q.explicacao || '').trim() || null
+        })).filter((q) => q.enunciado && q.a && q.b && q.c && q.d && ['A','B','C','D'].includes(q.correta));
+        if (questions.length) {
+          const { error: qError } = await sb.from('questoes').insert(questions);
+          if (qError) throw qError;
+        }
+      }
+
+      if (message) { message.hidden = false; message.textContent = `Curso “${course.titulo}” importado como rascunho com ${moduleIdMap.length} módulo(s).`; }
+      toast('Curso importado. Agora revise e publique.');
+      if (typeof window.carregarCursosCompleto === 'function') await window.carregarCursosCompleto();
+      setTimeout(() => { document.querySelector('#modalImportarCursoJson')?.setAttribute('aria-hidden', 'true'); window.abrirAba('cursos'); }, 900);
+    } catch (error) {
+      if (message) { message.hidden = false; message.textContent = error.message; }
+      toast(`Importação: ${error.message}`, 'error');
+    } finally {
+      setLoading(button, false);
+    }
+  }
+
+  function configurarAtualizacaoPeriodicaGestor() {
+    if (window.__altitudePollingGestor) return;
+    window.__altitudePollingGestor = true;
+    let running = false;
+    const refresh = async () => {
+      if (document.hidden || running) return;
+      running = true;
+      try {
+        const active = document.querySelector('.aba.ativa')?.id;
+        if (active === 'cursos' && typeof window.carregarCursosCompleto === 'function') await window.carregarCursosCompleto();
+        if (active === 'dashboard') await carregarDashboard();
+        if (active === 'alunos' && typeof window.carregarAlunosDoSupabase === 'function') await window.carregarAlunosDoSupabase();
+        if (active === 'certificados-gestao') document.querySelector('#btnAtualizarCertificados')?.click();
+        if (active === 'chamados') document.querySelector('#chAtualizarLista')?.click();
+      } catch (error) {
+        console.warn('Atualização periódica da gestão:', error.message);
+      } finally {
+        running = false;
+      }
+    };
+    window.setInterval(refresh, 12000);
+    document.addEventListener('visibilitychange', () => { if (!document.hidden) refresh(); });
+    window.addEventListener('focus', refresh);
+  }
+
+  function configurarTempoRealGestor() {
+    if (!window.sb || window.__altitudeRealtimeGestor) return;
+    window.__altitudeRealtimeGestor = true;
+    let timer;
+    const refresh = () => {
+      clearTimeout(timer);
+      timer = setTimeout(async () => {
+        const active = document.querySelector('.aba.ativa')?.id;
+        if (active === 'cursos' && typeof window.carregarCursosCompleto === 'function') await window.carregarCursosCompleto();
+        if (active === 'dashboard') await carregarDashboard();
+        if (active === 'alunos' && typeof window.carregarAlunosDoSupabase === 'function') await window.carregarAlunosDoSupabase();
+        if (active === 'certificados-gestao') document.querySelector('#btnAtualizarCertificados')?.click();
+        if (active === 'chamados') document.querySelector('#chAtualizarLista')?.click();
+      }, 350);
+    };
+    const tables = ['cursos','modulos','materiais','provas','questoes','matriculas','alunos','certificados','carteiras_horas_curso','chamados','chamado_interacoes','avaliacoes_cursos'];
+    const channel = sb.channel('altitude-gestor-tempo-real');
+    tables.forEach((table) => channel.on('postgres_changes', { event: '*', schema: 'public', table }, refresh));
+    channel.subscribe((status) => {
+      const indicator = document.querySelector('.status-dot');
+      if (indicator) indicator.title = status === 'SUBSCRIBED' ? 'Atualizações em tempo real ativas' : 'Conectando atualizações em tempo real';
+    });
+  }
+
   async function wire() {
     const profile = await window.GESTOR_AUTH_READY;
     if (!profile) return;
+    const managerName = String(profile.nome || 'GESTOR ALTITUDE').trim().toUpperCase();
+    if ($('#gestorNomeAtual')) $('#gestorNomeAtual').textContent = managerName;
+    if ($('#gestorIdAtual')) $('#gestorIdAtual').textContent = String(profile.gestor_id || '—').toUpperCase();
     $('#gestorHoje').textContent = new Intl.DateTimeFormat('pt-BR', { dateStyle: 'long' }).format(new Date());
     if (typeof window.carregarAlunos === 'function') window.carregarAlunos();
     $('#btnMenuGestor')?.addEventListener('click', () => {
@@ -446,6 +603,11 @@
     });
     $('#btnGerarPdfModulo')?.addEventListener('click', gerarPdfModulo);
     $('#formCursoIA')?.addEventListener('submit', gerarCursoIA);
+    $('#btnGerarSomenteCapaIA')?.addEventListener('click', () => gerarSomenteCapaIA(Number(document.querySelector('#modalCurso')?.dataset?.courseId || 0)));
+    $('#btnGerarCapaIAAvulsa')?.addEventListener('click', () => gerarSomenteCapaIA());
+    $('#btnImportarCursoJson')?.addEventListener('click', () => $('#modalImportarCursoJson')?.setAttribute('aria-hidden', 'false'));
+    $('#fecharImportarCursoJson')?.addEventListener('click', () => $('#modalImportarCursoJson')?.setAttribute('aria-hidden', 'true'));
+    $('#confirmarImportarCursoJson')?.addEventListener('click', importarCursoJson);
     document.addEventListener('click', event => {
       const btn = event.target.closest('.gc-publish');
       if (!btn) return;
@@ -453,6 +615,7 @@
       const tr = btn.closest('tr[data-id]');
       if (tr) alternarPublicacaoCurso(Number(tr.dataset.id), btn);
     }, true);
+    configurarTempoRealGestor();
     carregarDashboard();
   }
 

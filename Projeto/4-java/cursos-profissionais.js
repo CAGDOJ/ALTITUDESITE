@@ -140,6 +140,7 @@
       <article class="public-course-card" data-id="${Number(curso.id)}">
         <div class="public-course-cover">
           <img src="${escapeHTML(capa(curso.capa_url))}" alt="Capa do curso ${escapeHTML(curso.titulo)}" loading="lazy" onerror="this.src='/Projeto/3-img/LOGO.png'">
+          <img class="course-brand-mark" src="/Projeto/3-img/LOGO.png" alt="" aria-hidden="true">
           ${hot ? `<span class="hot-badge">Em alta</span>` : ""}
           <span class="workload-chip">${Number(curso.carga_horaria || 0)}h</span>
         </div>
@@ -267,10 +268,35 @@
     document.addEventListener("keydown", (event) => { if (event.key === "Escape") fecharModal(); });
   }
 
+  function configurarTempoRealCatalogo() {
+    if (!sb || window.__altitudeRealtimeCatalogo) return;
+    window.__altitudeRealtimeCatalogo = true;
+    let timer;
+    const refresh = () => {
+      clearTimeout(timer);
+      timer = setTimeout(async () => {
+        try {
+          state.cursos = await carregarCursos();
+          renderCategorias();
+          renderCargas();
+          renderCursos();
+        } catch (error) {
+          console.warn("Catálogo em tempo real:", error.message);
+        }
+      }, 450);
+    };
+    const channel = sb.channel('altitude-catalogo-tempo-real');
+    ['cursos','modulos','materiais','matriculas','avaliacoes_cursos'].forEach((table) => {
+      channel.on('postgres_changes', { event: '*', schema: 'public', table }, refresh);
+    });
+    channel.subscribe();
+  }
+
   async function start() {
     wire();
     try {
       state.cursos = await carregarCursos();
+      configurarTempoRealCatalogo();
       renderCategorias();
       renderCargas();
       renderCursos();

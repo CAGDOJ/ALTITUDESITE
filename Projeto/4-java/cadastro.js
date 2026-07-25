@@ -304,7 +304,6 @@ form?.addEventListener("submit", async (e) => {
       email: payloadAluno.email,
       password: senhaEl.value,
       options: {
-        emailRedirectTo: "https://www.portalaltitude.com.br/Projeto/1-html/4-login.html",
         data: {
           perfil: "ALUNO",
           nome: payloadAluno.nome,
@@ -319,8 +318,11 @@ form?.addEventListener("submit", async (e) => {
     if (authError) throw authError;
     if (!authData?.user?.id) throw new Error("Usuário criado sem ID.");
 
-    showMsg(authData.session ? "Cadastro realizado com sucesso!" : "Cadastro realizado. Confirme seu e-mail para entrar.", "ok");
-    alert(authData.session ? "Cadastro realizado com sucesso!" : "Cadastro realizado. Confira seu e-mail para confirmar a conta.");
+    if (!authData.session) {
+      throw new Error("A confirmação de e-mail ainda está ativada no Supabase. Desative Confirm email em Authentication > Providers > Email para liberar o acesso imediato.");
+    }
+    showMsg("Cadastro realizado com sucesso! Você já pode entrar no portal.", "ok");
+    alert("Cadastro realizado com sucesso! Você já pode entrar no portal.");
     form.reset();
 
     [nomeEl, cpfEl, nascEl, emailEl, senhaEl, confEl, telEl, objetivoEl].forEach(el => {

@@ -125,3 +125,11 @@ button, input, select { font: inherit; }
   .workload-box { min-height: 76px; padding: 11px; }
   .public-course-actions { flex-direction: column; }
 }
+
+/* Marca oficial sobre as capas dos cursos */
+.public-course-cover .course-brand-mark{
+  position:absolute;left:12px;bottom:10px;z-index:3;
+  width:min(132px,42%)!important;height:auto!important;object-fit:contain!important;
+  padding:6px 8px;border-radius:9px;background:rgba(255,255,255,.90);
+  box-shadow:0 4px 14px rgba(7,49,79,.16)
+}

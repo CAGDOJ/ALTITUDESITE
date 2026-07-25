@@ -10,6 +10,7 @@
   <link rel="stylesheet" href="../2-css/base-portal.css">
   <link rel="stylesheet" href="../2-css/11-portaldoaluno.css">
   <link rel="stylesheet" href="../2-css/06-responsive.css">
+  <link rel="stylesheet" href="../2-css/15-ajustes-finais.css">
 </head>
 <body>
   <div class="portal-layout">
@@ -224,6 +225,10 @@
             <p>Consulte solicitações e pagamentos registrados em sua conta.</p>
           </div>
         </div>
+        <div class="payment-whatsapp-card">
+          <div><strong>Pagamentos e atendimento financeiro</strong><span>Após escolher o serviço, fale com a instituição pelo WhatsApp para receber as instruções de pagamento.</span></div>
+          <a href="https://w.app/Altitude" target="_blank" rel="noopener" class="whatsapp-payment-button">Falar com a Altitude no WhatsApp</a>
+        </div>
         <div class="surface-card table-card" id="listaPagamentos"></div>
       </section>
 
@@ -316,7 +321,7 @@
 
           <article class="surface-card student-card-area">
             <div class="card-title-row">
-              <div><h2>Carteirinha digital</h2><p>Documento digital com QR Code de autenticação.</p></div>
+              <div><h2>Carteirinha digital</h2><p>Liberada após a conclusão e aprovação em pelo menos um curso.</p></div>
             </div>
             <div id="boxCarteirinha"></div>
             <button type="button" id="btnBaixarCarteirinha" class="primary-button card-download-button">Baixar carteirinha em PDF</button>
@@ -400,5 +405,6 @@
   <script src="../4-java/supabase-init.js"></script>
   <script src="../4-java/portaldoaluno.js"></script>
   <script src="../4-java/06-responsive.js"></script>
+  <script src="../4-java/15-ajustes-finais.js" defer></script>
 </body>
 </html>

@@ -1434,3 +1434,100 @@ body:has(.gestor-topbar) .sidebar-bottom {
 .simple-exam-card strong { display: block; color: #102c43; overflow-wrap: anywhere; }
 .simple-exam-card small { display: block; margin-top: 4px; color: #728598; }
 .simple-exam-card > div:last-child { display: flex; gap: 7px; flex-wrap: wrap; justify-content: flex-end; }
+
+/* =========================================================
+   ATUALIZAÇÃO 13 — gestão compacta, legível e responsiva
+   ========================================================= */
+.course-action-cell {
+  display: grid !important;
+  grid-template-columns: repeat(2, minmax(118px, 1fr));
+  gap: 7px;
+  min-width: 270px;
+  align-items: stretch;
+}
+.course-action-cell .btn-mini {
+  width: 100%;
+  min-height: 38px;
+  margin: 0 !important;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  white-space: normal;
+  line-height: 1.15;
+}
+.student-name-cell { text-transform: uppercase; font-weight: 800; }
+
+.course-builder-modal {
+  width: min(1020px, calc(100vw - 56px)) !important;
+  max-width: 1020px !important;
+  max-height: min(86dvh, 760px) !important;
+}
+.course-builder-header { padding: 15px 18px 12px; }
+.course-builder-header h3 { font-size: 19px; }
+.course-builder-header p:not(.builder-eyebrow) { font-size: 12px; }
+.builder-steps { padding: 8px 16px; gap: 5px; }
+.builder-steps span { padding: 6px 7px; font-size: 10px; }
+.builder-steps span b { width: 21px; height: 21px; flex-basis: 21px; }
+.course-builder-grid {
+  grid-template-columns: minmax(250px, 300px) minmax(0, 1fr);
+  min-height: 0;
+  max-height: calc(min(86dvh, 760px) - 160px);
+}
+.builder-create-panel, .builder-list-panel { padding: 15px; }
+.builder-module-form { margin-top: 11px; }
+.builder-module-form label,
+.builder-edit-panel label { margin-bottom: 9px; font-size: 12px; }
+.builder-module-form input,
+.builder-module-form textarea,
+.builder-edit-panel input,
+.builder-edit-panel textarea { padding: 9px 10px; }
+.builder-help-card { margin-top: 11px; padding: 10px; }
+.builder-list-heading { margin-bottom: 10px; }
+.builder-module-list { gap: 9px; }
+.builder-module-card { padding: 12px; }
+.builder-module-copy h5 { font-size: 14px; }
+.builder-progress-row { margin: 9px 0 7px; }
+.builder-module-actions { margin-top: 9px; }
+.builder-footer { padding: 9px 16px; }
+
+.manager-sidebar {
+  height: 100dvh !important;
+  max-height: 100dvh !important;
+  overflow-y: auto !important;
+  overscroll-behavior: contain;
+}
+.manager-content { min-width: 0; }
+
+@media (max-width: 1120px) {
+  .course-builder-modal {
+    width: min(96vw, 900px) !important;
+    max-height: 92dvh !important;
+  }
+  .course-builder-grid {
+    max-height: calc(92dvh - 155px);
+    grid-template-columns: minmax(230px, 280px) minmax(0, 1fr);
+  }
+}
+
+@media (max-width: 760px) {
+  .course-action-cell { grid-template-columns: 1fr 1fr; min-width: 250px; }
+  .course-builder-modal {
+    width: 100vw !important;
+    max-width: none !important;
+    height: 100dvh !important;
+    max-height: none !important;
+    border-radius: 0 !important;
+  }
+  .course-builder-header { padding: 12px 14px; }
+  .builder-steps { overflow-x: auto; grid-template-columns: repeat(5, minmax(110px,1fr)); }
+  .course-builder-grid {
+    display: block;
+    max-height: calc(100dvh - 145px);
+    overflow-y: auto;
+  }
+  .builder-create-panel, .builder-list-panel { overflow: visible; border: 0; }
+  .builder-create-panel { border-bottom: 1px solid #dce6ef; }
+  .builder-footer { position: sticky; bottom: 0; z-index: 5; }
+  .builder-footer p { display: none; }
+  .manager-sidebar { width: min(84vw, 300px); }
+}

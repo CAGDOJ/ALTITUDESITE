@@ -11,6 +11,7 @@ const state = {
   cursos: [],
   cursosDisponiveis: [],
   resultados: [],
+  avaliacoes: [],
   certificados: [],
   certificadosHistorico: [],
   carteirasHoras: [],
@@ -172,12 +173,13 @@ async function carregarAluno() {
     .from("alunos")
     .select("*")
     .eq("user_id", state.user.id)
-    .single();
+    .maybeSingle();
 
-  if (error || !data) throw new Error(error?.message || "Cadastro do aluno não encontrado.");
+  if (error) throw new Error(error.message || "Não foi possível carregar o cadastro do aluno.");
+  if (!data) throw new Error("Cadastro do aluno não encontrado. Entre novamente ou procure o atendimento.");
   state.aluno = data;
 
-  const primeiroNome = String(data.nome || "Aluno").trim().split(/\s+/)[0];
+  const primeiroNome = String(data.nome || "Aluno").trim().split(/\s+/)[0].toUpperCase();
   setText("nomeAluno", primeiroNome);
   setText("nomeTopoAluno", primeiroNome);
   setText("infoRA", data.ra || "—");
@@ -246,6 +248,31 @@ async function carregarResultados() {
     .order("criado_em", { ascending: false });
   if (error) throw error;
   state.resultados = data || [];
+}
+
+async function carregarAvaliacoes() {
+  const { data, error } = await sb
+    .from("avaliacoes_cursos")
+    .select("*")
+    .eq("aluno_id", state.aluno.user_id)
+    .order("criado_em", { ascending: false });
+  if (error) {
+    console.warn("Avaliações indisponíveis:", error.message);
+    state.avaliacoes = [];
+    return;
+  }
+  state.avaliacoes = data || [];
+}
+
+function avaliacaoDoCurso(cursoId) {
+  return state.avaliacoes.find((item) => Number(item.curso_id) === Number(cursoId)) || null;
+}
+
+function alunoPodeTerCarteirinha() {
+  return state.cursos.some((curso) => {
+    const resultado = melhorResultadoCurso(curso.id);
+    return clamp(curso.progresso) >= 100 && Boolean(resultado?.aprovado);
+  });
 }
 
 async function carregarCertificados() {
@@ -465,7 +492,10 @@ async function abrirCurso(cursoId) {
   $("lessonContent").innerHTML = "";
 
   try {
-    const { data, error } = await sb.rpc("obter_modulos_curso", { p_curso_id: Number(cursoId) });
+    let { data, error } = await sb.rpc("obter_modulos_curso_v12", { p_curso_id: Number(cursoId) });
+    if (error && /obter_modulos_curso_v12|function/i.test(error.message || "")) {
+      ({ data, error } = await sb.rpc("obter_modulos_curso", { p_curso_id: Number(cursoId) }));
+    }
     if (error) throw error;
     state.modulos = (data || []).map((modulo) => ({
       ...modulo,
@@ -948,6 +978,13 @@ function renderCertificados() {
       help = bloqueado.observacao_gestor || "Uma solicitação foi bloqueada. O saldo devolvido pode ser usado em nova solicitação quando disponível.";
     }
 
+    const avaliacao = avaliacaoDoCurso(curso.id);
+    const avaliacaoHtml = pronto
+      ? (avaliacao
+        ? `<div class="course-review-done"><span>★★★★★</span><strong>Sua avaliação: ${Number(avaliacao.nota || 0)}/5</strong></div>`
+        : `<button class="course-review-button" type="button" onclick="avaliarCurso(${Number(curso.id)})">Avaliar este curso</button>`)
+      : "";
+
     return `<article class="certificate-card hours-wallet-card">
       <div class="certificate-card-top">
         <div><span class="eyebrow">${escapeHTML(curso.categoria || "Certificação")}</span><h3>${escapeHTML(curso.titulo || "Curso")}</h3><p>Carga máxima do curso: ${Number(curso.carga_horaria || 0)}h · ${resultado ? `melhor nota ${Number(resultado.nota || 0)}%` : "prova pendente"}</p></div>
@@ -965,6 +1002,7 @@ function renderCertificados() {
         <div class="requirement ${validadas > 0 ? "ok" : ""}"><b>${validadas > 0 ? "✓" : "3"}</b><span>Horas validadas pela gestão</span></div>
       </div>
       <div class="certificate-card-footer"><span class="certificate-code">${escapeHTML(help)}</span><div class="certificate-actions">${actions}</div></div>
+      ${avaliacaoHtml}
     </article>`;
   }).join("");
   renderHistoricoCertificados();
@@ -985,6 +1023,8 @@ async function avaliarCurso(cursoId) {
       p_comentario: comentario
     });
     if (error) throw error;
+    await carregarAvaliacoes();
+    renderCertificados();
     toast("Avaliação registrada. Obrigado!", "success");
   } catch (error) {
     toast(`Não foi possível avaliar: ${error.message}`, "error");
@@ -1033,6 +1073,31 @@ async function imagemParaDataURL(src) {
     reader.onerror = reject;
     reader.readAsDataURL(blob);
   });
+}
+
+async function imagemCircularDataURL(src, size = 320) {
+  const image = await new Promise((resolve, reject) => {
+    const img = new Image();
+    img.crossOrigin = "anonymous";
+    img.onload = () => resolve(img);
+    img.onerror = reject;
+    img.src = src;
+  });
+  const canvas = document.createElement("canvas");
+  canvas.width = size;
+  canvas.height = size;
+  const ctx = canvas.getContext("2d");
+  ctx.save();
+  ctx.beginPath();
+  ctx.arc(size / 2, size / 2, size / 2, 0, Math.PI * 2);
+  ctx.closePath();
+  ctx.clip();
+  const scale = Math.max(size / image.width, size / image.height);
+  const width = image.width * scale;
+  const height = image.height * scale;
+  ctx.drawImage(image, (size - width) / 2, (size - height) / 2, width, height);
+  ctx.restore();
+  return canvas.toDataURL("image/png");
 }
 
 async function gerarQrDataUrl(texto) {
@@ -1303,7 +1368,9 @@ async function carregarChamados() {
 
 async function abrirChamado(event) {
   event.preventDefault();
-  const submit = event.currentTarget.querySelector('button[type="submit"]');
+  const form = event.currentTarget;
+  const submit = form.querySelector('button[type="submit"]');
+  if (!submit) return;
   submit.disabled = true;
   submit.textContent = "Enviando...";
   try {
@@ -1318,7 +1385,7 @@ async function abrirChamado(event) {
       status: "ABERTO"
     });
     if (error) throw error;
-    event.currentTarget.reset();
+    form.reset();
     toast(`Chamado aberto: ${protocolo}`, "success");
     await carregarChamados();
   } catch (error) {
@@ -1375,13 +1442,20 @@ async function salvarCadastro(event) {
 function renderCarteirinha() {
   const box = $("boxCarteirinha");
   if (!box || !state.aluno) return;
+  const downloadButton = $("btnBaixarCarteirinha");
+  if (!alunoPodeTerCarteirinha()) {
+    box.innerHTML = `<div class="student-card-locked"><span>🔒</span><strong>Carteirinha ainda não liberada</strong><p>Conclua o conteúdo e seja aprovado em pelo menos um curso da Altitude. Depois disso, a carteirinha com QR Code ficará disponível automaticamente.</p></div>`;
+    if (downloadButton) { downloadButton.disabled = true; downloadButton.textContent = "Disponível após concluir um curso"; }
+    return;
+  }
+  if (downloadButton) { downloadButton.disabled = false; downloadButton.textContent = "Baixar carteirinha em PDF"; }
   const code = state.aluno.codigo_carteirinha || "";
   box.innerHTML = `
     <div class="digital-card">
       <div class="digital-card-top"><img src="../3-img/LOGO.png" alt="Altitude"><span>${new Date().getFullYear()}</span></div>
       <div class="digital-card-body">
         <img src="${escapeHTML(imgAluno(state.aluno.foto_url))}" alt="Foto do aluno">
-        <div class="digital-card-data"><strong class="student-card-name">${escapeHTML(state.aluno.nome || "Aluno")}</strong><span class="student-card-ra"><b>RA</b> ${escapeHTML(state.aluno.ra || "—")}</span><span>Status: ${escapeHTML(state.aluno.status || "ATIVO")}</span><span>Instituto de Educação e Tecnologia Altitude</span></div>
+        <div class="digital-card-data"><strong class="student-card-name">${escapeHTML(String(state.aluno.nome || "Aluno").toUpperCase())}</strong><span class="student-card-ra"><b>RA</b> ${escapeHTML(state.aluno.ra || "—")}</span><span>Status: ${escapeHTML(state.aluno.status || "ATIVO")}</span><span>Instituto de Educação e Tecnologia Altitude</span></div>
       </div>
       <div class="digital-card-footer">
         <div><strong>CARTEIRINHA DIGITAL</strong><span>Documento verificável na base oficial</span></div>
@@ -1419,6 +1493,7 @@ function renderCarteirinha() {
 }
 
 async function baixarCarteirinhaPDF() {
+  if (!alunoPodeTerCarteirinha()) return toast("A carteirinha será liberada após a conclusão e aprovação em pelo menos um curso.", "error");
   if (!state.aluno?.codigo_carteirinha) return toast("Código da carteirinha indisponível. Execute a atualização 04.", "error");
   if (!window.jspdf?.jsPDF || !window.QRCode) return toast("Gerador de PDF ou QR Code não carregado.", "error");
   try {
@@ -1430,7 +1505,7 @@ async function baixarCarteirinhaPDF() {
     const qr = await gerarQrDataUrl(url);
     if (!state.logoDataUrl) state.logoDataUrl = await imagemParaDataURL("../3-img/LOGO.png");
     let photo = null;
-    try { photo = await imagemParaDataURL(imgAluno(state.aluno.foto_url)); } catch {}
+    try { photo = await imagemCircularDataURL(imgAluno(state.aluno.foto_url)); } catch {}
 
     doc.setFillColor(255, 255, 255); doc.rect(0, 0, w, h, "F");
     doc.setFillColor(7, 49, 79); doc.roundedRect(1.5, 1.5, w - 3, h - 3, 3, 3, "F");
@@ -1439,8 +1514,10 @@ async function baixarCarteirinhaPDF() {
     doc.setFont("helvetica", "bold"); doc.setFontSize(6.8); doc.setTextColor(7, 49, 79);
     doc.text(String(new Date().getFullYear()), w - 7, 8.6, { align: "right" });
 
-    if (photo) doc.addImage(photo, photo.includes("image/png") ? "PNG" : "JPEG", 6, 19, 18, 20, undefined, "FAST");
-    else { doc.setFillColor(82, 192, 217); doc.roundedRect(6, 19, 18, 20, 2, 2, "F"); }
+    if (photo) {
+      doc.setFillColor(255,255,255); doc.circle(15, 29, 10, "F");
+      doc.addImage(photo, "PNG", 5, 19, 20, 20, undefined, "FAST");
+    } else { doc.setFillColor(82, 192, 217); doc.circle(15, 29, 10, "F"); }
 
     doc.setTextColor(255,255,255); doc.setFont("helvetica","bold"); doc.setFontSize(7.2);
     const nameLines = doc.splitTextToSize(String(state.aluno.nome || "Aluno").toUpperCase(), 38);
@@ -1473,7 +1550,8 @@ function filtrarCursos(query) {
 }
 
 async function atualizarDadosPrincipais() {
-  await Promise.all([carregarCursos(), carregarResultados(), carregarCertificados(), carregarHistoricoCertificados(), carregarCarteirasHoras(), carregarPagamentos()]);
+  await Promise.all([carregarCursos(), carregarResultados(), carregarAvaliacoes(), carregarCertificados(), carregarHistoricoCertificados(), carregarCarteirasHoras(), carregarPagamentos()]);
+  renderCarteirinha();
   renderDashboard();
   renderCursos();
   renderCertificados();
@@ -1515,6 +1593,52 @@ function configurarEventos() {
   });
 }
 
+function configurarAtualizacaoPeriodicaAluno() {
+  if (window.__altitudePollingAluno) return;
+  window.__altitudePollingAluno = true;
+  let emExecucao = false;
+  const atualizar = async () => {
+    if (document.hidden || emExecucao || !state.aluno?.user_id) return;
+    emExecucao = true;
+    try {
+      await atualizarDadosPrincipais();
+      await carregarChamados();
+      renderCarteirinha();
+    } catch (error) {
+      console.warn("Atualização periódica do portal:", error.message);
+    } finally {
+      emExecucao = false;
+    }
+  };
+  window.setInterval(atualizar, 12000);
+  document.addEventListener("visibilitychange", () => {
+    if (!document.hidden) atualizar();
+  });
+  window.addEventListener("focus", atualizar);
+}
+
+function configurarTempoRealAluno() {
+  if (!window.sb || window.__altitudeRealtimeAluno || !state.aluno?.user_id) return;
+  window.__altitudeRealtimeAluno = true;
+  let timer;
+  const refresh = () => {
+    clearTimeout(timer);
+    timer = setTimeout(async () => {
+      try {
+        await atualizarDadosPrincipais();
+        await carregarChamados();
+        renderCarteirinha();
+      } catch (error) {
+        console.warn("Atualização em tempo real:", error.message);
+      }
+    }, 450);
+  };
+  const channel = sb.channel(`altitude-aluno-${state.aluno.user_id}`);
+  ['cursos','modulos','materiais','provas','questoes','matriculas','resultados_provas','certificados','certificados_historico','carteiras_horas_curso','chamados','chamado_interacoes','avaliacoes_cursos']
+    .forEach((table) => channel.on('postgres_changes', { event: '*', schema: 'public', table }, refresh));
+  channel.subscribe();
+}
+
 async function iniciarPortal() {
   configurarEventos();
   try {
@@ -1523,6 +1647,8 @@ async function iniciarPortal() {
     await carregarAluno();
     await atualizarDadosPrincipais();
     await carregarChamados();
+    configurarTempoRealAluno();
+    configurarAtualizacaoPeriodicaAluno();
     const cursoInicial = Number(new URLSearchParams(window.location.search).get("curso"));
     if (cursoInicial && state.cursos.some((item) => Number(item.id) === cursoInicial)) {
       abrirAba("cursos");

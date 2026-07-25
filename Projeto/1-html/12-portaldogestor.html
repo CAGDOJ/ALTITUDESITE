@@ -7,20 +7,22 @@
   <title>Portal de Gestão - Altitude</title>
   <link rel="icon" type="image/png" sizes="512x512" href="/Projeto/3-img/favicon-cloud.png?v=14">
 
-  <link rel="stylesheet" href="/Projeto/2-css/12-portaldogestor.css?v=17">
+  <link rel="stylesheet" href="/Projeto/2-css/12-portaldogestor.css?v=18">
   <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/jspdf@2.5.2/dist/jspdf.umd.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
   <script src="../4-java/altitude-dialogs.js?v=17"></script>
   <script src="../4-java/supabase-init.js?v=17" defer></script>
   <script src="../4-java/gestor-guard.js?v=17" defer></script>
-  <script src="../4-java/12-portaldogestor.js?v=17" defer></script>
+  <script src="../4-java/12-portaldogestor.js?v=18" defer></script>
   <script src="../4-java/gestor-enhancements.js?v=17" defer></script>
   <script src="../4-java/gestor-acessos.js?v=17" defer></script>
-  <script src="../4-java/gestor-certificados.js?v=17" defer></script>
+  <script src="../4-java/certificado-pdf-gestor.js?v=18" defer></script>
+  <script src="../4-java/gestor-certificados.js?v=18" defer></script>
   <link rel="stylesheet" href="../2-css/base-portal.css?v=17">
   <link rel="stylesheet" href="../2-css/06-responsive.css?v=17">
-  <link rel="stylesheet" href="../2-css/15-ajustes-finais.css?v=17">
+  <link rel="stylesheet" href="../2-css/15-ajustes-finais.css?v=18">
 </head>
 
 <body class="gestor-auth-pending">
@@ -713,6 +715,52 @@
             <h4>Histórico do registro</h4>
             <div id="certModalHistorico"></div>
           </div>
+        </div>
+      </div>
+
+      <div class="modal" id="modalEditarPdfCertificado" aria-hidden="true">
+        <div class="modal__sheet certificate-pdf-editor-modal">
+          <div class="section-heading">
+            <div><span>Documento acadêmico</span><h3 id="certPdfEditorTitulo">Editar certificado</h3></div>
+            <button type="button" id="certPdfEditorFechar">Fechar</button>
+          </div>
+          <p class="certificate-pdf-editor-help">As alterações abaixo modificam somente os dados exibidos no PDF. O saldo de horas e o status do certificado não são alterados.</p>
+          <form id="formEditarPdfCertificado" class="certificate-pdf-editor-form">
+            <div class="grid2">
+              <label>Título do documento
+                <input id="certPdfTituloDocumento" maxlength="60" placeholder="CERTIFICADO" required>
+              </label>
+              <label>Subtítulo
+                <input id="certPdfSubtituloDocumento" maxlength="90" placeholder="DE CONCLUSÃO E APROVEITAMENTO" required>
+              </label>
+            </div>
+            <label>Nome do aluno no certificado
+              <input id="certPdfNomeAluno" maxlength="180" required>
+            </label>
+            <label>Nome do curso no certificado
+              <input id="certPdfNomeCurso" maxlength="180" required>
+            </label>
+            <div class="grid3">
+              <label>Nota final
+                <input id="certPdfNota" type="number" min="0" max="100" step="0.01" required>
+              </label>
+              <label>Início do período
+                <input id="certPdfPeriodoInicio" type="date">
+              </label>
+              <label>Fim do período
+                <input id="certPdfPeriodoFim" type="date">
+              </label>
+            </div>
+            <label>Observação da alteração
+              <textarea id="certPdfObservacao" rows="3" placeholder="Ex.: correção do nome no documento."></textarea>
+            </label>
+            <div class="certificate-pdf-editor-meta" id="certPdfEditorMeta"></div>
+            <div class="actions certificate-pdf-editor-actions">
+              <button type="button" class="ghost" id="certPdfVisualizar">Visualizar PDF</button>
+              <button type="button" class="ghost" id="certPdfBaixar">Baixar PDF</button>
+              <button type="submit" id="certPdfSalvar">Salvar alterações</button>
+            </div>
+          </form>
         </div>
       </div>
 

@@ -1531,3 +1531,58 @@ body:has(.gestor-topbar) .sidebar-bottom {
   .builder-footer p { display: none; }
   .manager-sidebar { width: min(84vw, 300px); }
 }
+
+/* V18 - certificados estáveis, ações organizadas e editor do PDF */
+.cert-admin-actions{
+  display:grid;
+  grid-template-columns:repeat(2,minmax(112px,1fr));
+  align-items:stretch;
+  gap:7px;
+  min-width:250px;
+}
+.cert-admin-actions button,
+.cert-admin-actions a{
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  min-height:40px;
+  padding:8px 10px;
+  text-align:center;
+  line-height:1.15;
+  white-space:normal;
+}
+.cert-admin-actions .pdf-action{border-color:#9fd7e3;background:#ecf9fc;color:#075c76}
+.cert-admin-actions .edit-pdf-action{border-color:#b8cce2;background:#f2f7fc;color:#123e67}
+.certificate-admin-actions{display:flex;flex-wrap:wrap;gap:8px}
+.certificate-admin-actions .pdf-action,
+.certificate-admin-actions .edit-pdf-action{
+  display:inline-flex;align-items:center;justify-content:center;
+  padding:10px 13px;border:0;border-radius:9px;color:#fff;font-weight:800;text-decoration:none;cursor:pointer
+}
+.certificate-admin-actions .pdf-action{background:#087893}
+.certificate-admin-actions .edit-pdf-action{background:#315f91}
+.certificate-pdf-editor-modal{width:min(900px,96vw);max-height:min(92vh,820px);overflow:auto}
+.certificate-pdf-editor-help{margin:0 0 16px;color:#617187;line-height:1.5}
+.certificate-pdf-editor-form{display:grid;gap:14px}
+.certificate-pdf-editor-form label{display:grid;gap:7px;color:#133a5e;font-weight:800}
+.certificate-pdf-editor-form input,.certificate-pdf-editor-form textarea{
+  width:100%;border:1px solid #cad9e6;border-radius:10px;background:#fff;padding:12px 13px;color:#17283a;font:inherit
+}
+.certificate-pdf-editor-form input:focus,.certificate-pdf-editor-form textarea:focus{outline:3px solid rgba(42,177,205,.16);border-color:#2ab1cd}
+.certificate-pdf-editor-form .grid3{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:12px}
+.certificate-pdf-editor-meta{padding:11px 13px;border-radius:10px;background:#f3f8fb;color:#597087;font-size:13px}
+.certificate-pdf-editor-actions{display:flex;justify-content:flex-end;gap:9px;flex-wrap:wrap}
+.certificate-pdf-editor-actions button{min-height:42px;padding:10px 15px;border:0;border-radius:9px;background:#0b7893;color:#fff;font-weight:800;cursor:pointer}
+.certificate-pdf-editor-actions button.ghost{background:#edf4f8;color:#16456d;border:1px solid #c8d9e5}
+.certificate-admin-table-wrap tbody{transition:opacity .15s ease}
+.certificate-admin-table-wrap.is-refreshing tbody{opacity:.72}
+@media(max-width:900px){
+  .certificate-pdf-editor-form .grid2,.certificate-pdf-editor-form .grid3{grid-template-columns:1fr}
+  .cert-admin-actions{min-width:210px}
+}
+@media(max-width:640px){
+  .certificate-pdf-editor-modal{width:100vw;max-width:none;height:100dvh;max-height:none;border-radius:0;padding:18px}
+  .certificate-pdf-editor-actions{display:grid;grid-template-columns:1fr}
+  .certificate-pdf-editor-actions button{width:100%}
+  .cert-admin-actions{grid-template-columns:1fr;min-width:155px}
+}

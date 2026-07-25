@@ -23,7 +23,9 @@ const state = {
   prova: null,
   respostas: {},
   questaoIndex: 0,
-  logoDataUrl: null
+  logoDataUrl: null,
+  atualizandoDados: false,
+  atualizacaoPendente: false
 };
 
 const TITULOS_ABAS = {
@@ -322,7 +324,6 @@ async function carregarAvaliacoes() {
     .order("criado_em", { ascending: false });
   if (error) {
     console.warn("Avaliações indisponíveis:", error.message);
-    state.avaliacoes = [];
     return;
   }
   state.avaliacoes = data || [];
@@ -357,7 +358,6 @@ async function carregarHistoricoCertificados() {
     .order("criado_em", { ascending: false });
   if (error) {
     console.warn("Histórico de certificados indisponível:", error.message);
-    state.certificadosHistorico = [];
     return;
   }
   state.certificadosHistorico = data || [];
@@ -367,7 +367,6 @@ async function carregarCarteirasHoras() {
   const { data, error } = await sb.rpc("obter_minhas_carteiras_horas");
   if (error) {
     console.warn("Carteira de horas indisponível:", error.message);
-    state.carteirasHoras = [];
     return;
   }
   state.carteirasHoras = data || [];
@@ -381,7 +380,6 @@ async function carregarMovimentacoesHoras() {
     .order("criado_em", { ascending: false });
   if (error) {
     console.warn("Extrato de horas indisponível:", error.message);
-    state.movimentacoesHoras = [];
     return;
   }
   state.movimentacoesHoras = data || [];
@@ -1319,11 +1317,13 @@ async function baixarCertificado(certificadoId) {
     doc.addImage(state.logoDataUrl, "PNG", pageWidth - 79, 23, 60, 9, undefined, "FAST");
     doc.setTextColor(81, 58, 44);
     doc.setFont("times", "bold");
-    doc.setFontSize(34);
-    doc.text("Certificado", pageWidth / 2, 39, { align: "center" });
+    const tituloDocumento = String(cert.titulo_documento || "CERTIFICADO").toUpperCase();
+    const subtituloDocumento = String(cert.subtitulo_documento || "DE CONCLUSÃO E APROVEITAMENTO").toUpperCase();
+    doc.setFontSize(tituloDocumento.length > 20 ? 28 : 34);
+    doc.text(tituloDocumento, pageWidth / 2, 39, { align: "center" });
     doc.setFont("times", "normal");
     doc.setFontSize(11);
-    doc.text("DE CONCLUSÃO E APROVEITAMENTO", pageWidth / 2, 48, { align: "center" });
+    doc.text(subtituloDocumento, pageWidth / 2, 48, { align: "center" });
 
     doc.setTextColor(27, 42, 56);
     doc.setFont("times", "normal");
@@ -1416,6 +1416,7 @@ async function baixarCertificado(certificadoId) {
       `Carga horária certificada: ${hours} horas`,
       `Nota final: ${Number(cert.nota_final || 0)}%`,
       `Emissão: ${dataBR(cert.emitido_em)}`,
+      `Versão do PDF: ${Number(cert.versao_pdf || 1)}`,
       "Curso livre de qualificação e atualização.",
       "Base legal institucional informada:",
       "LDB nº 9.394/96, art. 41, e Decreto nº 5.154/04.",
@@ -1675,38 +1676,53 @@ function filtrarCursos(query) {
 
 async function atualizarDadosPrincipais() {
   if (!state.aluno?.user_id) return;
-  const tarefas = [
-    ['cursos', carregarCursos],
-    ['resultados', carregarResultados],
-    ['avaliações', carregarAvaliacoes],
-    ['certificados', carregarCertificados],
-    ['histórico', carregarHistoricoCertificados],
-    ['carteira de horas', carregarCarteirasHoras],
-    ['pagamentos', carregarPagamentos]
-  ];
-
-  const resultados = await Promise.allSettled(
-    tarefas.map(([, fn]) => tentarNovamente(() => fn(), 3, 220))
-  );
-  const falhas = resultados
-    .map((resultado, index) => ({ resultado, nome: tarefas[index][0] }))
-    .filter(({ resultado }) => resultado.status === 'rejected');
-
-  falhas.forEach(({ resultado, nome }) => console.warn(`Falha temporária em ${nome}:`, resultado.reason?.message || resultado.reason));
-
-  renderCarteirinha();
-  renderDashboard();
-  renderCursos();
-  renderCertificados();
-  renderPagamentos();
-
-  if (falhas.length && falhas.length < tarefas.length) {
-    mensagemDeSincronizacao('Algumas informações estão sendo sincronizadas. A atualização continuará automaticamente.');
+  if (state.atualizandoDados) {
+    state.atualizacaoPendente = true;
+    return;
   }
-  if (falhas.length === tarefas.length) {
-    const erro = new Error('Não foi possível sincronizar os dados agora.');
-    erro.code = 'SYNC_FAILED';
-    throw erro;
+  state.atualizandoDados = true;
+  try {
+    const tarefas = [
+      ['cursos', carregarCursos],
+      ['resultados', carregarResultados],
+      ['avaliações', carregarAvaliacoes],
+      ['certificados', carregarCertificados],
+      ['histórico', carregarHistoricoCertificados],
+      ['carteira de horas', carregarCarteirasHoras],
+      ['pagamentos', carregarPagamentos]
+    ];
+
+    const resultados = await Promise.allSettled(
+      tarefas.map(([, fn]) => tentarNovamente(() => fn(), 3, 220))
+    );
+    const falhas = resultados
+      .map((resultado, index) => ({ resultado, nome: tarefas[index][0] }))
+      .filter(({ resultado }) => resultado.status === 'rejected');
+
+    falhas.forEach(({ resultado, nome }) => console.warn(`Falha temporária em ${nome}:`, resultado.reason?.message || resultado.reason));
+
+    // Renderiza uma única vez ao final. Como as consultas não podem mais se
+    // sobrepor, os cards não apagam e voltam durante Realtime/polling.
+    renderCarteirinha();
+    renderDashboard();
+    renderCursos();
+    renderCertificados();
+    renderPagamentos();
+
+    if (falhas.length && falhas.length < tarefas.length) {
+      mensagemDeSincronizacao('Algumas informações estão sendo sincronizadas. A atualização continuará automaticamente.');
+    }
+    if (falhas.length === tarefas.length) {
+      const erro = new Error('Não foi possível sincronizar os dados agora.');
+      erro.code = 'SYNC_FAILED';
+      throw erro;
+    }
+  } finally {
+    state.atualizandoDados = false;
+    if (state.atualizacaoPendente) {
+      state.atualizacaoPendente = false;
+      window.setTimeout(atualizarDadosPrincipais, 180);
+    }
   }
 }
 
@@ -1768,7 +1784,7 @@ function configurarAtualizacaoPeriodicaAluno() {
       emExecucao = false;
     }
   };
-  window.setInterval(atualizar, 5000);
+  window.setInterval(atualizar, 20000);
   document.addEventListener("visibilitychange", () => {
     if (!document.hidden) atualizar();
   });
@@ -1789,7 +1805,7 @@ function configurarTempoRealAluno() {
       } catch (error) {
         console.warn("Atualização em tempo real:", error.message);
       }
-    }, 450);
+    }, 700);
   };
   const channel = sb.channel(`altitude-aluno-${state.aluno.user_id}`);
   ['cursos','modulos','materiais','provas','questoes','matriculas','resultados_provas','certificados','certificados_historico','carteiras_horas_curso','chamados','chamado_interacoes','avaliacoes_cursos']

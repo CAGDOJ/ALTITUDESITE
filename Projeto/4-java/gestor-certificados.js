@@ -23,7 +23,11 @@
     filtro: 'TODOS',
     busca: '',
     atual: null,
-    carteiraAtual: null
+    carteiraAtual: null,
+    pdfEditId: null,
+    carregando: false,
+    recarregar: false,
+    realtimeTimer: null
   };
 
   function badge(status) {
@@ -59,14 +63,24 @@
     return new Map(store.carteiras.map((item) => [carteiraKey(item.aluno_id, item.curso_id), item]));
   }
 
-  async function carregarCertificadosGestao() {
-    try { await sb.rpc('processar_certificados_automaticos_v15'); } catch (_) {}
+  async function carregarCertificadosGestao(options = {}) {
+    if (store.carregando) {
+      store.recarregar = true;
+      return;
+    }
+    store.carregando = true;
+    const silent = Boolean(options.silent);
+    const certWrap = byId('tabCertificadosGestao')?.closest('.certificate-admin-table-wrap');
+    const walletWrap = byId('tabCarteirasHorasGestao')?.closest('.certificate-admin-table-wrap');
     const certBody = byId('tabCertificadosGestao')?.querySelector('tbody');
     const walletBody = byId('tabCarteirasHorasGestao')?.querySelector('tbody');
-    if (certBody) certBody.innerHTML = '<tr><td colspan="7">Carregando solicitações...</td></tr>';
-    if (walletBody) walletBody.innerHTML = '<tr><td colspan="8">Carregando carteiras...</td></tr>';
+    if (!store.certificados.length && !silent && certBody) certBody.innerHTML = '<tr><td colspan="7">Carregando solicitações...</td></tr>';
+    if (!store.carteiras.length && !silent && walletBody) walletBody.innerHTML = '<tr><td colspan="8">Carregando carteiras...</td></tr>';
+    certWrap?.classList.add('is-refreshing');
+    walletWrap?.classList.add('is-refreshing');
 
     try {
+      try { await sb.rpc('processar_certificados_automaticos_v15'); } catch (_) {}
       const [certRes, walletRes] = await Promise.all([
         sb.from('certificados').select('*').order('id', { ascending: false }),
         sb.rpc('obter_carteiras_horas_gestao')
@@ -74,16 +88,15 @@
       if (certRes.error) throw certRes.error;
       if (walletRes.error) throw walletRes.error;
 
-      store.certificados = certRes.data || [];
-      store.carteiras = walletRes.data || [];
-
+      const certificados = certRes.data || [];
+      const carteiras = walletRes.data || [];
       const alunoIds = [...new Set([
-        ...store.certificados.map((x) => x.aluno_id),
-        ...store.carteiras.map((x) => x.aluno_id)
+        ...certificados.map((x) => x.aluno_id),
+        ...carteiras.map((x) => x.aluno_id)
       ].filter(Boolean))];
       const cursoIds = [...new Set([
-        ...store.certificados.map((x) => Number(x.curso_id)),
-        ...store.carteiras.map((x) => Number(x.curso_id))
+        ...certificados.map((x) => Number(x.curso_id)),
+        ...carteiras.map((x) => Number(x.curso_id))
       ].filter(Boolean))];
 
       const [alunosRes, cursosRes] = await Promise.all([
@@ -97,15 +110,27 @@
       if (alunosRes.error) throw alunosRes.error;
       if (cursosRes.error) throw cursosRes.error;
 
+      // Só troca o conteúdo depois que todas as consultas terminaram. Isso evita
+      // o efeito de a tabela apagar e voltar durante a atualização em tempo real.
+      store.certificados = certificados;
+      store.carteiras = carteiras;
       store.alunos = new Map((alunosRes.data || []).map((x) => [x.user_id, x]));
       store.cursos = new Map((cursosRes.data || []).map((x) => [Number(x.id), x]));
       renderCarteirasGestao();
       renderCertificadosGestao();
     } catch (error) {
       console.error(error);
-      if (certBody) certBody.innerHTML = `<tr><td colspan="7">Erro ao carregar: ${esc(error.message)}</td></tr>`;
-      if (walletBody) walletBody.innerHTML = `<tr><td colspan="8">Erro ao carregar: ${esc(error.message)}</td></tr>`;
-      toast(`Erro ao carregar certificados: ${error.message}`, true);
+      if (!store.certificados.length && certBody) certBody.innerHTML = `<tr><td colspan="7">Não foi possível carregar. Use “Atualizar lista”.</td></tr>`;
+      if (!store.carteiras.length && walletBody) walletBody.innerHTML = `<tr><td colspan="8">Não foi possível carregar. Use “Atualizar lista”.</td></tr>`;
+      if (!silent) toast(`Erro ao atualizar certificados: ${error.message}`, true);
+    } finally {
+      certWrap?.classList.remove('is-refreshing');
+      walletWrap?.classList.remove('is-refreshing');
+      store.carregando = false;
+      if (store.recarregar) {
+        store.recarregar = false;
+        window.setTimeout(() => carregarCertificadosGestao({ silent: true }), 180);
+      }
     }
   }
 
@@ -192,14 +217,18 @@
       const remove = status !== 'EMITIDO'
         ? `<button class="delete-request" data-cert-delete="${cert.id}">Excluir solicitação</button>`
         : '';
+      const editPdf = `<button class="edit-pdf-action" data-cert-pdf-edit="${cert.id}">Editar certificado</button>`;
+      const pdf = status === 'EMITIDO'
+        ? `<button class="pdf-action" data-cert-pdf-download="${cert.id}">Baixar PDF</button>`
+        : '';
       return `<tr>
-        <td><div class="cert-admin-student"><strong>${esc(aluno.nome || cert.nome_aluno || 'Aluno')}</strong><small>RA ${esc(aluno.ra || '—')} · ${esc(aluno.email || '')}</small></div></td>
-        <td><div class="cert-admin-course"><strong>${esc(curso.titulo || cert.nome_curso || 'Curso')}</strong><small>${status === 'AGUARDANDO_HORAS' && cert.liberar_em ? `Liberação prevista: ${dateBR(cert.liberar_em, true)}` : esc(cert.numero_certificado || 'Número após a liberação')}</small></div></td>
+        <td><div class="cert-admin-student"><strong>${esc(cert.nome_aluno || aluno.nome || 'Aluno')}</strong><small>RA ${esc(aluno.ra || '—')} · ${esc(aluno.email || '')}</small></div></td>
+        <td><div class="cert-admin-course"><strong>${esc(cert.nome_curso || curso.titulo || 'Curso')}</strong><small>${status === 'AGUARDANDO_HORAS' && cert.liberar_em ? `Liberação prevista: ${dateBR(cert.liberar_em, true)}` : esc(cert.numero_certificado || 'Número após a liberação')}</small></div></td>
         <td><strong>${hours}h</strong></td>
         <td>${num(cert.nota_final)}%</td>
         <td>${dateBR(cert.solicitado_em || cert.criado_em)}</td>
         <td>${badge(status)}</td>
-        <td><div class="cert-admin-actions"><button data-cert-detail="${cert.id}">Detalhes</button>${release}${block}${reopen}${cancel}${remove}</div></td>
+        <td><div class="cert-admin-actions"><button data-cert-detail="${cert.id}">Detalhes</button>${editPdf}${pdf}${release}${block}${reopen}${cancel}${remove}</div></td>
       </tr>`;
     }).join('');
   }
@@ -334,17 +363,20 @@
           observacao = 'Contagem automática encerrada pela gestão com crédito integral das horas.';
         }
 
-        let result = await sb.rpc('gestor_programar_certificado_v15', {
+        let result = await sb.rpc('gestor_liberar_certificado_v18', {
           p_certificado_id: Number(id),
           p_modo: modo,
           p_observacao: observacao || null
         });
         if (result.error) throw result.error;
 
-        const updated = Array.isArray(result.data) ? result.data[0] : result.data;
+        let updated = Array.isArray(result.data) ? result.data[0] : result.data;
+        const confirmacao = await sb.from('certificados').select('*').eq('id', Number(id)).maybeSingle();
+        if (confirmacao.error) throw confirmacao.error;
+        if (confirmacao.data) updated = confirmacao.data;
         const novoStatus = String(updated?.status || '').toUpperCase();
         if (!['EMITIDO', 'AGUARDANDO_HORAS'].includes(novoStatus)) {
-          throw new Error('O banco não confirmou a programação ou emissão do certificado.');
+          throw new Error(`O banco manteve o status ${novoStatus || 'DESCONHECIDO'}. Execute a correção V18 no Supabase.`);
         }
 
         const position = store.certificados.findIndex((item) => Number(item.id) === Number(id));
@@ -397,8 +429,8 @@
     const aluno = store.alunos.get(cert.aluno_id) || {};
     const curso = store.cursos.get(Number(cert.curso_id)) || {};
     const horas = num(cert.horas_solicitadas || cert.horas_emitidas);
-    const nome = aluno.nome || cert.nome_aluno || 'Aluno';
-    const titulo = curso.titulo || cert.nome_curso || 'Curso';
+    const nome = cert.nome_aluno || aluno.nome || 'Aluno';
+    const titulo = cert.nome_curso || curso.titulo || 'Curso';
 
     const motivo = await window.AltitudeDialog?.prompt({
       title: 'Excluir solicitação de certificado',
@@ -441,7 +473,7 @@
     const curso = store.cursos.get(Number(cert.curso_id)) || {};
     const wallet = mapaCarteiras().get(carteiraKey(cert.aluno_id, cert.curso_id)) || {};
     const requested = num(cert.horas_solicitadas || cert.horas_emitidas);
-    byId('certModalTitulo').textContent = `${aluno.nome || cert.nome_aluno || 'Aluno'} — ${curso.titulo || cert.nome_curso || 'Curso'}`;
+    byId('certModalTitulo').textContent = `${cert.nome_aluno || aluno.nome || 'Aluno'} — ${cert.nome_curso || curso.titulo || 'Curso'}`;
     byId('certModalResumo').innerHTML = `
       <article><span>Status</span><strong>${badge(cert.status)}</strong></article>
       <article><span>RA</span><strong>${esc(aluno.ra || '—')}</strong></article>
@@ -464,6 +496,8 @@
       ${['PENDENTE', 'EMITIDO', 'AGUARDANDO_HORAS'].includes(status) ? `<button class="block" data-cert-action="BLOQUEAR" data-id="${cert.id}">Bloquear</button>` : ''}
       ${status === 'BLOQUEADO' || status === 'CANCELADO' ? `<button data-cert-action="REABRIR" data-id="${cert.id}">Reabrir</button>` : ''}
       ${status !== 'CANCELADO' ? `<button class="cancel" data-cert-action="CANCELAR" data-id="${cert.id}">Cancelar</button>` : ''}
+      <button class="edit-pdf-action" data-cert-pdf-edit="${cert.id}">Editar dados do PDF</button>
+      ${status === 'EMITIDO' ? `<button class="pdf-action" data-cert-pdf-preview="${cert.id}">Visualizar PDF</button><button class="pdf-action" data-cert-pdf-download="${cert.id}">Baixar PDF</button>` : ''}
       ${status !== 'EMITIDO' ? `<button class="delete-request" data-cert-delete="${cert.id}">Excluir solicitação</button>` : ''}
       ${cert.codigo_validacao ? `<a class="topbar-link" href="8-certificados.html?codigo=${encodeURIComponent(cert.codigo_validacao)}" target="_blank">Abrir validação pública</a>` : ''}`;
 
@@ -473,6 +507,97 @@
       : (data || []).map((item) => `
         <div class="cert-history-row"><span class="cert-history-dot"></span><div><strong>${esc(String(item.acao || 'ATUALIZAÇÃO').replaceAll('_', ' '))}</strong><span>${esc(item.status_anterior || '—')} → ${esc(item.status_novo || '—')}${item.observacao ? ` · ${esc(item.observacao)}` : ''}</span></div><small>${dateBR(item.criado_em, true)}</small></div>`).join('') || '<div class="empty-state">Sem histórico.</div>';
     byId('modalCertificadoGestao').setAttribute('aria-hidden', 'false');
+  }
+
+  function certificadoContexto(id) {
+    const cert = store.certificados.find((item) => Number(item.id) === Number(id));
+    if (!cert) return null;
+    return {
+      cert,
+      aluno: store.alunos.get(cert.aluno_id) || {},
+      curso: store.cursos.get(Number(cert.curso_id)) || {}
+    };
+  }
+
+  function abrirEditorPdfCertificado(id) {
+    const context = certificadoContexto(id);
+    if (!context) return toast('Certificado não encontrado.', true);
+    const { cert, aluno, curso } = context;
+    store.pdfEditId = Number(id);
+    byId('certPdfEditorTitulo').textContent = `Editar certificado ${cert.numero_certificado || `#${cert.id}`}`;
+    byId('certPdfTituloDocumento').value = cert.titulo_documento || 'CERTIFICADO';
+    byId('certPdfSubtituloDocumento').value = cert.subtitulo_documento || 'DE CONCLUSÃO E APROVEITAMENTO';
+    byId('certPdfNomeAluno').value = cert.nome_aluno || aluno.nome || '';
+    byId('certPdfNomeCurso').value = cert.nome_curso || curso.titulo || '';
+    byId('certPdfNota').value = Number(cert.nota_final || 0);
+    byId('certPdfPeriodoInicio').value = cert.periodo_inicio || '';
+    byId('certPdfPeriodoFim').value = cert.periodo_fim || '';
+    byId('certPdfObservacao').value = '';
+    byId('certPdfEditorMeta').textContent = `Status: ${String(cert.status || 'PENDENTE').toUpperCase()} · Carga: ${num(cert.horas_emitidas || cert.horas_solicitadas)}h · Versão do PDF: ${Number(cert.versao_pdf || 1)}`;
+    byId('modalEditarPdfCertificado').setAttribute('aria-hidden', 'false');
+  }
+
+  function fecharEditorPdfCertificado() {
+    byId('modalEditarPdfCertificado')?.setAttribute('aria-hidden', 'true');
+    store.pdfEditId = null;
+  }
+
+  async function salvarEditorPdfCertificado(event) {
+    event.preventDefault();
+    const id = store.pdfEditId;
+    if (!id) return;
+    const button = byId('certPdfSalvar');
+    button.disabled = true;
+    button.textContent = 'Salvando...';
+    try {
+      const { data, error } = await sb.rpc('gestor_editar_certificado_pdf_v18', {
+        p_certificado_id: Number(id),
+        p_titulo_documento: byId('certPdfTituloDocumento').value.trim(),
+        p_subtitulo_documento: byId('certPdfSubtituloDocumento').value.trim(),
+        p_nome_aluno: byId('certPdfNomeAluno').value.trim(),
+        p_nome_curso: byId('certPdfNomeCurso').value.trim(),
+        p_nota_final: Number(byId('certPdfNota').value || 0),
+        p_periodo_inicio: byId('certPdfPeriodoInicio').value || null,
+        p_periodo_fim: byId('certPdfPeriodoFim').value || null,
+        p_observacao: byId('certPdfObservacao').value.trim() || null
+      });
+      if (error) throw error;
+      const updated = Array.isArray(data) ? data[0] : data;
+      const position = store.certificados.findIndex((item) => Number(item.id) === Number(id));
+      if (position >= 0 && updated) store.certificados[position] = { ...store.certificados[position], ...updated };
+      renderCertificadosGestao();
+      toast('Dados do certificado atualizados. A nova versão do PDF já pode ser visualizada.');
+      abrirEditorPdfCertificado(id);
+    } catch (error) {
+      toast(`Não foi possível editar o certificado: ${error.message}`, true);
+    } finally {
+      button.disabled = false;
+      button.textContent = 'Salvar alterações';
+    }
+  }
+
+  async function gerarPdfCertificadoGestor(id, preview = false) {
+    const context = certificadoContexto(id);
+    if (!context) return toast('Certificado não encontrado.', true);
+    const { cert, aluno, curso } = context;
+    if (String(cert.status || '').toUpperCase() !== 'EMITIDO') {
+      return toast('O PDF fica disponível somente depois que o status for EMITIDO.', true);
+    }
+    if (!window.AltitudeCertificatePDF) return toast('Gerador do certificado não carregou.', true);
+    const codigo = cert.codigo_validacao || cert.numero_certificado;
+    const validationUrl = `${window.location.origin}/Projeto/1-html/8-certificados.html?codigo=${encodeURIComponent(codigo)}`;
+    try {
+      toast(preview ? 'Abrindo pré-visualização...' : 'Preparando PDF...');
+      const options = {
+        sb, cert, aluno, curso,
+        logoUrl: '../3-img/LOGO.png',
+        validationUrl
+      };
+      if (preview) await window.AltitudeCertificatePDF.preview(options);
+      else await window.AltitudeCertificatePDF.download(options);
+    } catch (error) {
+      toast(`Não foi possível gerar o PDF: ${error.message}`, true);
+    }
   }
 
   function fecharModalCertificado() {
@@ -508,6 +633,10 @@
     byId('horasFecharModal')?.addEventListener('click', fecharModalHoras);
     byId('horasCancelar')?.addEventListener('click', fecharModalHoras);
     byId('formGerenciarHoras')?.addEventListener('submit', salvarGerenciaHoras);
+    byId('formEditarPdfCertificado')?.addEventListener('submit', salvarEditorPdfCertificado);
+    byId('certPdfEditorFechar')?.addEventListener('click', fecharEditorPdfCertificado);
+    byId('certPdfVisualizar')?.addEventListener('click', () => store.pdfEditId && gerarPdfCertificadoGestor(store.pdfEditId, true));
+    byId('certPdfBaixar')?.addEventListener('click', () => store.pdfEditId && gerarPdfCertificadoGestor(store.pdfEditId, false));
     byId('horasGestaoTotal')?.addEventListener('change', atualizarAlertaHoras);
     byId('horasGestaoExcepcional')?.addEventListener('change', atualizarAlertaHoras);
     byId('modalCertificadoGestao')?.addEventListener('click', (event) => {
@@ -515,6 +644,9 @@
     });
     byId('modalHorasGestao')?.addEventListener('click', (event) => {
       if (event.target.id === 'modalHorasGestao') fecharModalHoras();
+    });
+    byId('modalEditarPdfCertificado')?.addEventListener('click', (event) => {
+      if (event.target.id === 'modalEditarPdfCertificado') fecharEditorPdfCertificado();
     });
 
     document.addEventListener('click', (event) => {
@@ -526,13 +658,32 @@
       if (remove) excluirSolicitacao(Number(remove.dataset.certDelete));
       const wallet = event.target.closest('[data-wallet-manage]');
       if (wallet) abrirGerenciaHoras(wallet.dataset.walletManage, Number(wallet.dataset.courseId));
+      const pdfEdit = event.target.closest('[data-cert-pdf-edit]');
+      if (pdfEdit) abrirEditorPdfCertificado(Number(pdfEdit.dataset.certPdfEdit));
+      const pdfDownload = event.target.closest('[data-cert-pdf-download]');
+      if (pdfDownload) gerarPdfCertificadoGestor(Number(pdfDownload.dataset.certPdfDownload), false);
+      const pdfPreview = event.target.closest('[data-cert-pdf-preview]');
+      if (pdfPreview) gerarPdfCertificadoGestor(Number(pdfPreview.dataset.certPdfPreview), true);
     });
 
     carregarCertificadosGestao();
+    if (!window.__altitudeCertificadosGestaoRealtime) {
+      window.__altitudeCertificadosGestaoRealtime = true;
+      const agendar = () => {
+        clearTimeout(store.realtimeTimer);
+        store.realtimeTimer = window.setTimeout(() => {
+          if (!document.hidden) carregarCertificadosGestao({ silent: true });
+        }, 650);
+      };
+      const channel = sb.channel('altitude-certificados-gestao-v18');
+      ['certificados', 'certificados_historico', 'carteiras_horas_curso']
+        .forEach((table) => channel.on('postgres_changes', { event: '*', schema: 'public', table }, agendar));
+      channel.subscribe();
+    }
     if (!window.__altitudeCertificadosGestaoPolling) {
       window.__altitudeCertificadosGestaoPolling = window.setInterval(() => {
-        if (!document.hidden && document.querySelector('#certificados-gestao.ativa')) carregarCertificadosGestao();
-      }, 8000);
+        if (!document.hidden && document.querySelector('#certificados-gestao.ativa')) carregarCertificadosGestao({ silent: true });
+      }, 30000);
     }
   }
 

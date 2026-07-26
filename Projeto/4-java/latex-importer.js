@@ -2,7 +2,7 @@
   'use strict';
 
   const $ = (selector, scope = document) => scope.querySelector(selector);
-  const state = { parsedContent: null, parsedProof: null, previewUrl: null, busy: false };
+  const state = { parsedContent: null, parsedProof: null, previewUrl: null, previewBlob: null, busy: false };
   const esc = (value = '') => String(value)
     .replaceAll('&', '&amp;').replaceAll('<', '&lt;').replaceAll('>', '&gt;')
     .replaceAll('"', '&quot;').replaceAll("'", '&#039;');
@@ -558,13 +558,123 @@ Agir com ética envolve honestidade, responsabilidade, respeito e sigilo.
     });
   }
 
+  function cp1252Octal(value) {
+    const map = { '€':128, '‚':130, 'ƒ':131, '„':132, '…':133, '†':134, '‡':135, 'ˆ':136, '‰':137, 'Š':138, '‹':139, 'Œ':140, 'Ž':142, '‘':145, '’':146, '“':147, '”':148, '•':149, '–':150, '—':151, '˜':152, '™':153, 'š':154, '›':155, 'œ':156, 'ž':158, 'Ÿ':159 };
+    let result = '';
+    for (const character of String(value || '')) {
+      let code = character.codePointAt(0);
+      if (map[character] !== undefined) code = map[character];
+      else if (code > 255) code = 63;
+      if (code === 40 || code === 41 || code === 92 || code < 32 || code > 126) result += `\\${code.toString(8).padStart(3, '0')}`;
+      else result += String.fromCharCode(code);
+    }
+    return result;
+  }
+
+  function wrapPdfText(value, maxChars = 88) {
+    const words = String(value || '').replace(/\s+/g, ' ').trim().split(' ').filter(Boolean);
+    const lines = [];
+    let line = '';
+    words.forEach((word) => {
+      const candidate = line ? `${line} ${word}` : word;
+      if (candidate.length > maxChars && line) { lines.push(line); line = word; }
+      else line = candidate;
+    });
+    if (line) lines.push(line);
+    return lines.length ? lines : [''];
+  }
+
+  function simplePdfBlobFromContent(content) {
+    const courseTitle = content.curso.titulo || $('#modalModulos')?.dataset.courseTitle || 'Curso Altitude';
+    const area = content.curso.categoria || $('#modalModulos')?.dataset.courseCategory || 'Formação Profissional';
+    const totalHours = content.modulos.reduce((sum, item) => sum + Number(item.carga_horaria || 0), 0) || content.curso.carga_horaria || 0;
+    const pages = [];
+    const cover = [
+      { text: 'INSTITUIÇÃO ALTITUDE', size: 22, bold: true, color: '0.05 0.04 0.24', gap: 28 },
+      { text: 'Material de Estudo', size: 16, bold: true, color: '0.12 0.44 0.67', gap: 24 },
+      { text: `Curso de ${courseTitle}`, size: 20, bold: true, color: '0.05 0.04 0.24', gap: 34 },
+      { text: `Área de formação: ${area}`, size: 11, gap: 18 },
+      { text: 'Modalidade: EAD / Semipresencial', size: 11, gap: 18 },
+      { text: `Carga horária: ${totalHours} horas`, size: 11, gap: 18 },
+      { text: 'Finalidade: apoiar o estudo teórico e servir de base para a avaliação de aprendizagem.', size: 11, gap: 18 }
+    ];
+    pages.push(cover);
+    content.modulos.forEach((module, moduleIndex) => {
+      const blocks = pdfTextBlocks(module.conteudo_latex || module.conteudo || '');
+      let current = [
+        { text: `${moduleIndex + 1}. ${module.titulo}`, size: 18, bold: true, color: '0.12 0.44 0.67', gap: 24 },
+        { text: `Carga do módulo: ${Number(module.carga_horaria || 0)} horas`, size: 10, bold: true, gap: 16 },
+        { text: `Descrição: ${module.descricao || 'Conteúdo programático do módulo.'}`, size: 10, gap: 20 }
+      ];
+      let used = 90;
+      const pushPage = () => { pages.push(current); current = []; used = 35; };
+      blocks.forEach((block) => {
+        const size = block.type === 'h2' ? 15 : block.type === 'h3' ? 13 : block.type === 'h4' ? 11.5 : 10.5;
+        const bold = ['h2','h3','h4'].includes(block.type);
+        const prefix = block.type === 'li' ? '• ' : '';
+        const lines = wrapPdfText(`${prefix}${block.text}`, block.type === 'h2' ? 62 : 88);
+        const needed = lines.length * (size + 3) + (bold ? 8 : 4);
+        if (used + needed > 730 && current.length) pushPage();
+        current.push({ text: lines.join('\n'), size, bold, color: block.type === 'h2' ? '0.12 0.44 0.67' : '0.10 0.19 0.28', gap: bold ? 18 : 14 });
+        used += needed;
+      });
+      if (current.length) pages.push(current);
+    });
+
+    const objects = [];
+    const addObject = (value) => { objects.push(value); return objects.length; };
+    const catalogId = addObject('');
+    const pagesId = addObject('');
+    const fontRegularId = addObject('<< /Type /Font /Subtype /Type1 /BaseFont /Helvetica /Encoding /WinAnsiEncoding >>');
+    const fontBoldId = addObject('<< /Type /Font /Subtype /Type1 /BaseFont /Helvetica-Bold /Encoding /WinAnsiEncoding >>');
+    const pageIds = [];
+
+    pages.forEach((items, index) => {
+      let y = 785;
+      const commands = ['0.95 0.97 0.98 rg 42 742 511 64 re f'];
+      commands.push('BT');
+      items.forEach((item) => {
+        const lines = String(item.text || '').split('\n');
+        commands.push(`/${item.bold ? 'F2' : 'F1'} ${item.size || 10.5} Tf`);
+        commands.push(`${item.color || '0.10 0.19 0.28'} rg`);
+        lines.forEach((line) => {
+          commands.push(`1 0 0 1 58 ${y.toFixed(1)} Tm (${cp1252Octal(line)}) Tj`);
+          y -= (item.size || 10.5) + 3.2;
+        });
+        y -= Math.max(2, (item.gap || 14) - (item.size || 10.5));
+      });
+      commands.push('/F1 8 Tf 0.35 0.40 0.45 rg');
+      commands.push(`1 0 0 1 58 28 Tm (${cp1252Octal(`Instituição Altitude | ${courseTitle}`)}) Tj`);
+      commands.push(`1 0 0 1 520 28 Tm (${index + 1}) Tj`);
+      commands.push('ET');
+      const stream = commands.join('\n');
+      const contentId = addObject(`<< /Length ${stream.length} >>\nstream\n${stream}\nendstream`);
+      const pageId = addObject(`<< /Type /Page /Parent ${pagesId} 0 R /MediaBox [0 0 595 842] /Resources << /Font << /F1 ${fontRegularId} 0 R /F2 ${fontBoldId} 0 R >> >> /Contents ${contentId} 0 R >>`);
+      pageIds.push(pageId);
+    });
+    objects[catalogId - 1] = `<< /Type /Catalog /Pages ${pagesId} 0 R >>`;
+    objects[pagesId - 1] = `<< /Type /Pages /Kids [${pageIds.map((id) => `${id} 0 R`).join(' ')}] /Count ${pageIds.length} >>`;
+
+    let pdf = '%PDF-1.4\n%ALTITUDE\n';
+    const offsets = [0];
+    objects.forEach((object, index) => {
+      offsets.push(pdf.length);
+      pdf += `${index + 1} 0 obj\n${object}\nendobj\n`;
+    });
+    const xref = pdf.length;
+    pdf += `xref\n0 ${objects.length + 1}\n0000000000 65535 f \n`;
+    for (let i = 1; i <= objects.length; i += 1) pdf += `${String(offsets[i]).padStart(10, '0')} 00000 n \n`;
+    pdf += `trailer\n<< /Size ${objects.length + 1} /Root ${catalogId} 0 R >>\nstartxref\n${xref}\n%%EOF`;
+    return new Blob([new TextEncoder().encode(pdf)], { type: 'application/pdf' });
+  }
+
   function jsPdfConstructor() {
     return window.jspdf?.jsPDF || window.jsPDF || null;
   }
 
   async function pdfBlobFromContent(content) {
     const JsPDF = jsPdfConstructor();
-    if (!JsPDF) throw new Error('O gerador de PDF ainda não terminou de carregar. Aguarde alguns segundos, atualize a página e tente novamente.');
+    if (!JsPDF) return simplePdfBlobFromContent(content);
 
     const doc = new JsPDF({ unit: 'mm', format: 'a4', orientation: 'portrait', compress: true });
     const pageWidth = doc.internal.pageSize.getWidth();
@@ -687,19 +797,35 @@ Agir com ética envolve honestidade, responsabilidade, respeito e sigilo.
     const source = $('#latexContentSource')?.value || '';
     const placeholder = $('#latexPdfPlaceholder');
     const frame = $('#latexPdfPreviewFrame');
+    const openButton = $('#latexOpenPdf');
+    const downloadButton = $('#latexDownloadPdf');
     try {
       const parsed = parseContent(source);
       state.parsedContent = parsed;
       renderSummary(parsed);
-      if (placeholder) { placeholder.hidden = false; placeholder.innerHTML = 'Gerando a prévia do PDF institucional…'; }
-      const blob = await pdfBlobFromContent(parsed);
+      if (placeholder) { placeholder.hidden = false; placeholder.innerHTML = '<b>Gerando o PDF institucional…</b><br>Aguarde alguns segundos.'; }
+      if (openButton) openButton.disabled = true;
+      if (downloadButton) downloadButton.disabled = true;
+      const blob = await Promise.race([
+        pdfBlobFromContent(parsed),
+        new Promise((_, reject) => window.setTimeout(() => reject(new Error('A geração do PDF demorou mais que o esperado. Clique novamente em “Gerar prévia do PDF”.')), 15000))
+      ]);
       if (state.previewUrl) URL.revokeObjectURL(state.previewUrl);
+      state.previewBlob = blob;
       state.previewUrl = URL.createObjectURL(blob);
-      frame.src = state.previewUrl;
+      if (frame) {
+        frame.removeAttribute('hidden');
+        frame.src = `${state.previewUrl}#toolbar=1&navpanes=0&view=FitH`;
+      }
       if (placeholder) placeholder.hidden = true;
+      if (openButton) openButton.disabled = false;
+      if (downloadButton) downloadButton.disabled = false;
       showPreviewPane('pdf');
     } catch (error) {
       state.parsedContent = null;
+      state.previewBlob = null;
+      if (openButton) openButton.disabled = true;
+      if (downloadButton) downloadButton.disabled = true;
       if (placeholder) { placeholder.hidden = false; placeholder.innerHTML = `<b>Não foi possível gerar a prévia.</b><br>${esc(error.message)}`; }
       notify(error.message, true);
     }
@@ -735,11 +861,10 @@ Agir com ética envolve honestidade, responsabilidade, respeito e sigilo.
   }
 
   function showPreviewPane(name) {
-    document.querySelectorAll('[data-latex-preview]').forEach((button) => button.classList.toggle('active', button.dataset.latexPreview === name));
     const pdf = $('#latexPreviewPdfPane');
     const questions = $('#latexPreviewQuestionsPane');
-    if (pdf) pdf.hidden = name !== 'pdf';
-    if (questions) questions.hidden = name !== 'questions';
+    if (pdf) pdf.hidden = false;
+    if (questions) questions.hidden = false;
   }
 
   async function uploadPdf(blob, courseId, module) {
@@ -747,6 +872,107 @@ Agir com ética envolve honestidade, responsabilidade, respeito e sigilo.
     const { error } = await window.sb.storage.from('materiais_cursos').upload(path, blob, { upsert: false, contentType: 'application/pdf', cacheControl: '3600' });
     if (error) throw error;
     return window.sb.storage.from('materiais_cursos').getPublicUrl(path).data.publicUrl;
+  }
+
+  async function insertOne(table, payload, optionalFields = []) {
+    let current = { ...payload };
+    for (let attempt = 0; attempt <= optionalFields.length; attempt += 1) {
+      const { data, error } = await window.sb.from(table).insert(current).select().single();
+      if (!error) return data;
+      const message = String(error.message || error.details || '');
+      const field = optionalFields.find((name) => Object.prototype.hasOwnProperty.call(current, name) && (message.includes(`'${name}'`) || message.includes(`\"${name}\"`) || message.includes(` ${name} `)));
+      if (!field) throw error;
+      delete current[field];
+    }
+    throw new Error(`Não foi possível salvar em ${table}.`);
+  }
+
+  async function removeCurrentStructure(courseId) {
+    const { data: proofs, error: proofReadError } = await window.sb.from('provas').select('id').eq('curso_id', courseId);
+    if (proofReadError) throw proofReadError;
+    const proofIds = (proofs || []).map((item) => item.id);
+    if (proofIds.length) {
+      const { error: questionDeleteError } = await window.sb.from('questoes').delete().in('prova_id', proofIds);
+      if (questionDeleteError) throw questionDeleteError;
+    }
+    const { error: proofDeleteError } = await window.sb.from('provas').delete().eq('curso_id', courseId);
+    if (proofDeleteError) throw proofDeleteError;
+    const { error: materialDeleteError } = await window.sb.from('materiais').delete().eq('curso_id', courseId);
+    if (materialDeleteError) throw materialDeleteError;
+    const { error: moduleDeleteError } = await window.sb.from('modulos').delete().eq('curso_id', courseId);
+    if (moduleDeleteError) throw moduleDeleteError;
+  }
+
+  async function saveImportedCourseDirect(courseId, parsed, options = {}) {
+    if (options.replace) await removeCurrentStructure(courseId);
+    if (options.updateCourse) {
+      const coursePayload = {};
+      if (parsed.curso.titulo) coursePayload.titulo = parsed.curso.titulo;
+      if (parsed.curso.categoria) coursePayload.categoria = String(parsed.curso.categoria).toUpperCase();
+      if (Number(parsed.curso.carga_horaria) > 0) coursePayload.carga_horaria = Number(parsed.curso.carga_horaria);
+      if (parsed.curso.descricao) coursePayload.descricao = parsed.curso.descricao;
+      if (Object.keys(coursePayload).length) {
+        const { error: courseError } = await window.sb.from('cursos').update(coursePayload).eq('id', courseId);
+        if (courseError) throw courseError;
+      }
+    }
+
+    let moduleCount = 0;
+    let questionCount = 0;
+    for (const module of parsed.modulos) {
+      const savedModule = await insertOne('modulos', {
+        curso_id: courseId,
+        titulo: module.titulo,
+        descricao: module.descricao || null,
+        conteudo: module.conteudo || null,
+        conteudo_latex: module.conteudo_latex || null,
+        ordem: Number(module.ordem || moduleCount + 1),
+        carga_horaria: Number(module.carga_horaria || 0),
+        pdf_url: module.pdf_url || null,
+        video_url: module.video_url || null,
+        publicado: Boolean(options.publishModules)
+      }, ['conteudo_latex', 'carga_horaria', 'pdf_url', 'video_url']);
+      moduleCount += 1;
+
+      if (module.pdf_url) {
+        await insertOne('materiais', {
+          curso_id: courseId,
+          modulo_id: savedModule.id,
+          tipo: 'PDF',
+          titulo: `Apostila — ${module.titulo}`,
+          url: module.pdf_url
+        });
+      }
+
+      if (Array.isArray(module.questoes) && module.questoes.length) {
+        const proof = await insertOne('provas', {
+          curso_id: courseId,
+          modulo_id: savedModule.id,
+          titulo: `${module.titulo} — Avaliação`
+        }, ['modulo_id']);
+        const rows = module.questoes.map((question, index) => ({
+          prova_id: proof.id,
+          enunciado: question.enunciado,
+          enunciado_latex: question.enunciado_latex || null,
+          a: question.a,
+          b: question.b,
+          c: question.c,
+          d: question.d,
+          e: question.e || null,
+          correta: question.correta,
+          resolucao: question.resolucao || null,
+          ordem: Number(question.ordem || index + 1)
+        }));
+        let { error: questionError } = await window.sb.from('questoes').insert(rows);
+        if (questionError && /enunciado_latex|resolucao|ordem|\be\b/i.test(String(questionError.message || ''))) {
+          const compatibleRows = rows.map(({ enunciado_latex, resolucao, ordem, e, ...row }) => row);
+          ({ error: questionError } = await window.sb.from('questoes').insert(compatibleRows));
+        }
+        if (questionError) throw questionError;
+        questionCount += rows.length;
+      }
+    }
+    return { modulos_importados: moduleCount, questoes_importadas: questionCount };
   }
 
   async function importCourse(options = {}) {
@@ -790,15 +1016,11 @@ Agir com ética envolve honestidade, responsabilidade, respeito e sigilo.
         module.pdf_url = await uploadPdf(blob, courseId, module);
       }
       if (progress) progress.textContent = 'Salvando módulos, horas, prova, gabarito e resoluções…';
-      const payload = { curso: parsed.curso, modulos: parsed.modulos.map(({ conteudo_html, ...module }) => module) };
-      const { data, error } = await window.sb.rpc('gestor_importar_curso_latex', {
-        p_curso_id: courseId,
-        p_payload: payload,
-        p_substituir: replace,
-        p_publicar_modulos: Boolean($('#latexPublishModules')?.checked),
-        p_atualizar_curso: Boolean($('#latexUpdateCourse')?.checked)
+      const data = await saveImportedCourseDirect(courseId, parsed, {
+        replace,
+        publishModules: options.publishAfter || Boolean($('#latexPublishModules')?.checked),
+        updateCourse: Boolean($('#latexUpdateCourse')?.checked)
       });
-      if (error) throw error;
       if (progress) progress.textContent = '';
       if (window.carregarModulosCursoAtual) await window.carregarModulosCursoAtual();
       if (window.carregarCursosCompleto) await window.carregarCursosCompleto();
@@ -829,18 +1051,20 @@ Agir com ética envolve honestidade, responsabilidade, respeito e sigilo.
   function setMode(mode) {
     const normal = mode !== 'latex';
     $('#normalBuilderPanel').hidden = !normal;
-    $('#normalBuilderFooter').hidden = !normal;
     $('#latexBuilderPanel').hidden = normal;
+    const status = $('#builderHeaderMode');
+    if (status) status.textContent = normal ? 'Inserção normal' : 'Inserção em LaTeX';
     document.querySelectorAll('[data-builder-mode]').forEach((button) => {
       const active = button.dataset.builderMode === mode;
       button.classList.toggle('active', active);
       button.setAttribute('aria-selected', String(active));
     });
+    document.querySelector('.builder-scroll-area')?.scrollTo({ top: 0, behavior: 'smooth' });
     if (!normal && !state.parsedContent) {
       window.setTimeout(() => {
         updateContentPreview();
         try { updateProofPreview(); } catch (_) {}
-      }, 30);
+      }, 80);
     }
   }
 
@@ -852,11 +1076,22 @@ Agir com ética envolve honestidade, responsabilidade, respeito e sigilo.
 
   function bind() {
     document.querySelectorAll('[data-builder-mode]').forEach((button) => button.addEventListener('click', () => setMode(button.dataset.builderMode)));
-    document.querySelectorAll('[data-latex-preview]').forEach((button) => button.addEventListener('click', () => showPreviewPane(button.dataset.latexPreview)));
     $('#latexContentTemplate')?.addEventListener('click', () => { $('#latexContentSource').value = CONTENT_TEMPLATE; updateContentPreview(); });
     $('#latexProofTemplate')?.addEventListener('click', () => { $('#latexProofSource').value = PROOF_TEMPLATE; updateProofPreview(); });
     $('#latexValidateContent')?.addEventListener('click', updateContentPreview);
     $('#latexValidateProof')?.addEventListener('click', updateProofPreview);
+    $('#latexOpenPdf')?.addEventListener('click', () => {
+      if (state.previewUrl) window.open(state.previewUrl, '_blank', 'noopener');
+    });
+    $('#latexDownloadPdf')?.addEventListener('click', () => {
+      if (!state.previewUrl) return;
+      const link = document.createElement('a');
+      link.href = state.previewUrl;
+      link.download = `${slug($('#modalModulos')?.dataset.courseTitle || 'curso-altitude')}-previa.pdf`;
+      document.body.appendChild(link);
+      link.click();
+      link.remove();
+    });
     $('#latexImportConfirm')?.addEventListener('click', () => importCourse({ publishAfter: false }));
     $('#latexImportPublish')?.addEventListener('click', () => importCourse({ publishAfter: true }));
     $('#latexContentFile')?.addEventListener('change', async (event) => { await readFileInto(event.currentTarget, $('#latexContentSource')); updateContentPreview(); });
@@ -874,6 +1109,8 @@ Agir com ética envolve honestidade, responsabilidade, respeito e sigilo.
     contentTemplate: CONTENT_TEMPLATE,
     proofTemplate: PROOF_TEMPLATE,
     previewContent: updateContentPreview,
+    createPdfBlob: pdfBlobFromContent,
+    createModulePdfBlob: modulePdfBlob,
     importCourse
   });
 

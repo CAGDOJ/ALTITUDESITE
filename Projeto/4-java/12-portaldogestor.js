@@ -882,7 +882,7 @@ function gerarRaLocal(){
     configurarEventListenersModulos();
     document.getElementById('builderModeNormal')?.click();
     atualizarPreviaModuloNormal();
-    document.querySelector('.builder-create-panel')?.scrollTo?.({ top: 0 });
+    document.querySelector('.builder-scroll-area')?.scrollTo?.({ top: 0 });
     document.querySelector('.builder-list-panel')?.scrollTo?.({ top: 0 });
 
     const list = $('#tabModulosBody');
@@ -1123,7 +1123,17 @@ function gerarRaLocal(){
   async function criarPdfInstitucionalModuloBlob({ title, desc, hours, content, courseTitle }) {
     if (!content) throw new Error('Insira o conteúdo do módulo para gerar a apostila em PDF.');
     const JsPDF = window.jspdf?.jsPDF || window.jsPDF;
-    if (!JsPDF) throw new Error('O gerador de PDF ainda não terminou de carregar. Aguarde alguns segundos e tente novamente.');
+    if (!JsPDF && window.AltitudeLatexImporter?.createModulePdfBlob) {
+      return window.AltitudeLatexImporter.createModulePdfBlob({
+        titulo: title,
+        descricao: desc,
+        carga_horaria: hours,
+        conteudo: content,
+        conteudo_latex: content,
+        ordem: 1
+      }, { titulo: courseTitle || 'Curso Altitude', categoria: 'FORMAÇÃO PROFISSIONAL', carga_horaria: hours });
+    }
+    if (!JsPDF) throw new Error('Não foi possível carregar o gerador de PDF. Atualize a página e tente novamente.');
 
     const doc = new JsPDF({ unit: 'mm', format: 'a4', orientation: 'portrait', compress: true });
     const pageWidth = doc.internal.pageSize.getWidth();
@@ -1471,7 +1481,7 @@ function gerarRaLocal(){
         const autoPdf = document.getElementById('fModuloGerarPdfAutomatico');
         if (autoPdf) autoPdf.checked = true;
         atualizarPreviaModuloNormal();
-        document.querySelector('.builder-create-panel')?.scrollTo?.({ top: 0, behavior: 'smooth' });
+        document.querySelector('.builder-scroll-area')?.scrollTo?.({ top: 0, behavior: 'smooth' });
         document.getElementById('fModuloTitulo')?.focus();
       });
     }

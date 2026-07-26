@@ -18,8 +18,8 @@
   <script src="../4-java/altitude-dialogs.js?v=17"></script>
   <script src="../4-java/supabase-init.js?v=17" defer></script>
   <script src="../4-java/gestor-guard.js?v=17" defer></script>
-  <script src="../4-java/12-portaldogestor.js?v=29" defer></script>
-  <script src="../4-java/latex-importer.js?v=29" defer></script>
+  <script src="../4-java/12-portaldogestor.js?v=30" defer></script>
+  <script src="../4-java/latex-importer.js?v=30" defer></script>
   <script src="../4-java/gestor-enhancements.js?v=29" defer></script>
   <script src="../4-java/gestor-acessos.js?v=17" defer></script>
   <script src="../4-java/certificado-pdf-v27.js?v=29" defer></script>
@@ -29,7 +29,8 @@
   <link rel="stylesheet" href="../2-css/15-ajustes-finais.css?v=29">
   <link rel="stylesheet" href="../2-css/16-latex-importer.css?v=29">
   <link rel="stylesheet" href="../2-css/19-v28-correcoes.css?v=29">
-  <link rel="stylesheet" href="../2-css/20-v29-cursos.css?v=29">
+  <link rel="stylesheet" href="../2-css/20-v29-cursos.css?v=30">
+  <link rel="stylesheet" href="../2-css/21-v30-construtor.css?v=30">
 </head>
 
 <body class="gestor-auth-pending">
@@ -274,122 +275,122 @@
         </div>
       </div>
 
-      <!-- MODAL: Construtor responsivo do curso -->
+      <!-- MODAL: Construtor simplificado do curso -->
       <div class="modal" id="modalModulos" aria-hidden="true">
         <div class="modal__sheet course-builder-modal" role="dialog" aria-modal="true" aria-labelledby="courseBuilderTitle">
-          <header class="course-builder-header">
-            <div>
+          <header class="course-builder-header v30-builder-header">
+            <button type="button" class="builder-back-button" id="fecharModulos" aria-label="Voltar para a lista de cursos">← Voltar para cursos</button>
+            <div class="builder-title-block">
               <p class="builder-eyebrow">MONTAGEM DO CURSO</p>
               <h3 id="courseBuilderTitle"><span id="mmCursoNome"></span></h3>
-              <p>Cadastre tudo em uma única tela. Escolha o modo normal ou LaTeX e confira a prévia antes de publicar.</p>
+              <p>Escolha uma forma de cadastro, confira tudo na prévia e publique sem sair desta tela.</p>
             </div>
-            <button type="button" class="btn-fechar builder-close" id="fecharModulos" aria-label="Fechar">×</button>
+            <div class="builder-header-status" aria-live="polite">
+              <span>Curso em edição</span>
+              <strong id="builderHeaderMode">Inserção normal</strong>
+            </div>
           </header>
 
-          <div class="builder-mode-switch" role="tablist" aria-label="Forma de inserir o curso">
-            <button type="button" class="active" id="builderModeNormal" data-builder-mode="normal" role="tab" aria-selected="true">Inserção normal</button>
-            <button type="button" id="builderModeLatex" data-builder-mode="latex" role="tab" aria-selected="false">Inserção em LaTeX</button>
-          </div>
-          <div class="builder-path-help">
-            <strong>Escolha somente uma forma para montar o curso.</strong>
-            <span><b>Normal:</b> adicione um módulo por vez. <b>LaTeX:</b> cole o material e a prova completos. Nos dois modos, finalize pelo botão <b>Revisar e publicar curso</b>.</span>
-          </div>
+          <nav class="builder-mode-switch v30-mode-switch" role="tablist" aria-label="Forma de inserir o curso">
+            <div class="builder-mode-intro"><strong>Como deseja montar?</strong><span>Use somente uma opção por vez.</span></div>
+            <button type="button" class="active" id="builderModeNormal" data-builder-mode="normal" role="tab" aria-selected="true">
+              <b>Inserção normal</b><small>Cadastre módulo, arquivos e prova manualmente.</small>
+            </button>
+            <button type="button" id="builderModeLatex" data-builder-mode="latex" role="tab" aria-selected="false">
+              <b>Inserção em LaTeX</b><small>Cole conteúdo e prova, visualize e publique.</small>
+            </button>
+          </nav>
 
-          <section class="normal-builder-panel" id="normalBuilderPanel">
-            <div class="course-builder-grid easy-course-builder">
-              <aside class="builder-create-panel">
-                <div class="builder-panel-title">
-                  <span>NOVO MÓDULO</span>
-                  <h4>Conteúdo, arquivos e mídia</h4>
-                  <p>Todos os campos ficam visíveis. No celular, tablet ou computador, basta rolar a tela e salvar.</p>
-                </div>
+          <main class="builder-scroll-area">
+            <section class="normal-builder-panel" id="normalBuilderPanel">
+              <div class="v30-section-heading">
+                <span>CADASTRO MANUAL</span>
+                <h4>Adicione um módulo por vez</h4>
+                <p>Preencha os campos, confira a prévia e salve. Depois adicione o próximo módulo ou publique.</p>
+              </div>
 
-                <form id="formModulo" class="builder-module-form module-one-screen-form">
-                  <fieldset class="builder-form-section">
-                    <legend>Dados do módulo</legend>
-                    <div class="builder-two-fields builder-title-order">
-                      <label>Título do módulo
-                        <input type="text" id="fModuloTitulo" placeholder="Ex.: Introdução à Informática" required>
+              <div class="course-builder-grid easy-course-builder v30-normal-grid">
+                <section class="builder-create-panel">
+                  <form id="formModulo" class="builder-module-form module-one-screen-form">
+                    <fieldset class="builder-form-section">
+                      <legend>1. Dados do módulo</legend>
+                      <div class="builder-two-fields builder-title-order">
+                        <label>Título do módulo
+                          <input type="text" id="fModuloTitulo" placeholder="Ex.: Introdução à Informática" required>
+                        </label>
+                        <label>Ordem
+                          <input type="number" id="fModuloOrdem" min="1" value="1" inputmode="numeric">
+                        </label>
+                        <label>Horas
+                          <input type="number" id="fModuloHoras" min="0" max="200" step="1" value="0" placeholder="Ex.: 10" inputmode="numeric">
+                        </label>
+                      </div>
+                      <label>Descrição curta
+                        <input type="text" id="fModuloDesc" maxlength="240" placeholder="Explique brevemente o que será estudado.">
                       </label>
-                      <label>Ordem
-                        <input type="number" id="fModuloOrdem" min="1" value="1" inputmode="numeric">
+                    </fieldset>
+
+                    <fieldset class="builder-form-section">
+                      <legend>2. Conteúdo para leitura</legend>
+                      <label class="builder-content-label">Texto do módulo
+                        <textarea id="fModuloConteudo" rows="15" placeholder="Escreva ou cole aqui o conteúdo completo que aparecerá para o aluno."></textarea>
+                        <small class="field-hint">A pré-visualização é atualizada automaticamente ao lado.</small>
                       </label>
-                      <label>Horas
-                        <input type="number" id="fModuloHoras" min="0" max="200" step="1" value="0" placeholder="Ex.: 10" inputmode="numeric">
-                      </label>
+                    </fieldset>
+
+                    <fieldset class="builder-form-section">
+                      <legend>3. Foto, PDF, vídeo e material extra</legend>
+                      <div class="builder-media-grid">
+                        <label>Foto do módulo
+                          <input type="file" id="fModuloImagemArquivo" accept="image/*">
+                          <small class="field-hint">JPG, PNG ou WEBP.</small>
+                        </label>
+                        <label>Apostila em PDF
+                          <input type="file" id="fModuloPdfArquivo" accept="application/pdf,.pdf">
+                        </label>
+                        <label class="builder-wide-field">Vídeo complementar
+                          <input type="url" id="fModuloVideo" placeholder="https://youtube.com/... ou outro link">
+                        </label>
+                        <label>Título do material extra
+                          <input type="text" id="fModuloMaterialTitulo" placeholder="Ex.: Planilha de exercícios">
+                        </label>
+                        <label>Arquivo extra
+                          <input type="file" id="fModuloMaterialArquivo" accept=".pdf,.doc,.docx,.xls,.xlsx,.ppt,.pptx,.zip,.rar,image/*,audio/*,video/*">
+                        </label>
+                      </div>
+                      <label class="builder-check builder-auto-pdf"><input type="checkbox" id="fModuloGerarPdfAutomatico" checked> Gerar uma apostila PDF com o padrão visual da Altitude</label>
+                    </fieldset>
+
+                    <label class="builder-check"><input type="checkbox" id="fModuloPublicado"> Liberar este módulo para o aluno assim que salvar</label>
+                    <div class="builder-primary-actions">
+                      <button type="submit" id="btnSalvarModulo" class="builder-main-button">Salvar módulo</button>
+                      <button type="button" id="btnSalvarAbrirProva" class="builder-secondary-button">Salvar e cadastrar prova</button>
                     </div>
-                    <label>Descrição curta
-                      <input type="text" id="fModuloDesc" maxlength="240" placeholder="Explique brevemente o que será estudado.">
-                    </label>
-                  </fieldset>
-
-                  <fieldset class="builder-form-section">
-                    <legend>Conteúdo para leitura</legend>
-                    <label class="builder-content-label">Texto do módulo
-                      <textarea id="fModuloConteudo" rows="12" placeholder="Escreva ou cole aqui o conteúdo completo que aparecerá para o aluno."></textarea>
-                      <small class="field-hint">A pré-visualização é atualizada automaticamente ao lado.</small>
-                    </label>
-                  </fieldset>
-
-                  <fieldset class="builder-form-section">
-                    <legend>Foto, PDF, vídeo e material extra</legend>
-                    <div class="builder-media-grid">
-                      <label>Foto do módulo
-                        <input type="file" id="fModuloImagemArquivo" accept="image/*">
-                        <small class="field-hint">JPG, PNG ou WEBP.</small>
-                      </label>
-                      <label>Apostila em PDF
-                        <input type="file" id="fModuloPdfArquivo" accept="application/pdf,.pdf">
-                      </label>
-                      <label class="builder-wide-field">Vídeo complementar
-                        <input type="url" id="fModuloVideo" placeholder="https://youtube.com/... ou outro link">
-                      </label>
-                      <label>Título do material extra
-                        <input type="text" id="fModuloMaterialTitulo" placeholder="Ex.: Planilha de exercícios">
-                      </label>
-                      <label>Arquivo extra
-                        <input type="file" id="fModuloMaterialArquivo" accept=".pdf,.doc,.docx,.xls,.xlsx,.ppt,.pptx,.zip,.rar,image/*,audio/*,video/*">
-                      </label>
-                    </div>
-                    <label class="builder-check builder-auto-pdf"><input type="checkbox" id="fModuloGerarPdfAutomatico" checked> Gerar automaticamente uma apostila PDF com o cabeçalho da Altitude a partir do texto acima</label>
-                  </fieldset>
-
-                  <label class="builder-check"><input type="checkbox" id="fModuloPublicado"> Liberar o módulo assim que salvar</label>
-                  <div class="builder-primary-actions">
-                    <button type="submit" id="btnSalvarModulo" class="builder-main-button">Salvar módulo</button>
-                    <button type="button" id="btnSalvarAbrirProva" class="builder-secondary-button">Salvar e cadastrar prova</button>
-                  </div>
-                </form>
-              </aside>
-
-              <section class="builder-list-panel">
-                <section class="normal-live-preview" aria-label="Pré-visualização do módulo">
-                  <div class="builder-list-heading compact">
-                    <div><span>PRÉ-VISUALIZAÇÃO</span><h4>Como o módulo ficará para o aluno</h4><p>Confira texto, foto, PDF e vídeo antes de salvar.</p></div>
-                    <div class="preview-action-group">
-                      <button type="button" class="builder-secondary-button active" id="btnPreviewNormalScreen">Tela</button>
-                      <button type="button" class="builder-secondary-button" id="btnPreviewSelectedPdf">PDF anexado</button>
-                      <button type="button" class="builder-secondary-button" id="btnPreviewNormalPdf">Gerar PDF</button>
-                    </div>
-                  </div>
-                  <div id="normalMaterialPreview" class="normal-material-preview">
-                    <div class="normal-preview-empty">Preencha o módulo para visualizar aqui.</div>
-                  </div>
-                  <iframe id="normalPdfPreviewFrame" class="normal-pdf-preview-frame" title="Prévia do PDF do módulo" hidden></iframe>
+                  </form>
                 </section>
 
-                <div class="builder-list-heading modules-heading">
-                  <div>
-                    <span>MÓDULOS DO CURSO</span>
-                    <h4>Conteúdo já cadastrado</h4>
-                    <p id="builderModuleSummary">Carregando estrutura...</p>
-                  </div>
-                  <button type="button" class="builder-secondary-button" id="btnRecarregarModulos">Atualizar</button>
-                </div>
+                <aside class="builder-list-panel v30-preview-column">
+                  <section class="normal-live-preview" aria-label="Pré-visualização do módulo">
+                    <div class="builder-list-heading compact">
+                      <div><span>PRÉ-VISUALIZAÇÃO</span><h4>Como ficará para o aluno</h4><p>Confira antes de salvar.</p></div>
+                      <div class="preview-action-group">
+                        <button type="button" class="builder-secondary-button active" id="btnPreviewNormalScreen">Tela</button>
+                        <button type="button" class="builder-secondary-button" id="btnPreviewSelectedPdf">PDF anexado</button>
+                        <button type="button" class="builder-secondary-button" id="btnPreviewNormalPdf">Gerar PDF</button>
+                      </div>
+                    </div>
+                    <div id="normalMaterialPreview" class="normal-material-preview"><div class="normal-preview-empty">Preencha o módulo para visualizar aqui.</div></div>
+                    <iframe id="normalPdfPreviewFrame" class="normal-pdf-preview-frame" title="Prévia do PDF do módulo" hidden></iframe>
+                  </section>
+                </aside>
+              </div>
 
-                <div id="tabModulosBody" class="builder-module-list" aria-live="polite">
-                  <div class="builder-empty-state">Nenhum módulo cadastrado ainda.</div>
+              <section class="v30-modules-section">
+                <div class="builder-list-heading modules-heading">
+                  <div><span>MÓDULOS DO CURSO</span><h4>Conteúdo já cadastrado</h4><p id="builderModuleSummary">Carregando estrutura...</p></div>
+                  <button type="button" class="builder-secondary-button" id="btnRecarregarModulos">Atualizar lista</button>
                 </div>
+                <div id="tabModulosBody" class="builder-module-list" aria-live="polite"><div class="builder-empty-state">Nenhum módulo cadastrado ainda.</div></div>
 
                 <div id="form-edicao-modulo" class="builder-edit-panel" hidden>
                   <div class="builder-list-heading">
@@ -397,123 +398,104 @@
                     <button type="button" class="builder-secondary-button" onclick="fecharEdicaoModulo()">Fechar edição</button>
                   </div>
                   <form id="form-editar-modulo">
-                    <input type="hidden" id="editar-id">
-                    <input type="hidden" id="editar-course-id">
+                    <input type="hidden" id="editar-id"><input type="hidden" id="editar-course-id">
                     <div class="builder-two-fields builder-title-order">
-                      <label>Título do módulo
-                        <input type="text" id="editar-titulo" required>
-                      </label>
-                      <label>Ordem
-                        <input type="number" id="editar-order" min="1" value="1">
-                      </label>
-                      <label>Horas
-                        <input type="number" id="editar-carga-horaria" min="0" max="200" step="1" value="0">
-                      </label>
+                      <label>Título do módulo<input type="text" id="editar-titulo" required></label>
+                      <label>Ordem<input type="number" id="editar-order" min="1" value="1"></label>
+                      <label>Horas<input type="number" id="editar-carga-horaria" min="0" max="200" step="1" value="0"></label>
                     </div>
-                    <label>Descrição
-                      <textarea id="editar-descricao" rows="3"></textarea>
-                    </label>
-                    <label>Conteúdo completo
-                      <textarea id="editar-conteudo" rows="12" placeholder="Conteúdo disponibilizado ao aluno"></textarea>
-                    </label>
-                    <div class="builder-media-grid edit-media-grid">
-                      <label>Nova foto do módulo
-                        <input type="file" id="editar-imagem-arquivo" accept="image/*">
-                      </label>
-                      <label>Novo PDF
-                        <input type="file" id="editar-pdf-arquivo" accept="application/pdf,.pdf">
-                      </label>
-                      <label>PDF ou apostila (URL)
-                        <input type="url" id="editar-pdf-url" placeholder="https://...">
-                      </label>
-                      <label>Vídeo (URL)
-                        <input type="url" id="editar-video-url" placeholder="https://...">
-                      </label>
-                      <label>Título do material extra
-                        <input type="text" id="editar-material-titulo" placeholder="Ex.: Exercícios complementares">
-                      </label>
-                      <label>Novo material extra
-                        <input type="file" id="editar-material-arquivo" accept=".pdf,.doc,.docx,.xls,.xlsx,.ppt,.pptx,.zip,.rar,image/*,audio/*,video/*">
-                      </label>
+                    <label>Descrição<textarea id="editar-descricao" rows="3"></textarea></label>
+                    <label>Conteúdo completo<textarea id="editar-conteudo" rows="12"></textarea></label>
+                    <div class="builder-media-grid">
+                      <label>Nova imagem<input type="file" id="editar-imagem-arquivo" accept="image/*"></label>
+                      <label>Novo PDF<input type="file" id="editar-pdf-arquivo" accept="application/pdf,.pdf"></label>
+                      <label class="builder-wide-field">Vídeo complementar<input type="url" id="editar-video-url" placeholder="https://..."></label>
+                      <label>Título do material extra<input type="text" id="editar-material-titulo" placeholder="Ex.: Exercícios complementares"></label>
+                      <label>Novo material extra<input type="file" id="editar-material-arquivo" accept=".pdf,.doc,.docx,.xls,.xlsx,.ppt,.pptx,.zip,.rar,image/*,audio/*,video/*"></label>
                     </div>
-                    <label class="builder-check builder-auto-pdf"><input type="checkbox" id="editar-gerar-pdf" checked> Gerar/atualizar o PDF institucional com o conteúdo deste módulo ao salvar</label>
+                    <label class="builder-check builder-auto-pdf"><input type="checkbox" id="editar-gerar-pdf" checked> Gerar/atualizar o PDF institucional ao salvar</label>
                     <div class="builder-inline-actions">
-                      <button type="button" id="btnGerarPdfModulo" class="builder-secondary-button">Pré-visualizar PDF institucional</button>
+                      <button type="button" id="btnGerarPdfModulo" class="builder-secondary-button">Pré-visualizar PDF</button>
                       <button type="button" id="btnAbrirProvaEdicao" class="builder-secondary-button">Cadastrar/editar prova</button>
                     </div>
                     <label class="builder-check"><input type="checkbox" id="editar-publicado"> Liberar este módulo para os alunos</label>
-                    <div class="actions builder-form-actions">
-                      <button type="button" class="ghost" onclick="fecharEdicaoModulo()">Cancelar</button>
-                      <button type="submit">Salvar alterações</button>
-                    </div>
+                    <div class="actions builder-form-actions"><button type="button" class="ghost" onclick="fecharEdicaoModulo()">Cancelar</button><button type="submit">Salvar alterações</button></div>
                   </form>
                 </div>
               </section>
-            </div>
-            <footer class="builder-completion-bar" id="normalCompletionBar">
-              <div class="builder-completion-copy">
-                <strong id="builderNormalStatus">Salve o primeiro módulo para continuar.</strong>
-                <span>Você pode adicionar quantos módulos quiser e publicar sem sair desta tela.</span>
-              </div>
-              <button type="button" id="btnNormalNewModule" class="builder-secondary-button">+ Adicionar outro módulo</button>
-              <button type="button" id="btnBuilderPublishNormal" class="builder-publish-button">Revisar e publicar curso</button>
-            </footer>
-          </section>
 
-          <section id="latexBuilderPanel" class="latex-builder-panel" hidden>
-            <div class="latex-builder-workspace">
-              <section class="latex-builder-editors">
-                <div class="latex-editor-card">
-                  <header><div><span>1 · MATERIAL DE ESTUDO</span><h4>LaTeX do conteúdo</h4><p>Cole o material no padrão Altitude. O PDF institucional aparecerá ao lado.</p></div><label class="latex-file-button">Abrir conteúdo .tex<input id="latexContentFile" type="file" accept=".tex,text/plain,text/x-tex"></label></header>
-                  <div class="latex-editor-toolbar"><button type="button" id="latexContentTemplate">Carregar modelo de conteúdo</button><button type="button" id="latexValidateContent">Atualizar PDF</button></div>
-                  <textarea id="latexContentSource" spellcheck="false" aria-label="LaTeX do conteúdo"></textarea>
-                </div>
-                <div class="latex-editor-card proof-editor-card">
-                  <header><div><span>2 · AVALIAÇÃO SEPARADA</span><h4>LaTeX das questões</h4><p>Enunciados, alternativas, gabarito e resolução ficam separados da apostila.</p></div><label class="latex-file-button">Abrir prova .tex<input id="latexProofFile" type="file" accept=".tex,text/plain,text/x-tex"></label></header>
-                  <div class="latex-editor-toolbar"><button type="button" id="latexProofTemplate">Carregar modelo de prova</button><button type="button" id="latexValidateProof">Visualizar questões</button></div>
-                  <textarea id="latexProofSource" spellcheck="false" aria-label="LaTeX da prova"></textarea>
+              <footer class="builder-completion-bar" id="normalCompletionBar">
+                <div class="builder-completion-copy"><strong id="builderNormalStatus">Salve o primeiro módulo para continuar.</strong><span>Adicione quantos módulos quiser e publique quando estiver pronto.</span></div>
+                <button type="button" id="btnNormalNewModule" class="builder-secondary-button">+ Novo módulo</button>
+                <button type="button" id="btnBuilderPublishNormal" class="builder-publish-button">Revisar e publicar curso</button>
+              </footer>
+            </section>
+
+            <section id="latexBuilderPanel" class="latex-builder-panel" hidden>
+              <div class="v30-section-heading">
+                <span>CADASTRO POR LATEX</span>
+                <h4>Cole o material e a prova em campos separados</h4>
+                <p>O conteúdo gera o PDF institucional. A prova mantém questões, alternativas, gabarito e resolução separados.</p>
+              </div>
+
+              <section class="v30-latex-step" id="latexMaterialStep">
+                <header class="v30-step-header"><div><b>1</b></div><section><h4>Material de estudo</h4><p>Cole o LaTeX ou abra um arquivo .tex. Depois clique em “Gerar prévia do PDF”.</p></section></header>
+                <div class="v30-latex-grid">
+                  <div class="latex-editor-card">
+                    <header><div><span>CONTEÚDO</span><h4>LaTeX do material</h4><p>Use o modelo institucional da Altitude.</p></div><label class="latex-file-button">Abrir .tex<input id="latexContentFile" type="file" accept=".tex,text/plain,text/x-tex"></label></header>
+                    <div class="latex-editor-toolbar"><button type="button" id="latexContentTemplate">Carregar modelo</button><button type="button" id="latexValidateContent" class="primary">Gerar prévia do PDF</button></div>
+                    <textarea id="latexContentSource" spellcheck="false" aria-label="LaTeX do conteúdo"></textarea>
+                  </div>
+                  <aside class="v30-preview-card">
+                    <header><div><span>PRÉVIA DO MATERIAL</span><h4>PDF institucional</h4></div><div class="v30-preview-actions"><button type="button" id="latexOpenPdf" disabled>Abrir PDF</button><button type="button" id="latexDownloadPdf" disabled>Baixar prévia</button></div></header>
+                    <div id="latexPreviewSummary" class="latex-preview-summary"></div>
+                    <div id="latexPreviewPdfPane" class="latex-preview-pane">
+                      <iframe id="latexPdfPreviewFrame" title="Pré-visualização do PDF do conteúdo"></iframe>
+                      <div id="latexPdfPlaceholder" class="latex-preview-placeholder">Cole ou abra o conteúdo e clique em <b>Gerar prévia do PDF</b>.</div>
+                    </div>
+                  </aside>
                 </div>
               </section>
 
-              <aside class="latex-builder-preview">
-                <div class="latex-preview-tabs" role="tablist">
-                  <button type="button" class="active" data-latex-preview="pdf">Prévia do PDF</button>
-                  <button type="button" data-latex-preview="questions">Prévia da prova</button>
+              <section class="v30-latex-step" id="latexProofStep">
+                <header class="v30-step-header"><div><b>2</b></div><section><h4>Avaliação</h4><p>Cole as questões em LaTeX. Elas não são misturadas ao PDF do conteúdo.</p></section></header>
+                <div class="v30-latex-grid">
+                  <div class="latex-editor-card proof-editor-card">
+                    <header><div><span>PROVA</span><h4>LaTeX das questões</h4><p>Enunciado, alternativas A–E, gabarito e resolução.</p></div><label class="latex-file-button">Abrir .tex<input id="latexProofFile" type="file" accept=".tex,text/plain,text/x-tex"></label></header>
+                    <div class="latex-editor-toolbar"><button type="button" id="latexProofTemplate">Carregar modelo</button><button type="button" id="latexValidateProof" class="primary">Visualizar prova</button></div>
+                    <textarea id="latexProofSource" spellcheck="false" aria-label="LaTeX da prova"></textarea>
+                  </div>
+                  <aside class="v30-preview-card">
+                    <header><div><span>PRÉVIA DA AVALIAÇÃO</span><h4>Questões reconhecidas</h4></div></header>
+                    <div id="latexPreviewQuestionsPane" class="latex-preview-pane">
+                      <div id="latexQuestionsPreview" class="latex-questions-preview"><div class="latex-preview-placeholder">Cole ou abra a prova e clique em <b>Visualizar prova</b>.</div></div>
+                    </div>
+                  </aside>
                 </div>
-                <div id="latexPreviewPdfPane" class="latex-preview-pane">
-                  <div id="latexPreviewSummary" class="latex-preview-summary"></div>
-                  <iframe id="latexPdfPreviewFrame" title="Pré-visualização do PDF do conteúdo"></iframe>
-                  <div id="latexPdfPlaceholder" class="latex-preview-placeholder">Cole ou abra o conteúdo em LaTeX e clique em <b>Atualizar PDF</b>.</div>
-                </div>
-                <div id="latexPreviewQuestionsPane" class="latex-preview-pane" hidden>
-                  <div id="latexQuestionsPreview" class="latex-questions-preview"><div class="latex-preview-placeholder">Cole ou abra a prova em LaTeX e clique em <b>Visualizar questões</b>.</div></div>
-                </div>
-              </aside>
-            </div>
-            <footer class="latex-builder-footer latex-simple-footer">
-              <details class="latex-advanced-options">
-                <summary>Opções avançadas</summary>
-                <div class="latex-import-options">
-                  <label><input id="latexReplaceExisting" type="checkbox" checked> Substituir módulos e prova atuais</label>
-                  <label><input id="latexPublishModules" type="checkbox"> Liberar módulos logo após salvar</label>
-                  <label><input id="latexUpdateCourse" type="checkbox" checked> Atualizar dados do curso pelo LaTeX</label>
-                </div>
-              </details>
-              <span id="latexImportProgress" aria-live="polite"></span>
-              <div class="latex-final-actions">
-                <button type="button" id="latexImportConfirm" class="builder-secondary-button">Salvar como rascunho</button>
-                <button type="button" id="latexImportPublish" class="builder-publish-button">Salvar e publicar curso</button>
-              </div>
-            </footer>
-          </section>
+              </section>
 
-          <footer class="builder-footer" id="normalBuilderFooter">
-            <button id="btnVoltarModulos" type="button" class="builder-secondary-button">← Voltar para cursos</button>
-            <p>O curso permanece como rascunho até você usar o botão <b>Publicar</b> na lista de cursos.</p>
+              <section class="v30-latex-finish">
+                <div class="v30-finish-copy"><span>3 · FINALIZAR</span><h4>Salvar ou publicar</h4><p>O sistema cria os módulos, PDFs e a prova. Você pode manter como rascunho ou publicar agora.</p></div>
+                <div class="latex-import-options v30-import-options">
+                  <label><input id="latexReplaceExisting" type="checkbox" checked> Substituir a estrutura atual deste curso</label>
+                  <label><input id="latexPublishModules" type="checkbox" checked> Liberar os módulos ao publicar</label>
+                  <label><input id="latexUpdateCourse" type="checkbox" checked> Atualizar título, área e horas pelo LaTeX</label>
+                </div>
+                <span id="latexImportProgress" aria-live="polite"></span>
+                <div class="latex-final-actions">
+                  <button type="button" id="latexImportConfirm" class="builder-secondary-button">Salvar como rascunho</button>
+                  <button type="button" id="latexImportPublish" class="builder-publish-button">Salvar e publicar curso</button>
+                </div>
+              </section>
+            </section>
+          </main>
+
+          <footer class="v30-global-footer">
+            <button id="btnVoltarModulos" type="button" class="builder-secondary-button">← Voltar para a lista de cursos</button>
+            <p>As alterações são salvas somente quando você usa os botões de salvar. A publicação pode ser feita nesta mesma tela.</p>
           </footer>
         </div>
       </div>
-
 
       <!-- MODAL: Materiais -->
       <div class="modal" id="modalMateriais" aria-hidden="true">

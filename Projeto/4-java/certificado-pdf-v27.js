@@ -21,6 +21,26 @@
       .trim();
   }
 
+  function stripModulePrefix(value) {
+    const cleaned = cleanTitle(value);
+    return cleaned
+      .replace(/^m[oó]dulo\s+\d+\s*(?:[-–—:|]\s*)?/i, '')
+      .replace(/^unidade\s+\d+\s*(?:[-–—:|]\s*)?/i, '')
+      .replace(/^\d+\s*(?:[-–—:.)]\s*)/, '')
+      .trim();
+  }
+
+  function programTitle(module, index, course) {
+    const direct = stripModulePrefix(module?.titulo);
+    if (direct) return direct;
+    const headings = extractHeadings(module);
+    if (headings.length) return stripModulePrefix(headings[0]) || headings[0];
+    const description = stripModulePrefix(module?.descricao);
+    if (description) return description;
+    const courseName = stripModulePrefix(course?.titulo) || 'Conteúdo do curso';
+    return `${courseName} — parte ${index + 1}`;
+  }
+
   function uniqueTitles(values) {
     const used = new Set();
     return values.map(cleanTitle).filter((value) => {
@@ -168,7 +188,7 @@
 
     if (modules.length >= 2) {
       items = modules.map((module, index) => ({
-        titulo: cleanTitle(module.titulo) || `Módulo ${index + 1}`,
+        titulo: programTitle(module, index, course),
         horasBase: Number(module.carga_horaria || 0)
       }));
     } else if (modules.length === 1) {
@@ -178,7 +198,7 @@
         const target = Number(totalHours || 0) >= 40 && headings.length >= 6 ? 3 : 2;
         items = groupTitles(headings, target).map((titulo) => ({ titulo, horasBase: 1 }));
       } else {
-        const title = cleanTitle(module.titulo) || cleanTitle(course?.titulo) || 'Conteúdo programático';
+        const title = stripModulePrefix(module.titulo) || stripModulePrefix(course?.titulo) || 'Conteúdo programático';
         const desc = cleanTitle(module.descricao || course?.descricao);
         items = desc
           ? [

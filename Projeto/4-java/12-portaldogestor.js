@@ -3,9 +3,7 @@
 -----------------------------------------------------------*/
 function mostrarCarregamento(mensagem = 'Carregando...') {
   const loaderExistente = document.getElementById('global-loader');
-  if (loaderExistente) {
-    loaderExistente.remove();
-  }
+  if (loaderExistente) loaderExistente.remove();
 
   const loader = document.createElement('div');
   loader.id = 'global-loader';
@@ -17,6 +15,13 @@ function mostrarCarregamento(mensagem = 'Carregando...') {
       </div>
     </div>
   `;
+  // Segurança: nenhuma operação pode deixar a tela bloqueada indefinidamente.
+  loader._altitudeTimeout = window.setTimeout(() => {
+    if (loader.isConnected) {
+      console.warn('Carregamento removido automaticamente após o tempo limite:', mensagem);
+      loader.remove();
+    }
+  }, 20000);
   
   if (!document.querySelector('#loader-styles')) {
     const styles = document.createElement('style');
@@ -70,9 +75,19 @@ function mostrarCarregamento(mensagem = 'Carregando...') {
 
 function esconderCarregamento() {
   const loader = document.getElementById('global-loader');
-  if (loader) {
-    loader.remove();
-  }
+  if (!loader) return;
+  if (loader._altitudeTimeout) window.clearTimeout(loader._altitudeTimeout);
+  loader.remove();
+}
+
+function comTempoLimite(promise, ms = 15000, mensagem = 'A operação demorou mais do que o esperado.') {
+  let timer;
+  return Promise.race([
+    Promise.resolve(promise),
+    new Promise((_, reject) => {
+      timer = window.setTimeout(() => reject(new Error(mensagem)), ms);
+    })
+  ]).finally(() => window.clearTimeout(timer));
 }
 
 /* ----------------------------------------------------------
@@ -104,6 +119,14 @@ let alunos = [];
 const pageAln = { idx:1, size:10 };
 let editAlunoId = null;
 const $ = s => document.querySelector(s);
+function escapeHTML(value) {
+  return String(value ?? '')
+    .replaceAll('&', '&amp;')
+    .replaceAll('<', '&lt;')
+    .replaceAll('>', '&gt;')
+    .replaceAll('"', '&quot;')
+    .replaceAll("'", '&#039;');
+}
 
 function up(t){
   return (t||'')
@@ -827,39 +850,59 @@ function gerarRaLocal(){
 
   async function abrirPainelModulos(id) {
     debugModulos('Abrindo painel de módulos para curso:', id);
-    mostrarCarregamento('Carregando módulos...');
-    
-    const curso = GC.cursos.find(c => c.id === id);
+    // Remove qualquer carregamento antigo que tenha ficado preso.
+    esconderCarregamento();
+
+    const curso = GC.cursos.find(c => Number(c.id) === Number(id));
     if (!curso) {
-      esconderCarregamento();
-      alert('Curso não encontrado');
+      alert('Curso não encontrado. Atualize a lista e tente novamente.');
       return;
     }
 
-    cursoEditandoId = id;
+    cursoEditandoId = Number(id);
     GC.cursoAtual = curso;
     const modalModulos = $('#modalModulos');
-    if (modalModulos) {
-      modalModulos.dataset.courseId = String(id);
-      modalModulos.dataset.courseTitle = curso.titulo || 'Curso Altitude';
-      modalModulos.dataset.courseHours = String(Math.max(0, Number(curso.carga_horaria || 0)));
-      modalModulos.dataset.courseCategory = curso.categoria || '';
-      modalModulos.dataset.courseDescription = curso.descricao || '';
+    if (!modalModulos) {
+      alert('A tela de montagem do curso não foi carregada. Atualize a página com Ctrl + F5.');
+      return;
     }
-    
-    $('#mmCursoNome').textContent = `${curso.titulo} · ${curso.categoria || 'SEM ÁREA'}`;
 
-    await carregarModulosCurso(id);
-    
-    $('#modalModulos').setAttribute('aria-hidden', 'false');
+    modalModulos.dataset.courseId = String(id);
+    modalModulos.dataset.courseTitle = curso.titulo || 'Curso Altitude';
+    modalModulos.dataset.courseHours = String(Math.max(0, Number(curso.carga_horaria || 0)));
+    modalModulos.dataset.courseCategory = curso.categoria || '';
+    modalModulos.dataset.courseDescription = curso.descricao || '';
+
+    const courseName = $('#mmCursoNome');
+    if (courseName) courseName.textContent = `${curso.titulo} · ${curso.categoria || 'SEM ÁREA'}`;
+
+    // Abre primeiro a tela. O formulário continua utilizável mesmo se a internet estiver lenta.
+    modalModulos.setAttribute('aria-hidden', 'false');
     document.body.style.overflow = 'hidden';
-    document.querySelector('.builder-create-panel')?.scrollTo({ top: 0 });
-    document.querySelector('.builder-list-panel')?.scrollTo({ top: 0 });
+    configurarEventListenersModulos();
     document.getElementById('builderModeNormal')?.click();
     atualizarPreviaModuloNormal();
-    
-    configurarEventListenersModulos();
-    esconderCarregamento();
+    document.querySelector('.builder-create-panel')?.scrollTo?.({ top: 0 });
+    document.querySelector('.builder-list-panel')?.scrollTo?.({ top: 0 });
+
+    const list = $('#tabModulosBody');
+    if (list) list.innerHTML = '<div class="builder-empty-state"><strong>Carregando módulos…</strong><span>O formulário já pode ser preenchido enquanto os dados são carregados.</span></div>';
+
+    try {
+      await comTempoLimite(
+        carregarModulosCurso(Number(id)),
+        18000,
+        'Não foi possível concluir o carregamento dos módulos. Verifique a conexão e tente novamente.'
+      );
+    } catch (error) {
+      console.error('Erro/tempo limite ao abrir módulos:', error);
+      if (list) {
+        list.innerHTML = `<div class="builder-empty-state error" data-retry="true"><strong>Os módulos não foram carregados.</strong><span>${escapeHTML(error.message || 'Falha de conexão.')}</span><button type="button" id="btnRetryModulesV28">Tentar novamente</button></div>`;
+        document.getElementById('btnRetryModulesV28')?.addEventListener('click', () => carregarModulosCurso(Number(id)));
+      }
+    } finally {
+      esconderCarregamento();
+    }
   }
 
   function fecharPainelModulos() {
@@ -879,58 +922,107 @@ function gerarRaLocal(){
   async function carregarModulosCurso(cursoId) {
     const list = $('#tabModulosBody');
     const summary = $('#builderModuleSummary');
-    if (!list) return;
-    list.innerHTML = '<div class="builder-empty-state">Carregando módulos...</div>';
+    if (!list) return [];
+    list.innerHTML = '<div class="builder-empty-state"><strong>Carregando módulos…</strong><span>Aguarde só um instante.</span></div>';
 
     try {
-      const { data: modulos, error } = await sb
-        .from('modulos')
-        .select('*')
-        .eq('curso_id', cursoId)
-        .order('ordem', { ascending: true });
-      if (error) throw error;
+      const moduloResult = await comTempoLimite(
+        sb.from('modulos').select('*').eq('curso_id', Number(cursoId)).order('ordem', { ascending: true }),
+        15000,
+        'A consulta dos módulos demorou demais.'
+      );
+      if (moduloResult.error) throw moduloResult.error;
+      const modulos = moduloResult.data || [];
 
-      if (!modulos?.length) {
-        list.innerHTML = '<div class="builder-empty-state"><strong>O curso ainda não possui módulos.</strong><span>Use o formulário ao lado para criar o primeiro.</span></div>';
+      if (!modulos.length) {
+        list.innerHTML = '<div class="builder-empty-state"><strong>O curso ainda não possui módulos.</strong><span>Use o formulário ao lado para criar o primeiro módulo.</span></div>';
         if (summary) summary.textContent = '0 módulos cadastrados';
-        return;
+        return [];
       }
 
-      const cards = [];
+      const moduloIds = modulos.map((item) => Number(item.id)).filter(Boolean);
+      const [materiaisResult, provasResult] = await Promise.all([
+        comTempoLimite(
+          sb.from('materiais').select('id,modulo_id').in('modulo_id', moduloIds),
+          12000,
+          'A consulta dos materiais demorou demais.'
+        ).catch((error) => ({ data: [], error })),
+        comTempoLimite(
+          sb.from('provas').select('id,modulo_id').in('modulo_id', moduloIds),
+          12000,
+          'A consulta das provas demorou demais.'
+        ).catch((error) => ({ data: [], error }))
+      ]);
+
+      if (materiaisResult.error) console.warn('Materiais não puderam ser contados:', materiaisResult.error);
+      if (provasResult.error) console.warn('Provas não puderam ser contadas:', provasResult.error);
+
+      const materiais = materiaisResult.data || [];
+      const provas = provasResult.data || [];
+      const provaIds = provas.map((item) => Number(item.id)).filter(Boolean);
+      let questoes = [];
+      if (provaIds.length) {
+        const questoesResult = await comTempoLimite(
+          sb.from('questoes').select('id,prova_id').in('prova_id', provaIds),
+          12000,
+          'A consulta das questões demorou demais.'
+        ).catch((error) => ({ data: [], error }));
+        if (questoesResult.error) console.warn('Questões não puderam ser contadas:', questoesResult.error);
+        questoes = questoesResult.data || [];
+      }
+
+      const materialCount = materiais.reduce((acc, item) => {
+        const key = Number(item.modulo_id);
+        acc[key] = (acc[key] || 0) + 1;
+        return acc;
+      }, {});
+      const proofByModule = provas.reduce((acc, item) => {
+        const key = Number(item.modulo_id);
+        if (!acc[key]) acc[key] = [];
+        acc[key].push(Number(item.id));
+        return acc;
+      }, {});
+      const questionsByProof = questoes.reduce((acc, item) => {
+        const key = Number(item.prova_id);
+        acc[key] = (acc[key] || 0) + 1;
+        return acc;
+      }, {});
+
       let prontos = 0;
-      for (const modulo of modulos) {
-        const materiaisCount = await contarMateriaisModulo(modulo.id);
-        const questaoCount = await contarQuestoesModulo(modulo.id);
+      const cards = modulos.map((modulo) => {
+        const moduleId = Number(modulo.id);
+        const materiaisCount = materialCount[moduleId] || 0;
+        const questaoCount = (proofByModule[moduleId] || []).reduce((sum, proofId) => sum + (questionsByProof[proofId] || 0), 0);
         const temConteudo = Boolean(String(modulo.conteudo || '').trim() || String(modulo.pdf_url || '').trim());
         const etapas = Number(temConteudo) + Number(materiaisCount > 0) + Number(questaoCount > 0) + Number(Boolean(modulo.publicado));
         const percentual = Math.round((etapas / 4) * 100);
         if (percentual === 100) prontos += 1;
 
-        const safeTitle = String(modulo.titulo || 'Módulo').replaceAll('&', '&amp;').replaceAll('<', '&lt;').replaceAll('>', '&gt;').replaceAll('"', '&quot;');
-        cards.push(`
-          <article class="builder-module-card" data-module-id="${Number(modulo.id)}" data-module-title="${safeTitle}">
+        const safeTitle = escapeHTML(modulo.titulo || 'Módulo');
+        const safeDescription = escapeHTML(modulo.descricao || 'Sem descrição cadastrada.');
+        const rawContent = String(modulo.conteudo || '').trim();
+        const safePreview = rawContent
+          ? escapeHTML(rawContent.slice(0, 150)) + (rawContent.length > 150 ? '…' : '')
+          : (modulo.pdf_url ? 'Apostila em PDF anexada.' : 'Nenhum conteúdo inserido ainda.');
+
+        return `
+          <article class="builder-module-card" data-module-id="${moduleId}" data-module-title="${safeTitle}">
             <div class="builder-module-top">
               <div class="builder-module-order">${Number(modulo.ordem || 1)}</div>
               <div class="builder-module-copy">
                 <h5>${safeTitle}</h5>
-                <p><strong>${Math.max(0, Number(modulo.carga_horaria || 0))}h</strong> · ${modulo.descricao ? String(modulo.descricao).replaceAll('&', '&amp;').replaceAll('<', '&lt;').replaceAll('>', '&gt;') : 'Sem descrição cadastrada.'}</p>
-                <small class="builder-content-preview">${String(modulo.conteudo || '').trim() ? String(modulo.conteudo).trim().slice(0, 150).replaceAll('&', '&amp;').replaceAll('<', '&lt;').replaceAll('>', '&gt;') + (String(modulo.conteudo).trim().length > 150 ? '…' : '') : (modulo.pdf_url ? 'Apostila em PDF anexada.' : 'Nenhum conteúdo inserido ainda.')}</small>
+                <p><strong>${Math.max(0, Number(modulo.carga_horaria || 0))}h</strong> · ${safeDescription}</p>
+                <small class="builder-content-preview">${safePreview}</small>
               </div>
               <span class="builder-status ${modulo.publicado ? 'live' : ''}">${modulo.publicado ? 'LIBERADO' : 'RASCUNHO'}</span>
             </div>
-
-            <div class="builder-progress-row">
-              <div class="builder-progress"><span style="width:${percentual}%"></span></div>
-              <strong>${percentual}% configurado</strong>
-            </div>
-
+            <div class="builder-progress-row"><div class="builder-progress"><span style="width:${percentual}%"></span></div><strong>${percentual}% configurado</strong></div>
             <div class="builder-checks">
               <span class="${temConteudo ? 'done' : ''}">${temConteudo ? '✓' : '○'} Conteúdo/PDF</span>
               <span class="${materiaisCount > 0 ? 'done' : ''}">${materiaisCount > 0 ? '✓' : '○'} Arquivos e mídia (${materiaisCount})</span>
               <span class="${questaoCount > 0 ? 'done' : ''}">${questaoCount > 0 ? '✓' : '○'} Prova (${questaoCount})</span>
               <span class="${modulo.publicado ? 'done' : ''}">${modulo.publicado ? '✓' : '○'} Liberação</span>
             </div>
-
             <div class="builder-module-actions">
               <button type="button" class="primary" data-module-action="content">Editar módulo</button>
               <button type="button" data-module-action="materials">Arquivos e mídia</button>
@@ -938,15 +1030,18 @@ function gerarRaLocal(){
               <button type="button" data-module-action="toggle">${modulo.publicado ? 'Desativar' : 'Liberar módulo'}</button>
               <button type="button" class="danger" data-module-action="delete">Excluir</button>
             </div>
-          </article>`);
-      }
+          </article>`;
+      });
 
       list.innerHTML = cards.join('');
       if (summary) summary.textContent = `${modulos.length} módulo${modulos.length === 1 ? '' : 's'} · ${prontos} totalmente configurado${prontos === 1 ? '' : 's'}`;
+      return modulos;
     } catch (error) {
       console.error('Erro ao carregar módulos:', error);
-      list.innerHTML = `<div class="builder-empty-state error"><strong>Não foi possível carregar os módulos.</strong><span>${String(error.message || error)}</span></div>`;
+      list.innerHTML = `<div class="builder-empty-state error" data-retry="true"><strong>Não foi possível carregar os módulos.</strong><span>${escapeHTML(error.message || error)}</span><button type="button" id="btnRetryModulesV28">Tentar novamente</button></div>`;
+      document.getElementById('btnRetryModulesV28')?.addEventListener('click', () => carregarModulosCurso(Number(cursoId)));
       if (summary) summary.textContent = 'Falha ao carregar a estrutura';
+      return [];
     }
   }
 

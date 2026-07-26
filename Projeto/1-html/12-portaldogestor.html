@@ -7,7 +7,7 @@
   <title>Portal de Gestão - Altitude</title>
   <link rel="icon" type="image/png" sizes="512x512" href="/Projeto/3-img/favicon-cloud.png?v=14">
 
-  <link rel="stylesheet" href="/Projeto/2-css/12-portaldogestor.css?v=27">
+  <link rel="stylesheet" href="/Projeto/2-css/12-portaldogestor.css?v=28">
   <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.11/dist/katex.min.css">
   <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/jspdf@2.5.2/dist/jspdf.umd.min.js"></script>
@@ -18,16 +18,17 @@
   <script src="../4-java/altitude-dialogs.js?v=17"></script>
   <script src="../4-java/supabase-init.js?v=17" defer></script>
   <script src="../4-java/gestor-guard.js?v=17" defer></script>
-  <script src="../4-java/12-portaldogestor.js?v=27" defer></script>
-  <script src="../4-java/latex-importer.js?v=27" defer></script>
-  <script src="../4-java/gestor-enhancements.js?v=27" defer></script>
+  <script src="../4-java/12-portaldogestor.js?v=28" defer></script>
+  <script src="../4-java/latex-importer.js?v=28" defer></script>
+  <script src="../4-java/gestor-enhancements.js?v=28" defer></script>
   <script src="../4-java/gestor-acessos.js?v=17" defer></script>
-  <script src="../4-java/certificado-pdf-v27.js?v=27" defer></script>
-  <script src="../4-java/gestor-certificados.js?v=27" defer></script>
-  <link rel="stylesheet" href="../2-css/base-portal.css?v=27">
-  <link rel="stylesheet" href="../2-css/06-responsive.css?v=27">
-  <link rel="stylesheet" href="../2-css/15-ajustes-finais.css?v=27">
-  <link rel="stylesheet" href="../2-css/16-latex-importer.css?v=27">
+  <script src="../4-java/certificado-pdf-v27.js?v=28" defer></script>
+  <script src="../4-java/gestor-certificados.js?v=28" defer></script>
+  <link rel="stylesheet" href="../2-css/base-portal.css?v=28">
+  <link rel="stylesheet" href="../2-css/06-responsive.css?v=28">
+  <link rel="stylesheet" href="../2-css/15-ajustes-finais.css?v=28">
+  <link rel="stylesheet" href="../2-css/16-latex-importer.css?v=28">
+  <link rel="stylesheet" href="../2-css/19-v28-correcoes.css?v=28">
 </head>
 
 <body class="gestor-auth-pending">
@@ -178,14 +179,22 @@
         </div>
         <div class="card">
           <table class="tabela" id="tabCursos">
+            <colgroup>
+              <col class="course-col-code">
+              <col class="course-col-title">
+              <col class="course-col-area">
+              <col class="course-col-modules">
+              <col class="course-col-published">
+              <col class="course-col-actions">
+            </colgroup>
             <thead>
               <tr>
-                <th style="width:110px">Código</th>
-                <th>Curso</th>
-                <th style="width:180px">Área</th>
-                <th style="width:100px">Módulos</th>
-                <th style="width:100px">Publicado</th>
-                <th style="width:390px">Ações</th>
+                <th class="col-id">Código</th>
+                <th class="col-curso">Curso</th>
+                <th class="col-area">Área</th>
+                <th class="col-modulos">Módulos</th>
+                <th class="col-pub">Publicado</th>
+                <th class="col-acoes">Ações</th>
               </tr>
             </thead>
             <tbody></tbody>
@@ -790,10 +799,10 @@
             <label>Total de horas validadas para o aluno
               <div class="hours-stepper">
                 <button type="button" id="horasMenos5" aria-label="Retirar 5 horas">− 5h</button>
-                <select id="horasGestaoTotal" required aria-label="Total de horas validadas"></select>
+                <input id="horasGestaoTotal" type="number" min="0" step="5" value="0" required inputmode="numeric" aria-label="Total de horas validadas">
                 <button type="button" id="horasMais5" aria-label="Adicionar 5 horas">+ 5h</button>
               </div>
-              <small class="field-hint">A gestão pode adicionar ou retirar horas, de 5 em 5, até o limite máximo de 200 horas. Não é possível reduzir abaixo das horas já reservadas ou utilizadas.</small>
+              <small class="field-hint">A gestão pode informar qualquer quantidade de horas, sempre de 5 em 5. Não existe limite máximo de horas validadas. Não é possível reduzir abaixo das horas já reservadas ou utilizadas.</small>
             </label>
             <label class="exception-check"><input id="horasGestaoExcepcional" type="checkbox"> Autorizar ajuste excepcional acima do limite automático de 8h por dia útil</label>
             <label>Justificativa da gestão

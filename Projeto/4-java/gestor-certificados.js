@@ -234,13 +234,12 @@
     }).join('');
   }
 
-  function preencherOpcoesHoras(select, max, selected) {
-    if (!select) return;
-    const limit = Math.min(200, Math.max(0, Math.floor(num(max || 200) / 5) * 5));
-    const current = Math.min(limit, Math.max(0, Math.floor(num(selected) / 5) * 5));
-    const values = [];
-    for (let h = 0; h <= limit; h += 5) values.push(h);
-    select.innerHTML = values.map((h) => `<option value="${h}"${h === current ? ' selected' : ''}>${h} horas</option>`).join('');
+  function preencherOpcoesHoras(field, _max, selected) {
+    if (!field) return;
+    const current = Math.max(0, Math.round(num(selected) / 5) * 5);
+    field.min = '0';
+    field.step = '5';
+    field.value = String(current);
   }
 
   function atualizarAlertaHoras() {
@@ -270,8 +269,8 @@
     const select = byId('horasGestaoTotal');
     if (!select) return;
     const minimum = num(store.carteiraAtual?.horas_reservadas) + num(store.carteiraAtual?.horas_utilizadas);
-    const next = Math.max(minimum, Math.min(200, num(select.value) + Number(delta || 0)));
-    select.value = String(Math.round(next / 5) * 5);
+    const next = Math.max(minimum, num(select.value) + Number(delta || 0));
+    select.value = String(Math.max(0, Math.round(next / 5) * 5));
     atualizarAlertaHoras();
   }
 
@@ -287,7 +286,7 @@
       <article><span>Horas utilizadas</span><strong>${num(item.horas_utilizadas)}h</strong></article>
       <article><span>Saldo disponível</span><strong>${num(item.saldo_disponivel)}h</strong></article>
       <article><span>Matrícula</span><strong>${dateBR(item.matricula_em)}</strong></article>`;
-    preencherOpcoesHoras(byId('horasGestaoTotal'), 200, item.horas_validadas);
+    preencherOpcoesHoras(byId('horasGestaoTotal'), null, item.horas_validadas);
     byId('horasGestaoExcepcional').checked = Boolean(item.liberacao_excepcional);
     byId('horasGestaoJustificativa').value = item.justificativa_gestor || '';
     atualizarAlertaHoras();
@@ -301,7 +300,7 @@
     const total = num(byId('horasGestaoTotal').value);
     const exceptional = byId('horasGestaoExcepcional').checked;
     const justification = byId('horasGestaoJustificativa').value.trim();
-    if (total < 0 || total > 200 || total % 5 !== 0) return toast('As horas devem estar entre 0 e 200, de 5 em 5.', true);
+    if (total < 0 || total % 5 !== 0) return toast('As horas devem ser um número igual ou maior que zero, de 5 em 5.', true);
     const button = event.currentTarget.querySelector('button[type="submit"]');
     button.disabled = true;
     button.textContent = 'Salvando...';
@@ -648,7 +647,13 @@
     byId('certPdfEditorFechar')?.addEventListener('click', fecharEditorPdfCertificado);
     byId('certPdfVisualizar')?.addEventListener('click', () => store.pdfEditId && gerarPdfCertificadoGestor(store.pdfEditId, true));
     byId('certPdfBaixar')?.addEventListener('click', () => store.pdfEditId && gerarPdfCertificadoGestor(store.pdfEditId, false));
-    byId('horasGestaoTotal')?.addEventListener('change', atualizarAlertaHoras);
+    byId('horasGestaoTotal')?.addEventListener('input', atualizarAlertaHoras);
+    byId('horasGestaoTotal')?.addEventListener('change', () => {
+      const field = byId('horasGestaoTotal');
+      if (!field) return;
+      field.value = String(Math.max(0, Math.round(num(field.value) / 5) * 5));
+      atualizarAlertaHoras();
+    });
     byId('horasGestaoExcepcional')?.addEventListener('change', atualizarAlertaHoras);
     byId('horasMenos5')?.addEventListener('click', () => ajustarHorasGestao(-5));
     byId('horasMais5')?.addEventListener('click', () => ajustarHorasGestao(5));

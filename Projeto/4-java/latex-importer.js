@@ -526,19 +526,157 @@ Agir com ética envolve honestidade, responsabilidade, respeito e sigilo.
     return node;
   }
 
+  function pdfTextBlocks(raw) {
+    let source = removeComments(raw || '')
+      .replace(/\\begin\{document\}|\\end\{document\}/g, '')
+      .replace(/\\documentclass(?:\[[^\]]*\])?\{[^}]*\}/g, '')
+      .replace(/\\section\*?\{([^{}]*)\}/g, '\n@@H2@@$1\n')
+      .replace(/\\subsection\*?\{([^{}]*)\}/g, '\n@@H3@@$1\n')
+      .replace(/\\subsubsection\*?\{([^{}]*)\}/g, '\n@@H4@@$1\n')
+      .replace(/\\paragraph\{([^{}]*)\}/g, '\n@@H4@@$1\n')
+      .replace(/\\item\s*/g, '\n@@LI@@')
+      .replace(/\\begin\{(?:itemize|enumerate)\}|\\end\{(?:itemize|enumerate)\}/g, '\n')
+      .replace(/\\\[([\s\S]*?)\\\]/g, '\n@@EQ@@$1\n')
+      .replace(/\$\$([\s\S]*?)\$\$/g, '\n@@EQ@@$1\n')
+      .replace(/\\begin\{equation\*?\}([\s\S]*?)\\end\{equation\*?\}/g, '\n@@EQ@@$1\n')
+      .replace(/\\textbf\{([^{}]*)\}/g, '$1')
+      .replace(/\\(?:textit|emph|underline)\{([^{}]*)\}/g, '$1')
+      .replace(/\\(?:label|ref|cite)\{[^{}]*\}/g, '')
+      .replace(/\\\\/g, '\n')
+      .replace(/~/g, ' ')
+      .replace(/\\[a-zA-Z@]+\*?(?:\[[^\]]*\])?/g, '')
+      .replace(/[{}]/g, '')
+      .replace(/\r/g, '');
+
+    return source.split(/\n+/).map((line) => line.trim()).filter(Boolean).map((line) => {
+      if (line.startsWith('@@H2@@')) return { type: 'h2', text: line.slice(6).trim() };
+      if (line.startsWith('@@H3@@')) return { type: 'h3', text: line.slice(6).trim() };
+      if (line.startsWith('@@H4@@')) return { type: 'h4', text: line.slice(6).trim() };
+      if (line.startsWith('@@LI@@')) return { type: 'li', text: line.slice(6).trim() };
+      if (line.startsWith('@@EQ@@')) return { type: 'eq', text: line.slice(6).trim() };
+      return { type: 'p', text: line.replace(/\s+/g, ' ').trim() };
+    });
+  }
+
+  function jsPdfConstructor() {
+    return window.jspdf?.jsPDF || window.jsPDF || null;
+  }
+
   async function pdfBlobFromContent(content) {
-    if (!window.html2pdf) throw new Error('O gerador de PDF não foi carregado. Atualize a página e tente novamente.');
-    const node = buildMaterialNode(content);
-    try {
-      return await window.html2pdf().set({
-        margin: [10, 9, 12, 9],
-        filename: `${slug(content.curso.titulo || 'material-altitude')}.pdf`,
-        image: { type: 'jpeg', quality: 0.97 },
-        html2canvas: { scale: 1.65, useCORS: true, backgroundColor: '#ffffff', logging: false },
-        jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' },
-        pagebreak: { mode: ['css', 'legacy'] }
-      }).from(node).outputPdf('blob');
-    } finally { node.remove(); }
+    const JsPDF = jsPdfConstructor();
+    if (!JsPDF) throw new Error('O gerador de PDF ainda não terminou de carregar. Aguarde alguns segundos, atualize a página e tente novamente.');
+
+    const doc = new JsPDF({ unit: 'mm', format: 'a4', orientation: 'portrait', compress: true });
+    const pageWidth = doc.internal.pageSize.getWidth();
+    const pageHeight = doc.internal.pageSize.getHeight();
+    const marginLeft = 20;
+    const marginRight = 20;
+    const contentWidth = pageWidth - marginLeft - marginRight;
+    const bottomLimit = pageHeight - 20;
+    const courseTitle = content.curso.titulo || $('#modalModulos')?.dataset.courseTitle || 'Curso Altitude';
+    const area = content.curso.categoria || $('#modalModulos')?.dataset.courseCategory || 'Formação Profissional';
+    const hours = content.modulos.reduce((sum, item) => sum + Number(item.carga_horaria || 0), 0) || content.curso.carga_horaria || 0;
+    let y = 24;
+    let pageNumber = 1;
+
+    const setColor = (hex) => {
+      const value = String(hex).replace('#', '');
+      doc.setTextColor(parseInt(value.slice(0,2),16), parseInt(value.slice(2,4),16), parseInt(value.slice(4,6),16));
+    };
+    const drawHeaderFooter = () => {
+      doc.setDrawColor(200, 211, 220);
+      doc.setLineWidth(0.25);
+      doc.line(marginLeft, 13, pageWidth - marginRight, 13);
+      doc.setFont('helvetica', 'normal');
+      doc.setFontSize(8.5);
+      doc.setTextColor(85, 85, 85);
+      doc.text('Instituição Altitude', marginLeft, 10);
+      doc.text(courseTitle, pageWidth - marginRight, 10, { align: 'right', maxWidth: 95 });
+      doc.line(marginLeft, pageHeight - 14, pageWidth - marginRight, pageHeight - 14);
+      doc.text(`${pageNumber}`, pageWidth / 2, pageHeight - 9, { align: 'center' });
+    };
+    const newPage = () => {
+      drawHeaderFooter();
+      doc.addPage();
+      pageNumber += 1;
+      y = 22;
+    };
+    const ensure = (needed = 12) => {
+      if (y + needed > bottomLimit) newPage();
+    };
+    const writeWrapped = (text, options = {}) => {
+      const value = String(text || '').trim();
+      if (!value) return;
+      const size = options.size || 11;
+      const lineHeight = options.lineHeight || size * 0.46;
+      const indent = options.indent || 0;
+      const maxWidth = contentWidth - indent;
+      doc.setFont('helvetica', options.bold ? 'bold' : 'normal');
+      doc.setFontSize(size);
+      setColor(options.color || '#263746');
+      const lines = doc.splitTextToSize(value, maxWidth);
+      lines.forEach((line) => {
+        ensure(lineHeight + 1);
+        doc.text(line, marginLeft + indent, y, { align: options.align || 'left', maxWidth });
+        y += lineHeight;
+      });
+      y += options.after ?? 2.5;
+    };
+
+    // Capa institucional.
+    doc.setFillColor(234, 244, 251);
+    doc.roundedRect(20, 38, pageWidth - 40, 62, 4, 4, 'F');
+    setColor('#0D0A3C');
+    doc.setFont('helvetica', 'bold');
+    doc.setFontSize(25);
+    doc.text('ALTITUDE', pageWidth / 2, 55, { align: 'center' });
+    setColor('#1F70AB');
+    doc.setFontSize(16);
+    doc.text('Material de Estudo', pageWidth / 2, 68, { align: 'center' });
+    setColor('#0D0A3C');
+    doc.setFontSize(21);
+    const coverTitle = doc.splitTextToSize(`Curso de ${courseTitle}`, pageWidth - 60);
+    doc.text(coverTitle, pageWidth / 2, 82, { align: 'center' });
+
+    doc.setDrawColor(31, 112, 171);
+    doc.setFillColor(247, 251, 254);
+    doc.roundedRect(20, 113, pageWidth - 40, 60, 3, 3, 'FD');
+    y = 125;
+    writeWrapped(`Curso: ${courseTitle}`, { bold: true, size: 11, after: 2 });
+    writeWrapped(`Área de formação: ${area}`, { size: 10.5, after: 2 });
+    writeWrapped('Modalidade: EAD / Semipresencial', { size: 10.5, after: 2 });
+    writeWrapped(`Carga horária: ${hours} horas`, { size: 10.5, after: 2 });
+    writeWrapped('Finalidade: apoiar o estudo teórico e servir de base para a avaliação de aprendizagem.', { size: 10.5, after: 2 });
+    drawHeaderFooter();
+
+    content.modulos.forEach((module, moduleIndex) => {
+      doc.addPage();
+      pageNumber += 1;
+      y = 24;
+      writeWrapped(`${moduleIndex + 1}. ${module.titulo}`, { size: 18, bold: true, color: '#1F70AB', after: 4 });
+      doc.setFillColor(234, 244, 251);
+      doc.setDrawColor(31, 112, 171);
+      const boxHeight = 25;
+      doc.roundedRect(marginLeft, y, contentWidth, boxHeight, 2, 2, 'FD');
+      const boxStart = y;
+      y += 8;
+      writeWrapped(`Carga do módulo: ${Number(module.carga_horaria || 0)} horas`, { size: 9.5, bold: true, after: 1 });
+      writeWrapped(`Descrição: ${module.descricao || 'Conteúdo programático do módulo.'}`, { size: 9, after: 1 });
+      y = Math.max(y, boxStart + boxHeight + 7);
+
+      const blocks = pdfTextBlocks(module.conteudo_latex || module.conteudo || '');
+      blocks.forEach((block) => {
+        if (block.type === 'h2') writeWrapped(block.text, { size: 15, bold: true, color: '#1F70AB', after: 3 });
+        else if (block.type === 'h3') writeWrapped(block.text, { size: 12.5, bold: true, color: '#0D0A3C', after: 2 });
+        else if (block.type === 'h4') writeWrapped(block.text, { size: 11.5, bold: true, color: '#0D0A3C', after: 2 });
+        else if (block.type === 'li') writeWrapped(`• ${block.text}`, { size: 10.5, indent: 4, after: 1.5 });
+        else if (block.type === 'eq') writeWrapped(block.text, { size: 10.5, align: 'center', color: '#0D0A3C', after: 3 });
+        else writeWrapped(block.text, { size: 10.5, after: 3 });
+      });
+      drawHeaderFooter();
+    });
+
+    return doc.output('blob');
   }
 
   async function modulePdfBlob(module, course) {
@@ -611,7 +749,7 @@ Agir com ética envolve honestidade, responsabilidade, respeito e sigilo.
     return window.sb.storage.from('materiais_cursos').getPublicUrl(path).data.publicUrl;
   }
 
-  async function importCourse() {
+  async function importCourse(options = {}) {
     if (state.busy) return;
     const courseId = Number($('#modalModulos')?.dataset.courseId || 0);
     if (!courseId) return notify('Abra um curso em “Montar curso” antes de importar.', true);
@@ -619,7 +757,9 @@ Agir com ética envolve honestidade, responsabilidade, respeito e sigilo.
     let proof;
     try {
       content = parseContent($('#latexContentSource')?.value || '');
-      proof = parseProof($('#latexProofSource')?.value || '');
+      const proofSource = $('#latexProofSource')?.value?.trim() || '';
+      proof = proofSource ? parseProof(proofSource) : { grupos: [], totalQuestions: 0, source: '' };
+      if (options.publishAfter && !proof.totalQuestions) throw new Error('Cadastre a prova em LaTeX antes de publicar o curso.');
     } catch (error) { return notify(error.message, true); }
     const parsed = mergeCourse(content, proof);
     const replace = Boolean($('#latexReplaceExisting')?.checked);
@@ -635,9 +775,12 @@ Agir com ética envolve honestidade, responsabilidade, respeito e sigilo.
       if (!confirmed) return;
     }
     state.busy = true;
-    const button = $('#latexImportConfirm');
+    const draftButton = $('#latexImportConfirm');
+    const publishButton = $('#latexImportPublish');
+    const button = options.publishAfter ? publishButton : draftButton;
     const progress = $('#latexImportProgress');
-    if (button) button.disabled = true;
+    if (draftButton) draftButton.disabled = true;
+    if (publishButton) publishButton.disabled = true;
     try {
       const courseTitle = parsed.curso.titulo || $('#modalModulos')?.dataset.courseTitle || 'Curso Altitude';
       for (let i = 0; i < parsed.modulos.length; i += 1) {
@@ -659,15 +802,27 @@ Agir com ética envolve honestidade, responsabilidade, respeito e sigilo.
       if (progress) progress.textContent = '';
       if (window.carregarModulosCursoAtual) await window.carregarModulosCursoAtual();
       if (window.carregarCursosCompleto) await window.carregarCursosCompleto();
-      setMode('normal');
-      notify(`Curso importado como rascunho: ${Number(data?.modulos_importados || parsed.modulos.length)} módulo(s) e ${Number(data?.questoes_importadas || parsed.totalQuestions)} questão(ões).`);
+      setMode('latex');
+      const importedModules = Number(data?.modulos_importados || parsed.modulos.length);
+      const importedQuestions = Number(data?.questoes_importadas || parsed.totalQuestions);
+      if (options.publishAfter) {
+        if (progress) progress.textContent = 'Revisando e publicando o curso…';
+        if (typeof window.altitudeAlternarPublicacaoCurso !== 'function') throw new Error('A publicação ainda não terminou de carregar. Aguarde alguns segundos e tente novamente.');
+        await window.altitudeAlternarPublicacaoCurso(courseId, publishButton, { forcePublish: true, throwOnError: true });
+        if (progress) progress.textContent = '';
+        notify(`Curso salvo e publicado: ${importedModules} módulo(s) e ${importedQuestions} questão(ões).`);
+        document.getElementById('fecharModulos')?.click();
+      } else {
+        notify(`Curso salvo como rascunho: ${importedModules} módulo(s) e ${importedQuestions} questão(ões). Agora você pode revisar ou publicar nesta mesma tela.`);
+      }
     } catch (error) {
       console.error('Importação LaTeX:', error);
       if (progress) progress.textContent = '';
       notify(`Não foi possível importar: ${error.message}`, true);
     } finally {
       state.busy = false;
-      if (button) button.disabled = false;
+      if (draftButton) draftButton.disabled = false;
+      if (publishButton) publishButton.disabled = false;
     }
   }
 
@@ -681,6 +836,12 @@ Agir com ética envolve honestidade, responsabilidade, respeito e sigilo.
       button.classList.toggle('active', active);
       button.setAttribute('aria-selected', String(active));
     });
+    if (!normal && !state.parsedContent) {
+      window.setTimeout(() => {
+        updateContentPreview();
+        try { updateProofPreview(); } catch (_) {}
+      }, 30);
+    }
   }
 
   async function readFileInto(input, target) {
@@ -696,7 +857,8 @@ Agir com ética envolve honestidade, responsabilidade, respeito e sigilo.
     $('#latexProofTemplate')?.addEventListener('click', () => { $('#latexProofSource').value = PROOF_TEMPLATE; updateProofPreview(); });
     $('#latexValidateContent')?.addEventListener('click', updateContentPreview);
     $('#latexValidateProof')?.addEventListener('click', updateProofPreview);
-    $('#latexImportConfirm')?.addEventListener('click', importCourse);
+    $('#latexImportConfirm')?.addEventListener('click', () => importCourse({ publishAfter: false }));
+    $('#latexImportPublish')?.addEventListener('click', () => importCourse({ publishAfter: true }));
     $('#latexContentFile')?.addEventListener('change', async (event) => { await readFileInto(event.currentTarget, $('#latexContentSource')); updateContentPreview(); });
     $('#latexProofFile')?.addEventListener('change', async (event) => { await readFileInto(event.currentTarget, $('#latexProofSource')); updateProofPreview(); });
     if ($('#latexContentSource') && !$('#latexContentSource').value.trim()) $('#latexContentSource').value = CONTENT_TEMPLATE;
@@ -711,7 +873,8 @@ Agir com ética envolve honestidade, responsabilidade, respeito e sigilo.
     latexToHtml,
     contentTemplate: CONTENT_TEMPLATE,
     proofTemplate: PROOF_TEMPLATE,
-    previewContent: updateContentPreview
+    previewContent: updateContentPreview,
+    importCourse
   });
 
   document.addEventListener('DOMContentLoaded', async () => {

@@ -937,6 +937,8 @@ function gerarRaLocal(){
       if (!modulos.length) {
         list.innerHTML = '<div class="builder-empty-state"><strong>O curso ainda não possui módulos.</strong><span>Use o formulário ao lado para criar o primeiro módulo.</span></div>';
         if (summary) summary.textContent = '0 módulos cadastrados';
+        const normalStatus = document.getElementById('builderNormalStatus');
+        if (normalStatus) normalStatus.textContent = 'Salve o primeiro módulo para continuar.';
         return [];
       }
 
@@ -1035,6 +1037,10 @@ function gerarRaLocal(){
 
       list.innerHTML = cards.join('');
       if (summary) summary.textContent = `${modulos.length} módulo${modulos.length === 1 ? '' : 's'} · ${prontos} totalmente configurado${prontos === 1 ? '' : 's'}`;
+      const normalStatus = document.getElementById('builderNormalStatus');
+      const totalHours = modulos.reduce((sum, item) => sum + Math.max(0, Number(item.carga_horaria || 0)), 0);
+      const totalQuestions = questoes.length;
+      if (normalStatus) normalStatus.textContent = `${modulos.length} módulo(s) · ${totalHours}h distribuídas · ${totalQuestions} questão(ões)`;
       return modulos;
     } catch (error) {
       console.error('Erro ao carregar módulos:', error);
@@ -1116,21 +1122,93 @@ function gerarRaLocal(){
 
   async function criarPdfInstitucionalModuloBlob({ title, desc, hours, content, courseTitle }) {
     if (!content) throw new Error('Insira o conteúdo do módulo para gerar a apostila em PDF.');
-    if (!window.html2pdf) throw new Error('O gerador de PDF ainda não foi carregado. Atualize a página.');
-    const wrapper = document.createElement('article');
-    wrapper.className = 'altitude-material-pdf';
-    wrapper.innerHTML = `
-      <div class="pdf-running-head"><span>Instituição Altitude</span><span>${escapeHTML(courseTitle)}</span></div>
-      <section class="pdf-cover"><img src="../3-img/LOGO.png" alt="Altitude"><div class="institution">Instituição Altitude</div><div class="material">Material de Estudo</div><h1>${escapeHTML(title)}</h1></section>
-      <section class="pdf-info-box"><b>Curso:</b><span>${escapeHTML(courseTitle)}</span><b>Módulo:</b><span>${escapeHTML(title)}</span><b>Carga horária:</b><span>${hours} horas</span><b>Descrição:</b><span>${escapeHTML(desc)}</span></section>
-      <section class="pdf-module first"><h2>${escapeHTML(title)}</h2>${content.split(/\n\s*\n/).map((paragraph) => `<p>${escapeHTML(paragraph).replaceAll('\n','<br>')}</p>`).join('')}<div class="pdf-footer">Instituição Altitude | Material de Estudo | ${escapeHTML(courseTitle)}</div></section>`;
-    document.body.appendChild(wrapper);
-    try {
-      return await window.html2pdf().set({
-        margin:[10,9,12,9], image:{type:'jpeg',quality:.97}, html2canvas:{scale:1.6,useCORS:true,backgroundColor:'#fff'},
-        jsPDF:{unit:'mm',format:'a4',orientation:'portrait'}, pagebreak:{mode:['css','legacy']}
-      }).from(wrapper).outputPdf('blob');
-    } finally { wrapper.remove(); }
+    const JsPDF = window.jspdf?.jsPDF || window.jsPDF;
+    if (!JsPDF) throw new Error('O gerador de PDF ainda não terminou de carregar. Aguarde alguns segundos e tente novamente.');
+
+    const doc = new JsPDF({ unit: 'mm', format: 'a4', orientation: 'portrait', compress: true });
+    const pageWidth = doc.internal.pageSize.getWidth();
+    const pageHeight = doc.internal.pageSize.getHeight();
+    const left = 20;
+    const right = 20;
+    const width = pageWidth - left - right;
+    const bottom = pageHeight - 20;
+    let y = 24;
+    let page = 1;
+
+    const color = (hex) => {
+      const value = String(hex).replace('#', '');
+      doc.setTextColor(parseInt(value.slice(0,2),16), parseInt(value.slice(2,4),16), parseInt(value.slice(4,6),16));
+    };
+    const headerFooter = () => {
+      doc.setDrawColor(200, 211, 220);
+      doc.setLineWidth(.25);
+      doc.line(left, 13, pageWidth - right, 13);
+      doc.setFont('helvetica','normal');
+      doc.setFontSize(8.5);
+      doc.setTextColor(85,85,85);
+      doc.text('Instituição Altitude', left, 10);
+      doc.text(courseTitle, pageWidth - right, 10, { align:'right', maxWidth:95 });
+      doc.line(left, pageHeight - 14, pageWidth - right, pageHeight - 14);
+      doc.text(String(page), pageWidth / 2, pageHeight - 9, { align:'center' });
+    };
+    const addPage = () => {
+      headerFooter();
+      doc.addPage();
+      page += 1;
+      y = 23;
+    };
+    const ensure = (needed=10) => { if (y + needed > bottom) addPage(); };
+    const write = (text, opts={}) => {
+      const value = String(text || '').trim();
+      if (!value) return;
+      const size = opts.size || 10.5;
+      const lineHeight = opts.lineHeight || size * .47;
+      doc.setFont('helvetica', opts.bold ? 'bold' : 'normal');
+      doc.setFontSize(size);
+      color(opts.color || '#263746');
+      const lines = doc.splitTextToSize(value, width - (opts.indent || 0));
+      lines.forEach(line => {
+        ensure(lineHeight + 1);
+        doc.text(line, left + (opts.indent || 0), y, { maxWidth: width - (opts.indent || 0), align: opts.align || 'left' });
+        y += lineHeight;
+      });
+      y += opts.after ?? 2.5;
+    };
+
+    doc.setFillColor(234,244,251);
+    doc.roundedRect(20, 38, pageWidth - 40, 62, 4, 4, 'F');
+    color('#0D0A3C');
+    doc.setFont('helvetica','bold');
+    doc.setFontSize(25);
+    doc.text('ALTITUDE', pageWidth / 2, 55, { align:'center' });
+    color('#1F70AB');
+    doc.setFontSize(16);
+    doc.text('Material de Estudo', pageWidth / 2, 68, { align:'center' });
+    color('#0D0A3C');
+    doc.setFontSize(20);
+    doc.text(doc.splitTextToSize(title, pageWidth - 60), pageWidth / 2, 83, { align:'center' });
+
+    doc.setDrawColor(31,112,171);
+    doc.setFillColor(247,251,254);
+    doc.roundedRect(20, 113, pageWidth - 40, 55, 3, 3, 'FD');
+    y = 125;
+    write(`Curso: ${courseTitle}`, { bold:true, size:10.5, after:2 });
+    write(`Módulo: ${title}`, { size:10.5, after:2 });
+    write(`Carga horária: ${hours} horas`, { size:10.5, after:2 });
+    write(`Descrição: ${desc || 'Conteúdo programático do módulo.'}`, { size:10, after:2 });
+    headerFooter();
+
+    doc.addPage();
+    page += 1;
+    y = 24;
+    write(title, { size:18, bold:true, color:'#1F70AB', after:5 });
+    const paragraphs = String(content).replace(/\r/g,'').split(/\n\s*\n|\n/).map(item => item.trim()).filter(Boolean);
+    paragraphs.forEach(paragraph => {
+      const bullet = /^[-•*]\s+/.test(paragraph);
+      write(bullet ? `• ${paragraph.replace(/^[-•*]\s+/, '')}` : paragraph, { size:10.5, indent: bullet ? 4 : 0, after: bullet ? 1.5 : 3 });
+    });
+    headerFooter();
+    return doc.output('blob');
   }
 
   async function gerarPreviaPdfNormal() {
@@ -1378,6 +1456,34 @@ function gerarRaLocal(){
         const id = Number(document.getElementById('editar-id')?.value || 0);
         const title = document.getElementById('editar-titulo')?.value.trim() || 'Módulo';
         if (id) window.abrirGestaoProvas(id, title);
+      });
+    }
+    const newModuleButton = document.getElementById('btnNormalNewModule');
+    if (newModuleButton && newModuleButton.dataset.bound !== 'true') {
+      newModuleButton.dataset.bound = 'true';
+      newModuleButton.addEventListener('click', () => {
+        document.getElementById('formModulo')?.reset();
+        const orderField = document.getElementById('fModuloOrdem');
+        const cards = document.querySelectorAll('#tabModulosBody [data-module-id]');
+        if (orderField) orderField.value = String(cards.length + 1);
+        const hoursField = document.getElementById('fModuloHoras');
+        if (hoursField) hoursField.value = '0';
+        const autoPdf = document.getElementById('fModuloGerarPdfAutomatico');
+        if (autoPdf) autoPdf.checked = true;
+        atualizarPreviaModuloNormal();
+        document.querySelector('.builder-create-panel')?.scrollTo?.({ top: 0, behavior: 'smooth' });
+        document.getElementById('fModuloTitulo')?.focus();
+      });
+    }
+    const publishNormalButton = document.getElementById('btnBuilderPublishNormal');
+    if (publishNormalButton && publishNormalButton.dataset.bound !== 'true') {
+      publishNormalButton.dataset.bound = 'true';
+      publishNormalButton.addEventListener('click', async () => {
+        const courseId = Number(document.getElementById('modalModulos')?.dataset.courseId || 0);
+        if (!courseId) return alert('Curso não identificado. Feche a tela e abra “Montar curso” novamente.');
+        if (typeof window.altitudeAlternarPublicacaoCurso !== 'function') return alert('A publicação ainda está carregando. Aguarde alguns segundos e tente novamente.');
+        const published = await window.altitudeAlternarPublicacaoCurso(courseId, publishNormalButton, { forcePublish: true });
+        if (published) document.getElementById('fecharModulos')?.click();
       });
     }
   }

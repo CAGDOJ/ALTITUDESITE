@@ -1,0 +1,167 @@
+/* =========================================================
+   PORTAL ALTITUDE V29 — fluxo único para montar e publicar
+   ========================================================= */
+#modalModulos .builder-path-help {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  flex: 0 0 auto;
+  padding: 9px 18px;
+  border-bottom: 1px solid #d8e4ed;
+  background: #eef9fb;
+  color: #31546d;
+  font-size: 12px;
+  line-height: 1.45;
+}
+#modalModulos .builder-path-help strong {
+  color: #074d67;
+  white-space: nowrap;
+}
+#modalModulos .normal-builder-panel,
+#modalModulos .latex-builder-panel {
+  display: flex;
+  flex-direction: column;
+}
+#modalModulos .normal-builder-panel[hidden],
+#modalModulos .latex-builder-panel[hidden] {
+  display: none !important;
+}
+#modalModulos .course-builder-grid,
+#modalModulos .latex-builder-workspace {
+  flex: 1;
+  min-height: 0;
+}
+#modalModulos .builder-completion-bar {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto auto;
+  gap: 10px;
+  align-items: center;
+  flex: 0 0 auto;
+  padding: 10px 16px;
+  border-top: 1px solid #cedde8;
+  background: #fff;
+  box-shadow: 0 -8px 22px rgba(8, 51, 79, .07);
+}
+#modalModulos .builder-completion-copy {
+  min-width: 0;
+  display: grid;
+  gap: 2px;
+}
+#modalModulos .builder-completion-copy strong {
+  color: #0b3c5d;
+  font-size: 13px;
+}
+#modalModulos .builder-completion-copy span {
+  color: #647b8d;
+  font-size: 11px;
+}
+#modalModulos .builder-publish-button {
+  min-height: 44px;
+  padding: 0 18px;
+  border: 1px solid #078a86;
+  border-radius: 9px;
+  background: #0ea5a3;
+  color: #fff;
+  font-weight: 900;
+  cursor: pointer;
+  box-shadow: 0 8px 18px rgba(14,165,163,.2);
+}
+#modalModulos .builder-publish-button:hover {
+  background: #078a86;
+}
+#modalModulos .builder-publish-button:disabled,
+#modalModulos .builder-secondary-button:disabled {
+  opacity: .6;
+  cursor: wait;
+}
+#modalModulos .latex-simple-footer {
+  grid-template-columns: minmax(180px, .7fr) minmax(150px, 1fr) auto;
+}
+#modalModulos .latex-advanced-options {
+  min-width: 0;
+  color: #31546d;
+  font-size: 11px;
+}
+#modalModulos .latex-advanced-options summary {
+  cursor: pointer;
+  font-weight: 900;
+}
+#modalModulos .latex-advanced-options[open] {
+  align-self: end;
+  padding: 8px;
+  border: 1px solid #d7e3eb;
+  border-radius: 8px;
+  background: #f8fbfd;
+}
+#modalModulos .latex-final-actions {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+}
+#modalModulos #latexImportProgress {
+  min-height: 18px;
+  color: #2d5d76;
+  font-size: 12px;
+  font-weight: 800;
+  text-align: center;
+}
+#modalModulos #latexPdfPreviewFrame {
+  background: #d9e0e5;
+}
+#modalModulos .latex-preview-placeholder b {
+  color: #0b3c5d;
+}
+
+@media (max-width: 1000px) {
+  #modalModulos .builder-path-help {
+    align-items: flex-start;
+    flex-direction: column;
+    gap: 3px;
+  }
+  #modalModulos .builder-path-help strong { white-space: normal; }
+  #modalModulos .builder-completion-bar,
+  #modalModulos .latex-simple-footer {
+    grid-template-columns: 1fr 1fr;
+  }
+  #modalModulos .builder-completion-copy,
+  #modalModulos .latex-advanced-options,
+  #modalModulos #latexImportProgress {
+    grid-column: 1 / -1;
+  }
+  #modalModulos .latex-final-actions {
+    grid-column: 1 / -1;
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+  }
+}
+
+@media (max-width: 700px) {
+  #modalModulos .builder-path-help {
+    padding: 8px 10px;
+    font-size: 11px;
+  }
+  #modalModulos .builder-completion-bar,
+  #modalModulos .latex-simple-footer {
+    position: sticky;
+    bottom: 0;
+    z-index: 30;
+    grid-template-columns: 1fr;
+    padding: 9px;
+  }
+  #modalModulos .builder-completion-copy,
+  #modalModulos .latex-advanced-options,
+  #modalModulos #latexImportProgress,
+  #modalModulos .latex-final-actions {
+    grid-column: auto;
+  }
+  #modalModulos .builder-completion-bar button,
+  #modalModulos .latex-final-actions button {
+    width: 100%;
+  }
+  #modalModulos .latex-final-actions {
+    grid-template-columns: 1fr;
+  }
+  #modalModulos .latex-builder-preview {
+    min-height: 64vh;
+  }
+}

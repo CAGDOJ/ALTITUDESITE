@@ -7,7 +7,7 @@
   <title>Portal de Gestão - Altitude</title>
   <link rel="icon" type="image/png" sizes="512x512" href="/Projeto/3-img/favicon-cloud.png?v=14">
 
-  <link rel="stylesheet" href="/Projeto/2-css/12-portaldogestor.css?v=28">
+  <link rel="stylesheet" href="/Projeto/2-css/12-portaldogestor.css?v=29">
   <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.11/dist/katex.min.css">
   <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/jspdf@2.5.2/dist/jspdf.umd.min.js"></script>
@@ -18,17 +18,18 @@
   <script src="../4-java/altitude-dialogs.js?v=17"></script>
   <script src="../4-java/supabase-init.js?v=17" defer></script>
   <script src="../4-java/gestor-guard.js?v=17" defer></script>
-  <script src="../4-java/12-portaldogestor.js?v=28" defer></script>
-  <script src="../4-java/latex-importer.js?v=28" defer></script>
-  <script src="../4-java/gestor-enhancements.js?v=28" defer></script>
+  <script src="../4-java/12-portaldogestor.js?v=29" defer></script>
+  <script src="../4-java/latex-importer.js?v=29" defer></script>
+  <script src="../4-java/gestor-enhancements.js?v=29" defer></script>
   <script src="../4-java/gestor-acessos.js?v=17" defer></script>
-  <script src="../4-java/certificado-pdf-v27.js?v=28" defer></script>
-  <script src="../4-java/gestor-certificados.js?v=28" defer></script>
-  <link rel="stylesheet" href="../2-css/base-portal.css?v=28">
-  <link rel="stylesheet" href="../2-css/06-responsive.css?v=28">
-  <link rel="stylesheet" href="../2-css/15-ajustes-finais.css?v=28">
-  <link rel="stylesheet" href="../2-css/16-latex-importer.css?v=28">
-  <link rel="stylesheet" href="../2-css/19-v28-correcoes.css?v=28">
+  <script src="../4-java/certificado-pdf-v27.js?v=29" defer></script>
+  <script src="../4-java/gestor-certificados.js?v=29" defer></script>
+  <link rel="stylesheet" href="../2-css/base-portal.css?v=29">
+  <link rel="stylesheet" href="../2-css/06-responsive.css?v=29">
+  <link rel="stylesheet" href="../2-css/15-ajustes-finais.css?v=29">
+  <link rel="stylesheet" href="../2-css/16-latex-importer.css?v=29">
+  <link rel="stylesheet" href="../2-css/19-v28-correcoes.css?v=29">
+  <link rel="stylesheet" href="../2-css/20-v29-cursos.css?v=29">
 </head>
 
 <body class="gestor-auth-pending">
@@ -289,6 +290,10 @@
             <button type="button" class="active" id="builderModeNormal" data-builder-mode="normal" role="tab" aria-selected="true">Inserção normal</button>
             <button type="button" id="builderModeLatex" data-builder-mode="latex" role="tab" aria-selected="false">Inserção em LaTeX</button>
           </div>
+          <div class="builder-path-help">
+            <strong>Escolha somente uma forma para montar o curso.</strong>
+            <span><b>Normal:</b> adicione um módulo por vez. <b>LaTeX:</b> cole o material e a prova completos. Nos dois modos, finalize pelo botão <b>Revisar e publicar curso</b>.</span>
+          </div>
 
           <section class="normal-builder-panel" id="normalBuilderPanel">
             <div class="course-builder-grid easy-course-builder">
@@ -445,6 +450,14 @@
                 </div>
               </section>
             </div>
+            <footer class="builder-completion-bar" id="normalCompletionBar">
+              <div class="builder-completion-copy">
+                <strong id="builderNormalStatus">Salve o primeiro módulo para continuar.</strong>
+                <span>Você pode adicionar quantos módulos quiser e publicar sem sair desta tela.</span>
+              </div>
+              <button type="button" id="btnNormalNewModule" class="builder-secondary-button">+ Adicionar outro módulo</button>
+              <button type="button" id="btnBuilderPublishNormal" class="builder-publish-button">Revisar e publicar curso</button>
+            </footer>
           </section>
 
           <section id="latexBuilderPanel" class="latex-builder-panel" hidden>
@@ -477,14 +490,20 @@
                 </div>
               </aside>
             </div>
-            <footer class="latex-builder-footer">
-              <div class="latex-import-options">
-                <label><input id="latexReplaceExisting" type="checkbox" checked> Substituir módulos e prova atuais</label>
-                <label><input id="latexPublishModules" type="checkbox"> Liberar módulos após importar</label>
-                <label><input id="latexUpdateCourse" type="checkbox" checked> Atualizar dados do curso pelo LaTeX</label>
-              </div>
+            <footer class="latex-builder-footer latex-simple-footer">
+              <details class="latex-advanced-options">
+                <summary>Opções avançadas</summary>
+                <div class="latex-import-options">
+                  <label><input id="latexReplaceExisting" type="checkbox" checked> Substituir módulos e prova atuais</label>
+                  <label><input id="latexPublishModules" type="checkbox"> Liberar módulos logo após salvar</label>
+                  <label><input id="latexUpdateCourse" type="checkbox" checked> Atualizar dados do curso pelo LaTeX</label>
+                </div>
+              </details>
               <span id="latexImportProgress" aria-live="polite"></span>
-              <button type="button" id="latexImportConfirm" class="builder-main-button">Importar como rascunho</button>
+              <div class="latex-final-actions">
+                <button type="button" id="latexImportConfirm" class="builder-secondary-button">Salvar como rascunho</button>
+                <button type="button" id="latexImportPublish" class="builder-publish-button">Salvar e publicar curso</button>
+              </div>
             </footer>
           </section>
 

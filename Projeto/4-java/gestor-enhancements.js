@@ -268,7 +268,7 @@
   }
 
   // ---------- Publicação com revisão ----------
-  async function alternarPublicacaoCurso(courseId, button) {
+  async function alternarPublicacaoCurso(courseId, button, options = {}) {
     setLoading(button, true, 'Verificando...');
     try {
       const [courseRes, modulesRes, testsRes, materialsRes] = await Promise.all([
@@ -287,8 +287,15 @@
       const modules = modulesRes.data || [];
       const tests = testsRes.data || [];
       const materials = materialsRes.data || [];
+      if (options.forcePublish && course.publicado) {
+        toast('O curso já está publicado. As alterações salvas já estão disponíveis.');
+        return true;
+      }
       let questionCount = 0;
       const moduleHoursTotal = modules.reduce((sum, module) => sum + Math.max(0, Number(module.carga_horaria || 0)), 0);
+      const modulesWithIndexedPdf = new Set(materials.filter(material => material.tipo === 'PDF').map(material => Number(material.modulo_id)));
+      const pdfOnlyModules = modules.filter(module => module.pdf_url && !modulesWithIndexedPdf.has(Number(module.id))).length;
+      const effectiveMaterialCount = materials.length + pdfOnlyModules;
 
       if (tests.length) {
         const questionRes = await sb.from('questoes').select('id').in('prova_id', tests.map(test => test.id));
@@ -313,7 +320,6 @@
           missing.push(`divisão das horas dos módulos: ${moduleHoursTotal}h cadastradas para um curso de ${Number(course.carga_horaria || 0)}h`);
         }
         if (modulesWithoutContent.length) missing.push(`conteúdo ou PDF em ${modulesWithoutContent.length} módulo(s)`);
-        if (!materials.length) missing.push('ao menos um material');
         if (!tests.length) missing.push('prova vinculada ao curso');
         if (tests.length && !questionCount) missing.push('questões da prova');
 
@@ -323,7 +329,7 @@
 
         const checklist = [
           `✓ ${modules.length} módulo(s)`,
-          `✓ ${materials.length} material(is)`,
+          `✓ ${effectiveMaterialCount} arquivo(s) ou PDF(s)`,
           `✓ ${tests.length} prova(s)`,
           `✓ ${questionCount} questão(ões)`,
           `✓ ${moduleHoursTotal}h distribuídas nos módulos`
@@ -358,13 +364,18 @@
         : 'Curso retirado do catálogo público.');
       await carregarDashboard();
       window.abrirAba('cursos');
+      return true;
     } catch (error) {
       console.error('Publicação do curso:', error);
       toast(error.message || 'Não foi possível alterar a publicação.', 'error');
+      if (options.throwOnError) throw error;
+      return false;
     } finally {
       setLoading(button, false);
     }
   }
+
+  window.altitudeAlternarPublicacaoCurso = alternarPublicacaoCurso;
 
   // ---------- IA ----------
   async function gerarCursoIA(event) {

@@ -61,6 +61,47 @@ Deno.serve(async (req) => {
       .from('gestores').select('*').eq('user_id', callerId).eq('status', 'ATIVO').single();
     if (callerError || !caller) return json({ ok: false, error: 'Acesso de gestão não autorizado.' }, 403);
 
+    if (action === 'redefinir_senha_aluno') {
+      if (Number(caller.nivel_acesso) < 4) {
+        return json({ ok: false, error: 'Somente o gestor principal pode redefinir senhas de alunos.' }, 403);
+      }
+
+      const alunoId = String(body.aluno_id || '').trim();
+      const novaSenha = String(body.nova_senha || '');
+      if (!alunoId) return json({ ok: false, error: 'Aluno não informado.' }, 400);
+      if (novaSenha.length < 8) return json({ ok: false, error: 'A nova senha deve possuir ao menos 8 caracteres.' }, 400);
+      if (!/[A-Z]/.test(novaSenha) || !/[a-z]/.test(novaSenha) || !/\d/.test(novaSenha)) {
+        return json({ ok: false, error: 'Use uma senha com letra maiúscula, minúscula e número.' }, 400);
+      }
+
+      const { data: aluno, error: alunoError } = await admin
+        .from('alunos')
+        .select('user_id,nome,email')
+        .eq('user_id', alunoId)
+        .maybeSingle();
+      if (alunoError) throw alunoError;
+      if (!aluno?.user_id) return json({ ok: false, error: 'Aluno não encontrado.' }, 404);
+
+      const { error: authError } = await admin.auth.admin.updateUserById(aluno.user_id, {
+        password: novaSenha
+      });
+      if (authError) throw authError;
+
+      // Auditoria sem registrar a senha.
+      try {
+        await admin.from('auditoria_redefinicoes_senha').insert({
+          aluno_id: aluno.user_id,
+          aluno_email: aluno.email || null,
+          redefinido_por: callerId,
+          origem: 'PORTAL_GESTAO'
+        });
+      } catch (_) {
+        // A redefinição continua válida mesmo se a tabela de auditoria ainda não existir.
+      }
+
+      return json({ ok: true, aluno_id: aluno.user_id });
+    }
+
     if (action === 'criar') {
       if (Number(caller.nivel_acesso) < 4) return json({ ok: false, error: 'Somente gestores de nível 4 podem criar acessos.' }, 403);
       const email = String(body.email || '').trim().toLowerCase();

@@ -94,22 +94,7 @@
   }
 
   function renderCargas() {
-    const wrap = $("filtrosCarga");
-    if (!wrap) return;
-    const counts = new Map();
-    state.cursos.filter((curso) => String(curso.tipo_curso || "PROFISSIONAL").toUpperCase() === state.tipo).forEach((curso) => {
-      const h = Number(curso.carga_horaria || 0);
-      counts.set(h, (counts.get(h) || 0) + 1);
-    });
-    const cargas = [...counts.keys()].sort((a, b) => a - b);
-    wrap.innerHTML = `
-      <button class="workload-box ${state.horas === "TODAS" ? "active" : ""}" type="button" data-horas="TODAS">
-        <strong>Todas</strong><span>${state.cursos.filter((curso) => String(curso.tipo_curso || "PROFISSIONAL").toUpperCase() === state.tipo).length} ${state.cursos.filter((curso) => String(curso.tipo_curso || "PROFISSIONAL").toUpperCase() === state.tipo).length === 1 ? "curso" : "cursos"}</span>
-      </button>
-      ${cargas.map((h) => `
-        <button class="workload-box ${String(state.horas) === String(h) ? "active" : ""}" type="button" data-horas="${h}">
-          <strong>${h}h</strong><span>${counts.get(h)} ${counts.get(h) === 1 ? "curso" : "cursos"}</span>
-        </button>`).join("")}`;
+    // A carga horária é escolhida pelo aluno no momento da solicitação do certificado.
   }
 
   function renderCategorias() {
@@ -127,17 +112,14 @@
       const tipoOk = String(curso.tipo_curso || "PROFISSIONAL").toUpperCase() === state.tipo;
       const buscaOk = !state.busca || search.includes(state.busca);
       const categoriaOk = !state.categoria || curso.categoria === state.categoria;
-      const horasOk = state.horas === "TODAS" || Number(curso.carga_horaria) === Number(state.horas);
-      return buscaOk && categoriaOk && horasOk && tipoOk;
+      return buscaOk && categoriaOk && tipoOk;
     });
 
     const sorters = {
       ALTA: (a, b) => score(b) - score(a),
       AVALIACAO: (a, b) => Number(b.avaliacao_media || 0) - Number(a.avaliacao_media || 0),
       MATRICULAS: (a, b) => Number(b.matriculas_total || 0) - Number(a.matriculas_total || 0),
-      RECENTES: (a, b) => new Date(b.criado_em || 0) - new Date(a.criado_em || 0),
-      CARGA_ASC: (a, b) => Number(a.carga_horaria || 0) - Number(b.carga_horaria || 0),
-      CARGA_DESC: (a, b) => Number(b.carga_horaria || 0) - Number(a.carga_horaria || 0)
+      RECENTES: (a, b) => new Date(b.criado_em || 0) - new Date(a.criado_em || 0)
     };
     return lista.sort(sorters[state.ordem] || sorters.ALTA);
   }
@@ -150,7 +132,6 @@
           <img src="${escapeHTML(capa(curso.capa_url))}" alt="Capa do curso ${escapeHTML(curso.titulo)}" loading="lazy" onerror="this.src='/Projeto/3-img/LOGO.png'">
           <img class="course-brand-mark" src="/Projeto/3-img/LOGO.png" alt="" aria-hidden="true">
           ${hot ? `<span class="hot-badge">Em alta</span>` : ""}
-          <span class="workload-chip">${Number(curso.carga_horaria || 0)}h</span>
         </div>
         <div class="public-course-body">
           <div class="course-category-row"><span class="course-category">${escapeHTML(curso.categoria || "Formação")}</span><span>${escapeHTML(nivel(curso.nivel))}</span></div>
@@ -211,7 +192,6 @@
     $("modalCursoCategoria").textContent = curso.categoria || "Curso";
     $("modalCursoTitulo").textContent = curso.titulo || (state.tipo === "TECNICO" ? "Curso técnico" : "Curso profissional");
     $("modalCursoDescricao").textContent = curso.descricao || "Conteúdo profissional organizado por módulos.";
-    $("modalCursoHoras").textContent = `${Number(curso.carga_horaria || 0)} horas`;
     $("modalCursoNivel").textContent = nivel(curso.nivel);
     $("modalCursoModulos").textContent = `${Number(curso.total_modulos || 0)} módulos`;
     $("modalCursoMateriais").textContent = `${Number(curso.total_materiais || 0)} materiais`;
@@ -271,13 +251,6 @@
     $("buscaCursosPublicos")?.addEventListener("input", (event) => { state.busca = event.target.value.trim().toLowerCase(); renderCursos(); });
     $("filtroCategoriaPublica")?.addEventListener("change", (event) => { state.categoria = event.target.value; renderCursos(); });
     $("ordenarCursosPublicos")?.addEventListener("change", (event) => { state.ordem = event.target.value; renderCursos(); });
-    $("filtrosCarga")?.addEventListener("click", (event) => {
-      const button = event.target.closest("[data-horas]");
-      if (!button) return;
-      state.horas = button.dataset.horas;
-      renderCargas();
-      renderCursos();
-    });
     $("catalogoCursos")?.addEventListener("click", (event) => {
       const button = event.target.closest("button[data-action]");
       if (!button) return;

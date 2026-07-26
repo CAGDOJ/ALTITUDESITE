@@ -19,10 +19,11 @@
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2" defer></script>
   <script src="/Projeto/4-java/supabase-init.js?v=27" defer></script>
   <script src="/Projeto/4-java/headerAuth.js?v=27" defer></script>
-  <script src="/Projeto/4-java/cursos-profissionais.js?v=27" defer></script>
+  <script src="/Projeto/4-java/cursos-profissionais.js?v=32" defer></script>
   <link rel="stylesheet" href="../2-css/06-responsive.css?v=27">
   <link rel="stylesheet" href="/Projeto/2-css/18-public-v27.css?v=27">
   <link rel="stylesheet" href="/Projeto/2-css/22-public-header-v31.css?v=31">
+  <link rel="stylesheet" href="../2-css/23-v32-integrado.css?v=32">
 </head>
 <body>
   <header class="new-header">
@@ -88,17 +89,11 @@
     <section class="course-finder-section" aria-labelledby="tituloCargas">
       <div class="section-heading-compact">
         <span class="catalog-kicker">Encontre sua formação</span>
-        <h2 id="tituloCargas">Filtre por tipo e carga horária</h2>
-        <p>Escolha primeiro o tipo de curso e depois a quantidade de horas que precisa.</p>
+        <h2 id="tituloCargas">Escolha o tipo de formação</h2>
+        <p>A carga horária do certificado será escolhida pelo aluno após concluir o curso e ser aprovado.</p>
       </div>
       <div class="course-finder-controls">
-        <div class="finder-group">
-          <span class="finder-group-title">Carga horária</span>
-          <div id="filtrosCarga" class="workload-grid" aria-live="polite">
-            <button class="workload-box active" type="button" data-horas="TODAS"><strong>Todas</strong><span>as cargas</span></button>
-          </div>
-        </div>
-        <div class="finder-group">
+        <div class="finder-group course-type-only">
           <span class="finder-group-title">Tipo de curso</span>
           <div class="course-type-tabs" id="filtrosTipoCurso">
             <button type="button" class="course-type-tab active" data-tipo="PROFISSIONAL"><strong>Cursos Profissionais</strong><span>Cursos livres e capacitações</span></button>
@@ -113,7 +108,7 @@
         <div>
           <span class="catalog-kicker">Catálogo atualizado</span>
           <h2 id="tituloCursos">Cursos Profissionais</h2>
-          <p>Imagem, carga horária, avaliação, popularidade e acesso ao conteúdo ficam organizados em um único card.</p>
+          <p>Imagem, avaliação, popularidade e acesso ao conteúdo ficam organizados em um único card.</p>
         </div>
         <div class="catalog-tools">
           <input id="buscaCursosPublicos" type="search" placeholder="Buscar curso..." aria-label="Buscar curso">
@@ -123,8 +118,7 @@
             <option value="AVALIACAO">Melhor avaliação</option>
             <option value="MATRICULAS">Mais inscritos</option>
             <option value="RECENTES">Mais recentes</option>
-            <option value="CARGA_ASC">Menor carga</option>
-            <option value="CARGA_DESC">Maior carga</option>
+            
           </select>
         </div>
       </div>
@@ -147,7 +141,6 @@
         <div id="modalCursoRating" class="modal-rating"></div>
         <p id="modalCursoDescricao"></p>
         <div class="catalog-modal-meta">
-          <span id="modalCursoHoras">0 horas</span>
           <span id="modalCursoNivel">Básico</span>
           <span id="modalCursoModulos">0 módulos</span>
           <span id="modalCursoMateriais">0 materiais</span>

@@ -18,12 +18,12 @@
   <script src="../4-java/altitude-dialogs.js?v=17"></script>
   <script src="../4-java/supabase-init.js?v=17" defer></script>
   <script src="../4-java/gestor-guard.js?v=17" defer></script>
-  <script src="../4-java/12-portaldogestor.js?v=30" defer></script>
-  <script src="../4-java/latex-importer.js?v=30" defer></script>
-  <script src="../4-java/gestor-enhancements.js?v=29" defer></script>
+  <script src="../4-java/12-portaldogestor.js?v=32.1" defer></script>
+  <script src="../4-java/latex-importer.js?v=33" defer></script>
+  <script src="../4-java/gestor-enhancements.js?v=33" defer></script>
   <script src="../4-java/gestor-acessos.js?v=17" defer></script>
-  <script src="../4-java/certificado-pdf-v27.js?v=29" defer></script>
-  <script src="../4-java/gestor-certificados.js?v=29" defer></script>
+  <script src="../4-java/certificado-pdf-v27.js?v=33" defer></script>
+  <script src="../4-java/gestor-certificados.js?v=33" defer></script>
   <link rel="stylesheet" href="../2-css/base-portal.css?v=29">
   <link rel="stylesheet" href="../2-css/06-responsive.css?v=29">
   <link rel="stylesheet" href="../2-css/15-ajustes-finais.css?v=29">
@@ -32,6 +32,8 @@
   <link rel="stylesheet" href="../2-css/20-v29-cursos.css?v=30">
   <link rel="stylesheet" href="../2-css/21-v30-construtor.css?v=30">
   <link rel="stylesheet" href="../2-css/22-v31-construtor.css?v=31">
+  <link rel="stylesheet" href="../2-css/23-v32-integrado.css?v=33">
+  <link rel="stylesheet" href="../2-css/24-v33-final.css?v=33">
 </head>
 
 <body class="gestor-auth-pending">
@@ -171,6 +173,42 @@
         </div>
       </div>
 
+      <!-- Modal: redefinir senha do aluno -->
+      <div class="modal" id="modalSenhaAluno" aria-hidden="true">
+        <div class="modal__sheet password-reset-sheet">
+          <div class="modal-heading-row">
+            <div>
+              <span class="eyebrow">Acesso do aluno</span>
+              <h3>Redefinir senha</h3>
+            </div>
+            <button type="button" class="ghost" id="btnFecharSenhaAluno" aria-label="Fechar">Fechar</button>
+          </div>
+          <div class="password-reset-student">
+            <strong id="senhaAlunoNome">Aluno</strong>
+            <span id="senhaAlunoEmail">email@exemplo.com</span>
+          </div>
+          <form id="formSenhaAluno">
+            <input type="hidden" id="senhaAlunoId">
+            <label>Nova senha temporária
+              <div class="password-field-row">
+                <input id="senhaAlunoNova" type="text" minlength="8" autocomplete="new-password" placeholder="Mínimo de 8 caracteres" required>
+                <button type="button" class="secondary-action" id="btnGerarSenhaAluno">Gerar senha</button>
+              </div>
+            </label>
+            <p class="field-help">A alteração é imediata. Entregue a nova senha ao aluno por um canal seguro.</p>
+            <div id="senhaAlunoResultado" class="password-copy-result" hidden>
+              <span>Senha atualizada com sucesso:</span>
+              <code id="senhaAlunoResultadoCodigo"></code>
+              <button type="button" class="secondary-action" id="btnCopiarSenhaAluno">Copiar senha</button>
+            </div>
+            <div class="actions">
+              <button type="button" class="ghost" id="btnCancelarSenhaAluno">Cancelar</button>
+              <button type="submit" id="btnSalvarSenhaAluno">Salvar nova senha</button>
+            </div>
+          </form>
+        </div>
+      </div>
+
       <section id="cursos" class="aba" data-min-level="2">
         <div class="page-heading"><div><span>Conteúdo acadêmico</span><h2>Cursos e conteúdos</h2><p>Cadastre o curso pelo modo normal ou pelo LaTeX, sempre com pré-visualização antes de publicar.</p></div><div class="page-heading-actions"><button type="button" class="secondary-action" id="btnNovoCursoTopo">+ Novo curso</button></div></div>
         <div class="toolbar">
@@ -245,9 +283,7 @@
               <label>Tipo de formação
                 <select id="fCursoTipo"><option value="PROFISSIONAL">Curso profissional</option><option value="TECNICO">Curso técnico</option></select>
               </label>
-              <label>Carga horária (horas)
-                <select id="fCursoHoras" required><option value="5">5 horas</option><option value="10">10 horas</option><option value="15">15 horas</option><option value="20" selected>20 horas</option><option value="25">25 horas</option><option value="30">30 horas</option><option value="35">35 horas</option><option value="40">40 horas</option><option value="45">45 horas</option><option value="50">50 horas</option><option value="55">55 horas</option><option value="60">60 horas</option><option value="65">65 horas</option><option value="70">70 horas</option><option value="75">75 horas</option><option value="80">80 horas</option><option value="85">85 horas</option><option value="90">90 horas</option><option value="95">95 horas</option><option value="100">100 horas</option><option value="105">105 horas</option><option value="110">110 horas</option><option value="115">115 horas</option><option value="120">120 horas</option><option value="125">125 horas</option><option value="130">130 horas</option><option value="135">135 horas</option><option value="140">140 horas</option><option value="145">145 horas</option><option value="150">150 horas</option><option value="155">155 horas</option><option value="160">160 horas</option><option value="165">165 horas</option><option value="170">170 horas</option><option value="175">175 horas</option><option value="180">180 horas</option><option value="185">185 horas</option><option value="190">190 horas</option><option value="195">195 horas</option><option value="200">200 horas</option></select>
-              </label>
+              <input type="hidden" id="fCursoHoras" value="5">
               <label>Nível
                 <select id="fCursoNivel"><option value="BASICO">Básico</option><option value="INTERMEDIARIO">Intermediário</option><option value="AVANCADO">Avançado</option></select>
               </label>
@@ -322,9 +358,7 @@
                         <label>Ordem
                           <input type="number" id="fModuloOrdem" min="1" value="1" inputmode="numeric">
                         </label>
-                        <label>Horas
-                          <input type="number" id="fModuloHoras" min="0" max="200" step="1" value="0" placeholder="Ex.: 10" inputmode="numeric">
-                        </label>
+                        <input type="hidden" id="fModuloHoras" value="0">
                       </div>
                       <label>Descrição curta
                         <input type="text" id="fModuloDesc" maxlength="240" placeholder="Explique brevemente o que será estudado.">
@@ -395,7 +429,7 @@
 
                 <div id="form-edicao-modulo" class="builder-edit-panel" hidden>
                   <div class="builder-list-heading">
-                    <div><span>EDIÇÃO</span><h4>Editar módulo completo</h4><p>Altere texto, horas, PDF, imagem, vídeo ou liberação.</p></div>
+                    <div><span>EDIÇÃO</span><h4>Editar módulo completo</h4><p>Altere texto, PDF, imagem, vídeo ou liberação.</p></div>
                     <button type="button" class="builder-secondary-button" onclick="fecharEdicaoModulo()">Fechar edição</button>
                   </div>
                   <form id="form-editar-modulo">
@@ -403,14 +437,20 @@
                     <div class="builder-two-fields builder-title-order">
                       <label>Título do módulo<input type="text" id="editar-titulo" required></label>
                       <label>Ordem<input type="number" id="editar-order" min="1" value="1"></label>
-                      <label>Horas<input type="number" id="editar-carga-horaria" min="0" max="200" step="1" value="0"></label>
+                      <input type="hidden" id="editar-carga-horaria" value="0">
                     </div>
                     <label>Descrição<textarea id="editar-descricao" rows="3"></textarea></label>
                     <label>Conteúdo completo<textarea id="editar-conteudo" rows="12"></textarea></label>
+                    <details class="builder-latex-sync">
+                      <summary>Editar também o LaTeX deste módulo</summary>
+                      <label>Código LaTeX<textarea id="editar-conteudo-latex" rows="10" spellcheck="false" placeholder="O conteúdo importado por LaTeX aparecerá aqui. Alterações feitas neste campo também serão refletidas no conteúdo normal."></textarea></label>
+                    </details>
                     <div class="builder-media-grid">
                       <label>Nova imagem<input type="file" id="editar-imagem-arquivo" accept="image/*"></label>
                       <label>Novo PDF<input type="file" id="editar-pdf-arquivo" accept="application/pdf,.pdf"></label>
-                      <label class="builder-wide-field">Vídeo complementar<input type="url" id="editar-video-url" placeholder="https://..."></label>
+                      <label class="builder-wide-field">Vídeo complementar
+                        <div class="builder-input-action"><input type="url" id="editar-video-url" placeholder="https://..."><button type="button" id="btnRemoverVideoModulo">Remover vídeo</button></div>
+                      </label>
                       <label>Título do material extra<input type="text" id="editar-material-titulo" placeholder="Ex.: Exercícios complementares"></label>
                       <label>Novo material extra<input type="file" id="editar-material-arquivo" accept=".pdf,.doc,.docx,.xls,.xlsx,.ppt,.pptx,.zip,.rar,image/*,audio/*,video/*"></label>
                     </div>

@@ -118,6 +118,7 @@ function abrirAba(id) {
 let alunos = [];
 const pageAln = { idx:1, size:10 };
 let editAlunoId = null;
+let senhaAlunoAtual = null;
 const $ = s => document.querySelector(s);
 function escapeHTML(value) {
   return String(value ?? '')
@@ -222,6 +223,7 @@ function renderAlunos(){
   const tbody = $('#tabAlunos tbody');
   if(!tbody) return;
 
+  const podeRedefinirSenha = Number(window.GESTOR_ATUAL?.nivel_acesso || 0) >= 4;
   const data = getFilteredAln();
   const totalPages = Math.max(1, Math.ceil(data.length / pageAln.size));
   if(pageAln.idx>totalPages) pageAln.idx = totalPages;
@@ -238,6 +240,7 @@ function renderAlunos(){
       <td><span class="badge ${a.status==='ATIVO'?'ativo':'inativo'}">${a.status}</span></td>
       <td class="student-actions">
         <button class="btn-mini primary-action-mini" data-act="edit" data-id="${a.id}">Editar dados</button>
+        ${podeRedefinirSenha ? `<button class="btn-mini" data-act="password" data-id="${a.id}">Redefinir senha</button>` : ''}
         <button class="btn-mini" data-act="toggle" data-id="${a.id}">${a.status==='ATIVO'?'Inativar':'Ativar'}</button>
       </td>
     </tr>`).join('');
@@ -342,6 +345,87 @@ async function alternarStatusAluno(alunoId, novoStatus) {
   }
 }
 
+
+function gerarSenhaTemporariaAluno() {
+  const letras = 'ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnopqrstuvwxyz';
+  const numeros = '23456789';
+  const simbolos = '!@#$%';
+  const todos = letras + numeros + simbolos;
+  const bytes = new Uint32Array(12);
+  crypto.getRandomValues(bytes);
+  const pick = (source, value) => source[value % source.length];
+  const base = [
+    pick('ABCDEFGHJKLMNPQRSTUVWXYZ', bytes[0]),
+    pick('abcdefghijkmnopqrstuvwxyz', bytes[1]),
+    pick(numeros, bytes[2]),
+    pick(simbolos, bytes[3])
+  ];
+  for (let i = 4; i < bytes.length; i += 1) base.push(pick(todos, bytes[i]));
+  for (let i = base.length - 1; i > 0; i -= 1) {
+    const j = bytes[i % bytes.length] % (i + 1);
+    [base[i], base[j]] = [base[j], base[i]];
+  }
+  return base.join('');
+}
+
+function abrirModalSenhaAluno(aluno) {
+  if (!aluno) return;
+  if (Number(window.GESTOR_ATUAL?.nivel_acesso || 0) < 4) {
+    alert('Somente o gestor principal pode redefinir senhas.');
+    return;
+  }
+  senhaAlunoAtual = aluno;
+  const modal = $('#modalSenhaAluno');
+  $('#senhaAlunoId').value = aluno.user_id || aluno.id || '';
+  $('#senhaAlunoNome').textContent = String(aluno.nome || 'Aluno').toUpperCase();
+  $('#senhaAlunoEmail').textContent = aluno.email || 'E-mail não informado';
+  $('#senhaAlunoNova').value = gerarSenhaTemporariaAluno();
+  $('#senhaAlunoResultado').hidden = true;
+  $('#senhaAlunoResultadoCodigo').textContent = '';
+  modal?.setAttribute('aria-hidden', 'false');
+  document.body.classList.add('gestor-modal-open');
+  setTimeout(() => $('#senhaAlunoNova')?.focus(), 50);
+}
+
+function fecharModalSenhaAluno() {
+  senhaAlunoAtual = null;
+  $('#formSenhaAluno')?.reset();
+  $('#senhaAlunoResultado') && ($('#senhaAlunoResultado').hidden = true);
+  $('#modalSenhaAluno')?.setAttribute('aria-hidden', 'true');
+  document.body.classList.remove('gestor-modal-open');
+}
+
+async function redefinirSenhaAluno(event) {
+  event.preventDefault();
+  const userId = String($('#senhaAlunoId')?.value || '').trim();
+  const novaSenha = String($('#senhaAlunoNova')?.value || '');
+  if (!userId) return alert('Aluno não identificado.');
+  if (novaSenha.length < 8) return alert('A senha deve possuir pelo menos 8 caracteres.');
+
+  const button = $('#btnSalvarSenhaAluno');
+  const original = button?.textContent || 'Salvar nova senha';
+  if (button) { button.disabled = true; button.textContent = 'Salvando...'; }
+  try {
+    const { data, error } = await sb.functions.invoke('gerenciar-gestor', {
+      body: {
+        acao: 'redefinir_senha_aluno',
+        aluno_id: userId,
+        nova_senha: novaSenha
+      }
+    });
+    if (error) throw error;
+    if (!data?.ok) throw new Error(data?.error || 'Não foi possível redefinir a senha.');
+    $('#senhaAlunoResultadoCodigo').textContent = novaSenha;
+    $('#senhaAlunoResultado').hidden = false;
+    alert('Senha redefinida. Copie a senha temporária e entregue ao aluno por um canal seguro.');
+  } catch (error) {
+    console.error('Redefinição de senha:', error);
+    alert(`Não foi possível redefinir a senha: ${error.message}`);
+  } finally {
+    if (button) { button.disabled = false; button.textContent = original; }
+  }
+}
+
 function carregarAlunos(){
   if($('#alnBusca')){
     $('#alnBusca').addEventListener('input', ()=>{ pageAln.idx=1; renderAlunos(); });
@@ -358,6 +442,16 @@ function carregarAlunos(){
       catch { prompt('Copie o link de cadastro:', url); }
     });
     $('#btnCancelar').addEventListener('click', closeModalAln);
+    $('#btnFecharSenhaAluno')?.addEventListener('click', fecharModalSenhaAluno);
+    $('#btnCancelarSenhaAluno')?.addEventListener('click', fecharModalSenhaAluno);
+    $('#btnGerarSenhaAluno')?.addEventListener('click', () => { $('#senhaAlunoNova').value = gerarSenhaTemporariaAluno(); });
+    $('#btnCopiarSenhaAluno')?.addEventListener('click', async () => {
+      const senha = $('#senhaAlunoResultadoCodigo')?.textContent || '';
+      if (!senha) return;
+      try { await navigator.clipboard.writeText(senha); alert('Senha copiada.'); }
+      catch { prompt('Copie a senha:', senha); }
+    });
+    $('#formSenhaAluno')?.addEventListener('submit', redefinirSenhaAluno);
 
     $('#tabAlunos').addEventListener('click', async (ev)=>{
       const btn = ev.target.closest('button'); 
@@ -373,6 +467,10 @@ function carregarAlunos(){
       
       if(act==='edit'){
         openModalAln(alunoId);
+      }
+
+      if(act==='password'){
+        abrirModalSenhaAluno(alunos[idx]);
       }
       
       if(act==='toggle'){ 
@@ -547,7 +645,7 @@ function gerarRaLocal(){
             <img src="${thumb(c.capa_url)}" class="curso-thumb" alt="Capa do curso">
             <div class="curso-textos">
               <div class="curso-titulo">${c.titulo}</div>
-              <div class="curso-sub">${c.carga_horaria || 0}h · ${(c.tipo_curso || 'PROFISSIONAL') === 'TECNICO' ? 'TÉCNICO' : 'PROFISSIONAL'} · ${c.categoria || '-'}</div>
+              <div class="curso-sub">${(c.tipo_curso || 'PROFISSIONAL') === 'TECNICO' ? 'TÉCNICO' : 'PROFISSIONAL'} · ${c.categoria || '-'}</div>
             </div>
           </div>
         </td>
@@ -595,7 +693,7 @@ function gerarRaLocal(){
 
       $('#fCursoNome').value  = '';
       $('#fCursoArea').value  = AREAS_FIXAS[0] || 'TECNOLOGIA';
-      $('#fCursoHoras').value = '20';
+      $('#fCursoHoras').value = '5';
       $('#fCursoDesc').value  = '';
       $('#fCursoPub').value   = 'NAO';
       $('#fCursoCapa').value  = '';
@@ -661,12 +759,6 @@ function gerarRaLocal(){
       return;
     }
 
-    if (horas < 5 || horas > 200 || horas % 5 !== 0) {
-      esconderCarregamento();
-      alert('A carga horária deve ser de 5 em 5 horas, entre 5h e 200h.');
-      return;
-    }
-
     const { data: dupList, error: dupErr } = await sb
       .from('cursos')
       .select('id,titulo')
@@ -693,7 +785,7 @@ function gerarRaLocal(){
       const payloadBase = {
         titulo      : nome,
         categoria   : area,
-        carga_horaria: horas,
+        carga_horaria: Math.max(5, Number(cursoAtual?.carga_horaria || horas || 5)),
         descricao   : desc,
         publicado   : publi,
         nivel       : nivel,
@@ -1013,7 +1105,7 @@ function gerarRaLocal(){
               <div class="builder-module-order">${Number(modulo.ordem || 1)}</div>
               <div class="builder-module-copy">
                 <h5>${safeTitle}</h5>
-                <p><strong>${Math.max(0, Number(modulo.carga_horaria || 0))}h</strong> · ${safeDescription}</p>
+                <p>${safeDescription}</p>
                 <small class="builder-content-preview">${safePreview}</small>
               </div>
               <span class="builder-status ${modulo.publicado ? 'live' : ''}">${modulo.publicado ? 'LIBERADO' : 'RASCUNHO'}</span>
@@ -1040,7 +1132,7 @@ function gerarRaLocal(){
       const normalStatus = document.getElementById('builderNormalStatus');
       const totalHours = modulos.reduce((sum, item) => sum + Math.max(0, Number(item.carga_horaria || 0)), 0);
       const totalQuestions = questoes.length;
-      if (normalStatus) normalStatus.textContent = `${modulos.length} módulo(s) · ${totalHours}h distribuídas · ${totalQuestions} questão(ões)`;
+      if (normalStatus) normalStatus.textContent = `${modulos.length} módulo(s) · ${totalQuestions} questão(ões)`;
       return modulos;
     } catch (error) {
       console.error('Erro ao carregar módulos:', error);
@@ -1425,6 +1517,29 @@ function gerarRaLocal(){
     if (back && back.dataset.bound !== 'true') {
       back.dataset.bound = 'true';
       back.addEventListener('click', fecharPainelModulos);
+    }
+
+    const removeVideo = document.getElementById('btnRemoverVideoModulo');
+    if (removeVideo && removeVideo.dataset.bound !== 'true') {
+      removeVideo.dataset.bound = 'true';
+      removeVideo.addEventListener('click', () => {
+        const input = document.getElementById('editar-video-url');
+        if (input) input.value = '';
+        alert('O vídeo será removido quando você salvar o módulo.');
+      });
+    }
+
+    const normalEdit = document.getElementById('editar-conteudo');
+    const latexEdit = document.getElementById('editar-conteudo-latex');
+    if (normalEdit && latexEdit && normalEdit.dataset.syncBound !== 'true') {
+      normalEdit.dataset.syncBound = 'true';
+      latexEdit.dataset.syncBound = 'true';
+      normalEdit.addEventListener('input', () => {
+        if (!latexEdit.matches(':focus')) latexEdit.value = normalEdit.value;
+      });
+      latexEdit.addEventListener('input', () => {
+        if (!normalEdit.matches(':focus')) normalEdit.value = latexEdit.value;
+      });
     }
 
     const previewIds = ['fModuloTitulo','fModuloOrdem','fModuloHoras','fModuloDesc','fModuloConteudo','fModuloVideo','fModuloImagemArquivo'];
@@ -1943,21 +2058,23 @@ function gerarRaLocal(){
 
       console.log('📋 Dados do módulo:', modulo);
 
-      document.getElementById('editar-id').value = modulo.id;
-      document.getElementById('editar-course-id').value = modulo.curso_id;
-      document.getElementById('editar-titulo').value = modulo.titulo || '';
-      document.getElementById('editar-descricao').value = modulo.descricao || '';
-      const editarConteudo = document.getElementById('editar-conteudo'); if (editarConteudo) editarConteudo.value = modulo.conteudo || '';
-      document.getElementById('editar-order').value = modulo.ordem || 1;
-      const editarHoras = document.getElementById('editar-carga-horaria');
-      if (editarHoras) editarHoras.value = Math.max(0, Number(modulo.carga_horaria || 0));
-      document.getElementById('editar-pdf-url').value = modulo.pdf_url || '';
-      document.getElementById('editar-video-url').value = modulo.video_url || '';
-      document.getElementById('editar-publicado').checked = modulo.publicado || false;
+      const setValue = (id, value) => { const el = document.getElementById(id); if (el) el.value = value ?? ''; };
+      setValue('editar-id', modulo.id);
+      setValue('editar-course-id', modulo.curso_id);
+      setValue('editar-titulo', modulo.titulo || '');
+      setValue('editar-descricao', modulo.descricao || '');
+      setValue('editar-conteudo', modulo.conteudo || '');
+      setValue('editar-conteudo-latex', modulo.conteudo_latex || modulo.conteudo || '');
+      setValue('editar-order', modulo.ordem || 1);
+      setValue('editar-carga-horaria', 0);
+      setValue('editar-video-url', modulo.video_url || '');
+      const publicado = document.getElementById('editar-publicado');
+      if (publicado) publicado.checked = Boolean(modulo.publicado);
       const editarGerarPdf = document.getElementById('editar-gerar-pdf');
       if (editarGerarPdf) editarGerarPdf.checked = true;
 
       const editPanel = document.getElementById('form-edicao-modulo');
+      if (editPanel) editPanel.dataset.pdfUrl = modulo.pdf_url || '';
       if (editPanel) {
         editPanel.hidden = false;
         editPanel.style.display = 'block';
@@ -2013,12 +2130,15 @@ function gerarRaLocal(){
       const newImageFile = document.getElementById('editar-imagem-arquivo')?.files?.[0] || null;
       const newExtraFile = document.getElementById('editar-material-arquivo')?.files?.[0] || null;
       const newExtraTitle = document.getElementById('editar-material-titulo')?.value.trim() || '';
-      let pdfUrl = document.getElementById('editar-pdf-url').value.trim();
+      const editPanel = document.getElementById('form-edicao-modulo');
+      let pdfUrl = String(editPanel?.dataset.pdfUrl || '').trim();
       let imageUrl = null;
       let extraUrl = null;
       const editTitle = document.getElementById('editar-titulo').value.trim();
       const editDescription = document.getElementById('editar-descricao').value.trim();
-      const editContent = document.getElementById('editar-conteudo')?.value.trim() || '';
+      const normalContent = document.getElementById('editar-conteudo')?.value.trim() || '';
+      const latexContent = document.getElementById('editar-conteudo-latex')?.value.trim() || '';
+      const editContent = normalContent || latexContent;
       const editHours = Math.max(0, Math.min(200, parseInt(document.getElementById('editar-carga-horaria')?.value || '0', 10) || 0));
       if (newPdfFile) {
         pdfUrl = await uploadPdfModulo(newPdfFile, Number(courseId));
@@ -2035,7 +2155,8 @@ function gerarRaLocal(){
         descricao: editDescription,
         conteudo: editContent,
         ordem: parseInt(document.getElementById('editar-order').value) || 1,
-        carga_horaria: editHours,
+        carga_horaria: 0,
+        conteudo_latex: latexContent || editContent,
         pdf_url: pdfUrl,
         video_url: document.getElementById('editar-video-url').value.trim(),
         publicado: document.getElementById('editar-publicado').checked,

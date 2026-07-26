@@ -13,6 +13,8 @@
   <link rel="stylesheet" href="../2-css/06-responsive.css?v=27">
   <link rel="stylesheet" href="../2-css/15-ajustes-finais.css?v=27">
   <link rel="stylesheet" href="../2-css/11-portaldoaluno.css?v=27">
+  <link rel="stylesheet" href="../2-css/23-v32-integrado.css?v=33">
+  <link rel="stylesheet" href="../2-css/24-v33-final.css?v=33">
 </head>
 <body>
   <div class="portal-layout">
@@ -184,16 +186,16 @@
           <a class="secondary-link" href="8-certificados.html" target="_blank">Validar um certificado</a>
         </div>
 
-        <div class="info-banner">
-          <strong>Certificado seguro</strong>
-          <span>Cada documento possui um código único e QR Code conectado à base oficial da Altitude.</span>
-        </div>
-
         <div class="section-block hours-wallet-overview">
           <div class="section-title">
-            <div><h2>Minha carteira de horas</h2><p>Você escolhe quantas horas disponíveis deseja usar. O PDF só aparece depois da liberação da gestão.</p></div>
+            <div><h2>Minha carteira de horas</h2><p>Escolha a quantidade desejada em cada solicitação. As horas são informadas de 5 em 5.</p></div>
           </div>
           <div id="resumoCarteiraHoras" class="hours-wallet-summary"></div>
+        </div>
+
+        <div class="info-banner certificate-security-banner">
+          <strong>Certificado seguro</strong>
+          <span>Cada documento possui um código único e QR Code conectado à base oficial da Altitude.</span>
         </div>
 
         <div class="section-block issued-certificates-section">
@@ -211,13 +213,13 @@
           <div id="listaCertificados" class="certificate-list"></div>
         </div>
 
-        <div class="section-block certificate-history-section">
-          <div class="section-title">
-            <div><h2>Histórico de certificados</h2><p>Acompanhe solicitações, liberações, bloqueios e emissões anteriores.</p></div>
-            <span id="contadorHistoricoCertificados">0 registros</span>
-          </div>
+        <details class="section-block certificate-history-section certificate-history-details">
+          <summary>
+            <span><strong>Ver histórico de certificados</strong><small>Solicitações e emissões anteriores</small></span>
+            <b id="contadorHistoricoCertificados">0 registros</b>
+          </summary>
           <div id="historicoCertificados" class="certificate-history-list"></div>
-        </div>
+        </details>
       </section>
 
       <section class="aba" id="pagamentos">
@@ -353,6 +355,7 @@
         <aside class="module-sidebar">
           <div class="module-sidebar-title">Conteúdo do curso</div>
           <div id="studyModuleList" class="module-list"></div>
+          <button type="button" id="btnCursoMaterialCompleto" class="course-material-button">Baixar material completo</button>
           <button type="button" id="btnAbrirProva" class="exam-button">Fazer prova</button>
         </aside>
 
@@ -447,8 +450,8 @@
   <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
   <script src="../4-java/altitude-dialogs.js?v=17"></script>
   <script src="../4-java/supabase-init.js?v=17"></script>
-  <script src="../4-java/certificado-pdf-v27.js?v=28"></script>
-  <script src="../4-java/portaldoaluno.js?v=27"></script>
+  <script src="../4-java/certificado-pdf-v27.js?v=33"></script>
+  <script src="../4-java/portaldoaluno.js?v=32"></script>
   <script src="../4-java/06-responsive.js?v=17"></script>
   <script src="../4-java/15-ajustes-finais.js?v=17" defer></script>
 </body>

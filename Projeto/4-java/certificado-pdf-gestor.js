@@ -12,6 +12,12 @@
     .normalize('NFD').replace(/[\u0300-\u036f]/g, '')
     .replace(/[^a-zA-Z0-9]+/g, '-').replace(/^-|-$/g, '').toLowerCase();
 
+  function formatCpf(value) {
+    const digits = String(value || '').replace(/\D/g, '').slice(0, 11);
+    if (digits.length !== 11) return String(value || '').trim() || '—';
+    return `${digits.slice(0,3)}.${digits.slice(3,6)}.${digits.slice(6,9)}-${digits.slice(9)}`;
+  }
+
   function cleanTitle(value) {
     return String(value || '')
       .replace(/<[^>]+>/g, ' ')
@@ -273,7 +279,7 @@
     doc.setTextColor(27, 42, 56);
     doc.setFont('times', 'normal');
     doc.setFontSize(12);
-    doc.text('O Instituto de Educação e Tecnologia Altitude certifica que', width / 2, 70, { align: 'center' });
+    doc.text('A ALTITUDE CENTRO UNIVERSITÁRIO certifica que', width / 2, 70, { align: 'center' });
     doc.setFont('times', 'italic');
     doc.setFontSize(studentName.length > 48 ? 24 : 29);
     const nameLines = doc.splitTextToSize(studentName, 225);
@@ -302,7 +308,7 @@
     doc.line(119, signY, 187, signY);
     doc.setFontSize(9);
     doc.setTextColor(50, 60, 70);
-    doc.text('DIREÇÃO DO INSTITUTO ALTITUDE', 68, signY + 6, { align: 'center' });
+    doc.text('DIREÇÃO DA ALTITUDE CENTRO UNIVERSITÁRIO', 68, signY + 6, { align: 'center' });
     doc.text('CONCLUINTE', 153, signY + 6, { align: 'center' });
 
     doc.addImage(qr, 'PNG', width - 52, height - 62, 25, 25);
@@ -337,6 +343,7 @@
     doc.setFontSize(8.5);
     const legal = [
       `RA: ${aluno?.ra || '—'}`,
+      `CPF: ${formatCpf(aluno?.cpf || cert.cpf_aluno)}`,
       `Carga horária certificada: ${hours} horas`,
       `Nota final: ${Number(cert.nota_final || 0)}%`,
       `Emissão: ${dateBR(cert.emitido_em)}`,

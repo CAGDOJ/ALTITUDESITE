@@ -160,7 +160,7 @@ function statusPill(status) {
   const danger = ["CANCELADA", "CANCELADO", "BLOQUEADO", "INATIVO", "REPROVADO", "ESTORNADO"].includes(normalized);
   const warning = ["PENDENTE", "AGUARDANDO_HORAS", "ABERTO", "EM_ANDAMENTO", "TRANCADA"].includes(normalized);
   const cls = success ? "success" : danger ? "danger" : warning ? "warning" : "neutral";
-  const label = normalized === "AGUARDANDO_HORAS" ? "AGUARDANDO LIBERAÇÃO" : normalized.replaceAll("_", " ");
+  const label = normalized === "AGUARDANDO_HORAS" ? "Aguardando liberação" : normalized.replaceAll("_", " ").toLocaleLowerCase("pt-BR").replace(/^./, (c) => c.toUpperCase());
   return `<span class="status-pill ${cls}">${escapeHTML(label)}</span>`;
 }
 
@@ -519,7 +519,6 @@ function courseCard(curso, compact = false) {
         <h3>${escapeHTML(curso.titulo || "Curso")}</h3>
         <p>${escapeHTML(curso.descricao || "Conteúdo disponível na plataforma Altitude.")}</p>
         <div class="course-meta">
-          <span>${Number(curso.carga_horaria || 0)}h</span>
           ${resultado ? `<span>Melhor nota: ${Number(resultado.nota || 0)}%</span>` : `<span>Prova pendente</span>`}
         </div>
         ${compact ? "" : `<div class="progress-line"><div class="progress-track"><div style="width:${progresso}%"></div></div><strong>${progresso}%</strong></div>`}
@@ -645,26 +644,200 @@ function materialIcon(type) {
   return { PDF: "PDF", VIDEO: "▶", AUDIO: "Áudio", IMAGEM: "Imagem", LINK: "Link" }[normalized] || "Arquivo";
 }
 
+
+function cleanLatexForStudent(value) {
+  let text = String(value || "").replace(/\r/g, "");
+  if (!text) return "";
+
+  // Remove preâmbulo e comandos de formatação que não pertencem ao conteúdo do aluno.
+  text = text
+    .replace(/^[\s\S]*?\\begin\{document\}/i, "")
+    .replace(/\\end\{document\}[\s\S]*$/i, "")
+    .replace(/\\(?:documentclass|usepackage|geometry|definecolor|titleformat|titlespacing|setlength|pagestyle|fancyhf|fancyhead|fancyfoot|renewcommand|onehalfspacing|Justifying)\*?(?:\[[^\]]*\])?\{[^{}]*\}/gi, "")
+    .replace(/\\(?:vspace|hspace)\*?\{[^{}]*\}/gi, "")
+    .replace(/\\includegraphics(?:\[[^\]]*\])?\{[^{}]*\}/gi, "")
+    .replace(/\\begin\{(?:center|tcolorbox|tabularx|tabular|itemize|enumerate)\}(?:\[[\s\S]*?\])?/gi, "\n")
+    .replace(/\\end\{(?:center|tcolorbox|tabularx|tabular|itemize|enumerate)\}/gi, "\n")
+    .replace(/^\s*\[[^\]\n]*(?:leftmargin|colback|colframe|boxrule|arc|left|right|top|bottom)[^\]\n]*\]\s*$/gim, "")
+    .replace(/\\section\*?\{([^{}]+)\}/gi, "\n## $1\n")
+    .replace(/\\subsection\*?\{([^{}]+)\}/gi, "\n### $1\n")
+    .replace(/\\subsubsection\*?\{([^{}]+)\}/gi, "\n#### $1\n")
+    .replace(/\\item\s*/gi, "\n- ")
+    .replace(/\\(?:textbf|textit|emph|underline)\{([^{}]*)\}/gi, "$1")
+    .replace(/\\textcolor\{[^{}]*\}\{([^{}]*)\}/gi, "$1")
+    .replace(/\\color\{[^{}]*\}/gi, "")
+    .replace(/\\(?:Large|LARGE|large|small|normalsize|bfseries|itshape|selectfont)\b/gi, "")
+    .replace(/\\\\/g, "\n")
+    .replace(/\\textbar\b/gi, "|")
+    .replace(/\\%/g, "%")
+    .replace(/\\&/g, "&")
+    .replace(/~+/g, " ")
+    .replace(/\$+/g, "")
+    .replace(/[{}]/g, "")
+    .replace(/^\s*(?:tcolorbox|center|altgray|altblue|altlight|linegray)\s*$/gim, "")
+    .replace(/^\s*\d+(?:\.\d+)?cm\s*$/gim, "")
+    .replace(/[ \t]+\n/g, "\n")
+    .replace(/\n{3,}/g, "\n\n")
+    .trim();
+
+  return text;
+}
+
+function studentContentHtml(value) {
+  const text = cleanLatexForStudent(value);
+  if (!text) return "";
+  const lines = text.split("\n");
+  const out = [];
+  let paragraph = [];
+  let list = [];
+
+  const flushParagraph = () => {
+    const joined = paragraph.join(" ").replace(/\s+/g, " ").trim();
+    if (joined) out.push(`<p>${escapeHTML(joined)}</p>`);
+    paragraph = [];
+  };
+  const flushList = () => {
+    if (list.length) out.push(`<ul>${list.map((item) => `<li>${escapeHTML(item)}</li>`).join("")}</ul>`);
+    list = [];
+  };
+
+  lines.forEach((raw) => {
+    const line = raw.trim();
+    if (!line) { flushParagraph(); flushList(); return; }
+    const heading = line.match(/^(#{2,4})\s+(.+)$/);
+    if (heading) {
+      flushParagraph(); flushList();
+      const level = heading[1].length <= 2 ? 3 : 4;
+      out.push(`<h${level} class="latex-heading">${escapeHTML(heading[2])}</h${level}>`);
+      return;
+    }
+    if (/^-\s+/.test(line)) {
+      flushParagraph();
+      list.push(line.replace(/^-\s+/, ""));
+      return;
+    }
+    flushList();
+    paragraph.push(line);
+  });
+  flushParagraph(); flushList();
+  return out.join("");
+}
+
+function uniqueModuleResources(modulo) {
+  const resources = [];
+  const seen = new Set();
+  const add = (resource) => {
+    const url = safeUrl(resource?.url);
+    if (!url) return;
+    const key = `${String(resource.tipo || "OUTRO").toUpperCase()}|${url}`;
+    if (seen.has(key)) return;
+    seen.add(key);
+    resources.push({ ...resource, url });
+  };
+
+  if (modulo.video_url) add({ tipo: "VIDEO", titulo: "Videoaula do módulo", url: modulo.video_url, destaque: true });
+
+  // Exibe somente um PDF por módulo, mesmo quando o mesmo arquivo foi registrado em duas tabelas.
+  const pdfCandidates = [];
+  if (modulo.pdf_url) pdfCandidates.push({ tipo: "PDF", titulo: "Material do módulo", url: modulo.pdf_url });
+  for (const material of modulo.materiais || []) {
+    if (String(material.tipo || "").toUpperCase() === "PDF") pdfCandidates.push(material);
+  }
+  if (pdfCandidates.length) add({ ...pdfCandidates[0], tipo: "PDF", titulo: "Material do módulo" });
+
+  for (const material of modulo.materiais || []) {
+    if (String(material.tipo || "").toUpperCase() !== "PDF") add(material);
+  }
+  return resources;
+}
+
+async function baixarMaterialCompletoCurso() {
+  if (!state.cursoAtual || !state.modulos.length) return toast("Nenhum material disponível.", "error");
+  if (!window.jspdf?.jsPDF) return toast("Gerador de PDF não carregado.", "error");
+
+  const button = $("btnCursoMaterialCompleto");
+  const original = button?.textContent || "Baixar material completo";
+  if (button) { button.disabled = true; button.textContent = "Gerando material..."; }
+  try {
+    const { jsPDF } = window.jspdf;
+    const doc = new jsPDF({ orientation: "portrait", unit: "mm", format: "a4" });
+    const width = doc.internal.pageSize.getWidth();
+    const height = doc.internal.pageSize.getHeight();
+    const margin = 18;
+    let y = 20;
+
+    const newPageIfNeeded = (needed = 12) => {
+      if (y + needed <= height - 18) return;
+      doc.addPage();
+      y = 20;
+    };
+    const writeLines = (text, size = 10, bold = false, spacing = 5) => {
+      doc.setFont("helvetica", bold ? "bold" : "normal");
+      doc.setFontSize(size);
+      const lines = doc.splitTextToSize(String(text || ""), width - margin * 2);
+      for (const line of lines) {
+        newPageIfNeeded(spacing + 2);
+        doc.text(line, margin, y);
+        y += spacing;
+      }
+    };
+
+    doc.setTextColor(10, 61, 98);
+    writeLines("INSTITUIÇÃO ALTITUDE", 11, true, 6);
+    doc.setTextColor(25, 42, 58);
+    writeLines(`Material de estudo — ${state.cursoAtual.titulo || "Curso"}`, 18, true, 8);
+    doc.setDrawColor(28, 170, 181);
+    doc.line(margin, y, width - margin, y);
+    y += 10;
+
+    state.modulos.forEach((modulo, index) => {
+      newPageIfNeeded(28);
+      doc.setTextColor(10, 61, 98);
+      writeLines(`${index + 1}. ${modulo.titulo || `Conteúdo ${index + 1}`}`, 14, true, 7);
+      doc.setTextColor(55, 70, 84);
+      if (modulo.descricao) writeLines(cleanLatexForStudent(modulo.descricao), 10, false, 5);
+      const clean = cleanLatexForStudent(modulo.conteudo || modulo.conteudo_latex || "");
+      if (clean) {
+        y += 2;
+        clean.split(/\n+/).map((line) => line.replace(/^#{2,4}\s*/, "").replace(/^-\s*/, "• ").trim()).filter(Boolean)
+          .forEach((line) => writeLines(line, 10, false, 5));
+      }
+      y += 8;
+    });
+
+    const totalPages = doc.getNumberOfPages();
+    for (let page = 1; page <= totalPages; page += 1) {
+      doc.setPage(page);
+      doc.setFont("helvetica", "normal");
+      doc.setFontSize(8);
+      doc.setTextColor(100, 115, 128);
+      doc.text(`Instituição Altitude · ${page} de ${totalPages}`, width / 2, height - 9, { align: "center" });
+    }
+
+    const filename = `material-${String(state.cursoAtual.titulo || "curso").normalize("NFD").replace(/[\u0300-\u036f]/g, "").replace(/[^a-zA-Z0-9]+/g, "-").replace(/^-|-$/g, "").toLowerCase()}.pdf`;
+    doc.save(filename);
+  } catch (error) {
+    console.error("Material completo:", error);
+    toast(`Não foi possível gerar o material: ${error.message}`, "error");
+  } finally {
+    if (button) { button.disabled = false; button.textContent = original; }
+  }
+}
+
 function renderModuloAtual() {
   const modulo = state.modulos[state.moduloIndex];
   if (!modulo) return;
 
   setText("lessonPosition", `Conteúdo ${state.moduloIndex + 1} de ${state.modulos.length}`);
   setText("lessonTitle", modulo.titulo || `Módulo ${state.moduloIndex + 1}`);
-  setText("lessonDescription", modulo.descricao || "Estude os materiais abaixo e marque o conteúdo como concluído.");
+  setText("lessonDescription", cleanLatexForStudent(modulo.descricao) || "Estude os materiais abaixo e marque o conteúdo como concluído.");
 
-  const recursos = [];
-  if (modulo.video_url) recursos.push({ tipo: "VIDEO", titulo: "Videoaula do módulo", url: modulo.video_url, destaque: true });
-  if (modulo.pdf_url) recursos.push({ tipo: "PDF", titulo: "Material principal do módulo", url: modulo.pdf_url });
-  for (const material of modulo.materiais || []) recursos.push(material);
-
+  const recursos = uniqueModuleResources(modulo);
   const content = $("lessonContent");
-  const textoModulo = String(modulo.conteudo || "").trim();
-  const blocoTexto = textoModulo
-    ? `<article class="lesson-written-content"><h3>Conteúdo do módulo</h3>${textoModulo.split(/\n{2,}/).map((paragrafo) => `<p>${escapeHTML(paragrafo).replaceAll("\n", "<br>")}</p>`).join("")}</article>`
-    : "";
+  const blocoTextoHtml = studentContentHtml(modulo.conteudo || modulo.conteudo_latex || "");
+  const blocoTexto = blocoTextoHtml ? `<article class="lesson-written-content"><h3>Conteúdo do módulo</h3>${blocoTextoHtml}</article>` : "";
 
-  if (!recursos.length && !textoModulo) {
+  if (!recursos.length && !blocoTextoHtml) {
     content.innerHTML = `<div class="empty-state">Este módulo ainda não possui conteúdo publicado.</div>`;
   } else {
     content.innerHTML = blocoTexto + recursos.map((resource) => {
@@ -677,7 +850,7 @@ function renderModuloAtual() {
       if (normalizedType === "IMAGEM" && url) {
         return `<figure class="lesson-module-image"><img src="${escapeHTML(url)}" alt="${escapeHTML(resource.titulo || "Imagem do módulo")}" loading="lazy"><figcaption>${escapeHTML(resource.titulo || "Imagem do módulo")}</figcaption></figure>`;
       }
-      return `<div class="lesson-resource"><span><strong>${escapeHTML(resource.titulo || "Material")}</strong><small>${escapeHTML(materialIcon(resource.tipo))}</small></span>${url ? `<a class="secondary-button" href="${escapeHTML(url)}" target="_blank" rel="noopener">Abrir</a>` : `<span class="status-pill neutral">Indisponível</span>`}</div>`;
+      return `<div class="lesson-resource" data-resource-kind="${escapeHTML(normalizedType)}"><span><strong>${escapeHTML(resource.titulo || "Material")}</strong><small>${escapeHTML(materialIcon(resource.tipo))}</small></span>${url ? `<a class="secondary-button" href="${escapeHTML(url)}" target="_blank" rel="noopener">${normalizedType === "PDF" ? "Abrir PDF" : "Abrir"}</a>` : `<span class="status-pill neutral">Indisponível</span>`}</div>`;
     }).join("");
   }
 
@@ -937,7 +1110,10 @@ function mensagemPublicaHistoricoCertificado(item, certificado) {
 function renderHistoricoCertificados() {
   const list = $("historicoCertificados");
   if (!list) return;
-  const historico = [...state.certificadosHistorico].sort((a, b) => new Date(b.criado_em) - new Date(a.criado_em));
+  const acoesPublicas = new Set(["SOLICITADO", "LIBERADO", "EMITIDO", "BLOQUEADO", "CANCELADO", "REABERTO"]);
+  const historico = [...state.certificadosHistorico]
+    .filter((item) => acoesPublicas.has(String(item.acao || "").toUpperCase()))
+    .sort((a, b) => new Date(b.criado_em) - new Date(a.criado_em));
   setText("contadorHistoricoCertificados", `${historico.length} ${historico.length === 1 ? "registro" : "registros"}`);
   if (!historico.length) {
     list.innerHTML = `<div class="empty-state">Nenhuma movimentação de certificado registrada.</div>`;
@@ -1122,7 +1298,7 @@ function renderCertificados() {
 
     return `<article class="certificate-card hours-wallet-card">
       <div class="certificate-card-top">
-        <div><span class="eyebrow">${escapeHTML(curso.categoria || "Certificação")}</span><h3>${escapeHTML(curso.titulo || "Curso")}</h3><p>Carga máxima do curso: ${Number(curso.carga_horaria || 0)}h · ${resultado ? `melhor nota ${Number(resultado.nota || 0)}%` : "prova pendente"}</p></div>
+        <div><span class="eyebrow">${escapeHTML(curso.categoria || "Certificação")}</span><h3>${escapeHTML(curso.titulo || "Curso")}</h3><p>${resultado ? `Melhor nota: ${Number(resultado.nota || 0)}%` : "Prova pendente"}</p></div>
         ${statusPill(statusVisual)}
       </div>
       <div class="wallet-balance-grid">
@@ -1369,7 +1545,6 @@ async function baixarCertificado(certificadoId) {
   const validationUrl = `${window.location.origin}/Projeto/1-html/8-certificados.html?codigo=${encodeURIComponent(codigo)}`;
 
   try {
-    toast("Preparando certificado e conteúdo programático...", "success");
     await window.AltitudeCertificatePDF.download({
       sb,
       cert,
@@ -1844,6 +2019,7 @@ function configurarEventos() {
   $("btnModuloAnterior")?.addEventListener("click", () => selecionarModulo(state.moduloIndex - 1));
   $("btnProximoModulo")?.addEventListener("click", () => selecionarModulo(state.moduloIndex + 1));
   $("btnConcluirModulo")?.addEventListener("click", concluirModuloAtual);
+  $("btnCursoMaterialCompleto")?.addEventListener("click", baixarMaterialCompletoCurso);
   $("btnAbrirProva")?.addEventListener("click", abrirProva);
   $("btnIrParaProva")?.addEventListener("click", abrirProva);
   $("btnQuestaoAnterior")?.addEventListener("click", questaoAnterior);
@@ -1955,5 +2131,6 @@ window.copiarCodigoCertificado = copiarCodigoCertificado;
 window.baixarCarteirinhaPDF = baixarCarteirinhaPDF;
 window.refazerProva = refazerProva;
 window.irParaCertificados = irParaCertificados;
+window.baixarMaterialCompletoCurso = baixarMaterialCompletoCurso;
 
 iniciarPortal();

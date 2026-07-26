@@ -42,18 +42,30 @@
 
   async function sendRecovery() {
     const button = $("btnSendRecovery");
+    const identifier = String($("recoveryIdentifier")?.value || "").trim();
+    if (!identifier) return setMessage("recoveryMessage", "Informe seu RA, CPF ou e-mail.", false);
+
     try {
       button.disabled = true;
       button.textContent = "Enviando...";
-      const email = await resolveRecoveryEmail($("recoveryIdentifier")?.value);
-      const redirectTo = `${location.origin}/Projeto/1-html/4-login.html?recovery=1`;
-      const { error } = await window.sb.auth.resetPasswordForEmail(email, { redirectTo });
-      if (error) throw error;
-      setMessage("recoveryMessage", `Link enviado para ${email}. Verifique também a caixa de spam.`, true);
+
+      // Primeira opção: função transacional do Portal Altitude (Resend ou fallback Supabase).
+      const result = await window.sb.functions.invoke("recuperar-senha", {
+        body: { identificador: identifier }
+      });
+      if (result.error || !result.data?.ok) {
+        // Compatibilidade enquanto a Edge Function ainda não tiver sido publicada.
+        const email = await resolveRecoveryEmail(identifier);
+        const redirectTo = "https://www.portalaltitude.com.br/Projeto/1-html/4-login.html?recovery=1";
+        const { error } = await window.sb.auth.resetPasswordForEmail(email, { redirectTo });
+        if (error) throw error;
+      }
+
+      setMessage("recoveryMessage", "Se os dados estiverem cadastrados, o link será enviado em instantes. Verifique também spam e lixo eletrônico.", true);
     } catch (error) {
       const message = /rate|limit/i.test(error.message || "")
         ? "Muitas tentativas. Aguarde alguns minutos e tente novamente."
-        : (error.message || "Não foi possível enviar o link.");
+        : (error.message || "Não foi possível enviar o link agora. Solicite ajuda à instituição.");
       setMessage("recoveryMessage", message, false);
     } finally {
       button.disabled = false;
@@ -101,6 +113,10 @@
   }
 
   document.addEventListener("DOMContentLoaded", async () => {
+    window.sb.auth.onAuthStateChange((event, session) => {
+      if (event === "PASSWORD_RECOVERY" && session) showResetModal();
+    });
+
     $("linkForgot")?.addEventListener("click", (event) => {
       event.preventDefault();
       const open = !$("forgotPane")?.hasAttribute("hidden");

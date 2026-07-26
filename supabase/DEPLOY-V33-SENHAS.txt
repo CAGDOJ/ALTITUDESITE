@@ -1,0 +1,25 @@
+ALTITUDE V33 — DEPLOY DAS SENHAS
+
+1) Execute a migration:
+   supabase/migrations/017_v32_senhas_e_interface.sql
+
+2) Publique as funções:
+   supabase functions deploy gerenciar-gestor
+   supabase functions deploy recuperar-senha
+
+3) Configure os secrets, caso use Resend:
+   supabase secrets set SITE_URL=https://www.portalaltitude.com.br
+   supabase secrets set RESEND_API_KEY=SUA_CHAVE
+   supabase secrets set EMAIL_FROM="Altitude <contato@seudominio.com>"
+
+4) Authentication > URL Configuration:
+   Site URL:
+   https://www.portalaltitude.com.br
+
+   Redirect URL permitida:
+   https://www.portalaltitude.com.br/Projeto/1-html/4-login.html?recovery=1
+
+5) Alternativa: configure um SMTP próprio em Authentication > SMTP Settings.
+
+6) A redefinição pela gestão fica em Gestão > Alunos > Redefinir senha.
+   Apenas gestor principal (nível 4) pode usar essa função.

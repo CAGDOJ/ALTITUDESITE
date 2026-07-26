@@ -70,11 +70,11 @@ function buildEmail(record: QueueRecord, siteUrl: string) {
       actionUrl = `${siteUrl}/Projeto/1-html/11-portaldoaluno.html#atendimento`;
       break;
     case "CERTIFICADO_EM_CONTAGEM":
-      intro = "A instituição autorizou a contagem de horas do seu certificado.";
+      intro = "Sua solicitação de certificado foi recebida e está em processamento.";
       detail = `
         <p><strong>Curso:</strong> ${curso}</p>
         <p><strong>Carga solicitada:</strong> ${horas}h</p>
-        <p>O certificado será liberado automaticamente após a conclusão da contagem de 8 horas por dia útil.</p>`;
+        <p>Você receberá uma nova mensagem quando o documento estiver disponível.</p>`;
       actionLabel = "Acompanhar certificado";
       actionUrl = `${siteUrl}/Projeto/1-html/11-portaldoaluno.html#certificados`;
       break;
@@ -91,7 +91,7 @@ function buildEmail(record: QueueRecord, siteUrl: string) {
       intro = "Há uma atualização na situação do seu certificado.";
       detail = `
         <p><strong>Curso:</strong> ${curso}</p>
-        <p><strong>Status:</strong> BLOQUEADO</p>
+        <p><strong>Status:</strong> Bloqueado</p>
         ${mensagem ? `<p><strong>Observação:</strong> ${mensagem}</p>` : ""}`;
       actionLabel = "Consultar situação";
       actionUrl = `${siteUrl}/Projeto/1-html/11-portaldoaluno.html#certificados`;

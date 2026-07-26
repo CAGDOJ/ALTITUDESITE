@@ -2,77 +2,118 @@
   'use strict';
 
   const $ = (selector, scope = document) => scope.querySelector(selector);
+  const state = { parsedContent: null, parsedProof: null, previewUrl: null, busy: false };
   const esc = (value = '') => String(value)
     .replaceAll('&', '&amp;').replaceAll('<', '&lt;').replaceAll('>', '&gt;')
     .replaceAll('"', '&quot;').replaceAll("'", '&#039;');
+  const slug = (value) => String(value || 'arquivo').normalize('NFD').replace(/[\u0300-\u036f]/g, '')
+    .toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '') || 'arquivo';
 
-  const TEMPLATE = String.raw`\documentclass{article}
+  const CONTENT_TEMPLATE = String.raw`\documentclass[12pt,a4paper]{article}
 
-% Dados opcionais do curso. Se estiver importando em um curso já criado,
-% marque no portal se deseja atualizar esses dados.
-\codigocurso{LGPD-001}
-\titulocurso{Introdução à LGPD}
-\areacurso{TECNOLOGIA}
+% DADOS DO CURSO
+\titulocurso{Auxiliar Administrativo}
+\areacurso{Área Administrativa}
 \cargahoraria{20}
 \nivelcurso{BASICO}
 \notaminima{70}
-\descricaoCurso{Curso introdutório sobre proteção de dados pessoais.}
+\descricaoCurso{Formação introdutória para atuação em rotinas administrativas.}
 
 \begin{document}
 
-\begin{altitudemodulo}{Introdução à LGPD}{1}
-\descricaoModulo{Conceitos iniciais, fundamentos e aplicação da LGPD.}
+\begin{altitudemodulo}{Fundamentos e Rotinas Administrativas}{1}
+\horasModulo{10}
+\descricaoModulo{Conceitos básicos, organização, documentos e rotinas do setor administrativo.}
+\videoModulo{https://www.youtube.com/}
 
 \begin{conteudo}
-\section{O que é a LGPD?}
+\section{Apresentação}
+O auxiliar administrativo presta apoio às atividades internas de uma organização.
 
-A Lei Geral de Proteção de Dados estabelece regras para o tratamento de dados pessoais.
+\section{Fundamentos da Administração}
+Administração é o processo de organizar recursos, pessoas, informações e atividades para alcançar objetivos.
 
-\subsection{Princípios essenciais}
-
+\subsection{Funções básicas}
 \begin{itemize}
-  \item finalidade;
-  \item necessidade;
-  \item transparência;
-  \item segurança.
+  \item \textbf{Planejar}: definir objetivos;
+  \item \textbf{Organizar}: distribuir tarefas e informações;
+  \item \textbf{Controlar}: acompanhar os resultados.
 \end{itemize}
-
-Uma representação didática dos pilares de segurança é:
-\[
-P = C + I + D
-\]
-
-onde $C$ representa confidencialidade, $I$ integridade e $D$ disponibilidade.
 \end{conteudo}
+\end{altitudemodulo}
 
-\begin{altitudequestao}{1}
-\enunciado{Qual é o principal objetivo da LGPD?}
-\alternativa{A}{Impedir completamente o uso da internet.}
-\alternativa{B}{Regular o tratamento de dados pessoais.}
-\alternativa{C}{Eliminar bancos de dados.}
-\alternativa{D}{Proibir o armazenamento de documentos.}
-\alternativa{E}{Substituir todas as normas de segurança.}
-\gabarito{B}
-\resolucao{A alternativa B está correta porque a LGPD estabelece regras e princípios para o tratamento de dados pessoais.}
-\end{altitudequestao}
+\begin{altitudemodulo}{Atendimento, Comunicação e Informática}{2}
+\horasModulo{10}
+\descricaoModulo{Atendimento profissional, comunicação, informática e ética no trabalho.}
 
+\begin{conteudo}
+\section{Atendimento Profissional}
+Atender bem significa acolher a pessoa com respeito, compreender sua necessidade e encaminhar corretamente sua demanda.
+
+\section{Informática Aplicada}
+O profissional utiliza editor de texto, planilhas, e-mail e sistemas de cadastro.
+
+\section{Ética Profissional}
+Agir com ética envolve honestidade, responsabilidade, respeito e sigilo.
+\end{conteudo}
 \end{altitudemodulo}
 
 \end{document}`;
 
-  const state = { parsed: null, busy: false };
+  const PROOF_TEMPLATE = String.raw`\documentclass{article}
+\begin{document}
 
-  function toast(message, error = false) {
+% A prova fica separada do conteúdo. O número abaixo corresponde à ordem do módulo.
+\begin{altitudeprova}{1}
+
+\begin{altitudequestao}{1}
+\enunciado{Qual ação corresponde à função administrativa de planejar?}
+\alternativa{A}{Definir previamente objetivos e ações.}
+\alternativa{B}{Excluir todos os documentos.}
+\alternativa{C}{Ignorar os prazos.}
+\alternativa{D}{Evitar o atendimento ao público.}
+\alternativa{E}{Substituir todos os procedimentos.}
+\gabarito{A}
+\resolucao{Planejar significa definir objetivos e organizar previamente as ações necessárias.}
+\end{altitudequestao}
+
+\begin{altitudequestao}{2}
+\enunciado{Qual característica é adequada ao auxiliar administrativo?}
+\alternativa{A}{Desorganização.}
+\alternativa{B}{Falta de responsabilidade.}
+\alternativa{C}{Atenção aos detalhes.}
+\alternativa{D}{Divulgação de informações sigilosas.}
+\alternativa{E}{Descumprimento de prazos.}
+\gabarito{C}
+\resolucao{A atenção aos detalhes reduz erros e melhora a qualidade das rotinas administrativas.}
+\end{altitudequestao}
+
+\end{altitudeprova}
+
+\begin{altitudeprova}{2}
+\begin{altitudequestao}{3}
+\enunciado{Qual ferramenta é comum no setor administrativo?}
+\alternativa{A}{Editor de texto.}
+\alternativa{B}{Somente jogos eletrônicos.}
+\alternativa{C}{Apenas redes sociais.}
+\alternativa{D}{Nenhum recurso digital.}
+\alternativa{E}{Somente equipamentos industriais.}
+\gabarito{A}
+\resolucao{Editores de texto, planilhas, e-mail e sistemas de cadastro fazem parte das rotinas administrativas.}
+\end{altitudequestao}
+\end{altitudeprova}
+
+\end{document}`;
+
+  function notify(message, error = false) {
     if (window.AltitudeDialog?.alert) {
       window.AltitudeDialog.alert({
-        title: error ? 'Importação LaTeX' : 'Portal Altitude',
+        title: error ? 'Verifique o curso' : 'Portal Altitude',
         message,
         danger: error,
         confirmText: 'Entendi'
       });
-      return;
-    }
-    window.alert(message);
+    } else window.alert(message);
   }
 
   function removeComments(source) {
@@ -145,8 +186,22 @@ onde $C$ representa confidencialidade, $I$ integridade e $D$ disponibilidade.
         args.push(arg.value.trim());
         contentStart = arg.end;
       }
-      const end = source.indexOf(endToken, contentStart);
-      if (end < 0) throw new Error(`Falta \\end{${environment}}.`);
+      let depth = 1;
+      let searchAt = contentStart;
+      let end = -1;
+      while (depth > 0) {
+        const nextBegin = source.indexOf(beginToken, searchAt);
+        const nextEnd = source.indexOf(endToken, searchAt);
+        if (nextEnd < 0) throw new Error(`Falta \\end{${environment}}.`);
+        if (nextBegin >= 0 && nextBegin < nextEnd) {
+          depth += 1;
+          searchAt = nextBegin + beginToken.length;
+        } else {
+          depth -= 1;
+          if (depth === 0) end = nextEnd;
+          searchAt = nextEnd + endToken.length;
+        }
+      }
       blocks.push({ args, body: source.slice(contentStart, end).trim(), start, end: end + endToken.length });
       cursor = end + endToken.length;
     }
@@ -157,29 +212,9 @@ onde $C$ representa confidencialidade, $I$ integridade e $D$ disponibilidade.
     const value = String(expression || '').trim();
     if (!value) return '';
     try {
-      if (window.katex?.renderToString) {
-        return window.katex.renderToString(value, { displayMode, throwOnError: false, strict: 'ignore' });
-      }
+      if (window.katex?.renderToString) return window.katex.renderToString(value, { displayMode, throwOnError: false, strict: 'ignore' });
     } catch (_) {}
-    return displayMode
-      ? `<div class="latex-equation">${esc(value)}</div>`
-      : `<span class="latex-inline-math">${esc(value)}</span>`;
-  }
-
-  function replaceSimpleCommand(text, name, tag) {
-    const token = `\\${name}`;
-    let output = '';
-    let cursor = 0;
-    while (true) {
-      const start = text.indexOf(token, cursor);
-      if (start < 0) { output += text.slice(cursor); break; }
-      output += text.slice(cursor, start);
-      const arg = readBraced(text, start + token.length);
-      if (!arg) { output += token; cursor = start + token.length; continue; }
-      output += `<${tag}>${arg.value}</${tag}>`;
-      cursor = arg.end;
-    }
-    return output;
+    return displayMode ? `<div class="latex-equation">${esc(value)}</div>` : `<span class="latex-inline-math">${esc(value)}</span>`;
   }
 
   function latexToHtml(raw) {
@@ -187,28 +222,22 @@ onde $C$ representa confidencialidade, $I$ integridade e $D$ disponibilidade.
       .replace(/\\begin\{document\}|\\end\{document\}/g, '')
       .replace(/\\documentclass(?:\[[^\]]*\])?\{[^}]*\}/g, '')
       .trim();
-
     const protectedValues = [];
     const protect = (html) => {
       const token = `@@ALTITUDE_TOKEN_${protectedValues.length}@@`;
       protectedValues.push(html);
       return token;
     };
-
     source = source
       .replace(/\\\[([\s\S]*?)\\\]/g, (_, value) => protect(mathHtml(value, true)))
       .replace(/\$\$([\s\S]*?)\$\$/g, (_, value) => protect(mathHtml(value, true)))
       .replace(/\\begin\{equation\*?\}([\s\S]*?)\\end\{equation\*?\}/g, (_, value) => protect(mathHtml(value, true)))
       .replace(/(?<!\\)\$([^$\n]+)\$/g, (_, value) => protect(mathHtml(value, false)));
-
-    source = esc(source);
-
-    // Elementos de texto mais usados no material acadêmico.
-    source = source
+    source = esc(source)
       .replace(/\\section\*?\{([^{}]*)\}/g, '<h2>$1</h2>')
       .replace(/\\subsection\*?\{([^{}]*)\}/g, '<h3>$1</h3>')
       .replace(/\\subsubsection\*?\{([^{}]*)\}/g, '<h4>$1</h4>')
-      .replace(/\\paragraph\{([^{}]*)\}/g, '<h5>$1</h5>')
+      .replace(/\\paragraph\{([^{}]*)\}/g, '<h4>$1</h4>')
       .replace(/\\textbf\{([^{}]*)\}/g, '<strong>$1</strong>')
       .replace(/\\textit\{([^{}]*)\}/g, '<em>$1</em>')
       .replace(/\\emph\{([^{}]*)\}/g, '<em>$1</em>')
@@ -223,223 +252,402 @@ onde $C$ representa confidencialidade, $I$ integridade e $D$ disponibilidade.
       .replace(/\\(?:label|ref|cite)\{[^{}]*\}/g, '')
       .replace(/\\[a-zA-Z@]+\*?(?:\[[^\]]*\])?/g, '')
       .replace(/[{}]/g, '');
-
-    // Fecha itens antes do próximo item/fim da lista.
-    source = source
-      .replace(/<li>([\s\S]*?)(?=<li>|<\/ul>|<\/ol>)/g, '<li>$1</li>');
-
-    const blocks = source.split(/\n\s*\n+/).map((block) => block.trim()).filter(Boolean);
-    source = blocks.map((block) => {
+    source = source.replace(/<li>([\s\S]*?)(?=<li>|<\/ul>|<\/ol>)/g, '<li>$1</li>');
+    source = source.split(/\n\s*\n+/).map((block) => block.trim()).filter(Boolean).map((block) => {
       if (/^<(h[2-5]|ul|ol|div|table|blockquote)/.test(block)) return block.replaceAll('\n', ' ');
       return `<p>${block.replaceAll('\n', '<br>')}</p>`;
     }).join('\n');
-
-    protectedValues.forEach((html, index) => {
-      source = source.replaceAll(`@@ALTITUDE_TOKEN_${index}@@`, html);
-    });
+    protectedValues.forEach((html, index) => { source = source.replaceAll(`@@ALTITUDE_TOKEN_${index}@@`, html); });
     return source;
   }
 
   function latexToPlain(raw) {
-    const container = document.createElement('div');
-    container.innerHTML = latexToHtml(raw);
-    return (container.textContent || '').replace(/\s+/g, ' ').trim();
+    const node = document.createElement('div');
+    node.innerHTML = latexToHtml(raw);
+    return (node.textContent || '').replace(/\s+/g, ' ').trim();
   }
 
-  function parseQuestions(moduleBody) {
-    return environmentBlocks(moduleBody, 'altitudequestao', 1).map((block, index) => {
+  function standardMetadata(source, label) {
+    const escaped = String(label).replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+    const table = new RegExp(`${escaped}\\s*:\\s*&\\s*([^\\\\\\n]+)\\s*\\\\\\\\`, 'i').exec(source)?.[1];
+    return table ? latexToPlain(table) : '';
+  }
+
+  function standardCourseTitle(source) {
+    return standardMetadata(source, 'Curso')
+      || latexToPlain(/\\LARGE\\bfseries\s+Curso\s+de\s+([^}\n\\]+)/i.exec(source)?.[1] || '')
+      || latexToPlain(/\\fancyhead\[R\]\{[^}]*Curso\s+de\s+([^}]+)\}/i.exec(source)?.[1] || '')
+      || $('#modalModulos')?.dataset.courseTitle
+      || 'Curso Altitude';
+  }
+
+  function uniqueStandardTitles(values) {
+    const seen = new Set();
+    return values.map((value) => latexToPlain(value)).filter((value) => {
+      const key = value.toLocaleLowerCase('pt-BR');
+      if (!value || seen.has(key)) return false;
+      seen.add(key);
+      return true;
+    });
+  }
+
+  function groupModuleTitle(names, index) {
+    const clean = uniqueStandardTitles(names);
+    const useful = clean.filter((name) => !/(^apresenta|^objetiv|^síntese|^conclus)/i.test(name));
+    const list = useful.length ? useful : clean;
+    if (!list.length) return `Módulo ${index + 1}`;
+    if (list.length === 1) return list[0];
+    if (list.length === 2) return `${list[0]} e ${list[1]}`;
+    return `${list[0]}, ${list[1]} e ${list[list.length - 1]}`;
+  }
+
+  function parseStandardContent(clean) {
+    const documentMatch = /\\begin\{document\}([\s\S]*?)\\end\{document\}/i.exec(clean);
+    const body = documentMatch?.[1] || clean;
+    const sectionRegex = /\\section\*?\{([^{}]+)\}/g;
+    const sections = [];
+    let match;
+    while ((match = sectionRegex.exec(body))) sections.push({ title: match[1], index: match.index });
+    if (!sections.length) throw new Error('Nenhuma seção foi encontrada no material. Use \\section{Título} ou o modelo Altitude.');
+
+    const currentHours = Math.max(0, Math.min(200, Number($('#modalModulos')?.dataset.courseHours || 0)));
+    const commandHours = Math.max(0, Math.min(200, Number(firstCommand(clean, 'cargahoraria')) || 0));
+    const totalHours = commandHours || currentHours;
+    const targetCount = sections.length < 2
+      ? 1
+      : totalHours > 0
+        ? Math.min(sections.length, totalHours >= 40 ? 3 : 2)
+        : (sections.length >= 9 ? 3 : 2);
+    const firstSection = sections[0].index;
+    const usefulBody = body.slice(firstSection);
+    const adjusted = sections.map((section) => ({ ...section, index: section.index - firstSection }));
+    const modules = [];
+    let remainingHours = totalHours;
+
+    for (let group = 0; group < targetCount; group += 1) {
+      const startSection = Math.floor((group * adjusted.length) / targetCount);
+      const endSection = Math.floor(((group + 1) * adjusted.length) / targetCount);
+      const start = adjusted[startSection].index;
+      const end = endSection < adjusted.length ? adjusted[endSection].index : usefulBody.length;
+      const latex = usefulBody.slice(start, end).trim();
+      const names = adjusted.slice(startSection, endSection).map((item) => item.title);
+      const groupsLeft = targetCount - group;
+      const hours = totalHours > 0 ? (groupsLeft === 1 ? remainingHours : Math.floor(remainingHours / groupsLeft)) : 0;
+      remainingHours -= hours;
+      const plain = latexToPlain(latex);
+      modules.push({
+        titulo: groupModuleTitle(names, group),
+        ordem: group + 1,
+        carga_horaria: hours,
+        descricao: plain.slice(0, 220),
+        conteudo: plain,
+        conteudo_latex: latex,
+        conteudo_html: latexToHtml(latex),
+        video_url: null,
+        questoes: []
+      });
+    }
+
+    const courseTitle = firstCommand(clean, 'titulocurso')
+      ? latexToPlain(firstCommand(clean, 'titulocurso'))
+      : standardCourseTitle(clean);
+    const category = latexToPlain(firstCommand(clean, 'areacurso'))
+      || standardMetadata(clean, 'Área de formação')
+      || $('#modalModulos')?.dataset.courseCategory
+      || 'FORMAÇÃO PROFISSIONAL';
+    const description = latexToPlain(firstCommand(clean, 'descricaoCurso'))
+      || $('#modalModulos')?.dataset.courseDescription
+      || modules[0]?.descricao
+      || '';
+    return {
+      curso: {
+        codigo: firstCommand(clean, 'codigocurso'),
+        titulo: courseTitle,
+        categoria: String(category).toUpperCase(),
+        carga_horaria: totalHours || null,
+        descricao: description,
+        nivel: firstCommand(clean, 'nivelcurso', 'BASICO').toUpperCase(),
+        nota_minima: Math.min(100, Math.max(0, Number(firstCommand(clean, 'notaminima')) || 70))
+      },
+      modulos: modules,
+      source: clean
+    };
+  }
+
+  function parseContent(source) {
+    const clean = removeComments(source);
+    const blocks = environmentBlocks(clean, 'altitudemodulo', 2);
+    if (!blocks.length) return parseStandardContent(clean);
+    const course = {
+      codigo: firstCommand(clean, 'codigocurso'),
+      titulo: latexToPlain(firstCommand(clean, 'titulocurso')),
+      categoria: latexToPlain(firstCommand(clean, 'areacurso')).toUpperCase(),
+      carga_horaria: Math.min(200, Math.max(0, Number(firstCommand(clean, 'cargahoraria')) || Number($('#modalModulos')?.dataset.courseHours || 0))) || null,
+      descricao: latexToPlain(firstCommand(clean, 'descricaoCurso')),
+      nivel: firstCommand(clean, 'nivelcurso', 'BASICO').toUpperCase(),
+      nota_minima: Math.min(100, Math.max(0, Number(firstCommand(clean, 'notaminima')) || 70))
+    };
+    let modules = blocks.map((block, index) => {
+      const content = environmentBlocks(block.body, 'conteudo', 0)[0]?.body || '';
+      const plain = latexToPlain(content);
+      if (!plain) throw new Error(`O módulo “${block.args[0] || index + 1}” não possui conteúdo no ambiente conteudo.`);
+      return {
+        titulo: latexToPlain(block.args[0]) || `Módulo ${index + 1}`,
+        ordem: Number(block.args[1]) || index + 1,
+        carga_horaria: Math.max(0, Number(firstCommand(block.body, 'horasModulo')) || 0),
+        descricao: latexToPlain(firstCommand(block.body, 'descricaoModulo')) || plain.slice(0, 220),
+        conteudo: plain,
+        conteudo_latex: content,
+        conteudo_html: latexToHtml(content),
+        video_url: firstCommand(block.body, 'videoModulo') || null,
+        questoes: []
+      };
+    }).sort((a, b) => a.ordem - b.ordem);
+
+    const total = Number(course.carga_horaria || 0);
+    const explicit = modules.reduce((sum, module) => sum + Number(module.carga_horaria || 0), 0);
+    const missing = modules.filter((module) => !Number(module.carga_horaria)).length;
+    if (total > 0 && missing) {
+      let remaining = Math.max(0, total - explicit);
+      modules = modules.map((module, index) => {
+        if (module.carga_horaria) return module;
+        const missingAfter = modules.slice(index + 1).filter((item) => !Number(item.carga_horaria)).length;
+        const hours = missingAfter ? Math.floor(remaining / (missingAfter + 1)) : remaining;
+        remaining -= hours;
+        return { ...module, carga_horaria: hours };
+      });
+    }
+    return { curso: course, modulos: modules, source: clean };
+  }
+
+  function parseQuestionBlocks(source) {
+    return environmentBlocks(source, 'altitudequestao', 1).map((block, index) => {
       const alternatives = {};
       commandValues(block.body, 'alternativa', 2).forEach(({ args }) => {
         const letter = String(args[0] || '').trim().toUpperCase();
         if (['A', 'B', 'C', 'D', 'E'].includes(letter)) alternatives[letter] = latexToPlain(args[1]);
       });
       const correct = firstCommand(block.body, 'gabarito').toUpperCase();
-      const enunciadoLatex = firstCommand(block.body, 'enunciado');
+      const statementLatex = firstCommand(block.body, 'enunciado');
       const resolutionLatex = firstCommand(block.body, 'resolucao');
-      if (!enunciadoLatex) throw new Error(`A questão ${index + 1} não possui \\enunciado{...}.`);
-      for (const required of ['A', 'B', 'C', 'D']) {
-        if (!alternatives[required]) throw new Error(`A questão ${index + 1} não possui a alternativa ${required}.`);
-      }
-      if (!['A', 'B', 'C', 'D', 'E'].includes(correct)) {
-        throw new Error(`O gabarito da questão ${index + 1} precisa ser A, B, C, D ou E.`);
-      }
+      if (!statementLatex) throw new Error(`A questão ${index + 1} não possui \\enunciado{...}.`);
+      ['A', 'B', 'C', 'D'].forEach((letter) => {
+        if (!alternatives[letter]) throw new Error(`A questão ${index + 1} não possui a alternativa ${letter}.`);
+      });
+      if (!['A', 'B', 'C', 'D', 'E'].includes(correct)) throw new Error(`O gabarito da questão ${index + 1} precisa ser A, B, C, D ou E.`);
       if (correct === 'E' && !alternatives.E) throw new Error(`A questão ${index + 1} usa gabarito E, mas não possui alternativa E.`);
       return {
         ordem: Number(block.args[0]) || index + 1,
-        enunciado: latexToPlain(enunciadoLatex),
-        enunciado_latex: enunciadoLatex,
-        a: alternatives.A,
-        b: alternatives.B,
-        c: alternatives.C,
-        d: alternatives.D,
-        e: alternatives.E || null,
+        enunciado: latexToPlain(statementLatex),
+        enunciado_latex: statementLatex,
+        a: alternatives.A, b: alternatives.B, c: alternatives.C, d: alternatives.D, e: alternatives.E || null,
         correta: correct,
         resolucao: latexToPlain(resolutionLatex) || 'Resolução não cadastrada.'
       };
     });
   }
 
-  function parseLatex(source) {
+  function parseProof(source) {
     const clean = removeComments(source);
-    const moduleBlocks = environmentBlocks(clean, 'altitudemodulo', 2);
-    if (!moduleBlocks.length) {
-      throw new Error('Nenhum módulo encontrado. Use \\begin{altitudemodulo}{Título}{1}.');
+    let groups = environmentBlocks(clean, 'altitudeprova', 1).map((block) => ({
+      modulo_ref: String(block.args[0] || '1').trim(),
+      questoes: parseQuestionBlocks(block.body)
+    }));
+    if (!groups.length) {
+      groups = environmentBlocks(clean, 'altitudemodulo', 2).map((block) => ({
+        modulo_ref: String(block.args[1] || block.args[0] || '1').trim(),
+        questoes: parseQuestionBlocks(block.body)
+      }));
     }
-    const course = {
-      codigo: firstCommand(clean, 'codigocurso'),
-      titulo: latexToPlain(firstCommand(clean, 'titulocurso')),
-      categoria: latexToPlain(firstCommand(clean, 'areacurso')).toUpperCase(),
-      carga_horaria: Number(firstCommand(clean, 'cargahoraria')) || null,
-      descricao: latexToPlain(firstCommand(clean, 'descricaoCurso')),
-      nivel: firstCommand(clean, 'nivelcurso', 'BASICO').toUpperCase(),
-      nota_minima: Number(firstCommand(clean, 'notaminima')) || 70
-    };
-
-    const modules = moduleBlocks.map((block, index) => {
-      const contentBlock = environmentBlocks(block.body, 'conteudo', 0)[0];
-      const latex = contentBlock?.body || '';
-      const plain = latexToPlain(latex);
-      if (!plain) throw new Error(`O módulo “${block.args[0] || index + 1}” não possui conteúdo.`);
-      return {
-        titulo: latexToPlain(block.args[0]) || `Módulo ${index + 1}`,
-        ordem: Number(block.args[1]) || index + 1,
-        descricao: latexToPlain(firstCommand(block.body, 'descricaoModulo')) || plain.slice(0, 220),
-        conteudo: plain,
-        conteudo_latex: latex,
-        conteudo_html: latexToHtml(latex),
-        video_url: firstCommand(block.body, 'videoModulo') || null,
-        questoes: parseQuestions(block.body)
-      };
-    }).sort((a, b) => a.ordem - b.ordem);
-
-    const totalQuestions = modules.reduce((sum, module) => sum + module.questoes.length, 0);
-    if (!totalQuestions) throw new Error('Nenhuma questão encontrada. Use o ambiente altitudequestao.');
-    return { curso: course, modulos: modules, totalQuestions, source: clean };
+    if (!groups.length) {
+      const questions = parseQuestionBlocks(clean);
+      if (questions.length) groups = [{ modulo_ref: '1', questoes: questions }];
+    }
+    const totalQuestions = groups.reduce((sum, group) => sum + group.questoes.length, 0);
+    if (!totalQuestions) throw new Error('Nenhuma questão encontrada. Use altitudeprova e altitudequestao.');
+    return { grupos: groups, totalQuestions, source: clean };
   }
 
-  function renderPreview(parsed) {
-    const box = $('#latexImportPreview');
-    if (!box) return;
-    const courseTitle = parsed.curso.titulo || $('#modalModulos')?.dataset.courseTitle || 'Curso atual';
+  function mergeCourse(content, proof) {
+    const modules = content.modulos.map((module) => ({ ...module, questoes: [] }));
+    proof.grupos.forEach((group) => {
+      const numeric = Number(group.modulo_ref);
+      const target = modules.find((module) => Number(module.ordem) === numeric)
+        || modules.find((module) => module.titulo.toLocaleLowerCase('pt-BR') === String(group.modulo_ref).toLocaleLowerCase('pt-BR'))
+        || modules[0];
+      target.questoes.push(...group.questoes);
+    });
+    return { curso: content.curso, modulos: modules, totalQuestions: proof.totalQuestions };
+  }
+
+  function renderSummary(content, proof = state.parsedProof) {
+    const box = $('#latexPreviewSummary');
+    if (!box || !content) return;
+    const title = content.curso.titulo || $('#modalModulos')?.dataset.courseTitle || 'Curso atual';
+    const hours = content.modulos.reduce((sum, item) => sum + Number(item.carga_horaria || 0), 0) || content.curso.carga_horaria || 0;
     box.innerHTML = `
-      <div class="latex-preview-summary">
-        <article><span>Curso</span><strong>${esc(courseTitle)}</strong></article>
-        <article><span>Módulos</span><strong>${parsed.modulos.length}</strong></article>
-        <article><span>Questões</span><strong>${parsed.totalQuestions}</strong></article>
-        <article><span>Carga informada</span><strong>${parsed.curso.carga_horaria ? `${parsed.curso.carga_horaria}h` : 'Manter atual'}</strong></article>
-      </div>
-      <div class="latex-preview-modules">
-        ${parsed.modulos.map((module) => `
-          <article>
-            <div><b>${module.ordem}</b><span><strong>${esc(module.titulo)}</strong><small>${module.questoes.length} questão(ões) · PDF será gerado</small></span></div>
-            <p>${esc(module.descricao)}</p>
-          </article>`).join('')}
-      </div>`;
+      <article><span>Curso</span><strong>${esc(title)}</strong></article>
+      <article><span>Módulos</span><strong>${content.modulos.length}</strong></article>
+      <article><span>Questões</span><strong>${proof?.totalQuestions || 0}</strong></article>
+      <article><span>Carga</span><strong>${hours || '—'}h</strong></article>`;
   }
 
-  async function generatePdf(module, courseTitle) {
-    const wrapper = document.createElement('div');
-    wrapper.className = 'altitude-latex-pdf';
-    wrapper.innerHTML = `
-      <header><span>INSTITUTO DE EDUCAÇÃO E TECNOLOGIA ALTITUDE</span><h1>${esc(courseTitle || 'Curso')}</h1><h2>${esc(module.titulo)}</h2></header>
-      <main>${module.conteudo_html}</main>
-      <footer>Portal Altitude · Material acadêmico</footer>`;
-    document.body.appendChild(wrapper);
-    try {
-      if (window.html2pdf) {
-        return await window.html2pdf().set({
-          margin: [12, 14, 15, 14],
-          filename: `${slug(module.titulo)}.pdf`,
-          image: { type: 'jpeg', quality: 0.97 },
-          html2canvas: { scale: 1.7, useCORS: true, backgroundColor: '#ffffff' },
-          jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' },
-          pagebreak: { mode: ['css', 'legacy'] }
-        }).from(wrapper).outputPdf('blob');
-      }
+  function buildMaterialNode(content) {
+    const courseTitle = content.curso.titulo || $('#modalModulos')?.dataset.courseTitle || 'Curso Altitude';
+    const area = content.curso.categoria || 'Formação Profissional';
+    const hours = content.modulos.reduce((sum, item) => sum + Number(item.carga_horaria || 0), 0) || content.curso.carga_horaria || 0;
+    const node = document.createElement('article');
+    node.className = 'altitude-material-pdf';
+    node.innerHTML = `
+      <div class="pdf-running-head"><span>Instituição Altitude</span><span>${esc(courseTitle)}</span></div>
+      <section class="pdf-cover">
+        <img src="../3-img/LOGO.png" alt="Instituição Altitude">
+        <div class="institution">Instituição Altitude</div>
+        <div class="material">Material de Estudo</div>
+        <h1>Curso de ${esc(courseTitle)}</h1>
+      </section>
+      <section class="pdf-info-box">
+        <b>Curso:</b><span>${esc(courseTitle)}</span>
+        <b>Área de formação:</b><span>${esc(area)}</span>
+        <b>Modalidade:</b><span>EAD / Semipresencial</span>
+        <b>Carga horária:</b><span>${hours} horas</span>
+        <b>Finalidade do material:</b><span>Apoiar o estudo teórico do aluno e servir de base para avaliação de aprendizagem ao final do curso.</span>
+      </section>
+      ${content.modulos.map((module, index) => `
+        <section class="pdf-module ${index === 0 ? 'first' : ''}">
+          <div class="pdf-running-head"><span>Instituição Altitude</span><span>${esc(courseTitle)}</span></div>
+          <h2>${index + 1}. ${esc(module.titulo)}</h2>
+          <div class="pdf-info-box"><b>Carga do módulo:</b><span>${Number(module.carga_horaria || 0)} horas</span><b>Descrição:</b><span>${esc(module.descricao || '')}</span></div>
+          ${module.conteudo_html}
+          <div class="pdf-footer">Instituição Altitude | Material de Estudo | ${esc(courseTitle)}</div>
+        </section>`).join('')}
+      <div class="pdf-orientation"><strong>Orientação ao aluno:</strong> recomenda-se a leitura integral deste material antes da avaliação.</div>`;
+    document.body.appendChild(node);
+    return node;
+  }
 
-      if (!window.jspdf?.jsPDF) throw new Error('Biblioteca de PDF não carregada.');
-      const { jsPDF } = window.jspdf;
-      const doc = new jsPDF({ unit: 'mm', format: 'a4' });
-      const margin = 18;
-      const width = 174;
-      doc.setFont('helvetica', 'bold'); doc.setFontSize(16); doc.text(courseTitle || 'Curso', margin, 20, { maxWidth: width });
-      doc.setFontSize(14); doc.text(module.titulo, margin, 31, { maxWidth: width });
-      doc.setFont('helvetica', 'normal'); doc.setFontSize(10.5);
-      let y = 43;
-      const paragraphs = module.conteudo.split(/(?<=[.!?])\s+/);
-      for (const paragraph of paragraphs) {
-        const lines = doc.splitTextToSize(paragraph, width);
-        if (y + lines.length * 5.2 > 280) { doc.addPage(); y = 20; }
-        doc.text(lines, margin, y); y += lines.length * 5.2 + 2;
-      }
-      return doc.output('blob');
-    } finally {
-      wrapper.remove();
+  async function pdfBlobFromContent(content) {
+    if (!window.html2pdf) throw new Error('O gerador de PDF não foi carregado. Atualize a página e tente novamente.');
+    const node = buildMaterialNode(content);
+    try {
+      return await window.html2pdf().set({
+        margin: [10, 9, 12, 9],
+        filename: `${slug(content.curso.titulo || 'material-altitude')}.pdf`,
+        image: { type: 'jpeg', quality: 0.97 },
+        html2canvas: { scale: 1.65, useCORS: true, backgroundColor: '#ffffff', logging: false },
+        jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' },
+        pagebreak: { mode: ['css', 'legacy'] }
+      }).from(node).outputPdf('blob');
+    } finally { node.remove(); }
+  }
+
+  async function modulePdfBlob(module, course) {
+    return pdfBlobFromContent({ curso: course, modulos: [module] });
+  }
+
+  async function updateContentPreview() {
+    const source = $('#latexContentSource')?.value || '';
+    const placeholder = $('#latexPdfPlaceholder');
+    const frame = $('#latexPdfPreviewFrame');
+    try {
+      const parsed = parseContent(source);
+      state.parsedContent = parsed;
+      renderSummary(parsed);
+      if (placeholder) { placeholder.hidden = false; placeholder.innerHTML = 'Gerando a prévia do PDF institucional…'; }
+      const blob = await pdfBlobFromContent(parsed);
+      if (state.previewUrl) URL.revokeObjectURL(state.previewUrl);
+      state.previewUrl = URL.createObjectURL(blob);
+      frame.src = state.previewUrl;
+      if (placeholder) placeholder.hidden = true;
+      showPreviewPane('pdf');
+    } catch (error) {
+      state.parsedContent = null;
+      if (placeholder) { placeholder.hidden = false; placeholder.innerHTML = `<b>Não foi possível gerar a prévia.</b><br>${esc(error.message)}`; }
+      notify(error.message, true);
     }
   }
 
-  function slug(value) {
-    return String(value || 'modulo').normalize('NFD').replace(/[\u0300-\u036f]/g, '')
-      .toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '') || 'modulo';
+  function updateProofPreview() {
+    const box = $('#latexQuestionsPreview');
+    try {
+      const parsed = parseProof($('#latexProofSource')?.value || '');
+      state.parsedProof = parsed;
+      renderSummary(state.parsedContent, parsed);
+      let number = 0;
+      box.innerHTML = parsed.grupos.map((group) => `
+        <section class="latex-proof-group">
+          <h4>Questões do módulo ${esc(group.modulo_ref)}</h4>
+          ${group.questoes.map((question) => {
+            number += 1;
+            const alternatives = ['A','B','C','D','E'].filter((letter) => question[letter.toLowerCase()]);
+            return `<article class="latex-question-card">
+              <header><strong>Questão ${number}</strong><span>Gabarito: ${question.correta}</span></header>
+              <p>${esc(question.enunciado)}</p>
+              <ul>${alternatives.map((letter) => `<li class="${question.correta === letter ? 'correct' : ''}"><b>${letter})</b> ${esc(question[letter.toLowerCase()])}</li>`).join('')}</ul>
+              <div class="resolution"><b>Resolução:</b> ${esc(question.resolucao)}</div>
+            </article>`;
+          }).join('')}
+        </section>`).join('');
+      showPreviewPane('questions');
+    } catch (error) {
+      state.parsedProof = null;
+      box.innerHTML = `<div class="latex-preview-placeholder"><b>Revise o LaTeX da prova.</b><br>${esc(error.message)}</div>`;
+      notify(error.message, true);
+    }
+  }
+
+  function showPreviewPane(name) {
+    document.querySelectorAll('[data-latex-preview]').forEach((button) => button.classList.toggle('active', button.dataset.latexPreview === name));
+    const pdf = $('#latexPreviewPdfPane');
+    const questions = $('#latexPreviewQuestionsPane');
+    if (pdf) pdf.hidden = name !== 'pdf';
+    if (questions) questions.hidden = name !== 'questions';
   }
 
   async function uploadPdf(blob, courseId, module) {
     const path = `${courseId}/latex/${Date.now()}-${module.ordem}-${slug(module.titulo)}.pdf`;
-    const { error } = await window.sb.storage.from('materiais_cursos').upload(path, blob, {
-      upsert: false,
-      contentType: 'application/pdf',
-      cacheControl: '3600'
-    });
+    const { error } = await window.sb.storage.from('materiais_cursos').upload(path, blob, { upsert: false, contentType: 'application/pdf', cacheControl: '3600' });
     if (error) throw error;
     return window.sb.storage.from('materiais_cursos').getPublicUrl(path).data.publicUrl;
   }
 
   async function importCourse() {
     if (state.busy) return;
-    const modalCourse = $('#modalModulos');
-    const courseId = Number(modalCourse?.dataset.courseId || 0);
-    if (!courseId) return toast('Abra primeiro o curso em “Montar curso”.', true);
-    const source = $('#latexImportSource')?.value || '';
-    let parsed;
+    const courseId = Number($('#modalModulos')?.dataset.courseId || 0);
+    if (!courseId) return notify('Abra um curso em “Montar curso” antes de importar.', true);
+    let content;
+    let proof;
     try {
-      parsed = parseLatex(source);
-      state.parsed = parsed;
-      renderPreview(parsed);
-    } catch (error) {
-      return toast(error.message, true);
-    }
-
+      content = parseContent($('#latexContentSource')?.value || '');
+      proof = parseProof($('#latexProofSource')?.value || '');
+    } catch (error) { return notify(error.message, true); }
+    const parsed = mergeCourse(content, proof);
     const replace = Boolean($('#latexReplaceExisting')?.checked);
     if (replace) {
       const confirmed = window.AltitudeDialog?.confirm
         ? await window.AltitudeDialog.confirm({
             title: 'Substituir a estrutura atual?',
-            message: 'Os módulos, materiais e provas já cadastrados neste curso serão removidos e substituídos pelo conteúdo do LaTeX.',
+            message: 'Os módulos, materiais e provas atuais deste curso serão removidos e substituídos pelo conteúdo revisado na prévia.',
             confirmText: 'Substituir e importar',
             danger: true
           })
         : window.confirm('Substituir módulos, materiais e provas atuais?');
       if (!confirmed) return;
     }
-
     state.busy = true;
     const button = $('#latexImportConfirm');
     const progress = $('#latexImportProgress');
-    button.disabled = true;
+    if (button) button.disabled = true;
     try {
-      const courseTitle = parsed.curso.titulo || modalCourse.dataset.courseTitle || 'Curso Altitude';
+      const courseTitle = parsed.curso.titulo || $('#modalModulos')?.dataset.courseTitle || 'Curso Altitude';
       for (let i = 0; i < parsed.modulos.length; i += 1) {
         const module = parsed.modulos[i];
-        progress.textContent = `Gerando e enviando PDF ${i + 1} de ${parsed.modulos.length}: ${module.titulo}`;
-        const blob = await generatePdf(module, courseTitle);
+        if (progress) progress.textContent = `Gerando PDF ${i + 1}/${parsed.modulos.length}: ${module.titulo}`;
+        const blob = await modulePdfBlob(module, { ...parsed.curso, titulo: courseTitle });
         module.pdf_url = await uploadPdf(blob, courseId, module);
       }
-
-      progress.textContent = 'Gravando módulos, prova, alternativas, gabarito e resoluções...';
-      const payload = {
-        curso: parsed.curso,
-        modulos: parsed.modulos.map(({ conteudo_html, ...module }) => module)
-      };
+      if (progress) progress.textContent = 'Salvando módulos, horas, prova, gabarito e resoluções…';
+      const payload = { curso: parsed.curso, modulos: parsed.modulos.map(({ conteudo_html, ...module }) => module) };
       const { data, error } = await window.sb.rpc('gestor_importar_curso_latex', {
         p_curso_id: courseId,
         p_payload: payload,
@@ -448,124 +656,66 @@ onde $C$ representa confidencialidade, $I$ integridade e $D$ disponibilidade.
         p_atualizar_curso: Boolean($('#latexUpdateCourse')?.checked)
       });
       if (error) throw error;
-
-      progress.textContent = '';
-      closeModal();
-      await window.carregarModulosCursoAtual?.();
-      await window.carregarCursosCompleto?.();
-      toast(`Importação concluída: ${Number(data?.modulos_importados || parsed.modulos.length)} módulo(s) e ${Number(data?.questoes_importadas || parsed.totalQuestions)} questão(ões).`);
+      if (progress) progress.textContent = '';
+      if (window.carregarModulosCursoAtual) await window.carregarModulosCursoAtual();
+      if (window.carregarCursosCompleto) await window.carregarCursosCompleto();
+      setMode('normal');
+      notify(`Curso importado como rascunho: ${Number(data?.modulos_importados || parsed.modulos.length)} módulo(s) e ${Number(data?.questoes_importadas || parsed.totalQuestions)} questão(ões).`);
     } catch (error) {
       console.error('Importação LaTeX:', error);
-      progress.textContent = '';
-      toast(`Não foi possível importar: ${error.message}`, true);
+      if (progress) progress.textContent = '';
+      notify(`Não foi possível importar: ${error.message}`, true);
     } finally {
       state.busy = false;
-      button.disabled = false;
+      if (button) button.disabled = false;
     }
   }
 
-  function validateSource() {
-    try {
-      state.parsed = parseLatex($('#latexImportSource')?.value || '');
-      renderPreview(state.parsed);
-      $('#latexImportConfirm').disabled = false;
-    } catch (error) {
-      state.parsed = null;
-      $('#latexImportConfirm').disabled = true;
-      $('#latexImportPreview').innerHTML = `<div class="latex-import-error"><strong>O arquivo ainda não pode ser importado.</strong><span>${esc(error.message)}</span></div>`;
-    }
+  function setMode(mode) {
+    const normal = mode !== 'latex';
+    $('#normalBuilderPanel').hidden = !normal;
+    $('#normalBuilderFooter').hidden = !normal;
+    $('#latexBuilderPanel').hidden = normal;
+    document.querySelectorAll('[data-builder-mode]').forEach((button) => {
+      const active = button.dataset.builderMode === mode;
+      button.classList.toggle('active', active);
+      button.setAttribute('aria-selected', String(active));
+    });
   }
 
-  function openModal() {
-    const courseId = Number($('#modalModulos')?.dataset.courseId || 0);
-    if (!courseId) return toast('Abra um curso em “Montar curso” antes de importar.', true);
-    $('#modalImportarLatex')?.setAttribute('aria-hidden', 'false');
-    document.body.style.overflow = 'hidden';
-    validateSource();
+  async function readFileInto(input, target) {
+    const file = input.files?.[0];
+    if (!file) return;
+    target.value = await file.text();
   }
 
-  function closeModal() {
-    $('#modalImportarLatex')?.setAttribute('aria-hidden', 'true');
-    if ($('#modalModulos')?.getAttribute('aria-hidden') === 'true') document.body.style.overflow = '';
-  }
-
-  function downloadTemplate() {
-    const blob = new Blob([TEMPLATE], { type: 'text/x-tex;charset=utf-8' });
-    const url = URL.createObjectURL(blob);
-    const link = document.createElement('a');
-    link.href = url;
-    link.download = 'modelo-curso-altitude.tex';
-    link.click();
-    URL.revokeObjectURL(url);
-  }
-
-  function injectUi() {
-    const header = $('.course-builder-header');
-    if (header && !$('#btnImportarLatex')) {
-      const actions = document.createElement('div');
-      actions.className = 'builder-header-actions';
-      actions.innerHTML = '<button type="button" id="btnImportarLatex" class="latex-import-open">Importar LaTeX</button>';
-      const close = $('#fecharModulos', header);
-      header.insertBefore(actions, close);
-    }
-
-    if (!$('#modalImportarLatex')) {
-      const modal = document.createElement('div');
-      modal.className = 'modal';
-      modal.id = 'modalImportarLatex';
-      modal.setAttribute('aria-hidden', 'true');
-      modal.innerHTML = `
-        <div class="modal__sheet latex-import-modal" role="dialog" aria-modal="true" aria-labelledby="latexImportTitle">
-          <header class="latex-import-head">
-            <div><span>IMPORTAÇÃO ACADÊMICA</span><h3 id="latexImportTitle">Transformar LaTeX em curso</h3><p>Cole um arquivo no padrão Altitude. O portal gera os PDFs, módulos, prova, alternativas, gabarito e resoluções.</p></div>
-            <button type="button" id="latexImportClose" class="builder-close" aria-label="Fechar">×</button>
-          </header>
-          <div class="latex-import-body">
-            <section class="latex-import-editor">
-              <div class="latex-import-toolbar">
-                <label class="latex-file-button">Abrir arquivo .tex<input id="latexImportFile" type="file" accept=".tex,text/x-tex,text/plain"></label>
-                <button type="button" id="latexDownloadTemplate" class="builder-secondary-button">Baixar modelo .tex</button>
-                <button type="button" id="latexValidate" class="builder-secondary-button">Validar</button>
-              </div>
-              <textarea id="latexImportSource" spellcheck="false" aria-label="Código LaTeX"></textarea>
-              <div class="latex-import-options">
-                <label><input id="latexReplaceExisting" type="checkbox" checked> Substituir módulos e provas existentes</label>
-                <label><input id="latexPublishModules" type="checkbox"> Liberar os módulos após importar</label>
-                <label><input id="latexUpdateCourse" type="checkbox" checked> Atualizar título, área e carga pelos comandos do LaTeX</label>
-              </div>
-            </section>
-            <aside class="latex-import-preview"><h4>Pré-visualização</h4><div id="latexImportPreview"></div></aside>
-          </div>
-          <footer class="latex-import-footer">
-            <span id="latexImportProgress" aria-live="polite"></span>
-            <div><button type="button" id="latexImportCancel" class="builder-secondary-button">Cancelar</button><button type="button" id="latexImportConfirm" class="builder-main-button">Gerar PDFs e importar</button></div>
-          </footer>
-        </div>`;
-      document.body.appendChild(modal);
-      $('#latexImportSource').value = TEMPLATE;
-    }
-
-    $('#btnImportarLatex')?.addEventListener('click', openModal);
-    $('#latexImportClose')?.addEventListener('click', closeModal);
-    $('#latexImportCancel')?.addEventListener('click', closeModal);
-    $('#latexValidate')?.addEventListener('click', validateSource);
-    $('#latexDownloadTemplate')?.addEventListener('click', downloadTemplate);
+  function bind() {
+    document.querySelectorAll('[data-builder-mode]').forEach((button) => button.addEventListener('click', () => setMode(button.dataset.builderMode)));
+    document.querySelectorAll('[data-latex-preview]').forEach((button) => button.addEventListener('click', () => showPreviewPane(button.dataset.latexPreview)));
+    $('#latexContentTemplate')?.addEventListener('click', () => { $('#latexContentSource').value = CONTENT_TEMPLATE; updateContentPreview(); });
+    $('#latexProofTemplate')?.addEventListener('click', () => { $('#latexProofSource').value = PROOF_TEMPLATE; updateProofPreview(); });
+    $('#latexValidateContent')?.addEventListener('click', updateContentPreview);
+    $('#latexValidateProof')?.addEventListener('click', updateProofPreview);
     $('#latexImportConfirm')?.addEventListener('click', importCourse);
-    $('#latexImportFile')?.addEventListener('change', async (event) => {
-      const file = event.target.files?.[0];
-      if (!file) return;
-      $('#latexImportSource').value = await file.text();
-      validateSource();
-    });
-    $('#modalImportarLatex')?.addEventListener('click', (event) => {
-      if (event.target.id === 'modalImportarLatex') closeModal();
-    });
+    $('#latexContentFile')?.addEventListener('change', async (event) => { await readFileInto(event.currentTarget, $('#latexContentSource')); updateContentPreview(); });
+    $('#latexProofFile')?.addEventListener('change', async (event) => { await readFileInto(event.currentTarget, $('#latexProofSource')); updateProofPreview(); });
+    if ($('#latexContentSource') && !$('#latexContentSource').value.trim()) $('#latexContentSource').value = CONTENT_TEMPLATE;
+    if ($('#latexProofSource') && !$('#latexProofSource').value.trim()) $('#latexProofSource').value = PROOF_TEMPLATE;
+    setMode('normal');
   }
 
-  window.AltitudeLatexImporter = Object.freeze({ parse: parseLatex, latexToHtml, template: TEMPLATE });
+  window.AltitudeLatexImporter = Object.freeze({
+    parseContent,
+    parseProof,
+    mergeCourse,
+    latexToHtml,
+    contentTemplate: CONTENT_TEMPLATE,
+    proofTemplate: PROOF_TEMPLATE,
+    previewContent: updateContentPreview
+  });
 
   document.addEventListener('DOMContentLoaded', async () => {
     try { await window.GESTOR_AUTH_READY; } catch (_) {}
-    injectUi();
+    bind();
   });
 })();

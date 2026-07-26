@@ -669,9 +669,13 @@ function renderModuloAtual() {
   } else {
     content.innerHTML = blocoTexto + recursos.map((resource) => {
       const url = safeUrl(resource.url);
-      const embed = String(resource.tipo).toUpperCase() === "VIDEO" ? youtubeEmbed(url) : "";
+      const normalizedType = String(resource.tipo || "OUTRO").toUpperCase();
+      const embed = normalizedType === "VIDEO" ? youtubeEmbed(url) : "";
       if (embed && resource.destaque) {
         return `<iframe class="video-frame" src="${escapeHTML(embed)}" title="${escapeHTML(resource.titulo)}" allowfullscreen></iframe>`;
+      }
+      if (normalizedType === "IMAGEM" && url) {
+        return `<figure class="lesson-module-image"><img src="${escapeHTML(url)}" alt="${escapeHTML(resource.titulo || "Imagem do módulo")}" loading="lazy"><figcaption>${escapeHTML(resource.titulo || "Imagem do módulo")}</figcaption></figure>`;
       }
       return `<div class="lesson-resource"><span><strong>${escapeHTML(resource.titulo || "Material")}</strong><small>${escapeHTML(materialIcon(resource.tipo))}</small></span>${url ? `<a class="secondary-button" href="${escapeHTML(url)}" target="_blank" rel="noopener">Abrir</a>` : `<span class="status-pill neutral">Indisponível</span>`}</div>`;
     }).join("");

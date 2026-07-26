@@ -812,3 +812,9 @@ a{color:inherit}
   .student-ticket-message{max-width:92%}
   .student-ticket-reply>div{align-items:stretch;flex-direction:column}
 }
+
+/* ALTITUDE V27 - foto do módulo exibida dentro da sala de estudo */
+.lesson-module-image{margin:16px 0;padding:10px;border:1px solid #d9e6ef;border-radius:14px;background:#fff;box-shadow:0 8px 24px rgba(7,49,79,.06)}
+.lesson-module-image img{display:block;width:100%;max-height:520px;object-fit:contain;border-radius:10px;background:#f4f8fb}
+.lesson-module-image figcaption{padding:9px 4px 2px;color:#61778a;font-size:12px;text-align:center}
+@media(max-width:640px){.lesson-module-image{margin:12px 0;padding:7px}.lesson-module-image img{max-height:360px}}

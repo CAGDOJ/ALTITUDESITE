@@ -13,14 +13,15 @@
   <link rel="icon" type="image/png" sizes="16x16" href="/Projeto/3-img/favicon-16x16.png?v=14">
   <link rel="manifest" href="/Projeto/3-img/site.webmanifest">
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
-  <link rel="stylesheet" href="/Projeto/2-css/base-public.css?v=25">
-  <link rel="stylesheet" href="/Projeto/2-css/2-profissinal.css?v=25">
-  <link rel="stylesheet" href="/Projeto/2-css/17-public-v25.css?v=25">
+  <link rel="stylesheet" href="/Projeto/2-css/base-public.css?v=27">
+  <link rel="stylesheet" href="/Projeto/2-css/2-profissinal.css?v=27">
+  <link rel="stylesheet" href="/Projeto/2-css/17-public-v25.css?v=27">
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2" defer></script>
-  <script src="/Projeto/4-java/supabase-init.js?v=25" defer></script>
-  <script src="/Projeto/4-java/headerAuth.js?v=25" defer></script>
-  <script src="/Projeto/4-java/cursos-profissionais.js?v=25" defer></script>
-  <link rel="stylesheet" href="../2-css/06-responsive.css?v=17">
+  <script src="/Projeto/4-java/supabase-init.js?v=27" defer></script>
+  <script src="/Projeto/4-java/headerAuth.js?v=27" defer></script>
+  <script src="/Projeto/4-java/cursos-profissionais.js?v=27" defer></script>
+  <link rel="stylesheet" href="../2-css/06-responsive.css?v=27">
+  <link rel="stylesheet" href="/Projeto/2-css/18-public-v27.css?v=27">
 </head>
 <body>
   <header class="new-header">
@@ -83,23 +84,26 @@
       </div>
     </section>
 
-    <section class="workload-section" aria-labelledby="tituloCargas">
+    <section class="course-finder-section" aria-labelledby="tituloCargas">
       <div class="section-heading-compact">
-        <div>
-          <span class="catalog-kicker">Carga horária disponível</span>
-          <h2 id="tituloCargas">Encontre o curso pelo tempo que precisa</h2>
-          <p>Cada caixa mostra a carga horária exata dos cursos publicados.</p>
+        <span class="catalog-kicker">Encontre sua formação</span>
+        <h2 id="tituloCargas">Filtre por tipo e carga horária</h2>
+        <p>Escolha primeiro o tipo de curso e depois a quantidade de horas que precisa.</p>
+      </div>
+      <div class="course-finder-controls">
+        <div class="finder-group">
+          <span class="finder-group-title">Carga horária</span>
+          <div id="filtrosCarga" class="workload-grid" aria-live="polite">
+            <button class="workload-box active" type="button" data-horas="TODAS"><strong>Todas</strong><span>as cargas</span></button>
+          </div>
         </div>
-      </div>
-      <div id="filtrosCarga" class="workload-grid" aria-live="polite">
-        <button class="workload-box active" type="button" data-horas="TODAS"><strong>Todas</strong><span>as cargas</span></button>
-      </div>
-    </section>
-
-    <section class="course-type-section" aria-label="Tipos de curso">
-      <div class="course-type-tabs" id="filtrosTipoCurso">
-        <button type="button" class="course-type-tab active" data-tipo="PROFISSIONAL"><strong>Cursos Profissionais</strong><span>Cursos livres e capacitações</span></button>
-        <button type="button" class="course-type-tab" data-tipo="TECNICO"><strong>Cursos Técnicos</strong><span>Formações de maior duração</span></button>
+        <div class="finder-group">
+          <span class="finder-group-title">Tipo de curso</span>
+          <div class="course-type-tabs" id="filtrosTipoCurso">
+            <button type="button" class="course-type-tab active" data-tipo="PROFISSIONAL"><strong>Cursos Profissionais</strong><span>Cursos livres e capacitações</span></button>
+            <button type="button" class="course-type-tab" data-tipo="TECNICO"><strong>Cursos Técnicos</strong><span>Formações de maior duração</span></button>
+          </div>
+        </div>
       </div>
     </section>
 
@@ -173,7 +177,7 @@
     <div class="footer-bottom"><p>&copy; 2026 - Instituto de Educação e Tecnologia - Altitude</p></div>
   </footer>
 
-  <script src="/Projeto/4-java/layout-public.js?v=17" defer></script>
-  <script src="../4-java/06-responsive.js?v=17"></script>
+  <script src="/Projeto/4-java/layout-public.js?v=27" defer></script>
+  <script src="../4-java/06-responsive.js?v=27"></script>
 </body>
 </html>

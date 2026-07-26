@@ -273,7 +273,7 @@
     try {
       const [courseRes, modulesRes, testsRes, materialsRes] = await Promise.all([
         sb.from('cursos').select('*').eq('id', courseId).single(),
-        sb.from('modulos').select('id,titulo,publicado,conteudo,pdf_url').eq('curso_id', courseId).order('ordem'),
+        sb.from('modulos').select('id,titulo,publicado,conteudo,pdf_url,carga_horaria').eq('curso_id', courseId).order('ordem'),
         sb.from('provas').select('id,titulo,modulo_id').eq('curso_id', courseId),
         sb.from('materiais').select('id,modulo_id,tipo').eq('curso_id', courseId)
       ]);
@@ -288,6 +288,7 @@
       const tests = testsRes.data || [];
       const materials = materialsRes.data || [];
       let questionCount = 0;
+      const moduleHoursTotal = modules.reduce((sum, module) => sum + Math.max(0, Number(module.carga_horaria || 0)), 0);
 
       if (tests.length) {
         const questionRes = await sb.from('questoes').select('id').in('prova_id', tests.map(test => test.id));
@@ -308,6 +309,9 @@
         if (!Number(course.carga_horaria)) missing.push('carga horária');
         if (!course.capa_url) missing.push('foto de capa');
         if (!modules.length) missing.push('ao menos um módulo');
+        if (modules.length && moduleHoursTotal !== Number(course.carga_horaria || 0)) {
+          missing.push(`divisão das horas dos módulos: ${moduleHoursTotal}h cadastradas para um curso de ${Number(course.carga_horaria || 0)}h`);
+        }
         if (modulesWithoutContent.length) missing.push(`conteúdo ou PDF em ${modulesWithoutContent.length} módulo(s)`);
         if (!materials.length) missing.push('ao menos um material');
         if (!tests.length) missing.push('prova vinculada ao curso');
@@ -322,7 +326,7 @@
           `✓ ${materials.length} material(is)`,
           `✓ ${tests.length} prova(s)`,
           `✓ ${questionCount} questão(ões)`,
-          `✓ ${course.carga_horaria}h de carga horária`
+          `✓ ${moduleHoursTotal}h distribuídas nos módulos`
         ].join('\n');
 
         if (!confirm(`Publicar “${course.titulo}” em Cursos Profissionais?\n\n${checklist}\n\nOs módulos também serão liberados para os alunos matriculados.`)) return;

@@ -842,6 +842,9 @@ function gerarRaLocal(){
     if (modalModulos) {
       modalModulos.dataset.courseId = String(id);
       modalModulos.dataset.courseTitle = curso.titulo || 'Curso Altitude';
+      modalModulos.dataset.courseHours = String(Math.max(0, Number(curso.carga_horaria || 0)));
+      modalModulos.dataset.courseCategory = curso.categoria || '';
+      modalModulos.dataset.courseDescription = curso.descricao || '';
     }
     
     $('#mmCursoNome').textContent = `${curso.titulo} · ${curso.categoria || 'SEM ÁREA'}`;
@@ -849,6 +852,11 @@ function gerarRaLocal(){
     await carregarModulosCurso(id);
     
     $('#modalModulos').setAttribute('aria-hidden', 'false');
+    document.body.style.overflow = 'hidden';
+    document.querySelector('.builder-create-panel')?.scrollTo({ top: 0 });
+    document.querySelector('.builder-list-panel')?.scrollTo({ top: 0 });
+    document.getElementById('builderModeNormal')?.click();
+    atualizarPreviaModuloNormal();
     
     configurarEventListenersModulos();
     esconderCarregamento();
@@ -863,6 +871,9 @@ function gerarRaLocal(){
     GC.cursoAtual = null;
     cursoEditandoId = null;
     moduloEditandoId = null;
+    document.body.style.overflow = '';
+    if (normalPreviewImageUrl) { URL.revokeObjectURL(normalPreviewImageUrl); normalPreviewImageUrl = null; }
+    if (normalPreviewPdfUrl) { URL.revokeObjectURL(normalPreviewPdfUrl); normalPreviewPdfUrl = null; }
   }
 
   async function carregarModulosCurso(cursoId) {
@@ -914,15 +925,15 @@ function gerarRaLocal(){
             </div>
 
             <div class="builder-checks">
-              <span class="${temConteudo ? 'done' : ''}">${temConteudo ? '✓' : '1'} Conteúdo/PDF</span>
-              <span class="${materiaisCount > 0 ? 'done' : ''}">${materiaisCount > 0 ? '✓' : '2'} Materiais (${materiaisCount})</span>
-              <span class="${questaoCount > 0 ? 'done' : ''}">${questaoCount > 0 ? '✓' : '3'} Prova (${questaoCount})</span>
-              <span class="${modulo.publicado ? 'done' : ''}">${modulo.publicado ? '✓' : '4'} Liberação</span>
+              <span class="${temConteudo ? 'done' : ''}">${temConteudo ? '✓' : '○'} Conteúdo/PDF</span>
+              <span class="${materiaisCount > 0 ? 'done' : ''}">${materiaisCount > 0 ? '✓' : '○'} Arquivos e mídia (${materiaisCount})</span>
+              <span class="${questaoCount > 0 ? 'done' : ''}">${questaoCount > 0 ? '✓' : '○'} Prova (${questaoCount})</span>
+              <span class="${modulo.publicado ? 'done' : ''}">${modulo.publicado ? '✓' : '○'} Liberação</span>
             </div>
 
             <div class="builder-module-actions">
               <button type="button" class="primary" data-module-action="content">Editar módulo</button>
-              <button type="button" data-module-action="materials">Materiais</button>
+              <button type="button" data-module-action="materials">Arquivos e mídia</button>
               <button type="button" data-module-action="exam">Prova</button>
               <button type="button" data-module-action="toggle">${modulo.publicado ? 'Desativar' : 'Liberar módulo'}</button>
               <button type="button" class="danger" data-module-action="delete">Excluir</button>
@@ -949,6 +960,112 @@ function gerarRaLocal(){
     return sb.storage.from('materiais_cursos').getPublicUrl(path).data.publicUrl;
   }
 
+  async function uploadArquivoCurso(file, cursoId, pasta = 'materiais') {
+    if (!file) return null;
+    const safeName = String(file.name || 'arquivo').normalize('NFD').replace(/[\u0300-\u036f]/g, '').replace(/[^a-zA-Z0-9._-]/g, '_');
+    const path = `${cursoId}/${pasta}/${Date.now()}-${safeName}`;
+    const { error } = await sb.storage.from('materiais_cursos').upload(path, file, {
+      upsert: false,
+      contentType: file.type || 'application/octet-stream'
+    });
+    if (error) throw error;
+    return sb.storage.from('materiais_cursos').getPublicUrl(path).data.publicUrl;
+  }
+
+  function tipoMaterialArquivo(file) {
+    const type = String(file?.type || '').toLowerCase();
+    const name = String(file?.name || '').toLowerCase();
+    if (type.startsWith('image/')) return 'IMAGEM';
+    if (type.startsWith('video/')) return 'VIDEO';
+    if (type.startsWith('audio/')) return 'AUDIO';
+    if (type === 'application/pdf' || name.endsWith('.pdf')) return 'PDF';
+    return 'OUTRO';
+  }
+
+  let normalPreviewImageUrl = null;
+  let normalPreviewPdfUrl = null;
+
+  function setNormalPreviewMode(mode) {
+    const screen = document.getElementById('normalMaterialPreview');
+    const frame = document.getElementById('normalPdfPreviewFrame');
+    if (!screen || !frame) return;
+    screen.hidden = mode === 'pdf';
+    frame.hidden = mode !== 'pdf';
+    ['btnPreviewNormalScreen','btnPreviewSelectedPdf','btnPreviewNormalPdf'].forEach((id) => {
+      document.getElementById(id)?.classList.toggle('active',
+        (mode === 'screen' && id === 'btnPreviewNormalScreen') ||
+        (mode === 'pdf' && id !== 'btnPreviewNormalScreen'));
+    });
+  }
+
+  function atualizarPreviaModuloNormal() {
+    const box = document.getElementById('normalMaterialPreview');
+    if (!box) return;
+    const titulo = document.getElementById('fModuloTitulo')?.value.trim() || 'Título do módulo';
+    const descricao = document.getElementById('fModuloDesc')?.value.trim() || 'A descrição aparecerá aqui.';
+    const horas = Math.max(0, Number(document.getElementById('fModuloHoras')?.value || 0));
+    const conteudo = document.getElementById('fModuloConteudo')?.value.trim() || 'O conteúdo para leitura aparecerá nesta área.';
+    const video = document.getElementById('fModuloVideo')?.value.trim() || '';
+    const imageFile = document.getElementById('fModuloImagemArquivo')?.files?.[0] || null;
+    if (normalPreviewImageUrl) { URL.revokeObjectURL(normalPreviewImageUrl); normalPreviewImageUrl = null; }
+    if (imageFile) normalPreviewImageUrl = URL.createObjectURL(imageFile);
+    box.innerHTML = `
+      <div class="normal-preview-hero">
+        <div><h3>${escapeHTML(titulo)}</h3><p>${escapeHTML(descricao)}</p><div class="normal-preview-meta"><span>${horas} horas</span><span>Material de estudo</span></div></div>
+        ${normalPreviewImageUrl ? `<img class="normal-preview-image" src="${normalPreviewImageUrl}" alt="Prévia da foto do módulo">` : '<div class="normal-preview-image"></div>'}
+      </div>
+      <div class="normal-preview-content">${escapeHTML(conteudo)}</div>
+      ${video ? `<a class="normal-preview-link" href="${escapeHTML(video)}" target="_blank" rel="noopener">Abrir vídeo complementar</a>` : ''}`;
+    setNormalPreviewMode('screen');
+  }
+
+  async function criarPdfInstitucionalModuloBlob({ title, desc, hours, content, courseTitle }) {
+    if (!content) throw new Error('Insira o conteúdo do módulo para gerar a apostila em PDF.');
+    if (!window.html2pdf) throw new Error('O gerador de PDF ainda não foi carregado. Atualize a página.');
+    const wrapper = document.createElement('article');
+    wrapper.className = 'altitude-material-pdf';
+    wrapper.innerHTML = `
+      <div class="pdf-running-head"><span>Instituição Altitude</span><span>${escapeHTML(courseTitle)}</span></div>
+      <section class="pdf-cover"><img src="../3-img/LOGO.png" alt="Altitude"><div class="institution">Instituição Altitude</div><div class="material">Material de Estudo</div><h1>${escapeHTML(title)}</h1></section>
+      <section class="pdf-info-box"><b>Curso:</b><span>${escapeHTML(courseTitle)}</span><b>Módulo:</b><span>${escapeHTML(title)}</span><b>Carga horária:</b><span>${hours} horas</span><b>Descrição:</b><span>${escapeHTML(desc)}</span></section>
+      <section class="pdf-module first"><h2>${escapeHTML(title)}</h2>${content.split(/\n\s*\n/).map((paragraph) => `<p>${escapeHTML(paragraph).replaceAll('\n','<br>')}</p>`).join('')}<div class="pdf-footer">Instituição Altitude | Material de Estudo | ${escapeHTML(courseTitle)}</div></section>`;
+    document.body.appendChild(wrapper);
+    try {
+      return await window.html2pdf().set({
+        margin:[10,9,12,9], image:{type:'jpeg',quality:.97}, html2canvas:{scale:1.6,useCORS:true,backgroundColor:'#fff'},
+        jsPDF:{unit:'mm',format:'a4',orientation:'portrait'}, pagebreak:{mode:['css','legacy']}
+      }).from(wrapper).outputPdf('blob');
+    } finally { wrapper.remove(); }
+  }
+
+  async function gerarPreviaPdfNormal() {
+    const title = document.getElementById('fModuloTitulo')?.value.trim() || 'Módulo do curso';
+    const desc = document.getElementById('fModuloDesc')?.value.trim() || '';
+    const hours = Math.max(0, Number(document.getElementById('fModuloHoras')?.value || 0));
+    const content = document.getElementById('fModuloConteudo')?.value.trim() || '';
+    const courseTitle = document.getElementById('modalModulos')?.dataset.courseTitle || 'Curso Altitude';
+    try {
+      const blob = await criarPdfInstitucionalModuloBlob({ title, desc, hours, content, courseTitle });
+      if (normalPreviewPdfUrl) URL.revokeObjectURL(normalPreviewPdfUrl);
+      normalPreviewPdfUrl = URL.createObjectURL(blob);
+      const frame = document.getElementById('normalPdfPreviewFrame');
+      if (frame) frame.src = normalPreviewPdfUrl;
+      setNormalPreviewMode('pdf');
+    } catch (error) {
+      alert(error.message);
+    }
+  }
+
+  function visualizarPdfSelecionado() {
+    const file = document.getElementById('fModuloPdfArquivo')?.files?.[0];
+    if (!file) return alert('Selecione primeiro a apostila em PDF.');
+    if (normalPreviewPdfUrl) URL.revokeObjectURL(normalPreviewPdfUrl);
+    normalPreviewPdfUrl = URL.createObjectURL(file);
+    const frame = document.getElementById('normalPdfPreviewFrame');
+    if (frame) frame.src = normalPreviewPdfUrl;
+    setNormalPreviewMode('pdf');
+  }
+
   async function adicionarModulo() {
     debugModulos('=== INICIANDO ADIÇÃO DE MÓDULO ===');
     mostrarCarregamento('Adicionando módulo...');
@@ -965,9 +1082,16 @@ function gerarRaLocal(){
     const descricaoInput = $('#fModuloDesc');
     const horasInput = $('#fModuloHoras');
     const conteudoInput = $('#fModuloConteudo');
+    const imageInput = $('#fModuloImagemArquivo');
     const pdfInput = $('#fModuloPdfArquivo');
     const videoInput = $('#fModuloVideo');
+    const extraTitleInput = $('#fModuloMaterialTitulo');
+    const extraFileInput = $('#fModuloMaterialArquivo');
     const publicadoInput = $('#fModuloPublicado');
+    const gerarPdfAutomaticoInput = $('#fModuloGerarPdfAutomatico');
+    const formElement = $('#formModulo');
+    const abrirProvaDepois = formElement?.dataset.openExam === 'true';
+    if (formElement) formElement.dataset.openExam = 'false';
 
     if (!tituloInput || !ordemInput) {
       esconderCarregamento();
@@ -980,9 +1104,13 @@ function gerarRaLocal(){
     const descricao = descricaoInput ? descricaoInput.value.trim() : '';
     const cargaHoraria = Math.max(0, parseInt(horasInput?.value || '0', 10) || 0);
     const conteudo = conteudoInput ? conteudoInput.value.trim() : '';
+    const imageFile = imageInput?.files?.[0] || null;
     const pdfFile = pdfInput?.files?.[0] || null;
     const videoUrl = videoInput?.value?.trim() || '';
+    const extraTitle = extraTitleInput?.value?.trim() || '';
+    const extraFile = extraFileInput?.files?.[0] || null;
     const publicado = Boolean(publicadoInput?.checked);
+    const gerarPdfAutomatico = Boolean(gerarPdfAutomaticoInput?.checked);
 
     if (!titulo) {
       esconderCarregamento();
@@ -996,7 +1124,14 @@ function gerarRaLocal(){
     try {
       debugModulos('Enviando para Supabase...');
       
-      const pdfUrl = await uploadPdfModulo(pdfFile, cursoEditandoId);
+      let pdfUrl = await uploadPdfModulo(pdfFile, cursoEditandoId);
+      if (!pdfUrl && gerarPdfAutomatico && conteudo) {
+        const courseTitle = document.getElementById('modalModulos')?.dataset.courseTitle || GC.cursoAtual?.titulo || 'Curso Altitude';
+        const generatedBlob = await criarPdfInstitucionalModuloBlob({ title: titulo, desc: descricao, hours: cargaHoraria, content: conteudo, courseTitle });
+        pdfUrl = await uploadPdfModulo(generatedBlob, cursoEditandoId);
+      }
+      const imageUrl = await uploadArquivoCurso(imageFile, cursoEditandoId, 'imagens-modulos');
+      const extraUrl = await uploadArquivoCurso(extraFile, cursoEditandoId, 'materiais-extras');
       const { data, error } = await sb
         .from('modulos')
         .insert([{
@@ -1019,16 +1154,15 @@ function gerarRaLocal(){
       }
 
       const moduloCriado = data?.[0];
-      if (pdfUrl && moduloCriado?.id) {
-        const { error: materialError } = await sb.from('materiais').insert({
-          curso_id: cursoEditandoId,
-          modulo_id: moduloCriado.id,
-          tipo: 'PDF',
-          titulo: `Apostila — ${titulo}`,
-          url: pdfUrl,
-          criado_em: new Date().toISOString()
-        });
-        if (materialError) console.warn('Módulo salvo, mas o material PDF não foi indexado:', materialError.message);
+      if (moduloCriado?.id) {
+        const materiaisNovos = [];
+        if (pdfUrl) materiaisNovos.push({ curso_id: cursoEditandoId, modulo_id: moduloCriado.id, tipo: 'PDF', titulo: `Apostila — ${titulo}`, url: pdfUrl, criado_em: new Date().toISOString() });
+        if (imageUrl) materiaisNovos.push({ curso_id: cursoEditandoId, modulo_id: moduloCriado.id, tipo: 'IMAGEM', titulo: `Imagem — ${titulo}`, url: imageUrl, criado_em: new Date().toISOString() });
+        if (extraUrl) materiaisNovos.push({ curso_id: cursoEditandoId, modulo_id: moduloCriado.id, tipo: tipoMaterialArquivo(extraFile), titulo: extraTitle || extraFile?.name || `Material — ${titulo}`, url: extraUrl, criado_em: new Date().toISOString() });
+        if (materiaisNovos.length) {
+          const { error: materialError } = await sb.from('materiais').insert(materiaisNovos);
+          if (materialError) console.warn('Módulo salvo, mas um material não foi indexado:', materialError.message);
+        }
       }
 
       debugModulos('✅ Módulo salvo com sucesso no Supabase:', data);
@@ -1037,15 +1171,23 @@ function gerarRaLocal(){
       if (descricaoInput) descricaoInput.value = '';
       if (horasInput) horasInput.value = '0';
       if (conteudoInput) conteudoInput.value = '';
+      if (imageInput) imageInput.value = '';
       if (pdfInput) pdfInput.value = '';
       if (videoInput) videoInput.value = '';
+      if (extraTitleInput) extraTitleInput.value = '';
+      if (extraFileInput) extraFileInput.value = '';
       if (publicadoInput) publicadoInput.checked = false;
+      if (gerarPdfAutomaticoInput) gerarPdfAutomaticoInput.checked = true;
       ordemInput.value = String((data?.[0]?.ordem || ordem) + 1);
 
       await carregarModulosCurso(cursoEditandoId);
+      atualizarPreviaModuloNormal();
       
       esconderCarregamento();
       alert('✅ Módulo adicionado com sucesso!');
+      if (abrirProvaDepois && moduloCriado?.id) {
+        await window.abrirGestaoProvas(moduloCriado.id, titulo);
+      }
       
       debugModulos('=== MÓDULO ADICIONADO COM SUCESSO ===');
 
@@ -1078,7 +1220,7 @@ function gerarRaLocal(){
         const title = card.dataset.moduleTitle || 'Módulo';
         const action = button.dataset.moduleAction;
         if (action === 'content') return window.abrirEdicaoModulo(id);
-        if (action === 'materials') return window.abrirGestaoMateriais(id, title);
+        if (action === 'materials') return window.abrirEdicaoModulo(id);
         if (action === 'exam') return window.abrirGestaoProvas(id, title);
         if (action === 'toggle') return window.alternarStatusModulo(id);
         if (action === 'delete') return window.excluirModulo(id);
@@ -1100,6 +1242,48 @@ function gerarRaLocal(){
     if (back && back.dataset.bound !== 'true') {
       back.dataset.bound = 'true';
       back.addEventListener('click', fecharPainelModulos);
+    }
+
+    const previewIds = ['fModuloTitulo','fModuloOrdem','fModuloHoras','fModuloDesc','fModuloConteudo','fModuloVideo','fModuloImagemArquivo'];
+    previewIds.forEach((id) => {
+      const field = document.getElementById(id);
+      if (!field || field.dataset.previewBound === 'true') return;
+      field.dataset.previewBound = 'true';
+      field.addEventListener(field.type === 'file' ? 'change' : 'input', atualizarPreviaModuloNormal);
+    });
+    const screenPreview = document.getElementById('btnPreviewNormalScreen');
+    if (screenPreview && screenPreview.dataset.bound !== 'true') {
+      screenPreview.dataset.bound = 'true';
+      screenPreview.addEventListener('click', () => { atualizarPreviaModuloNormal(); setNormalPreviewMode('screen'); });
+    }
+    const selectedPdf = document.getElementById('btnPreviewSelectedPdf');
+    if (selectedPdf && selectedPdf.dataset.bound !== 'true') {
+      selectedPdf.dataset.bound = 'true';
+      selectedPdf.addEventListener('click', visualizarPdfSelecionado);
+    }
+    const generatePdf = document.getElementById('btnPreviewNormalPdf');
+    if (generatePdf && generatePdf.dataset.bound !== 'true') {
+      generatePdf.dataset.bound = 'true';
+      generatePdf.addEventListener('click', gerarPreviaPdfNormal);
+    }
+    const saveAndExam = document.getElementById('btnSalvarAbrirProva');
+    if (saveAndExam && saveAndExam.dataset.bound !== 'true') {
+      saveAndExam.dataset.bound = 'true';
+      saveAndExam.addEventListener('click', () => {
+        const form = document.getElementById('formModulo');
+        if (!form) return;
+        form.dataset.openExam = 'true';
+        form.requestSubmit();
+      });
+    }
+    const openEditExam = document.getElementById('btnAbrirProvaEdicao');
+    if (openEditExam && openEditExam.dataset.bound !== 'true') {
+      openEditExam.dataset.bound = 'true';
+      openEditExam.addEventListener('click', () => {
+        const id = Number(document.getElementById('editar-id')?.value || 0);
+        const title = document.getElementById('editar-titulo')?.value.trim() || 'Módulo';
+        if (id) window.abrirGestaoProvas(id, title);
+      });
     }
   }
 
@@ -1188,6 +1372,7 @@ function gerarRaLocal(){
   window.abrirGestaoProvas = async function(moduloId, moduloTitulo) {
     fecharModalSelecao();
     mostrarCarregamento('Carregando provas...');
+    document.getElementById('modalModulos')?.setAttribute('aria-hidden', 'true');
     
     GC.moduloAtual = { id: moduloId, titulo: moduloTitulo };
     
@@ -1214,8 +1399,8 @@ function gerarRaLocal(){
         <div class="modal__sheet simple-exam-modal">
           <header class="course-builder-header">
             <div>
-              <p class="builder-eyebrow">PASSO 4 · AVALIAÇÃO</p>
-              <h3>Prova — ${moduloTitulo}</h3>
+              <p class="builder-eyebrow">AVALIAÇÃO DO MÓDULO</p>
+              <h3>Prova — ${escapeHTML(moduloTitulo)}</h3>
               <p>Crie uma avaliação e depois adicione as questões. O aluno verá uma questão por vez.</p>
             </div>
             <button type="button" class="btn-fechar builder-close" onclick="fecharModalProvas()" aria-label="Fechar">×</button>
@@ -1227,7 +1412,7 @@ function gerarRaLocal(){
               <h4>Comece com o título</h4>
               <form id="formProva">
                 <label>Título da prova
-                  <input type="text" id="fProvaTitulo" required value="Avaliação — ${moduloTitulo}" placeholder="Ex.: Avaliação do módulo">
+                  <input type="text" id="fProvaTitulo" required value="Avaliação — ${escapeHTML(moduloTitulo)}" placeholder="Ex.: Avaliação do módulo">
                 </label>
                 <button type="submit" class="builder-main-button">Criar prova e adicionar questões</button>
               </form>
@@ -1271,6 +1456,7 @@ function gerarRaLocal(){
 
     } catch (error) {
       esconderCarregamento();
+      document.getElementById('modalModulos')?.setAttribute('aria-hidden', 'false');
       console.error('❌ Erro ao carregar provas:', error);
       alert('Erro ao carregar provas: ' + error.message);
     }
@@ -1300,11 +1486,10 @@ function gerarRaLocal(){
 
       if (error) throw error;
 
-      // Recarregar a lista de provas
-      await window.abrirGestaoProvas(moduloId, GC.moduloAtual.titulo);
-      
       esconderCarregamento();
-      alert('✅ Prova criada com sucesso!');
+      const provaCriada = data?.[0];
+      if (provaCriada?.id) await window.editarProva(provaCriada.id);
+      else await window.abrirGestaoProvas(moduloId, GC.moduloAtual.titulo);
       
     } catch (error) {
       esconderCarregamento();
@@ -1314,184 +1499,97 @@ function gerarRaLocal(){
   }
 
   window.editarProva = async function(provaId) {
-    mostrarCarregamento('Abrindo editor de prova...');
-    
+    mostrarCarregamento('Abrindo editor da prova...');
     try {
-      // Buscar dados da prova e suas questões
-      const { data: prova, error: provaError } = await sb
-        .from('provas')
-        .select('*')
-        .eq('id', provaId)
-        .single();
+      document.getElementById('modalProvas')?.setAttribute('aria-hidden', 'true');
+      document.getElementById('modalEdicaoProva')?.remove();
 
+      const { data: prova, error: provaError } = await sb.from('provas').select('*').eq('id', provaId).single();
       if (provaError) throw provaError;
-
-      const { data: questões, error: questError } = await sb
-        .from('questoes')
-        .select('*')
-        .eq('prova_id', provaId)
-        .order('id', { ascending: true });
-
+      const { data: questoes, error: questError } = await sb.from('questoes').select('*').eq('prova_id', provaId).order('ordem', { ascending: true }).order('id', { ascending: true });
       if (questError) throw questError;
 
-      // Criar modal de edição da prova
       const modalEdicao = document.createElement('div');
       modalEdicao.className = 'modal';
       modalEdicao.id = 'modalEdicaoProva';
+      modalEdicao.setAttribute('aria-hidden', 'false');
       modalEdicao.innerHTML = `
-        <div class="modal__sheet" style="max-width: 1000px;">
-          <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
-            <h3>✏️ Editar Prova: ${prova.titulo}</h3>
-            <button type="button" class="btn-fechar" onclick="fecharModalEdicaoProva()" style="background: none; border: none; font-size: 24px; cursor: pointer;">×</button>
-          </div>
-
-          <!-- Formulário para nova questão -->
-          <div style="background: #f8fafc; padding: 20px; border-radius: 8px; margin-bottom: 20px;">
-            <h4 style="margin: 0 0 15px 0;">➕ Adicionar Questão</h4>
-            <form id="formQuestao">
-              <input type="hidden" id="fProvaId" value="${provaId}">
-              
-              <div style="margin-bottom: 15px;">
-                <label style="display: block; margin-bottom: 5px; font-weight: 500;">Enunciado da Questão</label>
-                <textarea id="fEnunciado" rows="3" required style="width: 100%; padding: 10px; border: 1px solid #d1d5db; border-radius: 6px;"></textarea>
-              </div>
-
-              <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 15px; margin-bottom: 15px;">
-                <div>
-                  <label style="display: block; margin-bottom: 5px; font-weight: 500;">Alternativa A</label>
-                  <input type="text" id="fAlternativaA" required style="width: 100%; padding: 10px; border: 1px solid #d1d5db; border-radius: 6px;">
+        <div class="modal__sheet exam-editor-sheet">
+          <header class="course-builder-header exam-editor-header">
+            <div><p class="builder-eyebrow">AVALIAÇÃO DO CURSO</p><h3>${escapeHTML(prova.titulo || 'Prova')}</h3><p>Cadastre as questões e confira a visualização ao lado. O aluno continuará selecionando uma alternativa por questão.</p></div>
+            <button type="button" class="btn-fechar builder-close" onclick="fecharModalEdicaoProva()" aria-label="Fechar">×</button>
+          </header>
+          <div class="exam-editor-grid">
+            <section class="exam-question-form-panel">
+              <div class="builder-panel-title"><span>NOVA QUESTÃO</span><h4>Enunciado, alternativas e resolução</h4></div>
+              <form id="formQuestao" class="exam-question-form">
+                <input type="hidden" id="fProvaId" value="${Number(provaId)}">
+                <label>Enunciado da questão<textarea id="fEnunciado" rows="4" required></textarea></label>
+                <div class="exam-alternatives-grid">
+                  <label>Alternativa A<input type="text" id="fAlternativaA" required></label>
+                  <label>Alternativa B<input type="text" id="fAlternativaB" required></label>
+                  <label>Alternativa C<input type="text" id="fAlternativaC" required></label>
+                  <label>Alternativa D<input type="text" id="fAlternativaD" required></label>
+                  <label>Alternativa E <small>(opcional)</small><input type="text" id="fAlternativaE"></label>
+                  <label>Resposta correta<select id="fCorreta" required><option value="A">A</option><option value="B">B</option><option value="C">C</option><option value="D">D</option><option value="E">E</option></select></label>
                 </div>
-                <div>
-                  <label style="display: block; margin-bottom: 5px; font-weight: 500;">Alternativa B</label>
-                  <input type="text" id="fAlternativaB" required style="width: 100%; padding: 10px; border: 1px solid #d1d5db; border-radius: 6px;">
-                </div>
+                <label>Resolução comentada<textarea id="fResolucao" rows="4" placeholder="Explique por que a alternativa correta é a resposta adequada."></textarea></label>
+                <button type="submit" class="builder-main-button">Adicionar questão</button>
+              </form>
+            </section>
+            <section class="exam-question-preview-panel">
+              <div class="builder-list-heading"><div><span>PRÉ-VISUALIZAÇÃO</span><h4>${questoes?.length || 0} questão(ões) cadastrada(s)</h4><p>O gabarito aparece em verde apenas para o gestor.</p></div></div>
+              <div class="exam-question-list">
+                ${questoes?.length ? questoes.map((q, index) => {
+                  const alternatives = [['A',q.a],['B',q.b],['C',q.c],['D',q.d],['E',q.e]].filter(([,value]) => value);
+                  return `<article class="latex-question-card">
+                    <header><strong>Questão ${index + 1}</strong><button type="button" class="exam-delete-question" onclick="excluirQuestao(${Number(q.id)})">Excluir</button></header>
+                    <p>${escapeHTML(q.enunciado || '')}</p>
+                    <ul>${alternatives.map(([letter,value]) => `<li class="${String(q.correta).toUpperCase() === letter ? 'correct' : ''}"><b>${letter})</b> ${escapeHTML(value)}</li>`).join('')}</ul>
+                    ${q.resolucao ? `<div class="resolution"><b>Resolução:</b> ${escapeHTML(q.resolucao)}</div>` : ''}
+                  </article>`;
+                }).join('') : '<div class="builder-empty-state"><strong>Nenhuma questão cadastrada.</strong><span>Use o formulário para adicionar a primeira.</span></div>'}
               </div>
-
-              <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 15px; margin-bottom: 15px;">
-                <div>
-                  <label style="display: block; margin-bottom: 5px; font-weight: 500;">Alternativa C</label>
-                  <input type="text" id="fAlternativaC" required style="width: 100%; padding: 10px; border: 1px solid #d1d5db; border-radius: 6px;">
-                </div>
-                <div>
-                  <label style="display: block; margin-bottom: 5px; font-weight: 500;">Alternativa D</label>
-                  <input type="text" id="fAlternativaD" required style="width: 100%; padding: 10px; border: 1px solid #d1d5db; border-radius: 6px;">
-                </div>
-              </div>
-
-              <div style="margin-bottom: 15px;">
-                <label style="display: block; margin-bottom: 5px; font-weight: 500;">Alternativa Correta</label>
-                <select id="fCorreta" required style="width: 100%; padding: 10px; border: 1px solid #d1d5db; border-radius: 6px;">
-                  <option value="A">A</option>
-                  <option value="B">B</option>
-                  <option value="C">C</option>
-                  <option value="D">D</option>
-                </select>
-              </div>
-
-              <div style="text-align: right;">
-                <button type="submit" style="padding: 10px 20px; background: #0ea5a3; color: white; border: none; border-radius: 6px; cursor: pointer;">
-                  ➕ Adicionar Questão
-                </button>
-              </div>
-            </form>
+            </section>
           </div>
-
-          <!-- Lista de questões -->
-          <div style="background: white; border-radius: 8px; padding: 20px; border: 1px solid #e2e8f0;">
-            <h4 style="margin: 0 0 15px 0;">📋 Questões da Prova (${questões?.length || 0})</h4>
-            <div id="listaQuestoes">
-              ${questões && questões.length > 0 ? 
-                questões.map((q, index) => `
-                  <div style="padding: 15px; border: 1px solid #e2e8f0; border-radius: 6px; margin-bottom: 10px; background: #f8fafc;">
-                    <div style="display: flex; justify-content: between; align-items: start;">
-                      <div style="flex: 1;">
-                        <strong>Questão ${index + 1}:</strong> ${q.enunciado}
-                        <div style="margin-top: 10px; display: grid; grid-template-columns: 1fr 1fr; gap: 10px;">
-                          <div style="color: ${q.correta === 'A' ? '#10b981' : '#64748b'}">A) ${q.a}</div>
-                          <div style="color: ${q.correta === 'B' ? '#10b981' : '#64748b'}">B) ${q.b}</div>
-                          <div style="color: ${q.correta === 'C' ? '#10b981' : '#64748b'}">C) ${q.c}</div>
-                          <div style="color: ${q.correta === 'D' ? '#10b981' : '#64748b'}">D) ${q.d}</div>
-                        </div>
-                      </div>
-                      <div style="display: flex; gap: 8px;">
-                        <button class="btn-mini" onclick="editarQuestao(${q.id})">✏️</button>
-                        <button class="btn-mini" onclick="excluirQuestao(${q.id})" style="color: #ef4444;">🗑️</button>
-                      </div>
-                    </div>
-                  </div>
-                `).join('') : 
-                '<p style="text-align: center; color: #64748b; padding: 20px;">Nenhuma questão cadastrada ainda</p>'
-              }
-            </div>
-          </div>
-
-          <div style="margin-top: 20px; text-align: left;">
-            <button type="button" class="ghost" onclick="fecharModalEdicaoProva()">← Voltar para Provas</button>
-          </div>
-        </div>
-      `;
-
+          <footer class="builder-footer"><button type="button" class="builder-secondary-button" onclick="fecharModalEdicaoProva()">← Voltar às provas</button><p>Depois de revisar, feche esta tela e volte à montagem do curso.</p></footer>
+        </div>`;
       document.body.appendChild(modalEdicao);
-
-      // Configurar evento do formulário de questão
-      document.getElementById('formQuestao')?.addEventListener('submit', async (e) => {
-        e.preventDefault();
+      document.getElementById('formQuestao')?.addEventListener('submit', async (event) => {
+        event.preventDefault();
         await adicionarQuestao(provaId);
       });
-
-      modalEdicao.setAttribute('aria-hidden', 'false');
       esconderCarregamento();
-
     } catch (error) {
       esconderCarregamento();
-      console.error('❌ Erro ao carregar prova:', error);
+      console.error('Erro ao abrir prova:', error);
       alert('Erro ao carregar prova: ' + error.message);
     }
   }
 
   async function adicionarQuestao(provaId) {
-    const enunciado = document.getElementById('fEnunciado').value.trim();
-    const alternativaA = document.getElementById('fAlternativaA').value.trim();
-    const alternativaB = document.getElementById('fAlternativaB').value.trim();
-    const alternativaC = document.getElementById('fAlternativaC').value.trim();
-    const alternativaD = document.getElementById('fAlternativaD').value.trim();
-    const correta = document.getElementById('fCorreta').value;
-
-    if (!enunciado || !alternativaA || !alternativaB || !alternativaC || !alternativaD) {
-      alert('Por favor, preencha todos os campos');
-      return;
-    }
-
+    const enunciado = document.getElementById('fEnunciado')?.value.trim() || '';
+    const a = document.getElementById('fAlternativaA')?.value.trim() || '';
+    const b = document.getElementById('fAlternativaB')?.value.trim() || '';
+    const c = document.getElementById('fAlternativaC')?.value.trim() || '';
+    const d = document.getElementById('fAlternativaD')?.value.trim() || '';
+    const e = document.getElementById('fAlternativaE')?.value.trim() || null;
+    const correta = document.getElementById('fCorreta')?.value || 'A';
+    const resolucao = document.getElementById('fResolucao')?.value.trim() || null;
+    if (!enunciado || !a || !b || !c || !d) return alert('Preencha o enunciado e as alternativas A, B, C e D.');
+    if (correta === 'E' && !e) return alert('A alternativa E foi marcada como correta, mas está vazia.');
     mostrarCarregamento('Adicionando questão...');
-    
     try {
-      const { data, error } = await sb
-        .from('questoes')
-        .insert([{
-          prova_id: provaId,
-          enunciado: enunciado,
-          a: alternativaA,
-          b: alternativaB,
-          c: alternativaC,
-          d: alternativaD,
-          correta: correta
-        }])
-        .select();
-
+      const { count } = await sb.from('questoes').select('*', { count: 'exact', head: true }).eq('prova_id', provaId);
+      const { error } = await sb.from('questoes').insert({
+        prova_id: Number(provaId), enunciado, a, b, c, d, e, correta, resolucao, ordem: Number(count || 0) + 1
+      });
       if (error) throw error;
-
-      // Limpar formulário
-      document.getElementById('formQuestao').reset();
-      
-      // Recarregar a lista de questões
-      const provaIdAtual = document.getElementById('fProvaId').value;
-      await window.editarProva(parseInt(provaIdAtual));
-      
-      esconderCarregamento();
-      
+      document.getElementById('modalEdicaoProva')?.remove();
+      await window.editarProva(Number(provaId));
     } catch (error) {
       esconderCarregamento();
-      console.error('❌ Erro ao adicionar questão:', error);
+      console.error('Erro ao adicionar questão:', error);
       alert('Erro ao adicionar questão: ' + error.message);
     }
   }
@@ -1555,18 +1653,16 @@ function gerarRaLocal(){
 
   window.fecharModalProvas = function() {
     const modal = document.getElementById('modalProvas');
-    if (modal) {
-      modal.setAttribute('aria-hidden', 'true');
-      setTimeout(() => modal.remove(), 300);
-    }
+    if (modal) modal.remove();
+    const builder = document.getElementById('modalModulos');
+    if (builder?.dataset.courseId) builder.setAttribute('aria-hidden', 'false');
   }
 
   window.fecharModalEdicaoProva = function() {
-    const modal = document.getElementById('modalEdicaoProva');
-    if (modal) {
-      modal.setAttribute('aria-hidden', 'true');
-      setTimeout(() => modal.remove(), 300);
-    }
+    document.getElementById('modalEdicaoProva')?.remove();
+    const proofList = document.getElementById('modalProvas');
+    if (proofList) proofList.setAttribute('aria-hidden', 'false');
+    else if (GC.moduloAtual?.id) window.abrirGestaoProvas(GC.moduloAtual.id, GC.moduloAtual.titulo);
   }
 
   // =====================================================================
@@ -1647,6 +1743,8 @@ function gerarRaLocal(){
       document.getElementById('editar-pdf-url').value = modulo.pdf_url || '';
       document.getElementById('editar-video-url').value = modulo.video_url || '';
       document.getElementById('editar-publicado').checked = modulo.publicado || false;
+      const editarGerarPdf = document.getElementById('editar-gerar-pdf');
+      if (editarGerarPdf) editarGerarPdf.checked = true;
 
       const editPanel = document.getElementById('form-edicao-modulo');
       if (editPanel) {
@@ -1700,13 +1798,34 @@ function gerarRaLocal(){
     }
 
     try {
+      const newPdfFile = document.getElementById('editar-pdf-arquivo')?.files?.[0] || null;
+      const newImageFile = document.getElementById('editar-imagem-arquivo')?.files?.[0] || null;
+      const newExtraFile = document.getElementById('editar-material-arquivo')?.files?.[0] || null;
+      const newExtraTitle = document.getElementById('editar-material-titulo')?.value.trim() || '';
+      let pdfUrl = document.getElementById('editar-pdf-url').value.trim();
+      let imageUrl = null;
+      let extraUrl = null;
+      const editTitle = document.getElementById('editar-titulo').value.trim();
+      const editDescription = document.getElementById('editar-descricao').value.trim();
+      const editContent = document.getElementById('editar-conteudo')?.value.trim() || '';
+      const editHours = Math.max(0, Math.min(200, parseInt(document.getElementById('editar-carga-horaria')?.value || '0', 10) || 0));
+      if (newPdfFile) {
+        pdfUrl = await uploadPdfModulo(newPdfFile, Number(courseId));
+      } else if (document.getElementById('editar-gerar-pdf')?.checked && editContent) {
+        const courseTitle = document.getElementById('modalModulos')?.dataset.courseTitle || GC.cursoAtual?.titulo || 'Curso Altitude';
+        const generatedBlob = await criarPdfInstitucionalModuloBlob({ title: editTitle, desc: editDescription, hours: editHours, content: editContent, courseTitle });
+        pdfUrl = await uploadPdfModulo(generatedBlob, Number(courseId));
+      }
+      if (newImageFile) imageUrl = await uploadArquivoCurso(newImageFile, Number(courseId), 'imagens-modulos');
+      if (newExtraFile) extraUrl = await uploadArquivoCurso(newExtraFile, Number(courseId), 'materiais-extras');
+
       const dadosAtualizados = {
-        titulo: document.getElementById('editar-titulo').value.trim(),
-        descricao: document.getElementById('editar-descricao').value.trim(),
-        conteudo: document.getElementById('editar-conteudo')?.value.trim() || '',
+        titulo: editTitle,
+        descricao: editDescription,
+        conteudo: editContent,
         ordem: parseInt(document.getElementById('editar-order').value) || 1,
-        carga_horaria: Math.max(0, parseInt(document.getElementById('editar-carga-horaria')?.value || '0', 10) || 0),
-        pdf_url: document.getElementById('editar-pdf-url').value.trim(),
+        carga_horaria: editHours,
+        pdf_url: pdfUrl,
         video_url: document.getElementById('editar-video-url').value.trim(),
         publicado: document.getElementById('editar-publicado').checked,
         updated_at: new Date().toISOString()
@@ -1726,6 +1845,18 @@ function gerarRaLocal(){
         .eq('id', moduloId);
 
       if (error) throw error;
+
+      const novosMateriais = [];
+      if ((newPdfFile || document.getElementById('editar-gerar-pdf')?.checked) && pdfUrl) {
+        await sb.from('materiais').delete().eq('modulo_id', Number(moduloId)).eq('tipo', 'PDF').like('titulo', 'Apostila —%');
+      }
+      if ((newPdfFile || document.getElementById('editar-gerar-pdf')?.checked) && pdfUrl) novosMateriais.push({ curso_id: Number(courseId), modulo_id: Number(moduloId), tipo: 'PDF', titulo: `Apostila — ${dadosAtualizados.titulo}`, url: pdfUrl, criado_em: new Date().toISOString() });
+      if (newImageFile && imageUrl) novosMateriais.push({ curso_id: Number(courseId), modulo_id: Number(moduloId), tipo: 'IMAGEM', titulo: `Imagem — ${dadosAtualizados.titulo}`, url: imageUrl, criado_em: new Date().toISOString() });
+      if (newExtraFile && extraUrl) novosMateriais.push({ curso_id: Number(courseId), modulo_id: Number(moduloId), tipo: tipoMaterialArquivo(newExtraFile), titulo: newExtraTitle || newExtraFile.name || `Material — ${dadosAtualizados.titulo}`, url: extraUrl, criado_em: new Date().toISOString() });
+      if (novosMateriais.length) {
+        const { error: materialError } = await sb.from('materiais').insert(novosMateriais);
+        if (materialError) console.warn('Módulo atualizado, mas um material não foi indexado:', materialError.message);
+      }
 
       esconderCarregamento();
       alert('✅ Módulo atualizado com sucesso!');

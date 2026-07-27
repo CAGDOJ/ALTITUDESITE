@@ -196,53 +196,30 @@
   }
 
   function drawProgramItems(doc, items, width, height) {
-    const left = 27;
-    const rightPanelWidth = 82;
-    const gap = 8;
-    const availableWidth = width - left - rightPanelWidth - 18;
-    const columnWidth = (availableWidth - gap) / 2;
-    const rowHeights = [];
-
-    for (let row = 0; row < Math.ceil(items.length / 2); row += 1) {
-      const pair = [items[row * 2], items[row * 2 + 1]].filter(Boolean);
-      const maxLines = Math.max(...pair.map((item, offset) => {
-        const index = row * 2 + offset + 1;
-        const label = `Módulo ${index} - ${item.titulo}`;
-        return doc.splitTextToSize(label, columnWidth - 14).length;
-      }));
-      rowHeights.push(Math.max(23, 14 + maxLines * 4.6));
-    }
-
+    const left = 28;
+    const rightPanelWidth = 76;
+    const availableWidth = width - left - rightPanelWidth - 20;
     let y = 55;
-    rowHeights.forEach((rowHeight, row) => {
-      for (let col = 0; col < 2; col += 1) {
-        const itemIndex = row * 2 + col;
-        const item = items[itemIndex];
-        if (!item) continue;
-        const x = left + col * (columnWidth + gap);
-        doc.setFillColor(244, 249, 251);
-        doc.setDrawColor(207, 222, 229);
-        doc.setLineWidth(0.25);
-        doc.roundedRect(x, y, columnWidth, rowHeight - 4, 2.5, 2.5, 'FD');
 
-        doc.setFont('helvetica', 'bold');
-        doc.setFontSize(9.2);
-        doc.setTextColor(7, 49, 79);
-        const titleLines = doc.splitTextToSize(`Módulo ${itemIndex + 1} - ${item.titulo}`, columnWidth - 12);
-        doc.text(titleLines, x + 6, y + 9.2);
-
-        doc.setFont('helvetica', 'normal');
-        doc.setFontSize(8.4);
-        doc.setTextColor(75, 88, 98);
-        doc.text(`${Number(item.horas || 0)} horas`, x + 6, y + 10.8 + titleLines.length * 4.1);
-      }
+    items.forEach((item, index) => {
+      const label = `Módulo ${index + 1} - ${item.titulo} (${Number(item.horas || 0)} horas)`;
+      doc.setFont('helvetica', 'normal');
+      doc.setFontSize(9.6);
+      doc.setTextColor(27, 42, 56);
+      const lines = doc.splitTextToSize(label, availableWidth - 8);
+      const rowHeight = Math.max(10, lines.length * 4.7 + 5);
+      if (y + rowHeight > height - 42) return;
+      doc.text(lines, left, y + 4.5);
+      doc.setDrawColor(222, 229, 234);
+      doc.setLineWidth(0.2);
+      doc.line(left, y + rowHeight - 1.5, left + availableWidth, y + rowHeight - 1.5);
       y += rowHeight;
     });
 
     doc.setFont('helvetica', 'bold');
     doc.setFontSize(12.5);
     doc.setTextColor(27, 42, 56);
-    doc.text(`TOTAL CERTIFICADO: ${items.reduce((sum, item) => sum + Number(item.horas || 0), 0)} HORAS`, left, Math.min(height - 25, y + 7));
+    doc.text(`TOTAL CERTIFICADO: ${items.reduce((sum, item) => sum + Number(item.horas || 0), 0)} HORAS`, left, Math.min(height - 24, y + 10));
   }
 
   async function build({ sb, cert, aluno, curso, logoUrl, validationUrl }) {
@@ -259,23 +236,14 @@
     const title = escText(cert.titulo_documento, 'CERTIFICADO').toUpperCase();
     const subtitle = escText(cert.subtitulo_documento, 'DE CONCLUSÃO E APROVEITAMENTO').toUpperCase();
     const hours = Math.max(0, Number(cert.horas_emitidas || cert.horas_solicitadas || 0));
+    const cpfValue = String(aluno?.cpf || cert.cpf_aluno || '').replace(/\D/g, '');
+    if (cpfValue.length !== 11) throw new Error('O CPF do aluno precisa estar cadastrado antes da emissão.');
     const program = await loadProgram(sb, cert.curso_id, hours, { ...curso, titulo: courseName }, cert.id);
     const logo = await imageToDataUrl(logoUrl || '../3-img/LOGO.png');
     const qr = await qrDataUrl(validationUrl);
 
     frame(doc, width, height);
-    doc.setFillColor(238, 247, 249);
-    doc.setDrawColor(192, 211, 220);
-    doc.roundedRect(20, 20, 68, 18, 2.5, 2.5, 'FD');
-    doc.setFont('helvetica', 'bold');
-    doc.setFontSize(7.2);
-    doc.setTextColor(83, 99, 109);
-    doc.text('REGISTRO DO CERTIFICADO', 24, 26);
-    doc.setFontSize(8.7);
-    doc.setTextColor(7, 49, 79);
-    const registryLines = doc.splitTextToSize(String(cert.numero_certificado || cert.codigo_validacao || '—'), 58);
-    doc.text(registryLines.slice(0, 2), 24, 32);
-    doc.addImage(logo, 'PNG', width - 79, 23, 60, 9, undefined, 'FAST');
+    doc.addImage(logo, 'PNG', 20, 22, 55, 8.5, undefined, 'FAST');
     doc.setTextColor(81, 58, 44);
     doc.setFont('times', 'bold');
     doc.setFontSize(title.length > 20 ? 28 : 34);
@@ -296,7 +264,7 @@
     doc.setFont('helvetica', 'normal');
     doc.setFontSize(9);
     doc.setTextColor(70, 80, 90);
-    doc.text(`CPF: ${formatCpf(aluno?.cpf || cert.cpf_aluno)}`, width / 2, afterName + 8, { align: 'center' });
+    doc.text(`CPF: ${formatCpf(cpfValue)}`, width / 2, afterName + 8, { align: 'center' });
 
     doc.setFont('times', 'normal');
     doc.setTextColor(27, 42, 56);
@@ -323,12 +291,16 @@
     doc.setTextColor(50, 60, 70);
     doc.text('DIREÇÃO DA ALTITUDE CENTRO UNIVERSITÁRIO', 68, signY + 6, { align: 'center' });
     doc.text('CONCLUINTE', 153, signY + 6, { align: 'center' });
+    doc.setFont('helvetica', 'normal');
+    doc.setFontSize(7.4);
+    doc.setTextColor(7, 49, 79);
+    doc.text(String(cert.numero_certificado || cert.codigo_validacao || '—'), 153, signY + 12, { align: 'center', maxWidth: 66 });
 
-    doc.addImage(qr, 'PNG', width - 52, height - 62, 25, 25);
+    doc.addImage(qr, 'PNG', width - 52, height - 73, 25, 25);
     doc.setFont('helvetica', 'bold');
     doc.setFontSize(7.5);
     doc.setTextColor(7, 49, 79);
-    doc.text('ESCANEIE PARA VALIDAR', width - 39.5, height - 66, { align: 'center' });
+    doc.text('ESCANEIE PARA VALIDAR', width - 39.5, height - 77, { align: 'center' });
     doc.setFont('helvetica', 'normal');
     doc.setFontSize(7.4);
 
@@ -346,7 +318,7 @@
     drawProgramItems(doc, program, width, height);
 
     doc.setFillColor(238, 247, 249);
-    doc.roundedRect(width - 77, 54, 56, 89, 3, 3, 'F');
+    doc.roundedRect(width - 77, 52, 56, 124, 3, 3, 'F');
     doc.setFont('helvetica', 'bold');
     doc.setTextColor(7, 49, 79);
     doc.setFontSize(10);
@@ -355,7 +327,7 @@
     doc.setFontSize(8.5);
     const legal = [
       `RA: ${aluno?.ra || '—'}`,
-      `CPF: ${formatCpf(aluno?.cpf || cert.cpf_aluno)}`,
+      `CPF: ${formatCpf(cpfValue)}`,
       `Carga horária certificada: ${hours} horas`,
       `Nota final: ${Number(cert.nota_final || 0)}%`,
       `Emissão: ${dateBR(cert.emitido_em)}`,
@@ -370,9 +342,9 @@
       doc.text(lines, width - 49, y, { align: 'center' });
       y += 7 + (lines.length - 1) * 4;
     });
-    doc.addImage(qr, 'PNG', width - 60, 147, 23, 23);
+    doc.addImage(qr, 'PNG', width - 60, 139, 23, 23);
     doc.setFontSize(7);
-    doc.text('Autenticidade pelo QR Code', width - 49, 175, { align: 'center' });
+    doc.text('Autenticidade pelo QR Code', width - 49, 167, { align: 'center' });
 
     doc.setFont('helvetica', 'normal');
     doc.setFontSize(7.5);

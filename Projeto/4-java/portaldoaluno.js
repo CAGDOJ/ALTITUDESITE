@@ -654,16 +654,24 @@ function cleanLatexForStudent(value) {
   let text = String(value || "").replace(/\r/g, "");
   if (!text) return "";
 
-  // Remove preâmbulo e comandos de formatação que não pertencem ao conteúdo do aluno.
   text = text
     .replace(/^[\s\S]*?\\begin\{document\}/i, "")
     .replace(/\\end\{document\}[\s\S]*$/i, "")
     .replace(/\\(?:documentclass|usepackage|geometry|definecolor|titleformat|titlespacing|setlength|pagestyle|fancyhf|fancyhead|fancyfoot|renewcommand|onehalfspacing|Justifying)\*?(?:\[[^\]]*\])?\{[^{}]*\}/gi, "")
     .replace(/\\(?:vspace|hspace)\*?\{[^{}]*\}/gi, "")
     .replace(/\\includegraphics(?:\[[^\]]*\])?\{[^{}]*\}/gi, "")
-    .replace(/\\begin\{(?:center|tcolorbox|tabularx|tabular|itemize|enumerate)\}(?:\[[\s\S]*?\])?/gi, "\n")
-    .replace(/\\end\{(?:center|tcolorbox|tabularx|tabular|itemize|enumerate)\}/gi, "\n")
-    .replace(/^\s*\[[^\]\n]*(?:leftmargin|colback|colframe|boxrule|arc|left|right|top|bottom)[^\]\n]*\]\s*$/gim, "")
+    .replace(/\\begin\{itemize\}(\[[^\]]*\])?/gi, (_, options = "") => {
+      const left = /leftmargin\s*=\s*([^,\]]+)/i.exec(options)?.[1]?.trim() || "";
+      return `\n@@LIST:${left}@@\n`;
+    })
+    .replace(/\\begin\{enumerate\}(\[[^\]]*\])?/gi, (_, options = "") => {
+      const left = /leftmargin\s*=\s*([^,\]]+)/i.exec(options)?.[1]?.trim() || "";
+      return `\n@@OLIST:${left}@@\n`;
+    })
+    .replace(/\\end\{(?:itemize|enumerate)\}/gi, "\n@@ENDLIST@@\n")
+    .replace(/\\begin\{(?:center|tcolorbox|tabularx|tabular)\}(?:\[[\s\S]*?\])?/gi, "\n")
+    .replace(/\\end\{(?:center|tcolorbox|tabularx|tabular)\}/gi, "\n")
+    .replace(/^\s*\[[^\]\n]*(?:colback|colframe|boxrule|arc|left|right|top|bottom)[^\]\n]*\]\s*$/gim, "")
     .replace(/\\section\*?\{([^{}]+)\}/gi, "\n## $1\n")
     .replace(/\\subsection\*?\{([^{}]+)\}/gi, "\n### $1\n")
     .replace(/\\subsubsection\*?\{([^{}]+)\}/gi, "\n#### $1\n")
@@ -684,7 +692,6 @@ function cleanLatexForStudent(value) {
     .replace(/[ \t]+\n/g, "\n")
     .replace(/\n{3,}/g, "\n\n")
     .trim();
-
   return text;
 }
 
@@ -695,20 +702,31 @@ function studentContentHtml(value) {
   const out = [];
   let paragraph = [];
   let list = [];
+  let listType = "ul";
+  let listMargin = "";
+  let orderedIndex = 0;
 
+  const safeCssDimension = (value) => /^\d+(?:[.,]\d+)?(?:cm|mm|pt|px|em|rem|in)$/i.test(String(value || '').trim())
+    ? String(value).trim().replace(',', '.') : '';
   const flushParagraph = () => {
     const joined = paragraph.join(" ").replace(/\s+/g, " ").trim();
     if (joined) out.push(`<p>${escapeHTML(joined)}</p>`);
     paragraph = [];
   };
   const flushList = () => {
-    if (list.length) out.push(`<ul>${list.map((item) => `<li>${escapeHTML(item)}</li>`).join("")}</ul>`);
-    list = [];
+    if (list.length) {
+      const margin = safeCssDimension(listMargin);
+      out.push(`<${listType} class="latex-list${margin ? ' has-custom-leftmargin' : ''}"${margin ? ` style="margin-left:${margin}"` : ''}>${list.map((item) => `<li>${escapeHTML(item)}</li>`).join("")}</${listType}>`);
+    }
+    list = []; listMargin = ''; orderedIndex = 0;
   };
 
   lines.forEach((raw) => {
     const line = raw.trim();
-    if (!line) { flushParagraph(); flushList(); return; }
+    if (!line) { flushParagraph(); return; }
+    const open = /^@@(O?LIST):([^@]*)@@$/.exec(line);
+    if (open) { flushParagraph(); flushList(); listType = open[1] === 'OLIST' ? 'ol' : 'ul'; listMargin = open[2] || ''; return; }
+    if (line === '@@ENDLIST@@') { flushParagraph(); flushList(); listType = 'ul'; return; }
     const heading = line.match(/^(#{2,4})\s+(.+)$/);
     if (heading) {
       flushParagraph(); flushList();
@@ -718,7 +736,9 @@ function studentContentHtml(value) {
     }
     if (/^-\s+/.test(line)) {
       flushParagraph();
-      list.push(line.replace(/^-\s+/, ""));
+      let item = line.replace(/^-\s+/, "");
+      if (listType === 'ol') item = item.replace(/^\d+[.)]\s*/, '');
+      list.push(item); orderedIndex += 1;
       return;
     }
     flushList();
@@ -770,63 +790,65 @@ async function baixarMaterialCompletoCurso() {
     const height = doc.internal.pageSize.getHeight();
     const margin = 18;
     let y = 20;
+    let logo = null;
+    try {
+      const response = await fetch(new URL('../3-img/LOGO.png', location.href));
+      const blob = await response.blob();
+      logo = await new Promise((resolve) => { const reader = new FileReader(); reader.onload = () => resolve(reader.result); reader.readAsDataURL(blob); });
+    } catch (_) {}
 
     const newPageIfNeeded = (needed = 12) => {
       if (y + needed <= height - 18) return;
-      doc.addPage();
-      y = 20;
+      doc.addPage(); y = 20;
     };
-    const writeLines = (text, size = 10, bold = false, spacing = 5) => {
+    const writeLines = (text, size = 10, bold = false, spacing = 5, indent = 0) => {
       doc.setFont("helvetica", bold ? "bold" : "normal");
       doc.setFontSize(size);
-      const lines = doc.splitTextToSize(String(text || ""), width - margin * 2);
-      for (const line of lines) {
-        newPageIfNeeded(spacing + 2);
-        doc.text(line, margin, y);
-        y += spacing;
-      }
+      const lines = doc.splitTextToSize(String(text || ""), width - margin * 2 - indent);
+      for (const line of lines) { newPageIfNeeded(spacing + 2); doc.text(line, margin + indent, y); y += spacing; }
     };
 
-    doc.setTextColor(10, 61, 98);
-    writeLines("ALTITUDE CENTRO UNIVERSITÁRIO", 11, true, 6);
-    doc.setTextColor(25, 42, 58);
-    writeLines(`Material de estudo — ${state.cursoAtual.titulo || "Curso"}`, 18, true, 8);
-    doc.setDrawColor(28, 170, 181);
-    doc.line(margin, y, width - margin, y);
-    y += 10;
+    doc.setFillColor(238,248,251); doc.roundedRect(14,14,width-28,78,5,5,'F');
+    if (logo) doc.addImage(logo,'PNG',(width-72)/2,24,72,20,undefined,'FAST');
+    doc.setTextColor(17,168,182); doc.setFont('helvetica','bold'); doc.setFontSize(14); doc.text('Material de Estudo',width/2,55,{align:'center'});
+    doc.setTextColor(7,59,90); doc.setFontSize(20); doc.text(doc.splitTextToSize(`Curso de ${state.cursoAtual.titulo || 'Curso'}`,width-50),width/2,70,{align:'center'});
+    doc.setDrawColor(17,168,182); doc.line(margin,100,width-margin,100); y=112;
+    writeLines(`Curso: ${state.cursoAtual.titulo || 'Curso'}`,10.5,true,6);
+    writeLines(`Área de formação: ${state.cursoAtual.categoria || 'Formação profissional'}`,10,false,6);
+    writeLines('Finalidade: apoiar o estudo teórico e servir de base para a avaliação de aprendizagem.',10,false,6);
 
     state.modulos.forEach((modulo, index) => {
-      newPageIfNeeded(28);
-      doc.setTextColor(10, 61, 98);
-      writeLines(`${index + 1}. ${modulo.titulo || `Conteúdo ${index + 1}`}`, 14, true, 7);
-      doc.setTextColor(55, 70, 84);
-      if (modulo.descricao) writeLines(cleanLatexForStudent(modulo.descricao), 10, false, 5);
+      doc.addPage(); y=22;
+      doc.setTextColor(7,59,90); writeLines(`${index + 1}. ${modulo.titulo || `Conteúdo ${index + 1}`}`,16,true,8);
+      doc.setTextColor(45,61,75);
       const clean = cleanLatexForStudent(modulo.conteudo || modulo.conteudo_latex || "");
-      if (clean) {
-        y += 2;
-        clean.split(/\n+/).map((line) => line.replace(/^#{2,4}\s*/, "").replace(/^-\s*/, "• ").trim()).filter(Boolean)
-          .forEach((line) => writeLines(line, 10, false, 5));
-      }
-      y += 8;
+      let currentIndent = 0;
+      clean.split(/\n+/).map((line) => line.trim()).filter(Boolean).forEach((line) => {
+        const open = /^@@(?:O?LIST):([^@]*)@@$/.exec(line);
+        if (open) {
+          const val = open[1] || '';
+          const num = Number((val.match(/[\d.,]+/)||['4'])[0].replace(',','.'));
+          currentIndent = /cm/i.test(val) ? num*10 : /mm/i.test(val) ? num : 4;
+          return;
+        }
+        if (line === '@@ENDLIST@@') { currentIndent = 0; return; }
+        const heading = line.match(/^#{2,4}\s+(.+)$/);
+        if (heading) { doc.setTextColor(7,59,90); writeLines(heading[1],13,true,7); doc.setTextColor(45,61,75); return; }
+        const item = line.replace(/^-\s*/, '• ');
+        writeLines(item,10,false,5,currentIndent);
+      });
     });
 
     const totalPages = doc.getNumberOfPages();
     for (let page = 1; page <= totalPages; page += 1) {
-      doc.setPage(page);
-      doc.setFont("helvetica", "normal");
-      doc.setFontSize(8);
-      doc.setTextColor(100, 115, 128);
-      doc.text(`ALTITUDE CENTRO UNIVERSITÁRIO · ${page} de ${totalPages}`, width / 2, height - 9, { align: "center" });
+      doc.setPage(page); doc.setFont("helvetica", "normal"); doc.setFontSize(8); doc.setTextColor(100,115,128);
+      doc.text(`Altitude Centro Universitário - ${page} de ${totalPages}`, width / 2, height - 9, { align: "center" });
     }
-
     const filename = `material-${String(state.cursoAtual.titulo || "curso").normalize("NFD").replace(/[\u0300-\u036f]/g, "").replace(/[^a-zA-Z0-9]+/g, "-").replace(/^-|-$/g, "").toLowerCase()}.pdf`;
     doc.save(filename);
   } catch (error) {
-    console.error("Material completo:", error);
-    toast(`Não foi possível gerar o material: ${error.message}`, "error");
-  } finally {
-    if (button) { button.disabled = false; button.textContent = original; }
-  }
+    console.error("Material completo:", error); toast(`Não foi possível gerar o material: ${error.message}`, "error");
+  } finally { if (button) { button.disabled = false; button.textContent = original; } }
 }
 
 function renderModuloAtual() {
@@ -895,8 +917,7 @@ async function concluirModuloAtual() {
     if (state.moduloIndex < state.modulos.length - 1) {
       setTimeout(() => selecionarModulo(state.moduloIndex + 1), 350);
     } else if (clamp(data) >= 100) {
-      toast("Conteúdo concluído. Abrindo a avaliação...", "success");
-      setTimeout(() => abrirProva(), 650);
+      toast("Conteúdo concluído. A avaliação já está disponível no botão Fazer prova.", "success");
     }
   } catch (error) {
     toast(`Erro ao salvar progresso: ${error.message}`, "error");
@@ -922,12 +943,7 @@ async function abrirProva() {
   if (!state.cursoAtual) return;
   const resultado = melhorResultadoCurso(state.cursoAtual.id);
   if (resultado?.aprovado) {
-    try {
-      const { data, error } = await sb.rpc("obter_correcao_resultado_prova", { p_resultado_id: Number(resultado.id) });
-      mostrarResultadoProva(error ? resultado : { ...resultado, ...(data || {}) });
-    } catch (_) {
-      mostrarResultadoProva(resultado);
-    }
+    mostrarResultadoProva(resultado);
     return;
   }
 
@@ -1048,29 +1064,28 @@ async function finalizarProva() {
 function mostrarResultadoProva(resultado) {
   $("modalProva")?.setAttribute("aria-hidden", "false");
   const aprovado = Boolean(resultado.aprovado);
+  const total = Number(resultado.total_questoes || state.prova?.questoes?.length || 0);
+  const acertos = Number(resultado.acertos || 0);
+  const erros = Math.max(0, total - acertos);
+  const dataRealizacao = resultado.criado_em || resultado.realizado_em || resultado.finalizado_em;
   setText("quizTitle", "Resultado da prova");
   if ($("quizProgressBar")) $("quizProgressBar").style.width = "100%";
   $("quizBody").innerHTML = `
     <div class="quiz-result ${aprovado ? "approved" : "failed"}">
       <div class="result-icon">${aprovado ? "✓" : "↻"}</div>
-      <h3>${aprovado ? "Parabéns, você foi aprovado!" : "Continue estudando"}</h3>
+      <h3>${aprovado ? "Você foi aprovado" : "Nova tentativa disponível"}</h3>
       <strong>${Number(resultado.nota || 0)}%</strong>
+      <dl class="quiz-result-summary">
+        <div><dt>Acertos</dt><dd>${acertos}${total ? ` de ${total}` : ""}</dd></div>
+        <div><dt>Erros</dt><dd>${erros}</dd></div>
+        <div><dt>Situação</dt><dd>${aprovado ? "Aprovado" : "Reprovado"}</dd></div>
+        ${dataRealizacao ? `<div><dt>Realizada em</dt><dd>${new Date(dataRealizacao).toLocaleDateString("pt-BR")}</dd></div>` : ""}
+      </dl>
       <p>${aprovado
-        ? "Você já pode solicitar o certificado na aba Certificados. Após a liberação da gestão, o PDF ficará disponível."
-        : `Você acertou ${Number(resultado.acertos || 0)} de ${Number(resultado.total_questoes || 0)} questões. Revise o conteúdo e faça uma nova tentativa.`}</p>
+        ? "Você já pode solicitar o certificado na aba Certificados."
+        : "Revise o conteúdo e faça uma nova tentativa."}</p>
       <button class="primary-button" type="button" onclick="${aprovado ? "irParaCertificados()" : "refazerProva()"}">${aprovado ? "Solicitar certificado" : "Tentar novamente"}</button>
-    </div>
-    ${Array.isArray(resultado.correcao) && resultado.correcao.length ? `
-      <section class="quiz-corrections">
-        <div class="quiz-corrections-title"><span>Correção comentada</span><h3>Resoluções das questões</h3></div>
-        ${resultado.correcao.map((item, index) => `
-          <article class="quiz-correction ${item.correto ? "correct" : "incorrect"}">
-            <header><strong>Questão ${index + 1}</strong><span>${item.correto ? "Acertou" : "Revisar"}</span></header>
-            <p class="quiz-correction-question">${escapeHTML(item.enunciado || "")}</p>
-            <div class="quiz-correction-answer"><b>Sua resposta:</b> ${escapeHTML(item.resposta_aluno || "—")} · <b>Correta:</b> ${escapeHTML(item.resposta_correta || "—")} — ${escapeHTML(item.alternativa_correta || "")}</div>
-            <p class="quiz-correction-resolution"><b>Resolução:</b> ${escapeHTML(item.resolucao || "Resolução não cadastrada.")}</p>
-          </article>`).join("")}
-      </section>` : ""}`;
+    </div>`;
   $("quizCounter").textContent = aprovado ? "Aprovado" : "Nova tentativa disponível";
   $("btnQuestaoAnterior").style.display = "none";
   $("btnQuestaoProxima").style.display = "none";
@@ -1302,7 +1317,7 @@ function renderCertificados() {
       statusVisual = utilizadas > 0 ? "CONCLUÍDO" : "PENDENTE";
       help = reservadas > 0
         ? `${reservadas}h estão reservadas em uma solicitação.`
-        : "Não há saldo disponível neste curso. As horas já foram utilizadas ou ainda dependem de ajuste da gestão.";
+        : "Não há saldo disponível na sua carteira de horas.";
       actions = `<button class="secondary-button" type="button" disabled>Sem saldo disponível</button>`;
     }
 
@@ -1318,16 +1333,10 @@ function renderCertificados() {
         <div><span class="eyebrow">${escapeHTML(curso.categoria || "Certificação")}</span><h3>${escapeHTML(curso.titulo || "Curso")}</h3><p>${resultado ? `Melhor nota: ${Number(resultado.nota || 0)}%` : "Prova pendente"}</p></div>
         ${statusPill(statusVisual)}
       </div>
-      <div class="wallet-balance-grid">
-        <div><span>Validadas</span><strong>${validadas}h</strong></div>
-        <div><span>Disponíveis</span><strong>${saldo}h</strong></div>
-        <div><span>Em análise</span><strong>${reservadas}h</strong></div>
-        <div><span>Já usadas</span><strong>${utilizadas}h</strong></div>
-      </div>
       <div class="certificate-requirements">
         <div class="requirement ${progressoOk ? "ok" : ""}"><b>${progressoOk ? "✓" : "1"}</b><span>Conteúdo 100% concluído</span></div>
         <div class="requirement ${provaOk ? "ok" : ""}"><b>${provaOk ? "✓" : "2"}</b><span>Prova com nota mínima de ${notaMinima}%</span></div>
-        <div class="requirement ${validadas > 0 ? "ok" : ""}"><b>${validadas > 0 ? "✓" : "3"}</b><span>Saldo disponível na carteira</span></div>
+        <div class="requirement ${saldo >= 5 ? "ok" : ""}"><b>${saldo >= 5 ? "✓" : "3"}</b><span>Saldo disponível na carteira global</span></div>
       </div>
       <div class="certificate-card-footer"><span class="certificate-code">${escapeHTML(help)}</span><div class="certificate-actions">${actions}</div></div>
       ${avaliacaoHtml}

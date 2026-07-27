@@ -5,6 +5,7 @@
   const esc = (v='') => String(v ?? '').replaceAll('&','&amp;').replaceAll('<','&lt;').replaceAll('>','&gt;').replaceAll('"','&quot;').replaceAll("'",'&#039;');
   const norm = (v='') => String(v).normalize('NFD').replace(/[\u0300-\u036f]/g,'').toLowerCase();
   const n = (v) => Math.max(0, Number(v || 0));
+  const signed = (v) => Number(v || 0);
   const dateBR = (v, time=false) => {
     if (!v) return '—';
     const d = /^\d{4}-\d{2}-\d{2}$/.test(String(v)) ? new Date(`${v}T12:00:00`) : new Date(v);
@@ -17,7 +18,7 @@
   const state = {
     certificados: [], carteiras: [], alunos: new Map(), cursos: new Map(),
     busca: '', filtro: 'TODOS', processadosBusca: '', processadosStatus: 'TODOS',
-    certAtual: null, carteiraAtual: null, pdfEditId: null, loading: false, whatsapp: '5591983640933'
+    certAtual: null, carteiraAtual: null, pdfEditId: null, loading: false, whatsapp: '5591983640933', hoursMode: 'add'
   };
 
   function toast(message, error=false){
@@ -81,9 +82,9 @@
     if(!rows.length){body.innerHTML='<tr><td colspan="8">Nenhum aluno encontrado.</td></tr>';return;}
     body.innerHTML=rows.map(x=>`<tr>
       <td data-label="Aluno"><div class="cert-admin-student"><strong>${esc(x.aluno_nome||'Aluno')}</strong><small>RA ${esc(x.aluno_ra||'—')} · CPF ${esc(x.aluno_cpf||'—')}</small></div></td>
-      <td data-label="Cadastro">${dateBR(x.cadastrado_em)}</td>
+      <td data-label="Cadastro" class="no-wrap">${dateBR(x.data_inicio_contagem||x.cadastrado_em)}</td>
       <td data-label="Horas automáticas"><strong>${n(x.horas_automaticas)}h</strong><small class="table-subline">8h por dia desde o cadastro</small></td>
-      <td data-label="Ajustes"><strong>${n(x.horas_adicionais)}h</strong></td>
+      <td data-label="Ajustes"><strong class="${signed(x.horas_adicionais)<0?'negative-value':''}">${signed(x.horas_adicionais)>0?'+':''}${signed(x.horas_adicionais)}h</strong></td>
       <td data-label="Reservadas">${n(x.horas_reservadas)}h</td><td data-label="Utilizadas">${n(x.horas_utilizadas)}h</td>
       <td data-label="Saldo"><strong>${n(x.saldo_disponivel)}h</strong></td>
       <td data-label="Ações"><button type="button" data-wallet-v34="${esc(x.aluno_id)}">Gerenciar horas</button></td>
@@ -138,23 +139,56 @@
     if($('dashCertPendentes')) $('dashCertPendentes').textContent=count('PENDENTE')+count('AGUARDANDO_HORAS');
   }
 
+  function setHoursMode(mode){
+    state.hoursMode=mode==='remove'?'remove':'add';
+    $('horasModoAdicionar')?.classList.toggle('active',state.hoursMode==='add');
+    $('horasModoRetirar')?.classList.toggle('active',state.hoursMode==='remove');
+    $('horasConfirmarAjuste').textContent=state.hoursMode==='remove'?'Confirmar retirada':'Confirmar adição';
+    updateWalletPreview();
+  }
+  function updateWalletPreview(){
+    const x=state.carteiraAtual;if(!x)return;
+    let qty=Math.max(0,Math.round(n($('horasGestaoQuantidade')?.value)/5)*5);
+    if($('horasGestaoQuantidade'))$('horasGestaoQuantidade').value=String(qty);
+    const delta=state.hoursMode==='remove'?-qty:qty;
+    const currentAdditional=signed(x.horas_adicionais);
+    const nextAdditional=currentAdditional+delta;
+    const automatic=n(x.horas_automaticas),reserved=n(x.horas_reservadas),used=n(x.horas_utilizadas);
+    const current=Math.max(0,automatic+currentAdditional-reserved-used);
+    const next=automatic+nextAdditional-reserved-used;
+    $('horasGestaoTotal').value=String(nextAdditional);
+    $('horasSaldoAtual').textContent=`${current}h`;
+    $('horasSaldoDepois').textContent=`${Math.max(0,next)}h`;
+    $('horasSaldoDepois').classList.toggle('negative-value',next<0);
+    $('horasGestaoAlerta').textContent=next<0?'A retirada ultrapassa o saldo disponível. Reduza a quantidade.':qty===0?'Informe uma quantidade em múltiplos de 5 horas.':`${state.hoursMode==='remove'?'Retirada':'Adição'} de ${qty}h. Ajuste total da gestão após salvar: ${nextAdditional>0?'+':''}${nextAdditional}h.`;
+  }
   function openWallet(id){
-    const x=state.carteiras.find(r=>r.aluno_id===id); if(!x) return toast('Carteira não encontrada.',true);
-    state.carteiraAtual=x;
-    $('horasModalTitulo').textContent=x.aluno_nome||'Gerenciar horas';
-    $('horasModalResumo').innerHTML=`<article><span>Cadastro</span><strong>${dateBR(x.cadastrado_em)}</strong></article><article><span>Horas automáticas</span><strong>${n(x.horas_automaticas)}h</strong></article><article><span>Ajustes da gestão</span><strong>${n(x.horas_adicionais)}h</strong></article><article><span>Reservadas</span><strong>${n(x.horas_reservadas)}h</strong></article><article><span>Utilizadas</span><strong>${n(x.horas_utilizadas)}h</strong></article><article><span>Saldo disponível</span><strong>${n(x.saldo_disponivel)}h</strong></article>`;
-    $('horasGestaoTotal').value=String(n(x.horas_adicionais));
-    $('horasGestaoExcepcional').checked=true;
-    $('horasGestaoJustificativa').value=x.justificativa_gestor||'';
-    $('horasGestaoAlerta').className='hours-manager-alert ok';
-    $('horasGestaoAlerta').textContent=`O aluno já possui ${n(x.horas_automaticas)}h automáticas. Este campo adiciona horas extras à carteira.`;
+    const x=state.carteiras.find(r=>r.aluno_id===id); if(!x) return;
+    state.carteiraAtual=x; state.hoursMode='add';
+    $('horasModalTitulo').textContent=x.aluno_nome||'Carteira do aluno';
+    $('horasModalResumo').innerHTML=`<article><span>Cadastro</span><strong>${dateBR(x.data_inicio_contagem||x.cadastrado_em)}</strong></article><article><span>Horas automáticas</span><strong>${n(x.horas_automaticas)}h</strong></article><article><span>Ajustes da gestão</span><strong>${signed(x.horas_adicionais)>0?'+':''}${signed(x.horas_adicionais)}h</strong></article><article><span>Reservadas</span><strong>${n(x.horas_reservadas)}h</strong></article><article><span>Utilizadas</span><strong>${n(x.horas_utilizadas)}h</strong></article><article><span>Saldo disponível</span><strong>${n(x.saldo_disponivel)}h</strong></article>`;
+    $('horasGestaoQuantidade').value='0';
+    $('horasGestaoTotal').value=String(signed(x.horas_adicionais));
+    $('horasDataInicio').value=isoDate(x.data_inicio_contagem||x.cadastrado_em);
+    $('horasGestaoJustificativa').value='';
+    setHoursMode('add'); updateWalletPreview();
     $('modalHorasGestao').setAttribute('aria-hidden','false');
   }
   async function saveWallet(e){
     e.preventDefault(); const x=state.carteiraAtual; if(!x) return;
-    const hours=Math.max(0,Math.round(n($('horasGestaoTotal').value)/5)*5), reason=$('horasGestaoJustificativa').value.trim();
+    updateWalletPreview();
+    const total=Math.round(signed($('horasGestaoTotal').value)/5)*5;
+    const reason=$('horasGestaoJustificativa').value.trim();
+    const date=$('horasDataInicio').value||null;
+    const next=n(x.horas_automaticas)+total-n(x.horas_reservadas)-n(x.horas_utilizadas);
+    if(!reason)return toast('Informe a justificativa da gestão.',true);
+    if(next<0)return toast('O ajuste deixaria a carteira com saldo negativo.',true);
     const btn=e.currentTarget.querySelector('button[type="submit"]');btn.disabled=true;
-    try{const {error}=await sb.rpc('gestor_definir_horas_aluno_v34',{p_aluno_id:x.aluno_id,p_horas_adicionais:hours,p_justificativa:reason||null});if(error)throw error;$('modalHorasGestao').setAttribute('aria-hidden','true');toast('Carteira atualizada.');await load();}catch(err){toast(err.message,true);}finally{btn.disabled=false;}
+    try{
+      const {error}=await sb.rpc('gestor_ajustar_carteira_aluno_v34',{p_aluno_id:x.aluno_id,p_horas_adicionais:total,p_justificativa:reason,p_data_inicio_contagem:date});
+      if(error)throw error;
+      $('modalHorasGestao').setAttribute('aria-hidden','true');toast('Carteira atualizada.');await load();
+    }catch(err){toast(err.message,true);}finally{btn.disabled=false;}
   }
 
   function openWhatsapp(id){
@@ -237,8 +271,12 @@
     $('btnAtualizarCertificados')?.addEventListener('click',()=>load());
     $('formGerenciarHoras')?.addEventListener('submit',saveWallet);
     $('formAjustarCertificadoV34')?.addEventListener('submit',saveCertificateAdjustment);
-    $('horasMenos5')?.addEventListener('click',()=>{$('horasGestaoTotal').value=String(Math.max(0,n($('horasGestaoTotal').value)-5));});
-    $('horasMais5')?.addEventListener('click',()=>{$('horasGestaoTotal').value=String(n($('horasGestaoTotal').value)+5);});
+    $('horasModoAdicionar')?.addEventListener('click',()=>setHoursMode('add'));
+    $('horasModoRetirar')?.addEventListener('click',()=>setHoursMode('remove'));
+    $('horasMenos5')?.addEventListener('click',()=>{const i=$('horasGestaoQuantidade');i.value=String(Math.max(0,n(i.value)-5));updateWalletPreview();});
+    $('horasMais5')?.addEventListener('click',()=>{const i=$('horasGestaoQuantidade');i.value=String(n(i.value)+5);updateWalletPreview();});
+    $('horasGestaoQuantidade')?.addEventListener('input',updateWalletPreview);
+    $('horasDataInicio')?.addEventListener('change',updateWalletPreview);
     ['horasFecharModal','horasCancelar'].forEach(id=>$(id)?.addEventListener('click',()=>$('modalHorasGestao').setAttribute('aria-hidden','true')));
     $('certFecharModal')?.addEventListener('click',()=>$('modalCertificadoGestao').setAttribute('aria-hidden','true'));
     document.addEventListener('click',e=>{

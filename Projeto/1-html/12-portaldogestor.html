@@ -18,12 +18,12 @@
   <script src="../4-java/altitude-dialogs.js?v=17"></script>
   <script src="../4-java/supabase-init.js?v=17" defer></script>
   <script src="../4-java/gestor-guard.js?v=17" defer></script>
-  <script src="../4-java/12-portaldogestor.js?v=32.1" defer></script>
-  <script src="../4-java/latex-importer.js?v=33" defer></script>
+  <script src="../4-java/12-portaldogestor.js?v=34.1" defer></script>
+  <script src="../4-java/latex-importer.js?v=34.1" defer></script>
   <script src="../4-java/gestor-enhancements.js?v=33" defer></script>
   <script src="../4-java/gestor-acessos.js?v=17" defer></script>
-  <script src="../4-java/certificado-pdf-v27.js?v=33" defer></script>
-  <script src="../4-java/gestor-certificados.js?v=33" defer></script>
+  <script src="../4-java/certificado-pdf-v27.js?v=34.1" defer></script>
+  <script src="../4-java/gestor-certificados.js?v=34.1" defer></script>
   <link rel="stylesheet" href="../2-css/base-portal.css?v=29">
   <link rel="stylesheet" href="../2-css/06-responsive.css?v=29">
   <link rel="stylesheet" href="../2-css/15-ajustes-finais.css?v=29">
@@ -35,6 +35,7 @@
   <link rel="stylesheet" href="../2-css/23-v32-integrado.css?v=33">
   <link rel="stylesheet" href="../2-css/24-v33-final.css?v=33">
   <link rel="stylesheet" href="../2-css/25-v34-final.css?v=34">
+  <link rel="stylesheet" href="../2-css/26-v34-emissao.css?v=34.1">
 </head>
 
 <body class="gestor-auth-pending">
@@ -50,13 +51,14 @@
         <button class="nav-item" data-min-level="2" data-tab="cursos" onclick="abrirAba('cursos')"><span>▣</span> Cursos e conteúdos</button>
         <button class="nav-item" data-min-level="2" data-tab="alunos" onclick="abrirAba('alunos')"><span>♟</span> Alunos</button>
         <button class="nav-item" data-min-level="2" data-tab="certificados-gestao" onclick="abrirAba('certificados-gestao')"><span>✓</span> Certificados</button>
+        <button class="nav-item" data-min-level="2" data-tab="pagamentos-gestao" onclick="abrirAba('pagamentos-gestao')"><span>R$</span> Pagamentos</button>
+        <button class="nav-item" data-min-level="3" data-tab="tipos-curso" onclick="abrirAba('tipos-curso')"><span>▤</span> Tipos de curso</button>
         <button class="nav-item" data-min-level="4" data-tab="usuarios" onclick="abrirAba('usuarios')"><span>♙</span> Equipe e acessos</button>
         <button class="nav-item" data-min-level="1" data-tab="chamados" onclick="abrirAba('chamados')"><span>✉</span> Atendimento</button>
         <button class="nav-item" data-min-level="3" data-tab="comercial" onclick="abrirAba('comercial')"><span>◆</span> Comercial e promoções</button>
       </nav>
       <div class="sidebar-bottom">
         <div class="manager-identity"><span>GESTOR LOGADO</span><strong id="gestorNomeAtual">GESTOR ALTITUDE</strong><small id="gestorIdAtual">—</small></div>
-        <a href="2-profissional.html" target="_blank" rel="noopener">Ver catálogo público ↗</a>
         <button type="button" id="btnSairGestor">Sair</button>
       </div>
     </aside>
@@ -67,7 +69,7 @@
       <header class="gestor-topbar">
         <button class="mobile-menu" id="btnMenuGestor" type="button" aria-label="Abrir menu">☰</button>
         <div><p class="eyebrow">ALTITUDE CENTRO UNIVERSITÁRIO</p><h1 id="gestorPageTitle">Visão geral</h1></div>
-        <div class="topbar-actions"><span id="gestorHoje"></span><a href="2-profissional.html" target="_blank" rel="noopener">Ver site</a></div>
+        <div class="topbar-actions"><span id="gestorHoje"></span></div>
       </header>
 
       <section id="dashboard" class="aba ativa" data-min-level="1">
@@ -76,7 +78,7 @@
           <h2>Gerencie a jornada completa do aluno</h2>
           <p>Crie o curso, organize os materiais, revise a avaliação e publique. Depois acompanhe matrículas, progresso e certificados.</p>
           <div class="welcome-actions">
-            <button type="button" onclick="abrirAba('curso-ia')">✦ Criador de cursos</button>
+            <button type="button" onclick="abrirAba('curso-ia')">Criador de cursos</button>
             <button type="button" class="secondary" onclick="abrirAba('cursos')">Gerenciar cursos</button>
           </div>
         </div>
@@ -103,7 +105,7 @@
       </section>
 
       <section id="alunos" class="aba" data-min-level="2">
-        <h2>👨‍🎓 Gestão de Alunos</h2>
+        <h2>Gestão de alunos</h2>
         <div class="toolbar">
           <input id="alnBusca" type="search" placeholder="Buscar por nome ou RA…">
           <select id="alnStatus">
@@ -852,20 +854,28 @@
           <div class="section-heading"><div><span>Carteira de horas</span><h3 id="horasModalTitulo">Gerenciar horas</h3></div><button type="button" id="horasFecharModal">Fechar</button></div>
           <div id="horasModalResumo" class="certificate-admin-summary"></div>
           <form id="formGerenciarHoras" class="hours-manager-form">
-            <label>Horas adicionais liberadas pela gestão
+            <div class="hours-adjust-mode" role="group" aria-label="Tipo de ajuste">
+              <button type="button" id="horasModoAdicionar" class="active" data-hours-mode="add">Adicionar horas</button>
+              <button type="button" id="horasModoRetirar" data-hours-mode="remove">Retirar horas</button>
+            </div>
+            <label>Quantidade do ajuste
               <div class="hours-stepper">
-                <button type="button" id="horasMenos5" aria-label="Retirar 5 horas">− 5h</button>
-                <input id="horasGestaoTotal" type="number" min="0" step="5" value="0" required inputmode="numeric" aria-label="Total de horas validadas">
-                <button type="button" id="horasMais5" aria-label="Adicionar 5 horas">+ 5h</button>
+                <button type="button" id="horasMenos5" aria-label="Diminuir 5 horas">− 5h</button>
+                <input id="horasGestaoQuantidade" type="number" min="0" step="5" value="0" required inputmode="numeric" aria-label="Quantidade do ajuste">
+                <button type="button" id="horasMais5" aria-label="Aumentar 5 horas">+ 5h</button>
               </div>
-              <small class="field-hint">Informe o ajuste adicional de 5 em 5. As horas automáticas desde o cadastro são calculadas separadamente e não são apagadas.</small>
+              <input id="horasGestaoTotal" type="hidden" value="0">
             </label>
-            <label class="exception-check"><input id="horasGestaoExcepcional" type="checkbox"> Registrar ajuste manual de horas</label>
+            <label>Data inicial da contagem automática
+              <input id="horasDataInicio" type="date">
+              <small class="field-hint">Corrija esta data quando o cadastro antigo estiver gerando horas indevidas.</small>
+            </label>
             <label>Justificativa da gestão
-              <textarea id="horasGestaoJustificativa" rows="4" placeholder="Descreva o motivo do ajuste realizado na carteira do aluno."></textarea>
+              <textarea id="horasGestaoJustificativa" rows="4" required placeholder="Ex.: correção da data de cadastro ou retirada de lançamento indevido."></textarea>
             </label>
+            <div class="hours-adjust-preview"><article><span>Saldo atual</span><strong id="horasSaldoAtual">0h</strong></article><article><span>Saldo após o ajuste</span><strong id="horasSaldoDepois">0h</strong></article></div>
             <div class="hours-manager-alert" id="horasGestaoAlerta"></div>
-            <div class="actions"><button type="button" class="ghost" id="horasCancelar">Cancelar</button><button type="submit">Salvar horas</button></div>
+            <div class="actions"><button type="button" class="ghost" id="horasCancelar">Cancelar</button><button type="submit" id="horasConfirmarAjuste">Confirmar ajuste</button></div>
           </form>
         </div>
       </div>
@@ -939,14 +949,28 @@
       </div>
 
 
+
+      <section id="pagamentos-gestao" class="aba" data-min-level="2">
+        <div class="page-heading"><div><span>Controle financeiro</span><h2>Pagamentos</h2><p>Confira os pagamentos de certificados e packs e sincronize a liberação acadêmica.</p></div><button type="button" class="primary-action" id="btnAtualizarPagamentosV34">Atualizar</button></div>
+        <div class="toolbar"><input id="pagamentosBuscaV34" type="search" placeholder="Buscar por aluno, RA, CPF, curso ou protocolo"><select id="pagamentosStatusV34"><option value="TODOS">Todos os status</option><option value="AGUARDANDO_PAGAMENTO">Aguardando pagamento</option><option value="PAGAMENTO_INFORMADO">Pagamento informado</option><option value="PAGO">Pago</option><option value="ISENTO">Isento</option><option value="CANCELADO">Cancelado</option></select></div>
+        <div class="section-heading"><div><span>Certificados</span><h3>Pagamentos de certificados</h3><p>Ao confirmar, a solicitação ficará pronta para liberação na aba Certificados.</p></div></div>
+        <div id="listaPagamentosCertificadosGestao" class="commercial-card-grid"></div>
+        <div class="section-heading"><div><span>Packs</span><h3>Pagamentos de packs</h3><p>O pack libera somente a quantidade adquirida; o aluno escolhe os cursos depois.</p></div></div>
+        <div id="listaPacksPagamentosGestao" class="commercial-card-grid"></div>
+      </section>
+
+      <section id="tipos-curso" class="aba" data-min-level="3">
+        <div class="page-heading"><div><span>Catálogo público</span><h2>Tipos de curso</h2><p>Crie, edite e controle a visibilidade e as inscrições de cada tipo de formação.</p></div><button type="button" class="primary-action" id="btnNovoTipoCursoV34">Novo tipo</button></div>
+        <div id="listaTiposCursoGestao" class="commercial-card-grid"></div>
+      </section>
+
       <section id="comercial" class="aba" data-min-level="3">
-        <div class="page-heading"><div><span>Gestão comercial</span><h2>Comercial e promoções</h2><p>Configure o valor por certificado, packs, cupons, anúncios e visibilidade dos tipos de curso.</p></div><button type="button" class="primary-action" id="btnComercialAtualizar">Atualizar</button></div>
+        <div class="page-heading"><div><span>Gestão comercial</span><h2>Comercial e promoções</h2><p>Configure o valor por certificado, cupons, anúncios e packs promocionais.</p></div><button type="button" class="primary-action" id="btnComercialAtualizar">Atualizar</button></div>
         <nav class="v34-subtabs" aria-label="Seções comerciais">
           <button type="button" class="active" data-commercial-tab="config">Configurações</button>
           <button type="button" data-commercial-tab="cupons">Cupons</button>
           <button type="button" data-commercial-tab="promocoes">Promoções e novidades</button>
           <button type="button" data-commercial-tab="packs">Packs</button>
-          <button type="button" data-commercial-tab="tipos">Tipos de curso</button>
         </nav>
         <div class="commercial-panel active" data-commercial-panel="config">
           <form id="formConfiguracaoComercial" class="surface-admin-form">
@@ -967,20 +991,16 @@
         <div class="commercial-panel" data-commercial-panel="packs">
           <div class="section-heading"><div><span>Quantidade</span><h3>Packs</h3><p>O pack define somente a quantidade de certificados e o valor. O aluno escolhe os cursos depois.</p></div><button type="button" id="btnNovoPack">+ Novo pack</button></div>
           <div id="listaPacksGestao" class="commercial-card-grid"></div>
-          <div class="section-heading pack-payment-heading"><div><span>Pagamentos</span><h3>Solicitações de packs</h3><p>Confirme o pagamento para liberar automaticamente a quantidade comprada ao aluno.</p></div></div>
-          <div id="listaPacksPagamentosGestao" class="commercial-card-grid"></div>
-        </div>
-        <div class="commercial-panel" data-commercial-panel="tipos">
-          <div class="section-heading"><div><span>Catálogo público</span><h3>Tipos de curso</h3><p>Controle quais formações aparecem no site. Cursos técnicos permanecem ocultos até a autorização da instituição.</p></div></div>
-          <div id="listaTiposCursoGestao" class="commercial-card-grid"></div>
         </div>
       </section>
 
       <div class="modal" id="modalCupomV34" aria-hidden="true"><div class="modal__sheet"><div class="section-heading"><div><span>Desconto</span><h3 id="cupomModalTitulo">Novo cupom</h3></div><button type="button" data-close-v34="modalCupomV34">Fechar</button></div><form id="formCupomV34" class="surface-admin-form"><input type="hidden" id="cupomId"><div class="grid2"><label>Código<input id="cupomCodigo" maxlength="30" required></label><label>Aplicação<select id="cupomAplicacao"><option value="CERTIFICADO">Certificado</option><option value="PACK">Pack</option><option value="AMBOS">Certificado e pack</option></select></label></div><div class="grid2"><label>Tipo<select id="cupomTipo"><option value="PERCENTUAL">Percentual</option><option value="FIXO">Valor fixo</option><option value="GRATUITO">Gratuito</option></select></label><label>Valor<input id="cupomValor" type="number" min="0" step="0.01"></label></div><div class="grid2"><label>Início<input id="cupomInicio" type="datetime-local"></label><label>Fim<input id="cupomFim" type="datetime-local"></label></div><div class="grid2"><label>Limite total de usos<input id="cupomLimite" type="number" min="0"></label><label>Usos por aluno<input id="cupomLimiteAluno" type="number" min="1" value="1"></label></div><label><input id="cupomAtivo" type="checkbox" checked> Cupom ativo</label><button type="submit">Salvar cupom</button></form></div></div>
       <div class="modal" id="modalPromocaoV34" aria-hidden="true"><div class="modal__sheet"><div class="section-heading"><div><span>Pop-up</span><h3 id="promocaoModalTitulo">Novo anúncio</h3></div><button type="button" data-close-v34="modalPromocaoV34">Fechar</button></div><form id="formPromocaoV34" class="surface-admin-form"><input type="hidden" id="promocaoId"><label>Título<input id="promocaoTitulo" required></label><label>Descrição<textarea id="promocaoDescricao" rows="4"></textarea></label><div class="grid2"><label>Imagem<input id="promocaoImagem" type="file" accept="image/*"></label><label>Endereço exclusivo<input id="promocaoSlug" placeholder="pack-3-certificados"></label></div><div class="grid2"><label>Texto do botão<input id="promocaoBotao" value="Ver promoção"></label><label>Link do botão<input id="promocaoLink"></label></div><div class="grid2"><label>Início<input id="promocaoInicio" type="datetime-local"></label><label>Fim<input id="promocaoFim" type="datetime-local"></label></div><div class="grid2"><label>Público<select id="promocaoPublico"><option value="TODOS">Todos os alunos</option><option value="MATRICULADOS">Alunos matriculados</option><option value="APROVADOS">Alunos aprovados</option><option value="SEM_CERTIFICADO">Sem certificado emitido</option></select></label><label>Frequência<select id="promocaoFrequencia"><option value="UMA_VEZ">Mostrar uma vez</option><option value="DIARIA">Uma vez por dia</option><option value="CADA_ACESSO">Em cada acesso</option></select></label></div><label>Prioridade<input id="promocaoPrioridade" type="number" min="0" value="0"></label><label><input id="promocaoAtiva" type="checkbox" checked> Anúncio ativo</label><button type="submit">Salvar anúncio</button></form></div></div>
       <div class="modal" id="modalPackV34" aria-hidden="true"><div class="modal__sheet"><div class="section-heading"><div><span>Oferta</span><h3 id="packModalTitulo">Novo pack</h3></div><button type="button" data-close-v34="modalPackV34">Fechar</button></div><form id="formPackV34" class="surface-admin-form"><input type="hidden" id="packId"><label>Nome<input id="packNome" required></label><label>Descrição<textarea id="packDescricao" rows="3"></textarea></label><div class="grid2"><label>Quantidade de certificados<input id="packQuantidade" type="number" min="1" required></label><label>Valor do pack<input id="packValor" type="number" min="0" step="0.01" required></label></div><label>Imagem<input id="packImagem" type="file" accept="image/*"></label><label><input id="packAtivo" type="checkbox" checked> Pack ativo</label><button type="submit">Salvar pack</button></form></div></div>
+
+      <div class="modal" id="modalTipoCursoV34" aria-hidden="true"><div class="modal__sheet"><div class="section-heading"><div><span>Catálogo</span><h3 id="tipoCursoModalTitulo">Novo tipo de curso</h3></div><button type="button" data-close-emissao="modalTipoCursoV34">Fechar</button></div><form id="formTipoCursoV34" class="surface-admin-form"><input id="tipoCursoCodigo" type="hidden"><label>Nome<input id="tipoCursoNome" required></label><label>Descrição<textarea id="tipoCursoDescricao" rows="3"></textarea></label><div class="grid2"><label>Ordem de exibição<input id="tipoCursoOrdem" type="number" min="0" value="0"></label><label>Código interno<input id="tipoCursoCodigoNovo" maxlength="30" placeholder="PROFISSIONAL"></label></div><label><input id="tipoCursoVisivel" type="checkbox"> Mostrar no site público</label><label><input id="tipoCursoInscricao" type="checkbox"> Permitir inscrições</label><button type="submit">Salvar tipo de curso</button></form></div></div>
       <section id="chamados" class="aba" data-min-level="1">
-        <h2>📨 Gestão de Chamados</h2>
+        <h2>Gestão de chamados</h2>
         <div class="kpis-ch">
           <div class="kpi-ch">
             <span class="label">Pendentes</span>
@@ -1107,6 +1127,7 @@
   </div>
   <script src="../4-java/06-responsive.js?v=17"></script>
   <script src="../4-java/15-ajustes-finais.js?v=17" defer></script>
-  <script src="../4-java/v34-gestor.js?v=34" defer></script>
+  <script src="../4-java/v34-gestor.js?v=34.1" defer></script>
+  <script src="../4-java/v34-emissao-gestor.js?v=34.1" defer></script>
 </body>
 </html>

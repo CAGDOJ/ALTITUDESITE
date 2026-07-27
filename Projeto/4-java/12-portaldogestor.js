@@ -377,7 +377,7 @@ function abrirModalSenhaAluno(aluno) {
   senhaAlunoAtual = aluno;
   const modal = $('#modalSenhaAluno');
   $('#senhaAlunoId').value = aluno.user_id || aluno.id || '';
-  $('#senhaAlunoNome').textContent = String(aluno.nome || 'Aluno').toUpperCase();
+  $('#senhaAlunoNome').textContent = String(aluno.nome || 'Aluno');
   $('#senhaAlunoEmail').textContent = aluno.email || 'E-mail não informado';
   $('#senhaAlunoNova').value = gerarSenhaTemporariaAluno();
   $('#senhaAlunoResultado').hidden = true;
@@ -406,21 +406,31 @@ async function redefinirSenhaAluno(event) {
   const original = button?.textContent || 'Salvar nova senha';
   if (button) { button.disabled = true; button.textContent = 'Salvando...'; }
   try {
-    const { data, error } = await sb.functions.invoke('gerenciar-gestor', {
-      body: {
-        acao: 'redefinir_senha_aluno',
-        aluno_id: userId,
-        nova_senha: novaSenha
-      }
-    });
-    if (error) throw error;
-    if (!data?.ok) throw new Error(data?.error || 'Não foi possível redefinir a senha.');
+    const { data: sessionData, error: sessionError } = await sb.auth.getSession();
+    if (sessionError || !sessionData?.session?.access_token) throw new Error('Sua sessão de gestão expirou. Entre novamente.');
+    const functionUrl = `${String(sb.supabaseUrl || 'https://qwidlndoyhzvsrggwsba.supabase.co').replace(/\/$/,'')}/functions/v1/gerenciar-gestor`;
+    let response;
+    try {
+      response = await fetch(functionUrl, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${sessionData.session.access_token}`,
+          'apikey': sb.supabaseKey || 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJIUzI1NiIsInJlZiI6InF3aWRsbmRveWh6dnNyZ2d3c2JhIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzY2NDY4MjUsImV4cCI6MjA5MjIyMjgyNX0.CPcmbAC9KXLgdLVoAY_lRqjFyVzLLMiv38vKR2DFJeE'
+        },
+        body: JSON.stringify({ acao:'redefinir_senha_aluno', aluno_id:userId, nova_senha:novaSenha })
+      });
+    } catch (_) {
+      throw new Error('A função de redefinição não respondeu. Publique a Edge Function gerenciar-gestor no Supabase.');
+    }
+    const data = await response.json().catch(() => ({}));
+    if (!response.ok || !data?.ok) throw new Error(data?.error || `Falha na função de redefinição (${response.status}).`);
     $('#senhaAlunoResultadoCodigo').textContent = novaSenha;
     $('#senhaAlunoResultado').hidden = false;
     alert('Senha redefinida. Copie a senha temporária e entregue ao aluno por um canal seguro.');
   } catch (error) {
     console.error('Redefinição de senha:', error);
-    alert(`Não foi possível redefinir a senha: ${error.message}`);
+    alert(`Não foi possível redefinir a senha. ${error.message}`);
   } finally {
     if (button) { button.disabled = false; button.textContent = original; }
   }

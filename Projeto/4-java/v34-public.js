@@ -4,7 +4,8 @@
     'Instituto de Educação e Tecnologia Altitude',
     'INSTITUTO DE EDUCAÇÃO E TECNOLOGIA ALTITUDE',
     'Instituição Altitude',
-    'INSTITUIÇÃO ALTITUDE'
+    'INSTITUIÇÃO ALTITUDE',
+    'ALTITUDE CENTRO UNIVERSITÁRIO'
   ];
 
   function normalizeInstitutionName(root = document.body) {
@@ -14,7 +15,7 @@
     while (walker.nextNode()) nodes.push(walker.currentNode);
     nodes.forEach((node) => {
       let text = node.nodeValue || '';
-      OLD_NAMES.forEach((oldName) => { text = text.replaceAll(oldName, 'ALTITUDE CENTRO UNIVERSITÁRIO'); });
+      OLD_NAMES.forEach((oldName) => { text = text.replaceAll(oldName, 'Altitude Centro Universitário'); });
       node.nodeValue = text;
     });
   }
@@ -69,11 +70,62 @@
     });
   }
 
+  function naturalizeLabels() {
+    document.querySelectorAll('.home-eyebrow,.catalog-kicker,.validation-eyebrow,.eyebrow,.section-kicker').forEach((el) => {
+      const text=(el.textContent||'').trim().toLocaleLowerCase('pt-BR');
+      if(text) el.textContent=text.charAt(0).toLocaleUpperCase('pt-BR')+text.slice(1);
+    });
+  }
+
+  function pageTitle() {
+    const file=(location.pathname.split('/').pop()||'index.html').toLowerCase();
+    const map={
+      'index.html':'Início','1-index.html':'Início','2-profissional.html':'Cursos','3-tecnico.html':'Cursos técnicos','3-t#u00e9cnico.html':'Cursos técnicos',
+      '4-login.html':'Acessar','5-cadastro.html':'Cadastrar','6-sobrenos.html':'Sobre Nós','7-ajuda.html':'Ajuda','8-certificados.html':'Validar Certificado',
+      '9-contrato.html':'Termos de Contrato','10-politicadeprivacidade.html':'Política de Privacidade','13-validar-carteirinha.html':'Validar Carteirinha','14-login-gestor.html':'Acesso da Gestão'
+    };
+    document.title=`${map[file]||'Altitude'} - Altitude`;
+    const current=map[file];
+    document.querySelectorAll('.old-header .navbar a,.dropdown-menu a').forEach(a=>{
+      const label=(a.textContent||'').trim();
+      if(current && ((current==='Início'&&label==='Início')||(current.startsWith('Cursos')&&label==='Cursos')||(current==='Validar Certificado'&&label==='Certificados')||(current==='Sobre Nós'&&label==='Sobre Nós')||(current==='Ajuda'&&label==='Ajuda'))){a.setAttribute('aria-current','page');}
+      else a.removeAttribute('aria-current');
+    });
+  }
+
+  function normalizeCourseFinder(){
+    const section=document.querySelector('.course-finder-section');
+    if(!section)return;
+    const update=()=>{
+      const tabs=[...section.querySelectorAll('[data-tipo],.course-type-tab')].filter(x=>!x.hidden&&x.getAttribute('aria-hidden')!=='true');
+      section.classList.toggle('single-visible-type',tabs.length===1);
+      if(tabs.length===1&&!tabs[0].classList.contains('active')) tabs[0].click();
+    };
+    update();
+    new MutationObserver(update).observe(section,{subtree:true,attributes:true,attributeFilter:['hidden','aria-hidden','class']});
+  }
+
+  function ensureCnpjLink(){
+    document.querySelectorAll('footer a').forEach(a=>{
+      if(/consultar cnpj/i.test(a.textContent||''))a.remove();
+    });
+    const groups=[...document.querySelectorAll('footer ul,footer .footer-links,footer .links-rapidos')];
+    const group=groups.find(g=>/validar certificado|política de privacidade|registro mec/i.test(g.textContent||''));
+    if(group&&!group.querySelector('a[href*="cnpjreva/comprovante"]')){
+      const a=document.createElement('a');a.href='https://solucoes.receita.fazenda.gov.br/Servicos/cnpjreva/comprovante';a.target='_blank';a.rel='noopener';a.textContent='Comprovante de Inscrição no CNPJ';
+      if(group.tagName==='UL'){const li=document.createElement('li');li.appendChild(a);group.appendChild(li);}else group.appendChild(a);
+    }
+  }
+
   function start() {
     normalizeInstitutionName();
     cleanPublicExplanations();
     installEnrollmentGuard();
     applyCourseTypeVisibility();
+    naturalizeLabels();
+    pageTitle();
+    normalizeCourseFinder();
+    ensureCnpjLink();
   }
 
   document.addEventListener('DOMContentLoaded', start);

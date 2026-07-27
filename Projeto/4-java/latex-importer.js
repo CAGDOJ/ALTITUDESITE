@@ -49,7 +49,7 @@ Continue o conteúdo aqui.
 % ==================================================
 % LISTA
 % ==================================================
-\begin{itemize}
+\begin{itemize}[leftmargin=1.1cm]
   \item Primeiro item;
   \item Segundo item;
 \end{itemize}
@@ -212,6 +212,52 @@ Continue o conteúdo aqui.
     return `<div class="latex-table-wrap"><table class="latex-table"><tbody>${rows.map((row) => `<tr>${row.map((cell) => `<td>${esc(cell)}</td>`).join('')}</tr>`).join('')}</tbody></table></div>`;
   }
 
+
+  function parseDimensionToCss(value, fallback = '1.1cm') {
+    const raw = String(value || '').trim();
+    if (!raw || raw === '*') return fallback;
+    const match = raw.match(/^(-?\d+(?:[.,]\d+)?)\s*(cm|mm|pt|px|em|rem|in)$/i);
+    if (!match) return fallback;
+    const amount = Number(match[1].replace(',', '.'));
+    if (!Number.isFinite(amount)) return fallback;
+    return `${Math.max(0, amount)}${match[2].toLowerCase()}`;
+  }
+
+  function listOptions(rawOptions = '') {
+    const options = String(rawOptions || '').replace(/^\[|\]$/g, '');
+    const left = /(?:^|,)\s*leftmargin\s*=\s*([^,]+)/i.exec(options)?.[1]?.trim();
+    const itemSep = /(?:^|,)\s*itemsep\s*=\s*([^,]+)/i.exec(options)?.[1]?.trim();
+    return {
+      leftMargin: left ? parseDimensionToCss(left) : '',
+      itemSep: itemSep ? parseDimensionToCss(itemSep, '0.25rem') : ''
+    };
+  }
+
+  function listOpenHtml(tagName, rawOptions = '') {
+    const opts = listOptions(rawOptions);
+    const styles = [];
+    if (opts.leftMargin) styles.push(`margin-left:${opts.leftMargin}`);
+    if (opts.itemSep) styles.push(`--altitude-list-item-gap:${opts.itemSep}`);
+    return `<${tagName} class="latex-list${opts.leftMargin ? ' has-custom-leftmargin' : ''}"${styles.length ? ` style="${styles.join(';')}"` : ''}>`;
+  }
+
+  function dimensionToMm(value, fallback = 11) {
+    const raw = String(value || '').trim();
+    if (!raw || raw === '*') return fallback;
+    const match = raw.match(/^(-?\d+(?:[.,]\d+)?)\s*(cm|mm|pt|px|em|rem|in)$/i);
+    if (!match) return fallback;
+    const n = Math.max(0, Number(match[1].replace(',', '.')));
+    const unit = match[2].toLowerCase();
+    const factors = { mm: 1, cm: 10, pt: 25.4 / 72, px: 25.4 / 96, in: 25.4, em: 4.2, rem: 4.2 };
+    return n * (factors[unit] || 1);
+  }
+
+  function listMarginMm(rawOptions = '') {
+    const options = String(rawOptions || '').replace(/^\[|\]$/g, '');
+    const left = /(?:^|,)\s*leftmargin\s*=\s*([^,]+)/i.exec(options)?.[1]?.trim();
+    return left ? dimensionToMm(left, 11) : 4;
+  }
+
   function latexToHtml(raw) {
     let source = removeComments(raw)
       .replace(/\\begin\{document\}|\\end\{document\}/g, '')
@@ -234,8 +280,10 @@ Continue o conteúdo aqui.
       .replace(/\\end\{flushright\}/g, () => protect('</div>'))
       .replace(/\\begin\{flushleft\}/g, () => protect('<div class="latex-align-left">'))
       .replace(/\\end\{flushleft\}/g, () => protect('</div>'))
-      .replace(/\\begin\{itemize\}(?:\[[^\]]*\])?/g, '\\begin{itemize}')
-      .replace(/\\begin\{enumerate\}(?:\[[^\]]*\])?/g, '\\begin{enumerate}')
+      .replace(/\\begin\{itemize\}(\[[^\]]*\])?/g, (_, options = '') => protect(listOpenHtml('ul', options)))
+      .replace(/\\end\{itemize\}/g, () => protect('</ul>'))
+      .replace(/\\begin\{enumerate\}(\[[^\]]*\])?/g, (_, options = '') => protect(listOpenHtml('ol', options)))
+      .replace(/\\end\{enumerate\}/g, () => protect('</ol>'))
       .replace(/\\(?:vspace|hspace)\*?\{[^}]*\}/g, '')
       .replace(/\\(?:small|footnotesize|large|Large|LARGE|normalsize)\b/g, '')
       .replace(/\\textcolor\{[^}]*\}\{([^{}]*)\}/g, '$1')
@@ -254,10 +302,6 @@ Continue o conteúdo aqui.
       .replace(/\\textit\{([^{}]*)\}/g, '<em>$1</em>')
       .replace(/\\emph\{([^{}]*)\}/g, '<em>$1</em>')
       .replace(/\\underline\{([^{}]*)\}/g, '<u>$1</u>')
-      .replace(/\\begin\{itemize\}/g, '<ul>')
-      .replace(/\\end\{itemize\}/g, '</ul>')
-      .replace(/\\begin\{enumerate\}/g, '<ol>')
-      .replace(/\\end\{enumerate\}/g, '</ol>')
       .replace(/\\item\s*/g, '<li>')
       .replace(/\\\\/g, '<br>')
       .replace(/~+/g, ' ')
@@ -272,6 +316,8 @@ Continue o conteúdo aqui.
     protectedValues.forEach((html, index) => { source = source.replaceAll(`@@ALTITUDE_TOKEN_${index}@@`, html); });
     source = source
       .replace(/<p>\s*(<aside class="latex-info-box">)\s*<\/p>/g, '$1')
+      .replace(/<p>\s*(<(?:ul|ol) class="latex-list[^"]*"[^>]*>)\s*<\/p>/g, '$1')
+      .replace(/<p>\s*(<\/(?:ul|ol)>)\s*<\/p>/g, '$1')
       .replace(/<p>\s*(<\/aside>)\s*<\/p>/g, '$1')
       .replace(/<p>\s*(<div class="latex-align-(?:center|right|left)">)\s*<\/p>/g, '$1')
       .replace(/<p>\s*(<\/div>)\s*<\/p>/g, '$1')
@@ -502,14 +548,12 @@ Continue o conteúdo aqui.
       <section class="pdf-info-box">
         <b>Curso:</b><span>${esc(courseTitle)}</span>
         <b>Área de formação:</b><span>${esc(area)}</span>
-        <b>Modalidade:</b><span>EAD / Semipresencial</span>
         <b>Finalidade do material:</b><span>Apoiar o estudo teórico do aluno e servir de base para avaliação de aprendizagem ao final do curso.</span>
       </section>
       ${content.modulos.map((module, index) => `
         <section class="pdf-module ${index === 0 ? 'first' : ''}">
           <div class="pdf-running-head"><span>ALTITUDE CENTRO UNIVERSITÁRIO</span><span>${esc(courseTitle)}</span></div>
           <h2>${index + 1}. ${esc(module.titulo)}</h2>
-          <div class="pdf-info-box"><b>Descrição:</b><span>${esc(module.descricao || '')}</span></div>
           ${module.conteudo_html}
           <div class="pdf-footer">ALTITUDE CENTRO UNIVERSITÁRIO | Material de Estudo | ${esc(courseTitle)}</div>
         </section>`).join('')}
@@ -521,13 +565,28 @@ Continue o conteúdo aqui.
   function pdfTextBlocks(raw) {
     let source = removeComments(raw || '')
       .replace(/\\begin\{document\}|\\end\{document\}/g, '')
-      .replace(/\\documentclass(?:\[[^\]]*\])?\{[^}]*\}/g, '')
+      .replace(/\\documentclass(?:\[[^\]]*\])?\{[^}]*\}/g, '');
+
+    // Converte os ambientes de lista antes de remover comandos. O leftmargin passa a
+    // produzir recuo real tanto no HTML quanto no PDF, em vez de ser descartado.
+    source = source.replace(/\\begin\{(itemize|enumerate)\}(\[[^\]]*\])?([\s\S]*?)\\end\{\1\}/g,
+      (_, type, options = '', body = '') => {
+        const indent = listMarginMm(options);
+        let index = 0;
+        return String(body).split(/\\item\s*/).slice(1).map((item) => {
+          index += 1;
+          const prefix = type === 'enumerate' ? `${index}. ` : '• ';
+          return `\n@@LI:${indent.toFixed(2)}@@${prefix}${item.trim()}\n`;
+        }).join('');
+      });
+
+    source = source
       .replace(/\\section\*?\{([^{}]*)\}/g, '\n@@H2@@$1\n')
       .replace(/\\subsection\*?\{([^{}]*)\}/g, '\n@@H3@@$1\n')
       .replace(/\\subsubsection\*?\{([^{}]*)\}/g, '\n@@H4@@$1\n')
       .replace(/\\paragraph\{([^{}]*)\}/g, '\n@@H4@@$1\n')
-      .replace(/\\item\s*/g, '\n@@LI@@')
-      .replace(/\\begin\{(?:itemize|enumerate)\}|\\end\{(?:itemize|enumerate)\}/g, '\n')
+      .replace(/\\item\s*/g, '\n@@LI:4.00@@• ')
+      .replace(/\\begin\{(?:itemize|enumerate)\}(?:\[[^\]]*\])?|\\end\{(?:itemize|enumerate)\}/g, '\n')
       .replace(/\\\[([\s\S]*?)\\\]/g, '\n@@EQ@@$1\n')
       .replace(/\$\$([\s\S]*?)\$\$/g, '\n@@EQ@@$1\n')
       .replace(/\\begin\{equation\*?\}([\s\S]*?)\\end\{equation\*?\}/g, '\n@@EQ@@$1\n')
@@ -544,7 +603,10 @@ Continue o conteúdo aqui.
       if (line.startsWith('@@H2@@')) return { type: 'h2', text: line.slice(6).trim() };
       if (line.startsWith('@@H3@@')) return { type: 'h3', text: line.slice(6).trim() };
       if (line.startsWith('@@H4@@')) return { type: 'h4', text: line.slice(6).trim() };
-      if (line.startsWith('@@LI@@')) return { type: 'li', text: line.slice(6).trim() };
+      if (line.startsWith('@@LI:')) {
+        const match = /^@@LI:([0-9.]+)@@([\s\S]*)$/.exec(line);
+        return { type: 'li', indentMm: Number(match?.[1] || 4), text: String(match?.[2] || '').trim() };
+      }
       if (line.startsWith('@@EQ@@')) return { type: 'eq', text: line.slice(6).trim() };
       return { type: 'p', text: line.replace(/\s+/g, ' ').trim() };
     });
@@ -585,7 +647,6 @@ Continue o conteúdo aqui.
       { text: 'Material de Estudo', size: 16, bold: true, color: '0.12 0.44 0.67', gap: 24 },
       { text: `Curso de ${courseTitle}`, size: 20, bold: true, color: '0.05 0.04 0.24', gap: 34 },
       { text: `Área de formação: ${area}`, size: 11, gap: 18 },
-      { text: 'Modalidade: EAD / Semipresencial', size: 11, gap: 18 },
       { text: 'Finalidade: apoiar o estudo teórico e servir de base para a avaliação de aprendizagem.', size: 11, gap: 18 }
     ];
     pages.push(cover);
@@ -593,7 +654,6 @@ Continue o conteúdo aqui.
       const blocks = pdfTextBlocks(module.conteudo_latex || module.conteudo || '');
       let current = [
         { text: `${moduleIndex + 1}. ${module.titulo}`, size: 18, bold: true, color: '0.12 0.44 0.67', gap: 24 },
-        { text: `Descrição: ${module.descricao || 'Conteúdo programático do módulo.'}`, size: 10, gap: 20 }
       ];
       let used = 90;
       const pushPage = () => { pages.push(current); current = []; used = 35; };
@@ -604,7 +664,7 @@ Continue o conteúdo aqui.
         const lines = wrapPdfText(`${prefix}${block.text}`, block.type === 'h2' ? 62 : 88);
         const needed = lines.length * (size + 3) + (bold ? 8 : 4);
         if (used + needed > 730 && current.length) pushPage();
-        current.push({ text: lines.join('\n'), size, bold, color: block.type === 'h2' ? '0.12 0.44 0.67' : '0.10 0.19 0.28', gap: bold ? 18 : 14 });
+        current.push({ text: lines.join('\n'), size, bold, indentPt: block.type === 'li' ? Number(block.indentMm || 4) * 2.83465 : 0, color: block.type === 'h2' ? '0.12 0.44 0.67' : '0.10 0.19 0.28', gap: bold ? 18 : 14 });
         used += needed;
       });
       if (current.length) pages.push(current);
@@ -627,7 +687,7 @@ Continue o conteúdo aqui.
         commands.push(`/${item.bold ? 'F2' : 'F1'} ${item.size || 10.5} Tf`);
         commands.push(`${item.color || '0.10 0.19 0.28'} rg`);
         lines.forEach((line) => {
-          commands.push(`1 0 0 1 58 ${y.toFixed(1)} Tm (${cp1252Octal(line)}) Tj`);
+          commands.push(`1 0 0 1 ${(58 + Number(item.indentPt || 0)).toFixed(1)} ${y.toFixed(1)} Tm (${cp1252Octal(line)}) Tj`);
           y -= (item.size || 10.5) + 3.2;
         });
         y -= Math.max(2, (item.gap || 14) - (item.size || 10.5));
@@ -674,6 +734,24 @@ Continue o conteúdo aqui.
     const bottomLimit = pageHeight - 20;
     const courseTitle = content.curso.titulo || $('#modalModulos')?.dataset.courseTitle || 'Curso Altitude';
     const area = content.curso.categoria || $('#modalModulos')?.dataset.courseCategory || 'Formação Profissional';
+    let logoDataUrl = null;
+    try {
+      logoDataUrl = await new Promise((resolve) => {
+        const image = new Image();
+        image.crossOrigin = 'anonymous';
+        image.onload = () => {
+          try {
+            const canvas = document.createElement('canvas');
+            canvas.width = image.naturalWidth || image.width;
+            canvas.height = image.naturalHeight || image.height;
+            canvas.getContext('2d').drawImage(image, 0, 0);
+            resolve(canvas.toDataURL('image/png'));
+          } catch (_) { resolve(null); }
+        };
+        image.onerror = () => resolve(null);
+        image.src = new URL('../3-img/LOGO.png', location.href).href;
+      });
+    } catch (_) {}
     let y = 24;
     let pageNumber = 1;
 
@@ -723,26 +801,30 @@ Continue o conteúdo aqui.
 
     // Capa institucional.
     doc.setFillColor(234, 244, 251);
-    doc.roundedRect(20, 38, pageWidth - 40, 62, 4, 4, 'F');
-    setColor('#0D0A3C');
+    doc.roundedRect(20, 30, pageWidth - 40, 76, 4, 4, 'F');
+    if (logoDataUrl) {
+      const logoWidth = 74;
+      const logoHeight = 20;
+      doc.addImage(logoDataUrl, 'PNG', (pageWidth - logoWidth) / 2, 38, logoWidth, logoHeight, undefined, 'FAST');
+    } else {
+      setColor('#0D3553'); doc.setFont('helvetica', 'bold'); doc.setFontSize(24);
+      doc.text('ALTITUDE', pageWidth / 2, 52, { align: 'center' });
+    }
+    setColor('#0EA5B7');
     doc.setFont('helvetica', 'bold');
-    doc.setFontSize(25);
-    doc.text('ALTITUDE', pageWidth / 2, 55, { align: 'center' });
-    setColor('#1F70AB');
-    doc.setFontSize(16);
-    doc.text('Material de Estudo', pageWidth / 2, 68, { align: 'center' });
-    setColor('#0D0A3C');
-    doc.setFontSize(21);
+    doc.setFontSize(13);
+    doc.text('Material de Estudo', pageWidth / 2, 67, { align: 'center' });
+    setColor('#0D3553');
+    doc.setFontSize(20);
     const coverTitle = doc.splitTextToSize(`Curso de ${courseTitle}`, pageWidth - 60);
-    doc.text(coverTitle, pageWidth / 2, 82, { align: 'center' });
+    doc.text(coverTitle, pageWidth / 2, 84, { align: 'center' });
 
     doc.setDrawColor(31, 112, 171);
     doc.setFillColor(247, 251, 254);
-    doc.roundedRect(20, 113, pageWidth - 40, 60, 3, 3, 'FD');
-    y = 125;
+    doc.roundedRect(20, 116, pageWidth - 40, 52, 3, 3, 'FD');
+    y = 128;
     writeWrapped(`Curso: ${courseTitle}`, { bold: true, size: 11, after: 2 });
     writeWrapped(`Área de formação: ${area}`, { size: 10.5, after: 2 });
-    writeWrapped('Modalidade: EAD / Semipresencial', { size: 10.5, after: 2 });
     writeWrapped('Finalidade: apoiar o estudo teórico e servir de base para a avaliação de aprendizagem.', { size: 10.5, after: 2 });
     drawHeaderFooter();
 
@@ -751,21 +833,12 @@ Continue o conteúdo aqui.
       pageNumber += 1;
       y = 24;
       writeWrapped(`${moduleIndex + 1}. ${module.titulo}`, { size: 18, bold: true, color: '#1F70AB', after: 4 });
-      doc.setFillColor(234, 244, 251);
-      doc.setDrawColor(31, 112, 171);
-      const boxHeight = 25;
-      doc.roundedRect(marginLeft, y, contentWidth, boxHeight, 2, 2, 'FD');
-      const boxStart = y;
-      y += 8;
-      writeWrapped(`Descrição: ${module.descricao || 'Conteúdo programático do módulo.'}`, { size: 9, after: 1 });
-      y = Math.max(y, boxStart + boxHeight + 7);
-
       const blocks = pdfTextBlocks(module.conteudo_latex || module.conteudo || '');
       blocks.forEach((block) => {
         if (block.type === 'h2') writeWrapped(block.text, { size: 15, bold: true, color: '#1F70AB', after: 3 });
         else if (block.type === 'h3') writeWrapped(block.text, { size: 12.5, bold: true, color: '#0D0A3C', after: 2 });
         else if (block.type === 'h4') writeWrapped(block.text, { size: 11.5, bold: true, color: '#0D0A3C', after: 2 });
-        else if (block.type === 'li') writeWrapped(`• ${block.text}`, { size: 10.5, indent: 4, after: 1.5 });
+        else if (block.type === 'li') writeWrapped(block.text, { size: 10.5, indent: Number(block.indentMm || 4), after: 1.5 });
         else if (block.type === 'eq') writeWrapped(block.text, { size: 10.5, align: 'center', color: '#0D0A3C', after: 3 });
         else writeWrapped(block.text, { size: 10.5, after: 3 });
       });

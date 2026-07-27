@@ -8,7 +8,7 @@
   const money = (value) => Number(value || 0).toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
   const cleanPhone = (value) => String(value || '').replace(/\D/g, '') || '5591983640933';
   const localDate = (value) => value ? new Date(value).toLocaleString('pt-BR', { dateStyle: 'short', timeStyle: 'short' }) : '—';
-  const v34 = { config: null, promotions: [], promotionStates: [], packs: [], studentPacks: [], currentPromotion: null };
+  const v34 = { config: null, promotions: [], promotionStates: [], packs: [], studentPacks: [], currentPromotion: null, sessionShown: new Set() };
 
   function notify(message, error = false) {
     if (typeof toast === 'function') return toast(message, error ? 'error' : 'success');
@@ -152,21 +152,24 @@
     const input = document.querySelector(`[data-cert-coupon-input="${Number(id)}"]`);
     const code = String(input?.value || '').trim().toUpperCase();
     if (!code) return notify('Informe o código do cupom.', true);
-    const { error } = await sb.rpc('aplicar_cupom_certificado_v34', { p_certificado_id: Number(id), p_codigo: code });
+    const { data, error } = await sb.rpc('aplicar_cupom_certificado_v34', { p_certificado_id: Number(id), p_codigo: code });
     if (error) return notify(error.message, true);
     await carregarCertificados();
     renderCertificados(); renderPagamentos(); renderPaymentRequests();
-    notify('Cupom aplicado ao pagamento.');
+    if (String(data?.status || '').toUpperCase() === 'EMITIDO') notify('Cupom integral aplicado. Certificado emitido gratuitamente e liberado automaticamente.');
+    else if (data?.emissao_automatica_pendente) notify('Cupom integral aplicado. Corrija os dados obrigatórios informados para concluir a emissão automática.');
+    else notify('Cupom aplicado ao pagamento.');
   }
 
   async function applyPackCoupon(id) {
     const input = document.querySelector(`[data-pack-coupon-input="${Number(id)}"]`);
     const code = String(input?.value || '').trim().toUpperCase();
     if (!code) return notify('Informe o código do cupom.', true);
-    const { error } = await sb.rpc('aplicar_cupom_pack_v34', { p_pack_aluno_id: Number(id), p_codigo: code });
+    const { data, error } = await sb.rpc('aplicar_cupom_pack_v34', { p_pack_aluno_id: Number(id), p_codigo: code });
     if (error) return notify(error.message, true);
     await loadCommercialData();
-    notify('Cupom aplicado ao pack.');
+    if (String(data?.status_pagamento || '').toUpperCase() === 'PAGO') notify('Cupom integral aplicado. Pack liberado gratuitamente e de forma automática.');
+    else notify('Cupom aplicado ao pack.');
   }
 
   async function requestPack(id) {
@@ -179,10 +182,11 @@
       confirmText: 'Solicitar pack'
     }) : window.confirm('Solicitar este pack?');
     if (!okay) return;
-    const { error } = await sb.rpc('solicitar_pack_v34', { p_pack_id: Number(id), p_cupom: code || null });
+    const { data, error } = await sb.rpc('solicitar_pack_v34', { p_pack_id: Number(id), p_cupom: code || null });
     if (error) return notify(error.message, true);
     await loadCommercialData();
-    notify('Pack solicitado. Continue o pagamento pelo WhatsApp.');
+    if (String(data?.status_pagamento || '').toUpperCase() === 'PAGO') notify('Cupom integral aplicado. Pack liberado gratuitamente e de forma automática.');
+    else notify('Pack solicitado. Continue o pagamento pelo WhatsApp.');
   }
 
   function whatsappMessageForCertificate(cert) {
@@ -250,6 +254,7 @@
   }
 
   function shouldShowPromotion(item, stateRow) {
+    if (v34.sessionShown.has(Number(item.id))) return false;
     if (!stateRow) return true;
     if (item.frequencia === 'CADA_ACESSO') return true;
     if (item.frequencia === 'UMA_VEZ') return !stateRow.visualizado_em;
@@ -290,6 +295,7 @@
     if (save) save.textContent = promotionState(item.id)?.salvo ? 'Promoção salva' : 'Salvar promoção';
     modal?.setAttribute('aria-hidden', 'false');
     document.body.classList.add('v34-modal-open');
+    v34.sessionShown.add(Number(item.id));
     await upsertPromotionState(item, { visualizado_em: promotionState(item.id)?.visualizado_em || new Date().toISOString(), ultima_exibicao_em: new Date().toISOString() });
   }
 
@@ -310,12 +316,16 @@
   }
 
   function showRequestedOrNextPromotion() {
+    if ($('v34PromotionModal')?.getAttribute('aria-hidden') === 'false') return;
     const slug = new URLSearchParams(location.search).get('promocao');
     const requested = slug ? v34.promotions.find((item) => item.slug === slug) : null;
     if (requested) return openPromotion(requested);
     const next = v34.promotions.find((item) => shouldShowPromotion(item, promotionState(item.id)));
-    if (next) window.setTimeout(() => openPromotion(next), 600);
+    if (next) window.setTimeout(() => {
+      if ($('v34PromotionModal')?.getAttribute('aria-hidden') !== 'false') openPromotion(next);
+    }, 450);
   }
+  window.altitudeShowNextPromotionV342 = showRequestedOrNextPromotion;
 
   function wireEvents() {
     document.addEventListener('click', (event) => {
@@ -361,6 +371,7 @@
 
   async function start() {
     wireEvents();
+    document.addEventListener('altitude:aba-aluno', () => window.setTimeout(showRequestedOrNextPromotion, 250));
     for (let tries = 0; tries < 80 && !state?.aluno?.user_id; tries += 1) await new Promise((resolve) => setTimeout(resolve, 100));
     if (!state?.aluno?.user_id) return;
     await loadCommercialData();

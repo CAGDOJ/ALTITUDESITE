@@ -111,6 +111,7 @@
     if(status==='EMITIDO') parts.push(`<button data-cert-pdf-preview-v34="${id}">Visualizar PDF</button><button class="pdf-action" data-cert-pdf-download-v34="${id}">Baixar PDF</button>`);
     if(status!=='EMITIDO') parts.push(`<button class="block" data-cert-action-v34="BLOQUEAR" data-id="${id}">Bloquear</button><button class="cancel" data-cert-action-v34="CANCELAR" data-id="${id}">Cancelar</button>`);
     if(['BLOQUEADO','CANCELADO'].includes(status)) parts.push(`<button data-cert-action-v34="REABRIR" data-id="${id}">Reabrir</button>`);
+    if(processed && Number(window.GESTOR_ATUAL?.nivel_acesso||0)>=4) parts.push(`<button class="danger-action" data-cert-delete-v342="${id}">Excluir certificado</button>`);
     return `<div class="cert-admin-actions">${parts.join('')}</div>`;
   }
   function certRow(c, processed=false){
@@ -241,6 +242,25 @@
     if(error) return toast(error.message,true); toast(action==='LIBERAR'?'Certificado emitido e liberado.':'Situação atualizada.'); await load();
   }
 
+  async function deleteCertificate(id){
+    const c=state.certificados.find(x=>Number(x.id)===Number(id)); if(!c)return;
+    if(Number(window.GESTOR_ATUAL?.nivel_acesso||0)<4)return toast('Somente o gestor de nível máximo pode excluir certificados.',true);
+    const reason=window.AltitudeDialog
+      ? await AltitudeDialog.prompt({title:'Excluir certificado definitivamente',label:'Justificativa obrigatória',message:'O documento será removido do Portal do Aluno, o código e o QR Code deixarão de validar e as horas serão devolvidas à carteira.',required:true,confirmText:'Excluir certificado',danger:true})
+      : prompt('Informe a justificativa para excluir o certificado:');
+    if(reason===null||reason===undefined)return;
+    if(!String(reason).trim())return toast('Informe a justificativa da exclusão.',true);
+    const confirmed=window.AltitudeDialog
+      ? await AltitudeDialog.confirm({title:'Confirmar exclusão',message:`Excluir definitivamente o certificado ${c.numero_certificado||c.id}? Esta ação não poderá ser desfeita.`,confirmText:'Excluir definitivamente',danger:true})
+      : confirm('Excluir definitivamente este certificado?');
+    if(!confirmed)return;
+    const {error}=await sb.rpc('gestor_excluir_certificado_v34_2',{p_certificado_id:Number(id),p_motivo:String(reason).trim()});
+    if(error)return toast(error.message,true);
+    $('modalCertificadoGestao')?.setAttribute('aria-hidden','true');
+    toast('Certificado excluído, validação invalidada e horas devolvidas.');
+    await load();
+  }
+
   async function details(id){
     const c=state.certificados.find(x=>Number(x.id)===id); if(!c) return;
     state.certAtual=c; const a=aluno(c), course=curso(c);
@@ -287,6 +307,7 @@
       const det=e.target.closest('[data-cert-detail-v34]'); if(det)details(Number(det.dataset.certDetailV34));
       const dl=e.target.closest('[data-cert-pdf-download-v34]'); if(dl)pdf(Number(dl.dataset.certPdfDownloadV34),false);
       const pv=e.target.closest('[data-cert-pdf-preview-v34]'); if(pv)pdf(Number(pv.dataset.certPdfPreviewV34),true);
+      const del=e.target.closest('[data-cert-delete-v342]'); if(del)deleteCertificate(Number(del.dataset.certDeleteV342));
     });
     load();
     if(!window.__v34CertRealtime){window.__v34CertRealtime=true;const refresh=()=>setTimeout(()=>load({silent:true}),500);const ch=sb.channel('altitude-v34-certificados');['certificados','carteiras_horas_aluno_v34','packs_alunos_v34'].forEach(table=>ch.on('postgres_changes',{event:'*',schema:'public',table},refresh));ch.subscribe();}

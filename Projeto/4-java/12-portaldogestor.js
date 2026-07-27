@@ -233,12 +233,12 @@ function renderAlunos(){
 
   tbody.innerHTML = rows.map((a)=>`
     <tr data-aluno-id="${a.id}">
-      <td><strong>${a.ra}</strong></td>
-      <td class="student-name-cell">${String(a.nome || '').toUpperCase()}</td>
-      <td>${a.email}</td>
-      <td>${maskPhone(a.telefone)}</td>
-      <td><span class="badge ${a.status==='ATIVO'?'ativo':'inativo'}">${a.status}</span></td>
-      <td class="student-actions">
+      <td data-label="RA"><strong>${a.ra}</strong></td>
+      <td data-label="Nome" class="student-name-cell">${String(a.nome || '')}</td>
+      <td data-label="E-mail">${a.email}</td>
+      <td data-label="Telefone">${maskPhone(a.telefone)}</td>
+      <td data-label="Status"><span class="badge ${a.status==='ATIVO'?'ativo':'inativo'}">${a.status}</span></td>
+      <td data-label="Ações" class="student-actions">
         <button class="btn-mini primary-action-mini" data-act="edit" data-id="${a.id}">Editar dados</button>
         ${podeRedefinirSenha ? `<button class="btn-mini" data-act="password" data-id="${a.id}">Redefinir senha</button>` : ''}
         <button class="btn-mini" data-act="toggle" data-id="${a.id}">${a.status==='ATIVO'?'Inativar':'Ativar'}</button>
@@ -649,8 +649,8 @@ function gerarRaLocal(){
 
     tbody.innerHTML = GC.cursos.map(c => `
       <tr data-id="${c.id}">
-        <td class="col-id">${c.id}</td>
-        <td class="col-curso">
+        <td data-label="Código" class="col-id">${c.id}</td>
+        <td data-label="Curso" class="col-curso">
           <div class="curso-info">
             <img src="${thumb(c.capa_url)}" class="curso-thumb" alt="Capa do curso">
             <div class="curso-textos">
@@ -659,20 +659,20 @@ function gerarRaLocal(){
             </div>
           </div>
         </td>
-        <td class="col-area">${c.categoria || '-'}</td>
-        <td class="col-modulos">
-          <span title="Módulos cadastrados">📦 ${c.total_modulos || 0}</span>
+        <td data-label="Área" class="col-area">${c.categoria || '-'}</td>
+        <td data-label="Módulos" class="col-modulos">
+          <span title="Módulos cadastrados">${c.total_modulos || 0}</span>
         </td>
-        <td class="col-pub">
+        <td data-label="Publicado" class="col-pub">
           <span class="badge ${c.publicado ? 'pub' : 'nop'}">
             ${fmtBool(c.publicado)}
           </span>
         </td>
-        <td class="col-acoes course-action-cell">
+        <td data-label="Ações" class="col-acoes course-action-cell">
           <button class="btn-mini gc-edit" title="Editar nome, carga, capa e descrição">Editar dados</button>
           <button class="btn-mini gc-mods course-build-button" title="Cadastrar módulos, conteúdo, PDFs e prova">Montar curso</button>
           <button class="btn-mini gc-prev" title="Visualizar o curso">Pré-visualizar</button>
-          <button class="btn-mini gc-publish ${c.publicado ? 'is-live' : ''}" title="${c.publicado ? 'Retirar do catálogo' : 'Revisar e publicar'}">${c.publicado ? '✓ Publicado' : 'Publicar'}</button>
+          <button class="btn-mini gc-publish ${c.publicado ? 'is-live' : ''}" title="${c.publicado ? 'Retirar do catálogo' : 'Revisar e publicar'}">${c.publicado ? 'Publicado' : 'Publicar'}</button>
           <button class="btn-mini gc-dup" title="Duplicar curso">Duplicar</button>
           <button class="btn-mini gc-del danger" title="Excluir curso">Excluir</button>
         </td>
@@ -1285,23 +1285,23 @@ function gerarRaLocal(){
       y += opts.after ?? 2.5;
     };
 
-    doc.setFillColor(234,244,251);
-    doc.roundedRect(20, 38, pageWidth - 40, 62, 4, 4, 'F');
+    // Prévia minimalista, alinhada ao material oficial e sem caixas azuis.
     color('#0D0A3C');
     doc.setFont('helvetica','bold');
     doc.setFontSize(25);
-    doc.text('ALTITUDE', pageWidth / 2, 55, { align:'center' });
+    doc.text('ALTITUDE', pageWidth / 2, 42, { align:'center' });
     color('#1F70AB');
-    doc.setFontSize(16);
-    doc.text('Material de Estudo', pageWidth / 2, 68, { align:'center' });
+    doc.setFontSize(12);
+    doc.text('Material de estudo', pageWidth / 2, 54, { align:'center' });
     color('#0D0A3C');
-    doc.setFontSize(20);
-    doc.text(doc.splitTextToSize(title, pageWidth - 60), pageWidth / 2, 83, { align:'center' });
-
-    doc.setDrawColor(31,112,171);
-    doc.setFillColor(247,251,254);
-    doc.roundedRect(20, 113, pageWidth - 40, 55, 3, 3, 'FD');
-    y = 125;
+    doc.setFontSize(18);
+    const previewTitle = doc.splitTextToSize(title, pageWidth - 60);
+    doc.text(previewTitle, pageWidth / 2, 68, { align:'center' });
+    const previewBottom = 68 + Math.max(0, previewTitle.length - 1) * 8;
+    doc.setDrawColor(207,220,229);
+    doc.setLineWidth(.35);
+    doc.line(left, previewBottom + 12, pageWidth - right, previewBottom + 12);
+    y = previewBottom + 27;
     write(`Curso: ${courseTitle}`, { bold:true, size:10.5, after:2 });
     write(`Módulo: ${title}`, { size:10.5, after:2 });
     write(`Descrição: ${desc || 'Conteúdo programático do módulo.'}`, { size:10, after:2 });
@@ -1670,7 +1670,7 @@ function gerarRaLocal(){
         <div style="display: grid; gap: 15px; margin-bottom: 25px;">
           <button class="btn-grande" onclick="abrirGestaoMateriais(${moduloId}, '${moduloTitulo}')" 
                   style="padding: 20px; text-align: left; background: #f0f9ff; border: 2px solid #0ea5e9; border-radius: 8px; cursor: pointer;">
-            <div style="font-size: 18px; font-weight: bold; color: #0369a1;">📚 Materiais</div>
+            <div style="font-size: 18px; font-weight: bold; color: #0369a1;">Materiais</div>
             <div style="color: #64748b; margin-top: 5px;">Adicionar PDFs, vídeos, áudios e imagens</div>
           </button>
           

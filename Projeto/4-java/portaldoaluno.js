@@ -186,6 +186,7 @@ function abrirAba(id) {
   setText("tituloAbaAtual", TITULOS_ABAS[id] || "Portal do aluno");
   fecharMenuMobile();
   window.scrollTo({ top: 0, behavior: "smooth" });
+  document.dispatchEvent(new CustomEvent("altitude:aba-aluno", { detail: { id } }));
 }
 
 function abrirMenuMobile() {
@@ -808,11 +809,21 @@ async function baixarMaterialCompletoCurso() {
       for (const line of lines) { newPageIfNeeded(spacing + 2); doc.text(line, margin + indent, y); y += spacing; }
     };
 
-    doc.setFillColor(238,248,251); doc.roundedRect(14,14,width-28,78,5,5,'F');
-    if (logo) doc.addImage(logo,'PNG',(width-72)/2,24,72,20,undefined,'FAST');
-    doc.setTextColor(17,168,182); doc.setFont('helvetica','bold'); doc.setFontSize(14); doc.text('Material de Estudo',width/2,55,{align:'center'});
-    doc.setTextColor(7,59,90); doc.setFontSize(20); doc.text(doc.splitTextToSize(`Curso de ${state.cursoAtual.titulo || 'Curso'}`,width-50),width/2,70,{align:'center'});
-    doc.setDrawColor(17,168,182); doc.line(margin,100,width-margin,100); y=112;
+    // Capa minimalista: sem caixas ou molduras pesadas.
+    if (logo) doc.addImage(logo,'PNG',(width-66)/2,20,66,18,undefined,'FAST');
+    doc.setTextColor(17,168,182);
+    doc.setFont('helvetica','bold');
+    doc.setFontSize(11.5);
+    doc.text('Material de estudo',width/2,47,{align:'center'});
+    doc.setTextColor(7,59,90);
+    doc.setFontSize(18);
+    const coverLines = doc.splitTextToSize(`Curso de ${state.cursoAtual.titulo || 'Curso'}`,width-50);
+    doc.text(coverLines,width/2,60,{align:'center'});
+    const coverBottom = 60 + Math.max(0,coverLines.length-1)*8;
+    doc.setDrawColor(207,220,229);
+    doc.setLineWidth(.35);
+    doc.line(margin,coverBottom+12,width-margin,coverBottom+12);
+    y=coverBottom+27;
     writeLines(`Curso: ${state.cursoAtual.titulo || 'Curso'}`,10.5,true,6);
     writeLines(`Área de formação: ${state.cursoAtual.categoria || 'Formação profissional'}`,10,false,6);
     writeLines('Finalidade: apoiar o estudo teórico e servir de base para a avaliação de aprendizagem.',10,false,6);
@@ -1277,9 +1288,12 @@ function renderCertificados() {
     const validadas = Number(carteira?.horas_validadas || 0);
     const reservadas = Number(carteira?.horas_reservadas || 0);
     const utilizadas = Number(carteira?.horas_utilizadas || 0);
-    const pendente = certificadosDoCurso(curso.id).find((item) => String(item.status).toUpperCase() === "PENDENTE");
-    const bloqueado = certificadosDoCurso(curso.id).find((item) => String(item.status).toUpperCase() === "BLOQUEADO");
-    const emContagem = certificadosDoCurso(curso.id).find(certificadoAguardandoPrazo);
+    const certificadosCurso = certificadosDoCurso(curso.id);
+    const emitido = certificadosCurso.find((item) => String(item.status).toUpperCase() === "EMITIDO");
+    if (emitido) return "";
+    const pendente = certificadosCurso.find((item) => String(item.status).toUpperCase() === "PENDENTE");
+    const bloqueado = certificadosCurso.find((item) => String(item.status).toUpperCase() === "BLOQUEADO");
+    const emContagem = certificadosCurso.find(certificadoAguardandoPrazo);
     const pronto = progressoOk && provaOk;
     const options = opcoesHorasDisponiveis(saldo);
 
@@ -1307,7 +1321,10 @@ function renderCertificados() {
       actions = `<div class="hours-request-control">
         <label for="horasSolicitadas-${Number(curso.id)}">Horas deste certificado</label>
         <select id="horasSolicitadas-${Number(curso.id)}">${options.map((h) => `<option value="${h}"${h === Math.min(20, saldo) ? " selected" : ""}>${h} horas</option>`).join("")}</select>
-        <button class="primary-button" type="button" onclick="solicitarCertificado(${Number(curso.id)})">Solicitar análise</button>
+        <label for="cupomSolicitacao-${Number(curso.id)}">Cupom de desconto <small>(opcional)</small></label>
+        <input id="cupomSolicitacao-${Number(curso.id)}" class="certificate-coupon-before-request" type="text" maxlength="30" autocomplete="off" placeholder="Digite o cupom antes de solicitar">
+        <small class="coupon-request-help">O valor final será calculado antes do envio. Cupom integral libera o certificado automaticamente quando todos os requisitos estiverem válidos.</small>
+        <button class="primary-button" type="button" onclick="solicitarCertificado(${Number(curso.id)})">Solicitar certificado</button>
       </div>`;
     } else if (pronto && validadas === 0) {
       statusVisual = "PENDENTE";
@@ -1442,8 +1459,17 @@ async function solicitarCertificado(cursoId) {
     await Promise.all([carregarCertificados(), carregarHistoricoCertificados(), carregarCarteirasHoras()]);
     renderDashboard(); renderCertificados(); renderPagamentos(); window.renderSolicitacoesPagamentoV34?.();
     const statusPagamento = String(data?.pagamento_status || "").toUpperCase();
-    toast(statusPagamento === "ISENTO" ? "Solicitação registrada sem cobrança. Aguarde a liberação." : "Solicitação registrada. Continue o pagamento na aba Pagamentos.", "success");
-    abrirAba("pagamentos");
+    const statusCertificado = String(data?.status || "").toUpperCase();
+    if (statusCertificado === "EMITIDO") {
+      toast("Cupom aplicado. Certificado emitido gratuitamente e liberado automaticamente.", "success");
+      abrirAba("certificados");
+    } else if (statusPagamento === "ISENTO") {
+      toast("Solicitação gratuita registrada. A emissão automática será concluída quando os dados obrigatórios estiverem válidos.", "success");
+      abrirAba("certificados");
+    } else {
+      toast("Solicitação registrada. Continue o pagamento na aba Pagamentos.", "success");
+      abrirAba("pagamentos");
+    }
   } catch (error) {
     toast(`Não foi possível solicitar: ${error.message}`, "error");
   } finally {

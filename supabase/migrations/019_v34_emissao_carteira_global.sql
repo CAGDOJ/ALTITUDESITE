@@ -58,6 +58,8 @@ begin
 end;
 $$;
 
+drop function if exists public.obter_carteiras_horas_gestao_v34();
+
 create or replace function public.obter_carteiras_horas_gestao_v34()
 returns table(
   aluno_id uuid, aluno_nome text, aluno_email text, aluno_ra text, aluno_cpf text,
@@ -88,6 +90,8 @@ begin
   order by a.nome;
 end;
 $$;
+
+grant execute on function public.obter_carteiras_horas_gestao_v34() to authenticated;
 
 create or replace function public.gestor_ajustar_carteira_aluno_v34(
   p_aluno_id uuid,

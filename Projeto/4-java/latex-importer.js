@@ -542,13 +542,13 @@ Continue o conteúdo aqui.
       <section class="pdf-cover">
         <img src="../3-img/LOGO.png" alt="ALTITUDE CENTRO UNIVERSITÁRIO">
         <div class="institution">ALTITUDE CENTRO UNIVERSITÁRIO</div>
-        <div class="material">Material de Estudo</div>
+        <div class="material">Material de estudo</div>
         <h1>Curso de ${esc(courseTitle)}</h1>
       </section>
       <section class="pdf-info-box">
         <b>Curso:</b><span>${esc(courseTitle)}</span>
         <b>Área de formação:</b><span>${esc(area)}</span>
-        <b>Finalidade do material:</b><span>Apoiar o estudo teórico do aluno e servir de base para avaliação de aprendizagem ao final do curso.</span>
+        <b>Finalidade:</b><span>Apoiar o estudo teórico do aluno e servir de base para avaliação de aprendizagem ao final do curso.</span>
       </section>
       ${content.modulos.map((module, index) => `
         <section class="pdf-module ${index === 0 ? 'first' : ''}">
@@ -799,30 +799,28 @@ Continue o conteúdo aqui.
       y += options.after ?? 2.5;
     };
 
-    // Capa institucional.
-    doc.setFillColor(234, 244, 251);
-    doc.roundedRect(20, 30, pageWidth - 40, 76, 4, 4, 'F');
+    // Capa institucional minimalista, sem caixas coloridas.
     if (logoDataUrl) {
-      const logoWidth = 74;
-      const logoHeight = 20;
-      doc.addImage(logoDataUrl, 'PNG', (pageWidth - logoWidth) / 2, 38, logoWidth, logoHeight, undefined, 'FAST');
+      const logoWidth = 66;
+      const logoHeight = 18;
+      doc.addImage(logoDataUrl, 'PNG', (pageWidth - logoWidth) / 2, 24, logoWidth, logoHeight, undefined, 'FAST');
     } else {
       setColor('#0D3553'); doc.setFont('helvetica', 'bold'); doc.setFontSize(24);
-      doc.text('ALTITUDE', pageWidth / 2, 52, { align: 'center' });
+      doc.text('ALTITUDE', pageWidth / 2, 39, { align: 'center' });
     }
     setColor('#0EA5B7');
     doc.setFont('helvetica', 'bold');
-    doc.setFontSize(13);
-    doc.text('Material de Estudo', pageWidth / 2, 67, { align: 'center' });
+    doc.setFontSize(11.5);
+    doc.text('Material de estudo', pageWidth / 2, 51, { align: 'center' });
     setColor('#0D3553');
-    doc.setFontSize(20);
+    doc.setFontSize(18);
     const coverTitle = doc.splitTextToSize(`Curso de ${courseTitle}`, pageWidth - 60);
-    doc.text(coverTitle, pageWidth / 2, 84, { align: 'center' });
-
-    doc.setDrawColor(31, 112, 171);
-    doc.setFillColor(247, 251, 254);
-    doc.roundedRect(20, 116, pageWidth - 40, 52, 3, 3, 'FD');
-    y = 128;
+    doc.text(coverTitle, pageWidth / 2, 64, { align: 'center' });
+    const coverBottom = 64 + Math.max(0, coverTitle.length - 1) * 8;
+    doc.setDrawColor(207, 220, 229);
+    doc.setLineWidth(.35);
+    doc.line(marginLeft, coverBottom + 12, pageWidth - marginRight, coverBottom + 12);
+    y = coverBottom + 27;
     writeWrapped(`Curso: ${courseTitle}`, { bold: true, size: 11, after: 2 });
     writeWrapped(`Área de formação: ${area}`, { size: 10.5, after: 2 });
     writeWrapped('Finalidade: apoiar o estudo teórico e servir de base para a avaliação de aprendizagem.', { size: 10.5, after: 2 });

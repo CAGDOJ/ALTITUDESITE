@@ -10,7 +10,7 @@
   function openModal(id){$(id)?.setAttribute('aria-hidden','false');}
   function closeModal(id){$(id)?.setAttribute('aria-hidden','true');}
   function payLabel(value){return ({AGUARDANDO_PAGAMENTO:'Aguardando pagamento',PAGAMENTO_INFORMADO:'Pagamento informado',PAGO:'Pago - pronto para liberação',ISENTO:'Isento - pronto para liberação',CANCELADO:'Cancelado',PENDENTE:'Aguardando pagamento'})[String(value||'').toUpperCase()]||String(value||'Pendente').replaceAll('_',' ');}
-  function titleForTab(id){return ({dashboard:'Visão geral',cursos:'Cursos e conteúdos',usuarios:'Alunos','certificados-gestao':'Certificados','pagamentos-gestao':'Pagamentos','tipos-curso':'Tipos de curso',usuarios:'Equipe e acessos',chamados:'Atendimento',comercial:'Comercial e promoções'})[id]||'Portal de Gestão';}
+  function titleForTab(id){return ({dashboard:'Visão geral',cursos:'Cursos e conteúdos',alunos:'Alunos','certificados-gestao':'Certificados','pagamentos-gestao':'Pagamentos','tipos-curso':'Tipos de curso',usuarios:'Equipe e acessos',chamados:'Atendimento',comercial:'Comercial e promoções'})[id]||'Portal de Gestão';}
   function removeEmojis(){document.querySelectorAll('main h1,main h2,main h3,main button').forEach(el=>{if(el.children.length)return;el.textContent=el.textContent.replace(/[\u{1F300}-\u{1FAFF}\u{2600}-\u{27BF}]/gu,'').replace(/\s{2,}/g,' ').trim();});}
   async function loadPayments(){
     if(state.loading)return;state.loading=true;
@@ -40,11 +40,61 @@
     if(status!=='TODOS' && current!==status && !(status==='AGUARDANDO_PAGAMENTO'&&current==='PENDENTE'))return false;
     return !q||norm([student.nome,student.ra,student.cpf,student.email,course.titulo,item.nome_curso,item.protocolo_pagamento,item.numero_certificado].join(' ')).includes(q);
   }
+  function paymentGroupStatus(raw, kind='cert'){
+    const value=String(raw||'').toUpperCase();
+    if(value==='PAGO'||value==='ISENTO') return {group:'confirmed',label:value==='ISENTO'?'Confirmado sem cobrança':'Confirmado',css:'payment-confirmed'};
+    if(value==='PAGAMENTO_INFORMADO') return {group:'pending',label:'A confirmar',css:'payment-pending'};
+    if(value==='CANCELADO') return {group:'confirmed',label:'Cancelado',css:'payment-unpaid'};
+    return {group:'pending',label:'Não pago',css:'payment-unpaid'};
+  }
+  function zeroReason(row,kind){
+    if(Number(row.valor_final??row.valor_pago??row.valor_base)!==0)return '';
+    if(row.cupom_codigo)return `Gratuito por cupom ${esc(row.cupom_codigo)}`;
+    if(kind==='cert'&&row.pack_aluno_id)return 'Coberto por pack';
+    if(String(row.pagamento_status||'').toUpperCase()==='ISENTO')return 'Gratuidade ou cortesia';
+    if(kind==='pack'&&String(row.status_pagamento||'').toUpperCase()==='PAGO')return 'Pack gratuito';
+    return 'Valor zerado — verifique a origem';
+  }
+  function paymentCertificateCard(c){
+    const a=state.students.get(c.aluno_id)||{},course=state.courses.get(Number(c.curso_id))||{};
+    const raw=String(c.pagamento_status||'AGUARDANDO_PAGAMENTO').toUpperCase(),meta=paymentGroupStatus(raw,'cert');
+    const reason=zeroReason(c,'cert');
+    return `<article class="commercial-card payment-card ${meta.css}">
+      <div><span>${esc(c.protocolo_pagamento||`Solicitação ${c.id}`)}</span><h4>${esc(a.nome||c.nome_aluno||'Aluno')}</h4>
+      <p>${esc(course.titulo||c.nome_curso||'Curso')} · ${Number(c.horas_solicitadas||c.horas_emitidas||0)}h</p>
+      <small>RA ${esc(a.ra||'—')} · CPF ${esc(a.cpf||'—')}</small><strong>${money(c.valor_final)}</strong>
+      ${reason?`<small>${esc(reason)}</small>`:''}<span class="payment-status-chip">${esc(meta.label)}</span></div>
+      <div class="card-actions">${meta.group==='pending'?`<button type="button" class="success-action" data-confirm-cert-payment="${c.id}">Confirmar pagamento</button>`:''}
+      <button type="button" data-open-cert-whatsapp="${c.id}">Abrir WhatsApp</button><button type="button" data-open-cert-details="${c.id}">Ver na certificação</button></div>
+    </article>`;
+  }
+  function paymentPackCard(p){
+    const a=state.students.get(p.aluno_id)||{},pack=state.packDefs.get(Number(p.pack_id))||{};
+    const raw=String(p.status_pagamento||'PENDENTE').toUpperCase(),meta=paymentGroupStatus(raw,'pack');
+    const reason=zeroReason(p,'pack');
+    return `<article class="commercial-card payment-card ${meta.css}">
+      <div><span>${esc(p.protocolo_pagamento||`Pack ${p.id}`)}</span><h4>${esc(a.nome||'Aluno')}</h4>
+      <p>${esc(pack.nome||'Pack')} · ${Number(p.quantidade_adquirida||0)} certificado(s)</p>
+      <small>RA ${esc(a.ra||'—')} · CPF ${esc(a.cpf||'—')}</small><strong>${money(p.valor_final??p.valor_pago??p.valor_base)}</strong>
+      ${reason?`<small>${esc(reason)}</small>`:''}<span class="payment-status-chip">${esc(meta.label)}</span></div>
+      <div class="card-actions">${meta.group==='pending'?`<button type="button" class="success-action" data-confirm-pack-payment-emissao="${p.id}">Confirmar pagamento</button>`:''}
+      <button type="button" data-open-pack-whatsapp-emissao="${p.id}">Abrir WhatsApp</button></div>
+    </article>`;
+  }
+  function groupedPaymentHtml(rows,cardFn,emptyText){
+    if(!rows.length)return `<p class="empty-state">${esc(emptyText)}</p>`;
+    const pending=rows.filter(row=>paymentGroupStatus(row.pagamento_status??row.status_pagamento).group==='pending');
+    const confirmed=rows.filter(row=>paymentGroupStatus(row.pagamento_status??row.status_pagamento).group==='confirmed');
+    return `<section class="payment-group-v342"><header><h4>A confirmar</h4><span>${pending.length} registro(s)</span></header>
+      ${pending.length?pending.map(cardFn).join(''):'<p class="empty-state">Nenhum pagamento aguardando confirmação.</p>'}</section>
+      <section class="payment-group-v342"><header><h4>Confirmados</h4><span>${confirmed.length} registro(s)</span></header>
+      ${confirmed.length?confirmed.map(cardFn).join(''):'<p class="empty-state">Nenhum pagamento confirmado.</p>'}</section>`;
+  }
   function renderPayments(){
     const certBox=$('listaPagamentosCertificadosGestao');
-    if(certBox){const rows=state.certs.filter(x=>paymentFilter(x,'cert'));certBox.innerHTML=rows.length?rows.map(c=>{const a=state.students.get(c.aluno_id)||{},course=state.courses.get(Number(c.curso_id))||{};const pay=String(c.pagamento_status||'AGUARDANDO_PAGAMENTO').toUpperCase();return `<article class="commercial-card payment-card"><div><span>${esc(c.protocolo_pagamento||`Solicitação ${c.id}`)}</span><h4>${esc(a.nome||c.nome_aluno||'Aluno')}</h4><p>${esc(course.titulo||c.nome_curso||'Curso')} · ${Number(c.horas_solicitadas||c.horas_emitidas||0)}h</p><small>RA ${esc(a.ra||'—')} · CPF ${esc(a.cpf||'—')}</small><strong>${money(c.valor_final)}</strong><small class="payment-status">${esc(payLabel(pay))}</small></div><div class="card-actions">${!['PAGO','ISENTO','CANCELADO'].includes(pay)?`<button type="button" class="success-action" data-confirm-cert-payment="${c.id}">Confirmar pagamento</button>`:''}<button type="button" data-open-cert-whatsapp="${c.id}">Abrir WhatsApp</button><button type="button" data-open-cert-details="${c.id}">Ver na certificação</button></div></article>`;}).join(''):'<p class="empty-state">Nenhum pagamento de certificado encontrado.</p>';}
+    if(certBox){const rows=state.certs.filter(x=>paymentFilter(x,'cert'));certBox.innerHTML=groupedPaymentHtml(rows,paymentCertificateCard,'Nenhum pagamento de certificado encontrado.');}
     const packBox=$('listaPacksPagamentosGestao');
-    if(packBox){const rows=state.packs.filter(x=>paymentFilter(x,'pack'));packBox.innerHTML=rows.length?rows.map(p=>{const a=state.students.get(p.aluno_id)||{},pack=state.packDefs.get(Number(p.pack_id))||{},pay=String(p.status_pagamento||'PENDENTE').toUpperCase();return `<article class="commercial-card payment-card"><div><span>${esc(p.protocolo_pagamento||`Pack ${p.id}`)}</span><h4>${esc(a.nome||'Aluno')}</h4><p>${esc(pack.nome||'Pack')} · ${Number(p.quantidade_adquirida||0)} certificado(s)</p><small>RA ${esc(a.ra||'—')} · CPF ${esc(a.cpf||'—')}</small><strong>${money(p.valor_final??p.valor_pago??p.valor_base)}</strong><small class="payment-status">${esc(payLabel(pay))}</small></div><div class="card-actions">${pay!=='PAGO'&&pay!=='CANCELADO'?`<button type="button" class="success-action" data-confirm-pack-payment-emissao="${p.id}">Confirmar pagamento</button>`:''}<button type="button" data-open-pack-whatsapp-emissao="${p.id}">Abrir WhatsApp</button></div></article>`;}).join(''):'<p class="empty-state">Nenhum pagamento de pack encontrado.</p>';}
+    if(packBox){const rows=state.packs.filter(x=>paymentFilter(x,'pack'));packBox.innerHTML=groupedPaymentHtml(rows,paymentPackCard,'Nenhum pagamento de pack encontrado.');}
   }
   async function confirmCert(id){const {error}=await sb.rpc('gestor_confirmar_pagamento_certificado_v34',{p_certificado_id:Number(id),p_observacao:'Pagamento confirmado na aba Pagamentos.'});if(error)return toast(error.message,true);toast('Pagamento confirmado. A certificação já está pronta para liberação.');await loadPayments();}
   async function confirmPack(id){const row=state.packs.find(x=>Number(x.id)===Number(id));const {error}=await sb.rpc('gestor_confirmar_pagamento_pack_v34',{p_pack_aluno_id:Number(id),p_valor_pago:Number(row?.valor_final??row?.valor_base??0)});if(error)return toast(error.message,true);toast('Pagamento do pack confirmado.');await loadPayments();}

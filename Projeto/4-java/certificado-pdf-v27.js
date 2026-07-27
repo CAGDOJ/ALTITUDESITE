@@ -219,7 +219,7 @@
     doc.setFont('helvetica', 'bold');
     doc.setFontSize(12.5);
     doc.setTextColor(27, 42, 56);
-    doc.text(`TOTAL CERTIFICADO: ${items.reduce((sum, item) => sum + Number(item.horas || 0), 0)} HORAS`, left, Math.min(height - 24, y + 10));
+    doc.text(`Carga horária certificada: ${items.reduce((sum, item) => sum + Number(item.horas || 0), 0)} horas`, left, height - 27);
   }
 
   async function build({ sb, cert, aluno, curso, logoUrl, validationUrl }) {
@@ -231,7 +231,7 @@
     const doc = new jsPDF({ orientation: 'landscape', unit: 'mm', format: 'a4' });
     const width = doc.internal.pageSize.getWidth();
     const height = doc.internal.pageSize.getHeight();
-    const studentName = escText(cert.nome_aluno || aluno?.nome, 'ALUNO').toUpperCase();
+    const studentName = escText(cert.nome_aluno || aluno?.nome, 'Aluno').trim();
     const courseName = escText(cert.nome_curso || curso?.titulo, 'Curso');
     const title = escText(cert.titulo_documento, 'CERTIFICADO').toUpperCase();
     const subtitle = escText(cert.subtitulo_documento, 'DE CONCLUSÃO E APROVEITAMENTO').toUpperCase();
@@ -243,7 +243,7 @@
     const qr = await qrDataUrl(validationUrl);
 
     frame(doc, width, height);
-    doc.addImage(logo, 'PNG', 20, 22, 55, 8.5, undefined, 'FAST');
+    doc.addImage(logo, 'PNG', width - 79, 22, 60, 9, undefined, 'FAST');
     doc.setTextColor(81, 58, 44);
     doc.setFont('times', 'bold');
     doc.setFontSize(title.length > 20 ? 28 : 34);
@@ -255,7 +255,7 @@
     doc.setTextColor(27, 42, 56);
     doc.setFont('times', 'normal');
     doc.setFontSize(12);
-    doc.text('A ALTITUDE CENTRO UNIVERSITÁRIO certifica que', width / 2, 70, { align: 'center' });
+    doc.text('A Altitude Centro Universitário certifica que', width / 2, 70, { align: 'center' });
     doc.setFont('times', 'italic');
     doc.setFontSize(studentName.length > 48 ? 24 : 29);
     const nameLines = doc.splitTextToSize(studentName, 225);
@@ -317,14 +317,17 @@
 
     drawProgramItems(doc, program, width, height);
 
-    doc.setFillColor(238, 247, 249);
-    doc.roundedRect(width - 77, 52, 56, 124, 3, 3, 'F');
+    // Registro acadêmico minimalista, sem caixa de fundo.
+    const panelCenter = width - 49;
     doc.setFont('helvetica', 'bold');
     doc.setTextColor(7, 49, 79);
-    doc.setFontSize(10);
-    doc.text('REGISTRO ACADÊMICO', width - 49, 67, { align: 'center' });
+    doc.setFontSize(9.5);
+    doc.text('Registro acadêmico', panelCenter, 57, { align: 'center' });
+    doc.setDrawColor(215, 224, 233);
+    doc.setLineWidth(0.25);
+    doc.line(width - 72, 62, width - 26, 62);
     doc.setFont('helvetica', 'normal');
-    doc.setFontSize(8.5);
+    doc.setFontSize(8);
     const legal = [
       `RA: ${aluno?.ra || '—'}`,
       `CPF: ${formatCpf(cpfValue)}`,
@@ -336,20 +339,21 @@
       'LDB nº 9.394/96, art. 41, e Decreto nº 5.154/04.',
       'CNPJ: 45.628.030/0001-85'
     ];
-    let y = 78;
+    let y = 70;
     legal.forEach((line) => {
       const lines = doc.splitTextToSize(line, 48);
-      doc.text(lines, width - 49, y, { align: 'center' });
-      y += 7 + (lines.length - 1) * 4;
+      doc.text(lines, panelCenter, y, { align: 'center' });
+      y += 6.3 + (lines.length - 1) * 3.6;
     });
-    doc.addImage(qr, 'PNG', width - 60, 139, 23, 23);
+    const qrY = Math.max(137, y + 5);
+    doc.addImage(qr, 'PNG', width - 60.5, qrY, 23, 23);
     doc.setFontSize(7);
-    doc.text('Autenticidade pelo QR Code', width - 49, 167, { align: 'center' });
+    doc.text('Autenticidade pelo QR Code', panelCenter, qrY + 28, { align: 'center' });
 
     doc.setFont('helvetica', 'normal');
     doc.setFontSize(7.5);
     doc.setTextColor(92, 103, 112);
-    doc.text(`Documento nº ${cert.numero_certificado || cert.codigo_validacao} - confirme a autenticidade no Portal Altitude.`, width / 2, height - 16, { align: 'center' });
+    doc.text(`Documento nº ${cert.numero_certificado || cert.codigo_validacao} — confirme a autenticidade no Portal Altitude.`, width / 2, height - 16, { align: 'center', maxWidth: width - 48 });
 
     return { doc, filename: `certificado-${slug(courseName)}-${slug(studentName)}.pdf`, program };
   }

@@ -34,6 +34,7 @@
   <link rel="stylesheet" href="../2-css/22-v31-construtor.css?v=31">
   <link rel="stylesheet" href="../2-css/23-v32-integrado.css?v=33">
   <link rel="stylesheet" href="../2-css/24-v33-final.css?v=33">
+  <link rel="stylesheet" href="../2-css/25-v34-final.css?v=34">
 </head>
 
 <body class="gestor-auth-pending">
@@ -51,6 +52,7 @@
         <button class="nav-item" data-min-level="2" data-tab="certificados-gestao" onclick="abrirAba('certificados-gestao')"><span>✓</span> Certificados</button>
         <button class="nav-item" data-min-level="4" data-tab="usuarios" onclick="abrirAba('usuarios')"><span>♙</span> Equipe e acessos</button>
         <button class="nav-item" data-min-level="1" data-tab="chamados" onclick="abrirAba('chamados')"><span>✉</span> Atendimento</button>
+        <button class="nav-item" data-min-level="3" data-tab="comercial" onclick="abrirAba('comercial')"><span>◆</span> Comercial e promoções</button>
       </nav>
       <div class="sidebar-bottom">
         <div class="manager-identity"><span>GESTOR LOGADO</span><strong id="gestorNomeAtual">GESTOR ALTITUDE</strong><small id="gestorIdAtual">—</small></div>
@@ -64,7 +66,7 @@
     <main class="conteudo">
       <header class="gestor-topbar">
         <button class="mobile-menu" id="btnMenuGestor" type="button" aria-label="Abrir menu">☰</button>
-        <div><p class="eyebrow">Instituição Altitude</p><h1 id="gestorPageTitle">Visão geral</h1></div>
+        <div><p class="eyebrow">ALTITUDE CENTRO UNIVERSITÁRIO</p><h1 id="gestorPageTitle">Visão geral</h1></div>
         <div class="topbar-actions"><span id="gestorHoje"></span><a href="2-profissional.html" target="_blank" rel="noopener">Ver site</a></div>
       </header>
 
@@ -295,7 +297,6 @@
             <label>Descrição breve
               <input id="fCursoDesc" type="text" maxlength="160" placeholder="Até 160 caracteres">
             </label>
-            <div class="quick-hours"><span>Cargas mais usadas:</span><button type="button" data-hours="5">5h</button><button type="button" data-hours="10">10h</button><button type="button" data-hours="20">20h</button><button type="button" data-hours="40">40h</button><button type="button" data-hours="60">60h</button><button type="button" data-hours="80">80h</button><button type="button" data-hours="120">120h</button><button type="button" data-hours="160">160h</button><button type="button" data-hours="200">200h</button></div>
             <label>Foto de capa
               <input id="fCursoCapa" type="file" accept="image/*">
             </label>
@@ -484,7 +485,7 @@
                 <div class="v30-latex-grid">
                   <div class="latex-editor-card">
                     <header><div><span>CONTEÚDO</span><h4>LaTeX do material</h4><p>Use o modelo institucional da Altitude.</p></div><label class="latex-file-button">Abrir .tex<input id="latexContentFile" type="file" accept=".tex,text/plain,text/x-tex"></label></header>
-                    <div class="latex-editor-toolbar"><button type="button" id="latexContentTemplate">Carregar modelo</button><button type="button" id="latexValidateContent" class="primary">Gerar prévia do PDF</button></div>
+                    <div class="latex-editor-toolbar"><button type="button" id="latexContentTemplate">Carregar modelo</button><button type="button" id="latexSyncFromNormal">Sincronizar com modo normal</button><button type="button" id="latexValidateContent" class="primary">Gerar prévia do PDF</button></div>
                     <textarea id="latexContentSource" spellcheck="false" aria-label="LaTeX do conteúdo"></textarea>
                   </div>
                   <aside class="v30-preview-card">
@@ -520,8 +521,12 @@
                 <div class="latex-import-options v30-import-options">
                   <label><input id="latexReplaceExisting" type="checkbox" checked> Substituir a estrutura atual deste curso</label>
                   <label><input id="latexPublishModules" type="checkbox" checked> Liberar os módulos ao publicar</label>
-                  <label><input id="latexUpdateCourse" type="checkbox" checked> Atualizar título, área e horas pelo LaTeX</label>
+                  <label><input id="latexUpdateCourse" type="checkbox" checked> Atualizar título e área pelo LaTeX</label>
                 </div>
+                <section class="latex-module-video-manager" id="latexModuleVideoManager">
+                  <div><span>VÍDEOS DOS MÓDULOS</span><h5>Adicionar ou remover vídeos por módulo</h5><p>Os módulos reconhecidos no LaTeX aparecerão aqui. O vídeo fica sincronizado com a edição normal.</p></div>
+                  <div id="latexModuleVideoList" class="latex-module-video-list"><p class="empty-state">Gere a prévia do material para listar os módulos.</p></div>
+                </section>
                 <span id="latexImportProgress" aria-live="polite"></span>
                 <div class="latex-final-actions">
                   <button type="button" id="latexImportConfirm" class="builder-secondary-button">Salvar como rascunho</button>
@@ -631,10 +636,9 @@
         <div class="ai-layout">
           <form id="formCursoIA" class="panel ai-form">
             <div class="ai-callout"><strong>Descreva o curso como falaria comigo</strong><p>Inclua tema, público, objetivo e qualquer regra importante.</p></div>
-            <label>Pedido do curso<textarea id="iaPrompt" rows="6" required placeholder="Ex.: Crie um curso de Informática Básica para iniciantes, com 20 horas, 5 módulos, linguagem simples e prova final de 10 questões."></textarea></label>
+            <label>Pedido do curso<textarea id="iaPrompt" rows="6" required placeholder="Ex.: Crie um curso de Informática Básica para iniciantes, com 5 módulos, linguagem simples e prova final de 10 questões."></textarea></label>
             <div class="grid2">
               <label>Tipo de formação<select id="iaTipoCurso"><option value="PROFISSIONAL">Curso profissional</option><option value="TECNICO">Curso técnico</option></select></label>
-              <label>Carga horária<select id="iaCarga"><option value="5">5 horas</option><option value="10">10 horas</option><option value="15">15 horas</option><option value="20" selected>20 horas</option><option value="25">25 horas</option><option value="30">30 horas</option><option value="35">35 horas</option><option value="40">40 horas</option><option value="45">45 horas</option><option value="50">50 horas</option><option value="55">55 horas</option><option value="60">60 horas</option><option value="65">65 horas</option><option value="70">70 horas</option><option value="75">75 horas</option><option value="80">80 horas</option><option value="85">85 horas</option><option value="90">90 horas</option><option value="95">95 horas</option><option value="100">100 horas</option><option value="105">105 horas</option><option value="110">110 horas</option><option value="115">115 horas</option><option value="120">120 horas</option><option value="125">125 horas</option><option value="130">130 horas</option><option value="135">135 horas</option><option value="140">140 horas</option><option value="145">145 horas</option><option value="150">150 horas</option><option value="155">155 horas</option><option value="160">160 horas</option><option value="165">165 horas</option><option value="170">170 horas</option><option value="175">175 horas</option><option value="180">180 horas</option><option value="185">185 horas</option><option value="190">190 horas</option><option value="195">195 horas</option><option value="200">200 horas</option></select></label>
               <label>Nível<select id="iaNivel"><option value="BASICO">Básico</option><option value="INTERMEDIARIO">Intermediário</option><option value="AVANCADO">Avançado</option></select></label>
             </div>
             <div class="grid2">
@@ -662,7 +666,7 @@
         <div class="modal__sheet json-import-sheet">
           <h3>Importar curso gerado por IA</h3>
           <p class="sub">Cole o JSON produzido no ChatGPT/Claude gratuito. O curso será salvo como rascunho para revisão.</p>
-          <textarea id="cursoJsonInput" rows="18" placeholder='{"titulo":"Informática Básica","carga_horaria":20,"modulos":[...],"prova":{"questoes":[...]}}'></textarea>
+          <textarea id="cursoJsonInput" rows="18" placeholder='{"titulo":"Informática Básica","modulos":[...],"prova":{"questoes":[...]}}'></textarea>
           <div id="cursoJsonMensagem" class="form-review-note" hidden></div>
           <div class="actions">
             <button type="button" class="ghost" id="fecharImportarCursoJson">Cancelar</button>
@@ -805,7 +809,7 @@
           <select id="certFiltroStatus">
             <option value="TODOS">Todos os status</option>
             <option value="PENDENTE">Aguardando decisão</option>
-            <option value="AGUARDANDO_HORAS">Em contagem automática</option>
+            <option value="AGUARDANDO_HORAS">Aguardando</option>
             <option value="EMITIDO">Emitidos</option>
             <option value="BLOQUEADO">Bloqueados</option>
             <option value="CANCELADO">Cancelados</option>
@@ -813,11 +817,11 @@
         </div>
 
         <div class="section-heading certificate-hours-heading">
-          <div><span>Carteira acadêmica</span><h3>Gerência de horas dos alunos</h3><p>Administre os créditos disponíveis. Na liberação do certificado, escolha contagem automática de 8h por dia útil ou crédito integral para emissão imediata.</p></div>
+          <div><span>Carteira acadêmica</span><h3>Gerência de horas dos alunos</h3><p>Consulte o saldo geral de cada aluno. As horas automáticas contam desde o cadastro na plataforma, somadas aos ajustes realizados pela gestão.</p></div>
         </div>
         <div class="card certificate-admin-table-wrap">
           <table class="tabela" id="tabCarteirasHorasGestao">
-            <thead><tr><th>Aluno</th><th>Curso</th><th>Limite automático</th><th>Validadas</th><th>Reservadas</th><th>Utilizadas</th><th>Disponíveis</th><th>Ação</th></tr></thead>
+            <thead><tr><th>Aluno</th><th>Cadastro</th><th>Horas automáticas</th><th>Ajustes da gestão</th><th>Reservadas</th><th>Utilizadas</th><th>Saldo disponível</th><th>Ação</th></tr></thead>
             <tbody></tbody>
           </table>
         </div>
@@ -827,9 +831,19 @@
         </div>
         <div class="card certificate-admin-table-wrap">
           <table class="tabela" id="tabCertificadosGestao">
-            <thead><tr><th>Aluno</th><th>Curso</th><th>Horas solicitadas</th><th>Nota</th><th>Solicitação</th><th>Status</th><th>Ações</th></tr></thead>
+            <thead><tr><th>Aluno</th><th>Curso</th><th>Horas</th><th>Pagamento</th><th>Solicitação</th><th>Status</th><th>Ações</th></tr></thead>
             <tbody></tbody>
           </table>
+        </div>
+        <div class="section-heading certificate-processed-heading">
+          <div><span>Histórico</span><h3>Certificados processados</h3><p>Emitidos, liberados, bloqueados, cancelados e reemitidos.</p></div>
+        </div>
+        <div class="toolbar certificate-processed-toolbar">
+          <input id="certProcessadosBusca" type="search" placeholder="Pesquisar por nome, RA, CPF, curso ou código…">
+          <select id="certProcessadosStatus"><option value="TODOS">Todos os status</option><option value="EMITIDO">Emitidos</option><option value="BLOQUEADO">Bloqueados</option><option value="CANCELADO">Cancelados</option></select>
+        </div>
+        <div class="card certificate-admin-table-wrap">
+          <table class="tabela" id="tabCertificadosProcessados"><thead><tr><th>Aluno</th><th>Curso</th><th>Horas</th><th>Pagamento</th><th>Status</th><th>Atualização</th><th>Ações</th></tr></thead><tbody></tbody></table>
         </div>
       </section>
 
@@ -838,17 +852,17 @@
           <div class="section-heading"><div><span>Carteira de horas</span><h3 id="horasModalTitulo">Gerenciar horas</h3></div><button type="button" id="horasFecharModal">Fechar</button></div>
           <div id="horasModalResumo" class="certificate-admin-summary"></div>
           <form id="formGerenciarHoras" class="hours-manager-form">
-            <label>Total de horas validadas para o aluno
+            <label>Horas adicionais liberadas pela gestão
               <div class="hours-stepper">
                 <button type="button" id="horasMenos5" aria-label="Retirar 5 horas">− 5h</button>
                 <input id="horasGestaoTotal" type="number" min="0" step="5" value="0" required inputmode="numeric" aria-label="Total de horas validadas">
                 <button type="button" id="horasMais5" aria-label="Adicionar 5 horas">+ 5h</button>
               </div>
-              <small class="field-hint">A gestão pode informar qualquer quantidade de horas, sempre de 5 em 5. Não existe limite máximo de horas validadas. Não é possível reduzir abaixo das horas já reservadas ou utilizadas.</small>
+              <small class="field-hint">Informe o ajuste adicional de 5 em 5. As horas automáticas desde o cadastro são calculadas separadamente e não são apagadas.</small>
             </label>
-            <label class="exception-check"><input id="horasGestaoExcepcional" type="checkbox"> Autorizar ajuste excepcional acima do limite automático de 8h por dia útil</label>
+            <label class="exception-check"><input id="horasGestaoExcepcional" type="checkbox"> Registrar ajuste manual de horas</label>
             <label>Justificativa da gestão
-              <textarea id="horasGestaoJustificativa" rows="4" placeholder="Obrigatória quando a carga ultrapassar o limite calculado pelo período."></textarea>
+              <textarea id="horasGestaoJustificativa" rows="4" placeholder="Descreva o motivo do ajuste realizado na carteira do aluno."></textarea>
             </label>
             <div class="hours-manager-alert" id="horasGestaoAlerta"></div>
             <div class="actions"><button type="button" class="ghost" id="horasCancelar">Cancelar</button><button type="submit">Salvar horas</button></div>
@@ -860,6 +874,16 @@
         <div class="modal__sheet certificate-admin-modal">
           <div class="section-heading"><div><span>Registro acadêmico</span><h3 id="certModalTitulo">Certificado</h3></div><button type="button" id="certFecharModal">Fechar</button></div>
           <div id="certModalResumo" class="certificate-admin-summary"></div>
+          <form id="formAjustarCertificadoV34" class="certificate-request-adjustment" hidden>
+            <div class="grid3">
+              <label>Horas solicitadas<input id="certAjusteHoras" type="number" min="5" step="5" required></label>
+              <label>Início do período<input id="certAjusteInicio" type="date"></label>
+              <label>Fim do período<input id="certAjusteFim" type="date"></label>
+            </div>
+            <label>Observação da gestão<textarea id="certAjusteObservacao" rows="2" placeholder="Opcional"></textarea></label>
+            <div class="actions"><button type="submit">Salvar carga e período</button></div>
+            <small>O período parte do cadastro do aluno e deve respeitar o limite de 8 horas por dia. Horas extras da gestão permanecem identificadas como ajuste manual.</small>
+          </form>
           <div class="certificate-admin-actions" id="certModalAcoes"></div>
           <div class="certificate-admin-history">
             <h4>Histórico do registro</h4>
@@ -914,6 +938,47 @@
         </div>
       </div>
 
+
+      <section id="comercial" class="aba" data-min-level="3">
+        <div class="page-heading"><div><span>Gestão comercial</span><h2>Comercial e promoções</h2><p>Configure o valor por certificado, packs, cupons, anúncios e visibilidade dos tipos de curso.</p></div><button type="button" class="primary-action" id="btnComercialAtualizar">Atualizar</button></div>
+        <nav class="v34-subtabs" aria-label="Seções comerciais">
+          <button type="button" class="active" data-commercial-tab="config">Configurações</button>
+          <button type="button" data-commercial-tab="cupons">Cupons</button>
+          <button type="button" data-commercial-tab="promocoes">Promoções e novidades</button>
+          <button type="button" data-commercial-tab="packs">Packs</button>
+          <button type="button" data-commercial-tab="tipos">Tipos de curso</button>
+        </nav>
+        <div class="commercial-panel active" data-commercial-panel="config">
+          <form id="formConfiguracaoComercial" class="surface-admin-form">
+            <div class="grid2"><label>Valor padrão por certificado<input id="comValorCertificado" type="number" min="0" step="0.01" required></label><label>WhatsApp de cobrança<input id="comWhatsapp" type="text" placeholder="5591983640933" required></label></div>
+            <label><input id="comCobrancaAtiva" type="checkbox"> Ativar cobrança por certificado</label>
+            <label>Mensagem padrão do WhatsApp<textarea id="comMensagemWhatsapp" rows="5"></textarea></label>
+            <button type="submit">Salvar configurações</button>
+          </form>
+        </div>
+        <div class="commercial-panel" data-commercial-panel="cupons">
+          <div class="section-heading"><div><span>Descontos</span><h3>Cupons</h3><p>Crie códigos para certificado ou pack, com período e limite de uso.</p></div><button type="button" id="btnNovoCupom">+ Novo cupom</button></div>
+          <div id="listaCuponsGestao" class="commercial-card-grid"></div>
+        </div>
+        <div class="commercial-panel" data-commercial-panel="promocoes">
+          <div class="section-heading"><div><span>Comunicação</span><h3>Promoções e novidades</h3><p>Envie uma imagem para aparecer como pop-up no Portal do Aluno e mantenha um endereço exclusivo para cada anúncio.</p></div><button type="button" id="btnNovaPromocao">+ Novo anúncio</button></div>
+          <div id="listaPromocoesGestao" class="commercial-card-grid"></div>
+        </div>
+        <div class="commercial-panel" data-commercial-panel="packs">
+          <div class="section-heading"><div><span>Quantidade</span><h3>Packs</h3><p>O pack define somente a quantidade de certificados e o valor. O aluno escolhe os cursos depois.</p></div><button type="button" id="btnNovoPack">+ Novo pack</button></div>
+          <div id="listaPacksGestao" class="commercial-card-grid"></div>
+          <div class="section-heading pack-payment-heading"><div><span>Pagamentos</span><h3>Solicitações de packs</h3><p>Confirme o pagamento para liberar automaticamente a quantidade comprada ao aluno.</p></div></div>
+          <div id="listaPacksPagamentosGestao" class="commercial-card-grid"></div>
+        </div>
+        <div class="commercial-panel" data-commercial-panel="tipos">
+          <div class="section-heading"><div><span>Catálogo público</span><h3>Tipos de curso</h3><p>Controle quais formações aparecem no site. Cursos técnicos permanecem ocultos até a autorização da instituição.</p></div></div>
+          <div id="listaTiposCursoGestao" class="commercial-card-grid"></div>
+        </div>
+      </section>
+
+      <div class="modal" id="modalCupomV34" aria-hidden="true"><div class="modal__sheet"><div class="section-heading"><div><span>Desconto</span><h3 id="cupomModalTitulo">Novo cupom</h3></div><button type="button" data-close-v34="modalCupomV34">Fechar</button></div><form id="formCupomV34" class="surface-admin-form"><input type="hidden" id="cupomId"><div class="grid2"><label>Código<input id="cupomCodigo" maxlength="30" required></label><label>Aplicação<select id="cupomAplicacao"><option value="CERTIFICADO">Certificado</option><option value="PACK">Pack</option><option value="AMBOS">Certificado e pack</option></select></label></div><div class="grid2"><label>Tipo<select id="cupomTipo"><option value="PERCENTUAL">Percentual</option><option value="FIXO">Valor fixo</option><option value="GRATUITO">Gratuito</option></select></label><label>Valor<input id="cupomValor" type="number" min="0" step="0.01"></label></div><div class="grid2"><label>Início<input id="cupomInicio" type="datetime-local"></label><label>Fim<input id="cupomFim" type="datetime-local"></label></div><div class="grid2"><label>Limite total de usos<input id="cupomLimite" type="number" min="0"></label><label>Usos por aluno<input id="cupomLimiteAluno" type="number" min="1" value="1"></label></div><label><input id="cupomAtivo" type="checkbox" checked> Cupom ativo</label><button type="submit">Salvar cupom</button></form></div></div>
+      <div class="modal" id="modalPromocaoV34" aria-hidden="true"><div class="modal__sheet"><div class="section-heading"><div><span>Pop-up</span><h3 id="promocaoModalTitulo">Novo anúncio</h3></div><button type="button" data-close-v34="modalPromocaoV34">Fechar</button></div><form id="formPromocaoV34" class="surface-admin-form"><input type="hidden" id="promocaoId"><label>Título<input id="promocaoTitulo" required></label><label>Descrição<textarea id="promocaoDescricao" rows="4"></textarea></label><div class="grid2"><label>Imagem<input id="promocaoImagem" type="file" accept="image/*"></label><label>Endereço exclusivo<input id="promocaoSlug" placeholder="pack-3-certificados"></label></div><div class="grid2"><label>Texto do botão<input id="promocaoBotao" value="Ver promoção"></label><label>Link do botão<input id="promocaoLink"></label></div><div class="grid2"><label>Início<input id="promocaoInicio" type="datetime-local"></label><label>Fim<input id="promocaoFim" type="datetime-local"></label></div><div class="grid2"><label>Público<select id="promocaoPublico"><option value="TODOS">Todos os alunos</option><option value="MATRICULADOS">Alunos matriculados</option><option value="APROVADOS">Alunos aprovados</option><option value="SEM_CERTIFICADO">Sem certificado emitido</option></select></label><label>Frequência<select id="promocaoFrequencia"><option value="UMA_VEZ">Mostrar uma vez</option><option value="DIARIA">Uma vez por dia</option><option value="CADA_ACESSO">Em cada acesso</option></select></label></div><label>Prioridade<input id="promocaoPrioridade" type="number" min="0" value="0"></label><label><input id="promocaoAtiva" type="checkbox" checked> Anúncio ativo</label><button type="submit">Salvar anúncio</button></form></div></div>
+      <div class="modal" id="modalPackV34" aria-hidden="true"><div class="modal__sheet"><div class="section-heading"><div><span>Oferta</span><h3 id="packModalTitulo">Novo pack</h3></div><button type="button" data-close-v34="modalPackV34">Fechar</button></div><form id="formPackV34" class="surface-admin-form"><input type="hidden" id="packId"><label>Nome<input id="packNome" required></label><label>Descrição<textarea id="packDescricao" rows="3"></textarea></label><div class="grid2"><label>Quantidade de certificados<input id="packQuantidade" type="number" min="1" required></label><label>Valor do pack<input id="packValor" type="number" min="0" step="0.01" required></label></div><label>Imagem<input id="packImagem" type="file" accept="image/*"></label><label><input id="packAtivo" type="checkbox" checked> Pack ativo</label><button type="submit">Salvar pack</button></form></div></div>
       <section id="chamados" class="aba" data-min-level="1">
         <h2>📨 Gestão de Chamados</h2>
         <div class="kpis-ch">
@@ -1042,5 +1107,6 @@
   </div>
   <script src="../4-java/06-responsive.js?v=17"></script>
   <script src="../4-java/15-ajustes-finais.js?v=17" defer></script>
+  <script src="../4-java/v34-gestor.js?v=34" defer></script>
 </body>
 </html>

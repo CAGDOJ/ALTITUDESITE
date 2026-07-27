@@ -13,6 +13,10 @@
     tipo: "PROFISSIONAL"
   };
 
+  function typeSetting(code) { return window.ALTITUDE_COURSE_TYPES_V34?.[String(code || 'PROFISSIONAL').toUpperCase()] || null; }
+  function typeVisible(code) { const item=typeSetting(code); return item ? item.visivel_site !== false : String(code).toUpperCase() !== 'TECNICO'; }
+  function enrollmentAllowed(code) { const item=typeSetting(code); return item ? item.permitir_inscricao !== false : typeVisible(code); }
+
   function escapeHTML(value = "") {
     return String(value)
       .replaceAll("&", "&amp;")
@@ -109,7 +113,8 @@
   function cursosFiltrados() {
     let lista = state.cursos.filter((curso) => {
       const search = `${curso.titulo || ""} ${curso.descricao || ""} ${curso.categoria || ""}`.toLowerCase();
-      const tipoOk = String(curso.tipo_curso || "PROFISSIONAL").toUpperCase() === state.tipo;
+      const cursoTipo = String(curso.tipo_curso || "PROFISSIONAL").toUpperCase();
+      const tipoOk = cursoTipo === state.tipo && typeVisible(cursoTipo);
       const buscaOk = !state.busca || search.includes(state.busca);
       const categoriaOk = !state.categoria || curso.categoria === state.categoria;
       return buscaOk && categoriaOk && tipoOk;
@@ -127,7 +132,7 @@
   function card(curso) {
     const hot = isHot(curso);
     return `
-      <article class="public-course-card" data-id="${Number(curso.id)}">
+      <article class="public-course-card" data-id="${Number(curso.id)}" data-curso-tipo="${escapeHTML(String(curso.tipo_curso || 'PROFISSIONAL').toUpperCase())}">
         <div class="public-course-cover">
           <img src="${escapeHTML(capa(curso.capa_url))}" alt="Capa do curso ${escapeHTML(curso.titulo)}" loading="lazy" onerror="this.src='/Projeto/3-img/LOGO.png'">
           <img class="course-brand-mark" src="/Projeto/3-img/LOGO.png" alt="" aria-hidden="true">
@@ -145,7 +150,7 @@
           </div>
           <div class="public-course-actions">
             <button class="catalog-secondary-button" type="button" data-action="detalhes" data-id="${Number(curso.id)}">Ver detalhes</button>
-            <button class="catalog-primary-button" type="button" data-action="inscrever" data-id="${Number(curso.id)}">Inscrever-se</button>
+            <button class="catalog-primary-button" type="button" data-action="inscrever" data-id="${Number(curso.id)}" ${enrollmentAllowed(curso.tipo_curso || 'PROFISSIONAL') ? '' : 'disabled aria-disabled="true"'}>${enrollmentAllowed(curso.tipo_curso || 'PROFISSIONAL') ? 'Inscrever-se' : 'Inscrições indisponíveis'}</button>
           </div>
         </div>
       </article>`;
@@ -199,6 +204,9 @@
     $("modalCursoRating").innerHTML = estrelas(curso.avaliacao_media, curso.avaliacoes_total);
     $("modalCursoEmAlta").hidden = !isHot(curso);
     $("btnInscreverCurso").dataset.id = String(curso.id);
+    const allowed = enrollmentAllowed(curso.tipo_curso || "PROFISSIONAL");
+    $("btnInscreverCurso").disabled = !allowed;
+    $("btnInscreverCurso").textContent = allowed ? "Inscrever-se" : "Inscrições indisponíveis";
     $("modalCursoPublico").setAttribute("aria-hidden", "false");
     document.body.style.overflow = "hidden";
     registrar(curso.id, "VISUALIZACAO");
@@ -212,6 +220,8 @@
   async function inscrever(cursoId) {
     const id = Number(cursoId);
     if (!id) return;
+    const curso = state.cursos.find((item) => Number(item.id) === id);
+    if (!enrollmentAllowed(curso?.tipo_curso || "PROFISSIONAL")) return toast("As inscrições para este tipo de curso estão temporariamente indisponíveis.", "error");
     await registrar(id, "CLIQUE");
 
     const { data } = await sb.auth.getSession();
@@ -239,6 +249,7 @@
     $("filtrosTipoCurso")?.addEventListener("click", (event) => {
       const button = event.target.closest("[data-tipo]");
       if (!button) return;
+      if (!typeVisible(button.dataset.tipo)) return;
       state.tipo = button.dataset.tipo;
       state.horas = "TODAS";
       document.querySelectorAll(".course-type-tab").forEach((tab) => tab.classList.toggle("active", tab === button));
@@ -251,6 +262,7 @@
     $("buscaCursosPublicos")?.addEventListener("input", (event) => { state.busca = event.target.value.trim().toLowerCase(); renderCursos(); });
     $("filtroCategoriaPublica")?.addEventListener("change", (event) => { state.categoria = event.target.value; renderCursos(); });
     $("ordenarCursosPublicos")?.addEventListener("change", (event) => { state.ordem = event.target.value; renderCursos(); });
+    document.addEventListener("altitude:course-types-v34", () => { if (!typeVisible(state.tipo)) state.tipo = "PROFISSIONAL"; renderCategorias(); renderCursos(); });
     $("catalogoCursos")?.addEventListener("click", (event) => {
       const button = event.target.closest("button[data-action]");
       if (!button) return;

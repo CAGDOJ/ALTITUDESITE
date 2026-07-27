@@ -52,12 +52,12 @@ async function createModulePdf(title: string, courseTitle: string, content: stri
   const newPage = () => { page = pdf.addPage(pageSize); y = 786; };
   const drawFooter = () => {
     const pages = pdf.getPages();
-    pages.forEach((p, index) => p.drawText(`Instituicao Altitude | ${normalizeText(courseTitle)} | Pagina ${index + 1}/${pages.length}`, {
+    pages.forEach((p, index) => p.drawText(`ALTITUDE CENTRO UNIVERSITÁRIO | ${normalizeText(courseTitle)} | Pagina ${index + 1}/${pages.length}`, {
       x: margin, y: 24, size: 8, font: regular, color: rgb(.38, .43, .49),
     }));
   };
 
-  page.drawText('INSTITUICAO ALTITUDE', { x: margin, y, size: 17, font: bold, color: rgb(.03, .18, .35) });
+  page.drawText('ALTITUDE CENTRO UNIVERSITÁRIO', { x: margin, y, size: 17, font: bold, color: rgb(.03, .18, .35) });
   y -= 28;
   for (const line of wrapText(title, 62).filter(Boolean)) {
     page.drawText(line, { x: margin, y, size: 16, font: bold, color: rgb(.06, .24, .42) });
@@ -108,7 +108,7 @@ async function generateCourseCover(
     headers: { Authorization: `Bearer ${apiKey}`, 'Content-Type': 'application/json' },
     body: JSON.stringify({
       model: Deno.env.get('OPENAI_IMAGE_MODEL') || 'gpt-image-1-mini',
-      prompt: `Capa horizontal profissional para curso educacional da Instituicao Altitude. Curso: ${title}. Categoria: ${category}. Identidade visual em azul marinho, azul profundo, branco e ciano. Composicao moderna, limpa, didatica, confiavel e apropriada para ambiente educacional. Sem logotipos inventados, sem marcas de terceiros, sem texto pequeno e sem certificado. Deixe uma area visual limpa para a sobreposicao da logomarca oficial da Altitude pelo portal.`,
+      prompt: `Capa horizontal profissional para curso educacional da ALTITUDE CENTRO UNIVERSITÁRIO. Curso: ${title}. Categoria: ${category}. Identidade visual em azul marinho, azul profundo, branco e ciano. Composicao moderna, limpa, didatica, confiavel e apropriada para ambiente educacional. Sem logotipos inventados, sem marcas de terceiros, sem texto pequeno e sem certificado. Deixe uma area visual limpa para a sobreposicao da logomarca oficial da Altitude pelo portal.`,
       size: '1536x1024',
       quality: 'medium',
       output_format: 'png',

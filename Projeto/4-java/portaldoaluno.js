@@ -15,7 +15,10 @@ const state = {
   certificados: [],
   certificadosHistorico: [],
   carteirasHoras: [],
+  carteiraGlobal: null,
   movimentacoesHoras: [],
+  promocoesV34: [],
+  promocoesAlunoV34: [],
   pagamentos: [],
   chamados: [],
   chamadoAtual: null,
@@ -35,6 +38,7 @@ const TITULOS_ABAS = {
   cursos: "Meus cursos",
   certificados: "Certificados",
   pagamentos: "Pagamentos",
+  novidades: "Promoções",
   atendimento: "Atendimento",
   cadastro: "Meu cadastro"
 };
@@ -366,29 +370,30 @@ async function carregarHistoricoCertificados() {
 }
 
 async function carregarCarteirasHoras() {
-  const { data, error } = await sb.rpc("obter_minhas_carteiras_horas");
+  const { data, error } = await sb.rpc("obter_minha_carteira_horas_v34");
   if (error) {
-    console.warn("Carteira de horas indisponível:", error.message);
+    console.warn("Carteira global de horas indisponível:", error.message);
     return;
   }
-  state.carteirasHoras = data || [];
+  state.carteiraGlobal = data || null;
+  state.carteirasHoras = data ? [data] : [];
 }
 
 async function carregarMovimentacoesHoras() {
   const { data, error } = await sb
-    .from("movimentacoes_horas")
+    .from("movimentacoes_horas_aluno_v34")
     .select("*")
     .eq("aluno_id", state.aluno.user_id)
     .order("criado_em", { ascending: false });
   if (error) {
-    console.warn("Extrato de horas indisponível:", error.message);
+    console.warn("Extrato global de horas indisponível:", error.message);
     return;
   }
   state.movimentacoesHoras = data || [];
 }
 
-function carteiraHorasCurso(cursoId) {
-  return state.carteirasHoras.find((item) => Number(item.curso_id) === Number(cursoId)) || null;
+function carteiraHorasCurso(_cursoId) {
+  return state.carteiraGlobal || state.carteirasHoras[0] || null;
 }
 
 function opcoesHorasDisponiveis(saldo) {
@@ -783,7 +788,7 @@ async function baixarMaterialCompletoCurso() {
     };
 
     doc.setTextColor(10, 61, 98);
-    writeLines("INSTITUIÇÃO ALTITUDE", 11, true, 6);
+    writeLines("ALTITUDE CENTRO UNIVERSITÁRIO", 11, true, 6);
     doc.setTextColor(25, 42, 58);
     writeLines(`Material de estudo — ${state.cursoAtual.titulo || "Curso"}`, 18, true, 8);
     doc.setDrawColor(28, 170, 181);
@@ -811,7 +816,7 @@ async function baixarMaterialCompletoCurso() {
       doc.setFont("helvetica", "normal");
       doc.setFontSize(8);
       doc.setTextColor(100, 115, 128);
-      doc.text(`Instituição Altitude · ${page} de ${totalPages}`, width / 2, height - 9, { align: "center" });
+      doc.text(`ALTITUDE CENTRO UNIVERSITÁRIO · ${page} de ${totalPages}`, width / 2, height - 9, { align: "center" });
     }
 
     const filename = `material-${String(state.cursoAtual.titulo || "curso").normalize("NFD").replace(/[\u0300-\u036f]/g, "").replace(/[^a-zA-Z0-9]+/g, "-").replace(/^-|-$/g, "").toLowerCase()}.pdf`;
@@ -1111,9 +1116,21 @@ function renderHistoricoCertificados() {
   const list = $("historicoCertificados");
   if (!list) return;
   const acoesPublicas = new Set(["SOLICITADO", "LIBERADO", "EMITIDO", "BLOQUEADO", "CANCELADO", "REABERTO"]);
-  const historico = [...state.certificadosHistorico]
+  const historicoBase = [...state.certificadosHistorico]
     .filter((item) => acoesPublicas.has(String(item.acao || "").toUpperCase()))
     .sort((a, b) => new Date(b.criado_em) - new Date(a.criado_em));
+  const historico = [];
+  const eventosEmitidos = new Set();
+  historicoBase.forEach((item) => {
+    const status = String(item.status_novo || "").toUpperCase();
+    if (status === "EMITIDO") {
+      const minute = String(item.criado_em || "").slice(0, 16);
+      const key = `${Number(item.certificado_id || 0)}|${minute}|EMITIDO`;
+      if (eventosEmitidos.has(key)) return;
+      eventosEmitidos.add(key);
+    }
+    historico.push(item);
+  });
   setText("contadorHistoricoCertificados", `${historico.length} ${historico.length === 1 ? "registro" : "registros"}`);
   if (!historico.length) {
     list.innerHTML = `<div class="empty-state">Nenhuma movimentação de certificado registrada.</div>`;
@@ -1142,7 +1159,7 @@ function renderResumoCarteiraHoras() {
     return acc;
   }, { validadas: 0, reservadas: 0, utilizadas: 0, disponiveis: 0 });
   box.innerHTML = `
-    <article><span>Horas validadas</span><strong>${totais.validadas}h</strong></article>
+    <article><span>Horas acumuladas</span><strong>${totais.validadas}h</strong></article>
     <article><span>Saldo disponível</span><strong>${totais.disponiveis}h</strong></article>
     <article><span>Em análise</span><strong>${totais.reservadas}h</strong></article>
     <article><span>Já certificadas</span><strong>${totais.utilizadas}h</strong></article>`;
@@ -1174,7 +1191,7 @@ function renderExtratoHoras() {
     const curso = state.cursos.find((c) => Number(c.id) === Number(item.curso_id));
     const sinal = Number(item.horas || 0) > 0 ? "+" : "";
     return `<article class="hours-history-item">
-      <div><strong>${escapeHTML(rotuloMovimentoHoras(item.tipo))}</strong><span>${escapeHTML(curso?.titulo || "Curso")}</span></div>
+      <div><strong>${escapeHTML(rotuloMovimentoHoras(item.tipo))}</strong><span>${escapeHTML(item.observacao || "Carteira global do aluno")}</span></div>
       <div class="hours-history-value"><b>${sinal}${Number(item.horas || 0)}h</b><small>${dataBR(item.criado_em, true)}</small></div>
     </article>`;
   }).join("");
@@ -1263,7 +1280,7 @@ function renderCertificados() {
       actions = `<button class="secondary-button" type="button" disabled>Aguardando liberação</button>`;
     } else if (pendente) {
       statusVisual = "PENDENTE";
-      help = `${Number(pendente.horas_solicitadas || 0)}h reservadas. Aguardando a decisão da gestão; o PDF ainda não está disponível.`;
+      help = `${Number(pendente.horas_solicitadas || 0)}h reservadas. ${["PAGO","ISENTO"].includes(String(pendente.pagamento_status || "").toUpperCase()) ? "Pagamento confirmado; aguardando liberação." : "Aguardando pagamento pelo WhatsApp."}`;
       actions = `<button class="secondary-button" type="button" disabled>Aguardando decisão</button>`;
     } else if (bloqueado) {
       statusVisual = "BLOQUEADO";
@@ -1310,7 +1327,7 @@ function renderCertificados() {
       <div class="certificate-requirements">
         <div class="requirement ${progressoOk ? "ok" : ""}"><b>${progressoOk ? "✓" : "1"}</b><span>Conteúdo 100% concluído</span></div>
         <div class="requirement ${provaOk ? "ok" : ""}"><b>${provaOk ? "✓" : "2"}</b><span>Prova com nota mínima de ${notaMinima}%</span></div>
-        <div class="requirement ${validadas > 0 ? "ok" : ""}"><b>${validadas > 0 ? "✓" : "3"}</b><span>Horas validadas pela gestão</span></div>
+        <div class="requirement ${validadas > 0 ? "ok" : ""}"><b>${validadas > 0 ? "✓" : "3"}</b><span>Saldo disponível na carteira</span></div>
       </div>
       <div class="certificate-card-footer"><span class="certificate-code">${escapeHTML(help)}</span><div class="certificate-actions">${actions}</div></div>
       ${avaliacaoHtml}
@@ -1391,7 +1408,9 @@ async function avaliarCurso(cursoId) {
 
 async function solicitarCertificado(cursoId) {
   const select = $(`horasSolicitadas-${Number(cursoId)}`);
+  const cupomInput = $(`cupomSolicitacao-${Number(cursoId)}`);
   const horas = Number(select?.value || 0);
+  const cupom = String(cupomInput?.value || "").trim().toUpperCase();
   if (!horas) return toast("Escolha a quantidade de horas do certificado.", "error");
   const carteira = carteiraHorasCurso(cursoId);
   const saldo = Number(carteira?.saldo_disponivel || 0);
@@ -1399,28 +1418,27 @@ async function solicitarCertificado(cursoId) {
   const confirmou = window.AltitudeDialog
     ? await window.AltitudeDialog.confirm({
         title: `Solicitar certificado de ${horas}h`,
-        message: `Serão reservadas ${horas}h da sua carteira. O saldo restante será de ${saldo - horas}h. O PDF será liberado somente após a decisão da gestão.`,
+        message: `Serão reservadas ${horas}h da carteira global. A cobrança é por certificado, e não pela quantidade de horas.${cupom ? ` O cupom ${cupom} será validado.` : ""}`,
         confirmText: "Enviar solicitação"
       })
-    : window.confirm(`Solicitar um certificado de ${horas} horas? O saldo restante será de ${saldo - horas} horas.`);
+    : window.confirm(`Solicitar certificado de ${horas} horas?`);
   if (!confirmou) return;
-
   const button = document.activeElement instanceof HTMLButtonElement ? document.activeElement : null;
   if (button) { button.disabled = true; button.textContent = "Enviando..."; }
   try {
-    const { data, error } = await sb.rpc("solicitar_certificado_curso", {
-      p_curso_id: Number(cursoId),
-      p_horas: horas
+    const { data, error } = await sb.rpc("solicitar_certificado_curso_v34", {
+      p_curso_id: Number(cursoId), p_horas: horas, p_cupom: cupom || null
     });
     if (error) throw error;
     await Promise.all([carregarCertificados(), carregarHistoricoCertificados(), carregarCarteirasHoras()]);
-    renderDashboard();
-    renderCertificados();
-    toast(`Solicitação de ${horas}h enviada. Restam ${Number(data?.saldo_disponivel ?? saldo - horas)}h disponíveis.`, "success");
+    renderDashboard(); renderCertificados(); renderPagamentos(); window.renderSolicitacoesPagamentoV34?.();
+    const statusPagamento = String(data?.pagamento_status || "").toUpperCase();
+    toast(statusPagamento === "ISENTO" ? "Solicitação registrada sem cobrança. Aguarde a liberação." : "Solicitação registrada. Continue o pagamento na aba Pagamentos.", "success");
+    abrirAba("pagamentos");
   } catch (error) {
     toast(`Não foi possível solicitar: ${error.message}`, "error");
   } finally {
-    if (button) { button.disabled = false; button.textContent = "Solicitar análise"; }
+    if (button) { button.disabled = false; button.textContent = "Solicitar certificado"; }
   }
 }
 
@@ -1491,27 +1509,17 @@ async function gerarQrDataUrl(texto) {
 }
 
 async function carregarConteudoProgramatico(cursoId, totalHoras) {
-  let data = null;
-  let error = null;
-  ({ data, error } = await sb.from("modulos").select("id,titulo,ordem,carga_horaria").eq("curso_id", Number(cursoId)).order("ordem"));
-  if (error) ({ data, error } = await sb.from("modulos").select("id,titulo,ordem").eq("curso_id", Number(cursoId)).order("ordem"));
+  const { data, error } = await sb.from("modulos").select("id,titulo,ordem").eq("curso_id", Number(cursoId)).order("ordem");
   if (error) throw error;
   const modules = data || [];
-  if (!modules.length) return [{ titulo: "Conteúdo programático do curso", horas: Number(totalHoras || 0) }];
-  const explicit = modules.reduce((sum, item) => sum + Math.max(0, Number(item.carga_horaria || 0)), 0);
-  const missing = modules.filter((item) => !Number(item.carga_horaria)).length;
-  let remaining = Math.max(0, Number(totalHoras || 0) - explicit);
-  const base = missing ? Math.floor(remaining / missing) : 0;
-  return modules.map((item, index) => {
-    let hours = Math.max(0, Number(item.carga_horaria || 0));
-    if (!hours && missing) {
-      hours = base;
-      remaining -= base;
-      const missingAfter = modules.slice(index + 1).filter((m) => !Number(m.carga_horaria)).length;
-      if (!missingAfter) hours += remaining;
-    }
-    return { titulo: item.titulo || `Módulo ${index + 1}`, horas };
-  });
+  const hoursTotal = Math.max(0, Number(totalHoras || 0));
+  if (!modules.length) return [{ titulo: "Conteúdo programático do curso", horas: hoursTotal }];
+  const base = Math.floor(hoursTotal / modules.length);
+  const remainder = hoursTotal % modules.length;
+  return modules.map((item, index) => ({
+    titulo: String(item.titulo || `Módulo ${index + 1}`).replace(/^m[oó]dulo\s*\d+\s*[-–—:]?\s*/i, '').trim() || `Módulo ${index + 1}`,
+    horas: base + (index < remainder ? 1 : 0)
+  }));
 }
 
 function desenharMolduraCertificado(doc, pageWidth, pageHeight) {
@@ -1575,10 +1583,11 @@ function renderPagamentos() {
   const list = $("listaPagamentos");
   if (!list) return;
   if (!state.pagamentos.length) {
-    list.innerHTML = `<div class="empty-state">Nenhum pagamento encontrado.</div>`;
-    return;
+    list.innerHTML = `<div class="empty-state">Os pagamentos confirmados aparecerão aqui.</div>`;
+  } else {
+    list.innerHTML = `<table class="portal-table"><thead><tr><th>Descrição</th><th>Valor</th><th>Desconto</th><th>Total</th><th>Status</th><th>Data</th></tr></thead><tbody>${state.pagamentos.map((item) => `<tr><td>${escapeHTML(item.descricao || item.finalidade || "Pagamento")}</td><td>${dinheiro(item.valor)}</td><td>${dinheiro(item.desconto)}</td><td><strong>${dinheiro(item.valor_final || item.valor)}</strong></td><td>${statusPill(item.status)}</td><td>${dataBR(item.criado_em)}</td></tr>`).join("")}</tbody></table>`;
   }
-  list.innerHTML = `<table class="portal-table"><thead><tr><th>Descrição</th><th>Valor</th><th>Desconto</th><th>Total</th><th>Status</th><th>Data</th></tr></thead><tbody>${state.pagamentos.map((item) => `<tr><td>${escapeHTML(item.descricao || item.finalidade || "Pagamento")}</td><td>${dinheiro(item.valor)}</td><td>${dinheiro(item.desconto)}</td><td><strong>${dinheiro(item.valor_final || item.valor)}</strong></td><td>${statusPill(item.status)}</td><td>${dataBR(item.criado_em)}</td></tr>`).join("")}</tbody></table>`;
+  if (window.renderSolicitacoesPagamentoV34) window.renderSolicitacoesPagamentoV34();
 }
 
 async function carregarChamados() {
@@ -1842,7 +1851,7 @@ function renderCarteirinha() {
       <div class="digital-card-top"><img src="../3-img/LOGO.png" alt="Altitude"><span>${new Date().getFullYear()}</span></div>
       <div class="digital-card-body">
         <img src="${escapeHTML(imgAluno(state.aluno.foto_url))}" alt="Foto do aluno">
-        <div class="digital-card-data"><strong class="student-card-name">${escapeHTML(String(state.aluno.nome || "Aluno").toUpperCase())}</strong><span class="student-card-ra"><b>RA</b> ${escapeHTML(state.aluno.ra || "—")}</span><span>Status: ${escapeHTML(state.aluno.status || "ATIVO")}</span><span>Instituto de Educação e Tecnologia Altitude</span></div>
+        <div class="digital-card-data"><strong class="student-card-name">${escapeHTML(String(state.aluno.nome || "Aluno").toUpperCase())}</strong><span class="student-card-ra"><b>RA</b> ${escapeHTML(state.aluno.ra || "—")}</span><span>Status: ${escapeHTML(state.aluno.status || "ATIVO")}</span><span>ALTITUDE CENTRO UNIVERSITÁRIO</span></div>
       </div>
       <div class="digital-card-footer">
         <div><strong>CARTEIRINHA DIGITAL</strong><span>Documento verificável na base oficial</span></div>
@@ -1913,7 +1922,7 @@ async function baixarCarteirinhaPDF() {
     doc.setFont("helvetica","normal"); doc.setFontSize(5.2); doc.setTextColor(210,228,241);
     doc.text(`RA: ${state.aluno.ra || "—"}`, 28, infoY);
     doc.text(`STATUS: ${state.aluno.status || "ATIVO"}`, 28, infoY + 4);
-    doc.text("INSTITUTO ALTITUDE", 28, infoY + 8);
+    doc.text("ALTITUDE CENTRO UNIVERSITÁRIO", 28, infoY + 8);
 
     doc.setFillColor(255,255,255); doc.roundedRect(w - 21, h - 21, 17, 17, 1.5, 1.5, "F");
     doc.addImage(qr, "PNG", w - 20, h - 20, 15, 15);

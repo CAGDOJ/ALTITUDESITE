@@ -1,49 +1,65 @@
+% ==================================================
+% MODELO VAZIO — ALTITUDE CENTRO UNIVERSITÁRIO
+% Preencha somente os dados e o conteúdo do curso.
+% Logo, cabeçalho, rodapé e identidade visual são aplicados pelo portal.
+% ==================================================
+
 \documentclass{article}
 
-\codigocurso{LGPD-001}
-\titulocurso{Introdução à LGPD}
-\areacurso{TECNOLOGIA}
-\cargahoraria{20}
+% ==================================================
+% DADOS DO CURSO
+% ==================================================
+
+\codigocurso{CODIGO-DO-CURSO}
+\titulocurso{Título do curso}
+\areacurso{Área do curso}
 \nivelcurso{BASICO}
 \notaminima{70}
-\descricaoCurso{Curso introdutório sobre proteção de dados pessoais.}
+\descricaoCurso{Escreva uma descrição breve do curso.}
 
 \begin{document}
 
-\begin{altitudemodulo}{Introdução à LGPD}{1}
-\descricaoModulo{Conceitos iniciais, fundamentos e aplicação da LGPD.}
+% ==================================================
+% MÓDULO 1
+% Repita o ambiente altitudemodulo para criar outros módulos.
+% ==================================================
+
+\begin{altitudemodulo}{Título do módulo}{1}
+\descricaoModulo{Descrição breve do módulo.}
+
+% Vídeo opcional do módulo. Apague a linha quando não houver vídeo.
+% \videoModulo{https://www.youtube.com/watch?v=SEU_VIDEO}
 
 \begin{conteudo}
-\section{O que é a LGPD?}
 
-A Lei Geral de Proteção de Dados estabelece regras para o tratamento de dados pessoais.
+\section{Título da seção}
 
-\subsection{Princípios essenciais}
+Digite o desenvolvimento do conteúdo aqui.
+
+\subsection{Título da subseção}
+
+Continue o conteúdo aqui.
 
 \begin{itemize}
-  \item finalidade;
-  \item necessidade;
-  \item transparência;
-  \item segurança.
+    \item Primeiro item;
+    \item Segundo item.
 \end{itemize}
 
-Uma representação didática dos pilares de segurança é:
-\[
-P = C + I + D
-\]
-
-onde $C$ representa confidencialidade, $I$ integridade e $D$ disponibilidade.
 \end{conteudo}
 
+% ==================================================
+% QUESTÃO — repita o bloco para adicionar outras questões
+% ==================================================
+
 \begin{altitudequestao}{1}
-\enunciado{Qual é o principal objetivo da LGPD?}
-\alternativa{A}{Impedir completamente o uso da internet.}
-\alternativa{B}{Regular o tratamento de dados pessoais.}
-\alternativa{C}{Eliminar bancos de dados.}
-\alternativa{D}{Proibir o armazenamento de documentos.}
-\alternativa{E}{Substituir todas as normas de segurança.}
-\gabarito{B}
-\resolucao{A alternativa B está correta porque a LGPD estabelece regras e princípios para o tratamento de dados pessoais.}
+\enunciado{Digite o enunciado da questão.}
+\alternativa{A}{Alternativa A.}
+\alternativa{B}{Alternativa B.}
+\alternativa{C}{Alternativa C.}
+\alternativa{D}{Alternativa D.}
+\alternativa{E}{Alternativa E.}
+\gabarito{A}
+\resolucao{Explique de forma objetiva por que a alternativa está correta.}
 \end{altitudequestao}
 
 \end{altitudemodulo}

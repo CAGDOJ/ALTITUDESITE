@@ -23,7 +23,7 @@
         <button type="button" class="alt-dialog-close" aria-label="Fechar">×</button>
         <div class="alt-dialog-icon" aria-hidden="true">i</div>
         <div class="alt-dialog-copy">
-          <span class="alt-dialog-kicker">INSTITUIÇÃO ALTITUDE</span>
+          <span class="alt-dialog-kicker">ALTITUDE CENTRO UNIVERSITÁRIO</span>
           <h2 id="altDialogTitle"></h2>
           <p id="altDialogMessage"></p>
           <div id="altDialogOptions" class="alt-dialog-options"></div>

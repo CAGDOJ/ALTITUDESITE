@@ -785,7 +785,7 @@ function gerarRaLocal(){
       const payloadBase = {
         titulo      : nome,
         categoria   : area,
-        carga_horaria: Math.max(5, Number(cursoAtual?.carga_horaria || horas || 5)),
+        carga_horaria: Number(cursoAtual?.carga_horaria || 0),
         descricao   : desc,
         publicado   : publi,
         nivel       : nivel,
@@ -1130,7 +1130,6 @@ function gerarRaLocal(){
       list.innerHTML = cards.join('');
       if (summary) summary.textContent = `${modulos.length} módulo${modulos.length === 1 ? '' : 's'} · ${prontos} totalmente configurado${prontos === 1 ? '' : 's'}`;
       const normalStatus = document.getElementById('builderNormalStatus');
-      const totalHours = modulos.reduce((sum, item) => sum + Math.max(0, Number(item.carga_horaria || 0)), 0);
       const totalQuestions = questoes.length;
       if (normalStatus) normalStatus.textContent = `${modulos.length} módulo(s) · ${totalQuestions} questão(ões)`;
       return modulos;
@@ -1196,7 +1195,6 @@ function gerarRaLocal(){
     if (!box) return;
     const titulo = document.getElementById('fModuloTitulo')?.value.trim() || 'Título do módulo';
     const descricao = document.getElementById('fModuloDesc')?.value.trim() || 'A descrição aparecerá aqui.';
-    const horas = Math.max(0, Number(document.getElementById('fModuloHoras')?.value || 0));
     const conteudo = document.getElementById('fModuloConteudo')?.value.trim() || 'O conteúdo para leitura aparecerá nesta área.';
     const video = document.getElementById('fModuloVideo')?.value.trim() || '';
     const imageFile = document.getElementById('fModuloImagemArquivo')?.files?.[0] || null;
@@ -1204,7 +1202,7 @@ function gerarRaLocal(){
     if (imageFile) normalPreviewImageUrl = URL.createObjectURL(imageFile);
     box.innerHTML = `
       <div class="normal-preview-hero">
-        <div><h3>${escapeHTML(titulo)}</h3><p>${escapeHTML(descricao)}</p><div class="normal-preview-meta"><span>${horas} horas</span><span>Material de estudo</span></div></div>
+        <div><h3>${escapeHTML(titulo)}</h3><p>${escapeHTML(descricao)}</p><div class="normal-preview-meta"><span>Material de estudo</span></div></div>
         ${normalPreviewImageUrl ? `<img class="normal-preview-image" src="${normalPreviewImageUrl}" alt="Prévia da foto do módulo">` : '<div class="normal-preview-image"></div>'}
       </div>
       <div class="normal-preview-content">${escapeHTML(conteudo)}</div>
@@ -1248,7 +1246,7 @@ function gerarRaLocal(){
       doc.setFont('helvetica','normal');
       doc.setFontSize(8.5);
       doc.setTextColor(85,85,85);
-      doc.text('Instituição Altitude', left, 10);
+      doc.text('ALTITUDE CENTRO UNIVERSITÁRIO', left, 10);
       doc.text(courseTitle, pageWidth - right, 10, { align:'right', maxWidth:95 });
       doc.line(left, pageHeight - 14, pageWidth - right, pageHeight - 14);
       doc.text(String(page), pageWidth / 2, pageHeight - 9, { align:'center' });
@@ -1296,7 +1294,6 @@ function gerarRaLocal(){
     y = 125;
     write(`Curso: ${courseTitle}`, { bold:true, size:10.5, after:2 });
     write(`Módulo: ${title}`, { size:10.5, after:2 });
-    write(`Carga horária: ${hours} horas`, { size:10.5, after:2 });
     write(`Descrição: ${desc || 'Conteúdo programático do módulo.'}`, { size:10, after:2 });
     headerFooter();
 

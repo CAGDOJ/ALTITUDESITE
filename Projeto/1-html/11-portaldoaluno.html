@@ -15,12 +15,13 @@
   <link rel="stylesheet" href="../2-css/11-portaldoaluno.css?v=27">
   <link rel="stylesheet" href="../2-css/23-v32-integrado.css?v=33">
   <link rel="stylesheet" href="../2-css/24-v33-final.css?v=33">
+  <link rel="stylesheet" href="../2-css/25-v34-final.css?v=34">
 </head>
 <body>
   <div class="portal-layout">
     <aside class="student-sidebar" id="portalSidebar" aria-label="Menu do aluno">
       <div class="brand-box">
-        <img src="../3-img/LOGO.png" alt="Instituto Altitude">
+        <img src="../3-img/LOGO.png" alt="ALTITUDE CENTRO UNIVERSITÁRIO">
         <span>Ambiente de aprendizagem</span>
       </div>
 
@@ -29,8 +30,9 @@
         <button class="menu-link" data-aba="cursos"><span>02</span> Meus cursos</button>
         <button class="menu-link" data-aba="certificados"><span>03</span> Certificados</button>
         <button class="menu-link" data-aba="pagamentos"><span>04</span> Pagamentos</button>
-        <button class="menu-link" data-aba="atendimento"><span>05</span> Atendimento</button>
-        <button class="menu-link" data-aba="cadastro"><span>06</span> Meu cadastro</button>
+        <button class="menu-link" data-aba="novidades"><span>05</span> Promoções</button>
+        <button class="menu-link" data-aba="atendimento"><span>06</span> Atendimento</button>
+        <button class="menu-link" data-aba="cadastro"><span>07</span> Meu cadastro</button>
       </nav>
 
       <div class="sidebar-help">
@@ -180,8 +182,8 @@
         <div class="page-heading certificate-heading">
           <div>
             <span class="eyebrow">Conquistas</span>
-            <h1>Meus certificados</h1>
-            <p>Após concluir o conteúdo e a prova, escolha quantas horas deseja usar. O PDF será liberado somente após a aprovação da gestão.</p>
+            <h1>Certificados</h1>
+            <p>Consulte sua carteira, solicite o documento e acompanhe o pagamento e a liberação.</p>
           </div>
           <a class="secondary-link" href="8-certificados.html" target="_blank">Validar um certificado</a>
         </div>
@@ -231,12 +233,19 @@
           </div>
         </div>
         <div class="payment-whatsapp-card">
-          <div><strong>Pagamentos e atendimento financeiro</strong><span>Após escolher o serviço, fale com a instituição pelo WhatsApp para receber as instruções de pagamento.</span></div>
-          <a href="https://wa.me/5591983640933" target="_blank" rel="noopener" class="whatsapp-payment-button">Falar com a Altitude no WhatsApp</a>
+          <div><strong>Pagamento de certificado</strong><span>O valor é cobrado por certificado, independentemente da carga horária escolhida. Promoções, packs e cupons podem alterar o total.</span></div>
+          <a href="https://wa.me/5591983640933" target="_blank" rel="noopener" class="whatsapp-payment-button">Abrir WhatsApp</a>
         </div>
+        <div id="solicitacoesPagamentoV34" class="payment-request-grid"></div>
         <div class="surface-card table-card" id="listaPagamentos"></div>
       </section>
 
+
+      <section class="aba" id="novidades">
+        <div class="page-heading"><div><span class="eyebrow">Ofertas e comunicados</span><h1>Promoções e novidades</h1><p>Consulte os anúncios ativos e salve os que desejar acessar novamente.</p></div></div>
+        <div id="promocoesSalvasAluno" class="section-block"><div class="section-title"><h2>Promoções salvas</h2></div><div class="student-promotion-grid"></div></div>
+        <div class="section-block"><div class="section-title"><h2>Novidades disponíveis</h2></div><div id="listaPromocoesAluno" class="student-promotion-grid"></div></div>
+      </section>
       <section class="aba" id="atendimento">
         <div class="page-heading">
           <div>
@@ -443,6 +452,11 @@
     </div>
   </div>
 
+
+  <div class="v34-promotion-modal" id="v34PromotionModal" aria-hidden="true">
+    <div class="v34-promotion-dialog"><button type="button" class="v34-promotion-close" aria-label="Fechar">×</button><img id="v34PromotionImage" alt="Promoção"><div><span>NOVIDADE ALTITUDE</span><h2 id="v34PromotionTitle"></h2><p id="v34PromotionDescription"></p><div class="v34-promotion-actions"><button type="button" id="v34PromotionSave">Salvar promoção</button><a id="v34PromotionAction" target="_blank" rel="noopener">Ver promoção</a></div></div></div>
+  </div>
+
   <div id="globalToast" class="toast" role="status" aria-live="polite"></div>
 
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
@@ -454,5 +468,6 @@
   <script src="../4-java/portaldoaluno.js?v=32"></script>
   <script src="../4-java/06-responsive.js?v=17"></script>
   <script src="../4-java/15-ajustes-finais.js?v=17" defer></script>
+  <script src="../4-java/v34-aluno.js?v=34" defer></script>
 </body>
 </html>

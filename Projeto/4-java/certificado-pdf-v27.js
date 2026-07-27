@@ -87,18 +87,12 @@
   function distributeHours(items, totalHours) {
     const total = Math.max(0, Math.round(Number(totalHours || 0)));
     if (!items.length) return [];
-    const weights = items.map((item) => Math.max(0, Number(item.horasBase || 0)));
-    const weightTotal = weights.reduce((sum, value) => sum + value, 0);
-    const effective = weightTotal > 0 ? weights : items.map(() => 1);
-    const effectiveTotal = effective.reduce((sum, value) => sum + value, 0) || items.length;
-    const raw = effective.map((weight) => (total * weight) / effectiveTotal);
-    const hours = raw.map((value) => Math.floor(value));
-    let remaining = total - hours.reduce((sum, value) => sum + value, 0);
-    const order = raw
-      .map((value, index) => ({ index, fraction: value - Math.floor(value) }))
-      .sort((a, b) => b.fraction - a.fraction || a.index - b.index);
-    for (let i = 0; i < remaining; i += 1) hours[order[i % order.length].index] += 1;
-    return items.map((item, index) => ({ titulo: item.titulo, horas: hours[index] }));
+    const base = Math.floor(total / items.length);
+    const remainder = total % items.length;
+    return items.map((item, index) => ({
+      titulo: item.titulo,
+      horas: base + (index < remainder ? 1 : 0)
+    }));
   }
 
   async function imageToDataUrl(url) {
@@ -190,87 +184,65 @@
       && !cleanTitle(modules[0]?.conteudo)
       && !cleanTitle(modules[0]?.conteudo_latex);
     if (!modules.length || rpcLooksGeneric) modules = await queryModules(sb, courseId);
-    let items = [];
-
-    if (modules.length >= 2) {
-      items = modules.map((module, index) => ({
-        titulo: programTitle(module, index, course),
-        horasBase: Number(module.carga_horaria || 0)
-      }));
-    } else if (modules.length === 1) {
-      const module = modules[0];
-      const headings = extractHeadings(module);
-      if (headings.length >= 2) {
-        const target = Number(totalHours || 0) >= 40 && headings.length >= 6 ? 3 : 2;
-        items = groupTitles(headings, target).map((titulo) => ({ titulo, horasBase: 1 }));
-      } else {
-        const title = stripModulePrefix(module.titulo) || stripModulePrefix(course?.titulo) || 'Conteúdo programático';
-        const desc = cleanTitle(module.descricao || course?.descricao);
-        items = desc
-          ? [
-              { titulo: `${title} - fundamentos e conceitos`, horasBase: 1 },
-              { titulo: `${title} - procedimentos e aplicações`, horasBase: 1 },
-              { titulo: `${title} - consolidação e avaliação`, horasBase: 1 }
-            ]
-          : [{ titulo: title, horasBase: 1 }];
-      }
-    }
+    let items = modules.map((module, index) => ({
+      titulo: programTitle(module, index, course)
+    }));
 
     if (!items.length) {
-      const courseName = cleanTitle(course?.titulo) || 'Conteúdo programático do curso';
-      items = [
-        { titulo: `${courseName} - fundamentos`, horasBase: 1 },
-        { titulo: `${courseName} - aplicações práticas`, horasBase: 1 },
-        { titulo: `${courseName} - revisão e avaliação`, horasBase: 1 }
-      ];
+      items = [{ titulo: stripModulePrefix(course?.titulo) || 'Conteúdo programático do curso' }];
     }
-
-    // Mantém a página legível e garante uma divisão clara em pelo menos 2 blocos quando possível.
-    if (items.length > 10) items = groupTitles(items.map((item) => item.titulo), 10).map((titulo) => ({ titulo, horasBase: 1 }));
-    if (items.length === 1 && Number(totalHours || 0) >= 2) {
-      const base = items[0].titulo;
-      items = [
-        { titulo: `${base} - fundamentos`, horasBase: 1 },
-        { titulo: `${base} - aplicações`, horasBase: 1 }
-      ];
-    }
+    if (items.length > 12) items = items.slice(0, 12);
     return distributeHours(items, totalHours);
   }
 
   function drawProgramItems(doc, items, width, height) {
-    const contentWidth = width - 115;
-    const columnsCount = items.length > 6 ? 2 : 1;
-    const columnWidth = columnsCount === 2 ? (contentWidth - 14) / 2 : contentWidth;
-    const columns = columnsCount === 2
-      ? [items.slice(0, Math.ceil(items.length / 2)), items.slice(Math.ceil(items.length / 2))]
-      : [items];
-    const xs = columnsCount === 2 ? [28, 28 + columnWidth + 14] : [28];
+    const left = 27;
+    const rightPanelWidth = 82;
+    const gap = 8;
+    const availableWidth = width - left - rightPanelWidth - 18;
+    const columnWidth = (availableWidth - gap) / 2;
+    const rowHeights = [];
 
-    columns.forEach((column, col) => {
-      let y = 59;
-      column.forEach((item, index) => {
-        const absoluteIndex = columns.slice(0, col).reduce((sum, current) => sum + current.length, 0) + index + 1;
-        doc.setFillColor(238, 247, 249);
-        doc.roundedRect(xs[col], y - 4.4, 9, 9, 2, 2, 'F');
+    for (let row = 0; row < Math.ceil(items.length / 2); row += 1) {
+      const pair = [items[row * 2], items[row * 2 + 1]].filter(Boolean);
+      const maxLines = Math.max(...pair.map((item, offset) => {
+        const index = row * 2 + offset + 1;
+        const label = `Módulo ${index} - ${item.titulo}`;
+        return doc.splitTextToSize(label, columnWidth - 14).length;
+      }));
+      rowHeights.push(Math.max(23, 14 + maxLines * 4.6));
+    }
+
+    let y = 55;
+    rowHeights.forEach((rowHeight, row) => {
+      for (let col = 0; col < 2; col += 1) {
+        const itemIndex = row * 2 + col;
+        const item = items[itemIndex];
+        if (!item) continue;
+        const x = left + col * (columnWidth + gap);
+        doc.setFillColor(244, 249, 251);
+        doc.setDrawColor(207, 222, 229);
+        doc.setLineWidth(0.25);
+        doc.roundedRect(x, y, columnWidth, rowHeight - 4, 2.5, 2.5, 'FD');
+
         doc.setFont('helvetica', 'bold');
-        doc.setFontSize(8.5);
+        doc.setFontSize(9.2);
         doc.setTextColor(7, 49, 79);
-        doc.text(String(absoluteIndex), xs[col] + 4.5, y + 1.5, { align: 'center' });
+        const titleLines = doc.splitTextToSize(`Módulo ${itemIndex + 1} - ${item.titulo}`, columnWidth - 12);
+        doc.text(titleLines, x + 6, y + 9.2);
 
-        doc.setFont('times', 'normal');
-        doc.setFontSize(9.7);
-        doc.setTextColor(30, 42, 54);
-        const label = `${item.titulo} (${Number(item.horas || 0)} horas)`;
-        const lines = doc.splitTextToSize(label, columnWidth - 14);
-        doc.text(lines, xs[col] + 13, y);
-        y += Math.max(11, lines.length * 4.6 + 5);
-      });
+        doc.setFont('helvetica', 'normal');
+        doc.setFontSize(8.4);
+        doc.setTextColor(75, 88, 98);
+        doc.text(`${Number(item.horas || 0)} horas`, x + 6, y + 10.8 + titleLines.length * 4.1);
+      }
+      y += rowHeight;
     });
 
-    doc.setFont('times', 'bold');
-    doc.setFontSize(13);
+    doc.setFont('helvetica', 'bold');
+    doc.setFontSize(12.5);
     doc.setTextColor(27, 42, 56);
-    doc.text(`TOTAL CERTIFICADO: ${items.reduce((sum, item) => sum + Number(item.horas || 0), 0)} HORAS`, 29, height - 27);
+    doc.text(`TOTAL CERTIFICADO: ${items.reduce((sum, item) => sum + Number(item.horas || 0), 0)} HORAS`, left, Math.min(height - 25, y + 7));
   }
 
   async function build({ sb, cert, aluno, curso, logoUrl, validationUrl }) {
@@ -286,12 +258,23 @@
     const courseName = escText(cert.nome_curso || curso?.titulo, 'Curso');
     const title = escText(cert.titulo_documento, 'CERTIFICADO').toUpperCase();
     const subtitle = escText(cert.subtitulo_documento, 'DE CONCLUSÃO E APROVEITAMENTO').toUpperCase();
-    const hours = Math.max(0, Number(cert.horas_emitidas || cert.horas_solicitadas || curso?.carga_horaria || 0));
+    const hours = Math.max(0, Number(cert.horas_emitidas || cert.horas_solicitadas || 0));
     const program = await loadProgram(sb, cert.curso_id, hours, { ...curso, titulo: courseName }, cert.id);
     const logo = await imageToDataUrl(logoUrl || '../3-img/LOGO.png');
     const qr = await qrDataUrl(validationUrl);
 
     frame(doc, width, height);
+    doc.setFillColor(238, 247, 249);
+    doc.setDrawColor(192, 211, 220);
+    doc.roundedRect(20, 20, 68, 18, 2.5, 2.5, 'FD');
+    doc.setFont('helvetica', 'bold');
+    doc.setFontSize(7.2);
+    doc.setTextColor(83, 99, 109);
+    doc.text('REGISTRO DO CERTIFICADO', 24, 26);
+    doc.setFontSize(8.7);
+    doc.setTextColor(7, 49, 79);
+    const registryLines = doc.splitTextToSize(String(cert.numero_certificado || cert.codigo_validacao || '—'), 58);
+    doc.text(registryLines.slice(0, 2), 24, 32);
     doc.addImage(logo, 'PNG', width - 79, 23, 60, 9, undefined, 'FAST');
     doc.setTextColor(81, 58, 44);
     doc.setFont('times', 'bold');
@@ -348,7 +331,6 @@
     doc.text('ESCANEIE PARA VALIDAR', width - 39.5, height - 66, { align: 'center' });
     doc.setFont('helvetica', 'normal');
     doc.setFontSize(7.4);
-    doc.text(cert.numero_certificado || String(cert.codigo_validacao), width / 2, height - 16, { align: 'center' });
 
     doc.addPage('a4', 'landscape');
     frame(doc, width, height);

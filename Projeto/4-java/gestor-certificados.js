@@ -1,709 +1,257 @@
 (() => {
   'use strict';
 
-  const byId = (id) => document.getElementById(id);
-  const esc = (value = '') => String(value)
-    .replaceAll('&', '&amp;').replaceAll('<', '&lt;').replaceAll('>', '&gt;')
-    .replaceAll('"', '&quot;').replaceAll("'", '&#039;');
-  const dateBR = (value, withTime = false) => {
-    if (!value) return '—';
-    const text = String(value);
-    const d = /^\d{4}-\d{2}-\d{2}$/.test(text) ? new Date(`${text}T12:00:00`) : new Date(value);
-    if (Number.isNaN(d.getTime())) return '—';
-    return d.toLocaleString('pt-BR', withTime ? { dateStyle: 'short', timeStyle: 'short' } : { dateStyle: 'short' });
+  const $ = (id) => document.getElementById(id);
+  const esc = (v='') => String(v ?? '').replaceAll('&','&amp;').replaceAll('<','&lt;').replaceAll('>','&gt;').replaceAll('"','&quot;').replaceAll("'",'&#039;');
+  const norm = (v='') => String(v).normalize('NFD').replace(/[\u0300-\u036f]/g,'').toLowerCase();
+  const n = (v) => Math.max(0, Number(v || 0));
+  const dateBR = (v, time=false) => {
+    if (!v) return '—';
+    const d = /^\d{4}-\d{2}-\d{2}$/.test(String(v)) ? new Date(`${v}T12:00:00`) : new Date(v);
+    return Number.isNaN(d.getTime()) ? '—' : d.toLocaleString('pt-BR', time ? {dateStyle:'short',timeStyle:'short'} : {dateStyle:'short'});
   };
-  const normal = (value) => String(value || '').normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase();
-  const num = (value) => Math.max(0, Number(value || 0));
+  const money = (v) => Number(v || 0).toLocaleString('pt-BR',{style:'currency',currency:'BRL'});
+  const isoDate = (v) => { if(!v) return ''; const d=/^\d{4}-\d{2}-\d{2}$/.test(String(v))?new Date(`${v}T12:00:00`):new Date(v); return Number.isNaN(d.getTime())?'':`${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`; };
+  const suggestedPeriod = (registered,hours) => { const start=registered?new Date(registered):new Date(); start.setHours(12,0,0,0); const end=new Date(start); end.setDate(end.getDate()+Math.max(0,Math.ceil(n(hours)/8)-1)); const today=new Date();today.setHours(12,0,0,0);if(end>today)end.setTime(today.getTime());return {start:isoDate(start),end:isoDate(end)}; };
 
-  const store = {
-    certificados: [],
-    carteiras: [],
-    alunos: new Map(),
-    cursos: new Map(),
-    filtro: 'TODOS',
-    busca: '',
-    atual: null,
-    carteiraAtual: null,
-    pdfEditId: null,
-    carregando: false,
-    recarregar: false,
-    realtimeTimer: null
+  const state = {
+    certificados: [], carteiras: [], alunos: new Map(), cursos: new Map(),
+    busca: '', filtro: 'TODOS', processadosBusca: '', processadosStatus: 'TODOS',
+    certAtual: null, carteiraAtual: null, pdfEditId: null, loading: false, whatsapp: '5591983640933'
   };
 
-  function badge(status) {
-    const value = String(status || 'PENDENTE').toUpperCase();
-    const cls = value === 'EMITIDO' ? 'resolvido'
-      : ['PENDENTE', 'AGUARDANDO_HORAS'].includes(value) ? 'media'
-      : value === 'BLOQUEADO' ? 'urgente'
-      : 'cancelado';
-    const label = value === 'PENDENTE' ? 'AGUARDANDO DECISÃO'
-      : value === 'AGUARDANDO_HORAS' ? 'EM CONTAGEM'
-      : value;
+  function toast(message, error=false){
+    let el=document.querySelector('.gestor-toast');
+    if(!el){el=document.createElement('div');el.className='gestor-toast';document.body.appendChild(el);}
+    el.textContent=message;el.className=`gestor-toast show${error?' error':''}`;
+    clearTimeout(el._t);el._t=setTimeout(()=>el.className='gestor-toast',3800);
+  }
+  function statusLabel(s){
+    const x=String(s||'PENDENTE').toUpperCase();
+    return ({PENDENTE:'Aguardando decisão',AGUARDANDO_HORAS:'Aguardando',EMITIDO:'Emitido',BLOQUEADO:'Bloqueado',CANCELADO:'Cancelado'})[x]||x;
+  }
+  function badge(s){
+    const x=String(s||'PENDENTE').toUpperCase();
+    const cls=x==='EMITIDO'?'resolvido':x==='BLOQUEADO'?'urgente':x==='CANCELADO'?'cancelado':'media';
+    return `<span class="badge ${cls}">${esc(statusLabel(x))}</span>`;
+  }
+  function paymentBadge(s){
+    const x=String(s||'AGUARDANDO_PAGAMENTO').toUpperCase();
+    const label=({AGUARDANDO_PAGAMENTO:'Aguardando pagamento',PAGAMENTO_INFORMADO:'Pagamento informado',PAGO:'Pago',ISENTO:'Isento',CANCELADO:'Cancelado'})[x]||x;
+    const cls=['PAGO','ISENTO'].includes(x)?'resolvido':x==='CANCELADO'?'cancelado':'media';
     return `<span class="badge ${cls}">${esc(label)}</span>`;
   }
-
-  function toast(message, error = false) {
-    let node = document.querySelector('.gestor-toast');
-    if (!node) {
-      node = document.createElement('div');
-      node.className = 'gestor-toast';
-      document.body.appendChild(node);
-    }
-    node.textContent = message;
-    node.className = `gestor-toast show${error ? ' error' : ''}`;
-    clearTimeout(node._timer);
-    node._timer = setTimeout(() => { node.className = 'gestor-toast'; }, 3800);
+  function aluno(cert){ return state.alunos.get(cert.aluno_id)||{}; }
+  function curso(cert){ return state.cursos.get(Number(cert.curso_id))||{}; }
+  function hit(item, extra={}){
+    const q=norm(state.busca); if(!q) return true;
+    return norm([item.aluno_nome,item.aluno_email,item.aluno_ra,item.aluno_cpf,item.nome_aluno,item.nome_curso,item.numero_certificado,item.codigo_validacao,item.protocolo_pagamento,extra.nome,extra.email,extra.ra,extra.cpf,extra.titulo].join(' ')).includes(q);
   }
 
-  function carteiraKey(alunoId, cursoId) {
-    return `${alunoId}:${Number(cursoId)}`;
-  }
-
-  function mapaCarteiras() {
-    return new Map(store.carteiras.map((item) => [carteiraKey(item.aluno_id, item.curso_id), item]));
-  }
-
-  async function carregarCertificadosGestao(options = {}) {
-    if (store.carregando) {
-      store.recarregar = true;
-      return;
-    }
-    store.carregando = true;
-    const silent = Boolean(options.silent);
-    const certWrap = byId('tabCertificadosGestao')?.closest('.certificate-admin-table-wrap');
-    const walletWrap = byId('tabCarteirasHorasGestao')?.closest('.certificate-admin-table-wrap');
-    const certBody = byId('tabCertificadosGestao')?.querySelector('tbody');
-    const walletBody = byId('tabCarteirasHorasGestao')?.querySelector('tbody');
-    if (!store.certificados.length && !silent && certBody) certBody.innerHTML = '<tr><td colspan="7">Carregando solicitações...</td></tr>';
-    if (!store.carteiras.length && !silent && walletBody) walletBody.innerHTML = '<tr><td colspan="8">Carregando carteiras...</td></tr>';
-    // Mantém os dados atuais visíveis durante a atualização silenciosa.
-    if (!store.certificados.length) certWrap?.classList.add('is-refreshing');
-    if (!store.carteiras.length) walletWrap?.classList.add('is-refreshing');
-
-    try {
-      // A liberação automática é processada exclusivamente pelo Cron do Supabase.
-      const [certRes, walletRes] = await Promise.all([
-        sb.from('certificados').select('*').order('id', { ascending: false }),
-        sb.rpc('obter_carteiras_horas_gestao')
+  async function load(options={}){
+    if(state.loading) return;
+    state.loading=true;
+    try{
+      const [cr,wr,cfg]=await Promise.all([
+        sb.from('certificados').select('*').order('id',{ascending:false}),
+        sb.rpc('obter_carteiras_horas_gestao_v34'),
+        sb.from('configuracoes_comerciais_v34').select('whatsapp').eq('id',1).maybeSingle()
       ]);
-      if (certRes.error) throw certRes.error;
-      if (walletRes.error) throw walletRes.error;
-
-      const certificados = certRes.data || [];
-      const carteiras = walletRes.data || [];
-      const alunoIds = [...new Set([
-        ...certificados.map((x) => x.aluno_id),
-        ...carteiras.map((x) => x.aluno_id)
-      ].filter(Boolean))];
-      const cursoIds = [...new Set([
-        ...certificados.map((x) => Number(x.curso_id)),
-        ...carteiras.map((x) => Number(x.curso_id))
-      ].filter(Boolean))];
-
-      const [alunosRes, cursosRes] = await Promise.all([
-        alunoIds.length
-          ? sb.from('alunos').select('user_id,nome,email,ra').in('user_id', alunoIds)
-          : Promise.resolve({ data: [], error: null }),
-        cursoIds.length
-          ? sb.from('cursos').select('id,titulo,carga_horaria,categoria').in('id', cursoIds)
-          : Promise.resolve({ data: [], error: null })
+      if(cr.error) throw cr.error;
+      if(wr.error) throw wr.error;
+      state.certificados=cr.data||[]; state.carteiras=wr.data||[]; state.whatsapp=String(cfg?.data?.whatsapp||state.whatsapp).replace(/\D/g,'')||'5591983640933';
+      const alunoIds=[...new Set(state.certificados.map(x=>x.aluno_id).filter(Boolean))];
+      const cursoIds=[...new Set(state.certificados.map(x=>Number(x.curso_id)).filter(Boolean))];
+      const [ar,cur]=await Promise.all([
+        alunoIds.length?sb.from('alunos').select('user_id,nome,email,ra,cpf,criado_em').in('user_id',alunoIds):Promise.resolve({data:[],error:null}),
+        cursoIds.length?sb.from('cursos').select('id,titulo,categoria').in('id',cursoIds):Promise.resolve({data:[],error:null})
       ]);
-      if (alunosRes.error) throw alunosRes.error;
-      if (cursosRes.error) throw cursosRes.error;
-
-      // Só troca o conteúdo depois que todas as consultas terminaram. Isso evita
-      // o efeito de a tabela apagar e voltar durante a atualização em tempo real.
-      store.certificados = certificados;
-      store.carteiras = carteiras;
-      store.alunos = new Map((alunosRes.data || []).map((x) => [x.user_id, x]));
-      store.cursos = new Map((cursosRes.data || []).map((x) => [Number(x.id), x]));
-      renderCarteirasGestao();
-      renderCertificadosGestao();
-    } catch (error) {
-      console.error(error);
-      if (!store.certificados.length && certBody) certBody.innerHTML = `<tr><td colspan="7">Não foi possível carregar. Use “Atualizar lista”.</td></tr>`;
-      if (!store.carteiras.length && walletBody) walletBody.innerHTML = `<tr><td colspan="8">Não foi possível carregar. Use “Atualizar lista”.</td></tr>`;
-      if (!silent) toast(`Erro ao atualizar certificados: ${error.message}`, true);
-    } finally {
-      certWrap?.classList.remove('is-refreshing');
-      walletWrap?.classList.remove('is-refreshing');
-      store.carregando = false;
-      if (store.recarregar) {
-        store.recarregar = false;
-        window.setTimeout(() => carregarCertificadosGestao({ silent: true }), 180);
-      }
-    }
+      if(ar.error) throw ar.error; if(cur.error) throw cur.error;
+      state.alunos=new Map((ar.data||[]).map(x=>[x.user_id,x]));
+      state.cursos=new Map((cur.data||[]).map(x=>[Number(x.id),x]));
+      renderWallets(); renderCertificates(); renderProcessed(); updateKpis();
+    }catch(e){console.error(e); if(!options.silent) toast(`Não foi possível atualizar: ${e.message}`,true);}
+    finally{state.loading=false;}
   }
 
-  function bateBusca(item, aluno = {}, curso = {}) {
-    if (!store.busca) return true;
-    const haystack = normal([
-      item.aluno_nome, item.aluno_email, item.aluno_ra,
-      aluno.nome, aluno.email, aluno.ra,
-      item.curso_titulo, curso.titulo,
-      item.numero_certificado, item.codigo_validacao
-    ].join(' '));
-    return haystack.includes(normal(store.busca));
+  function renderWallets(){
+    const body=$('tabCarteirasHorasGestao')?.querySelector('tbody'); if(!body) return;
+    const q=norm(state.busca);
+    const rows=state.carteiras.filter(x=>!q||norm([x.aluno_nome,x.aluno_ra,x.aluno_cpf,x.aluno_email].join(' ')).includes(q));
+    if(!rows.length){body.innerHTML='<tr><td colspan="8">Nenhum aluno encontrado.</td></tr>';return;}
+    body.innerHTML=rows.map(x=>`<tr>
+      <td data-label="Aluno"><div class="cert-admin-student"><strong>${esc(x.aluno_nome||'Aluno')}</strong><small>RA ${esc(x.aluno_ra||'—')} · CPF ${esc(x.aluno_cpf||'—')}</small></div></td>
+      <td data-label="Cadastro">${dateBR(x.cadastrado_em)}</td>
+      <td data-label="Horas automáticas"><strong>${n(x.horas_automaticas)}h</strong><small class="table-subline">8h por dia desde o cadastro</small></td>
+      <td data-label="Ajustes"><strong>${n(x.horas_adicionais)}h</strong></td>
+      <td data-label="Reservadas">${n(x.horas_reservadas)}h</td><td data-label="Utilizadas">${n(x.horas_utilizadas)}h</td>
+      <td data-label="Saldo"><strong>${n(x.saldo_disponivel)}h</strong></td>
+      <td data-label="Ações"><button type="button" data-wallet-v34="${esc(x.aluno_id)}">Gerenciar horas</button></td>
+    </tr>`).join('');
   }
 
-  function renderCarteirasGestao() {
-    const tbody = byId('tabCarteirasHorasGestao')?.querySelector('tbody');
-    if (!tbody) return;
-    const rows = store.carteiras.filter((item) => bateBusca(item));
-    if (!rows.length) {
-      tbody.innerHTML = '<tr><td colspan="8">Nenhum aluno com curso concluído e prova aprovada.</td></tr>';
-      return;
-    }
-
-    tbody.innerHTML = rows.map((item) => {
-      const exceptional = item.liberacao_excepcional
-        ? '<span class="badge urgente">EXCEPCIONAL</span>'
-        : '';
-      return `<tr>
-        <td><div class="cert-admin-student"><strong>${esc(item.aluno_nome || 'Aluno')}</strong><small>RA ${esc(item.aluno_ra || '—')} · ${esc(item.aluno_email || '')}</small></div></td>
-        <td><div class="cert-admin-course"><strong>${esc(item.curso_titulo || 'Curso')}</strong><small>Matrícula: ${dateBR(item.matricula_em)}</small></div></td>
-        <td><strong>${num(item.horas_automaticas)}h</strong><small class="table-subline">8h por dia útil</small></td>
-        <td><strong>${num(item.horas_validadas)}h</strong> ${exceptional}</td>
-        <td>${num(item.horas_reservadas)}h</td>
-        <td>${num(item.horas_utilizadas)}h</td>
-        <td><strong>${num(item.saldo_disponivel)}h</strong></td>
-        <td><button type="button" data-wallet-manage="${esc(item.aluno_id)}" data-course-id="${Number(item.curso_id)}">Gerenciar horas</button></td>
-      </tr>`;
-    }).join('');
+  function pendingCertificates(){
+    return state.certificados.filter(c=>['PENDENTE','AGUARDANDO_HORAS'].includes(String(c.status||'').toUpperCase()))
+      .filter(c=>state.filtro==='TODOS'||String(c.status).toUpperCase()===state.filtro)
+      .filter(c=>hit(c,{...aluno(c),...curso(c)}));
+  }
+  function processedCertificates(){
+    let rows=state.certificados.filter(c=>!['PENDENTE','AGUARDANDO_HORAS'].includes(String(c.status||'').toUpperCase()));
+    const q=norm(state.processadosBusca);
+    if(q) rows=rows.filter(c=>norm([c.nome_aluno,c.nome_curso,c.numero_certificado,c.codigo_validacao,c.protocolo_pagamento,aluno(c).nome,aluno(c).ra,aluno(c).cpf,curso(c).titulo].join(' ')).includes(q));
+    if(state.processadosStatus!=='TODOS') rows=rows.filter(c=>String(c.status).toUpperCase()===state.processadosStatus);
+    return rows;
+  }
+  function certActions(c, processed=false){
+    const id=Number(c.id), status=String(c.status||'PENDENTE').toUpperCase(), pay=String(c.pagamento_status||'AGUARDANDO_PAGAMENTO').toUpperCase();
+    const parts=[`<button data-cert-detail-v34="${id}">Detalhes</button>`,`<button data-cert-whatsapp-v34="${id}">Abrir WhatsApp</button>`];
+    if(!processed && !['PAGO','ISENTO'].includes(pay)) parts.push(`<button class="payment-confirm" data-cert-pay-v34="${id}">Confirmar pagamento</button>`);
+    if(!processed && ['PAGO','ISENTO'].includes(pay)) parts.push(`<button class="release" data-cert-action-v34="LIBERAR" data-id="${id}">Liberar certificado</button>`);
+    if(status==='EMITIDO') parts.push(`<button data-cert-pdf-preview-v34="${id}">Visualizar PDF</button><button class="pdf-action" data-cert-pdf-download-v34="${id}">Baixar PDF</button>`);
+    if(status!=='EMITIDO') parts.push(`<button class="block" data-cert-action-v34="BLOQUEAR" data-id="${id}">Bloquear</button><button class="cancel" data-cert-action-v34="CANCELAR" data-id="${id}">Cancelar</button>`);
+    if(['BLOQUEADO','CANCELADO'].includes(status)) parts.push(`<button data-cert-action-v34="REABRIR" data-id="${id}">Reabrir</button>`);
+    return `<div class="cert-admin-actions">${parts.join('')}</div>`;
+  }
+  function certRow(c, processed=false){
+    const a=aluno(c), course=curso(c), hours=n(c.horas_emitidas||c.horas_solicitadas);
+    return `<tr>
+      <td data-label="Aluno"><div class="cert-admin-student"><strong>${esc(c.nome_aluno||a.nome||'Aluno')}</strong><small>RA ${esc(a.ra||'—')} · CPF ${esc(a.cpf||'—')}</small></div></td>
+      <td data-label="Curso"><div class="cert-admin-course"><strong>${esc(c.nome_curso||course.titulo||'Curso')}</strong><small>${esc(c.numero_certificado||c.protocolo_pagamento||'Aguardando número')}</small></div></td>
+      <td data-label="Horas"><strong>${hours}h</strong></td><td data-label="Pagamento">${paymentBadge(c.pagamento_status)}</td>
+      ${processed?`<td data-label="Situação">${badge(c.status)}</td><td data-label="Atualização">${dateBR(c.atualizado_em||c.emitido_em,true)}</td>`:`<td data-label="Solicitado em">${dateBR(c.solicitado_em||c.criado_em)}</td><td data-label="Situação">${badge(c.status)}</td>`}
+      <td data-label="Ações">${certActions(c,processed)}</td></tr>`;
+  }
+  function renderCertificates(){
+    const body=$('tabCertificadosGestao')?.querySelector('tbody'); if(!body) return;
+    const rows=pendingCertificates(); body.innerHTML=rows.length?rows.map(c=>certRow(c,false)).join(''):'<tr><td colspan="7">Nenhum certificado aguardando decisão.</td></tr>';
+  }
+  function renderProcessed(){
+    const body=$('tabCertificadosProcessados')?.querySelector('tbody'); if(!body) return;
+    const rows=processedCertificates(); body.innerHTML=rows.length?rows.map(c=>certRow(c,true)).join(''):'<tr><td colspan="7">Nenhum certificado processado.</td></tr>';
+  }
+  function updateKpis(){
+    const count=s=>state.certificados.filter(c=>String(c.status).toUpperCase()===s).length;
+    if($('certKpiPendente')) $('certKpiPendente').textContent=count('PENDENTE')+count('AGUARDANDO_HORAS');
+    if($('certKpiEmitido')) $('certKpiEmitido').textContent=count('EMITIDO');
+    if($('certKpiBloqueado')) $('certKpiBloqueado').textContent=count('BLOQUEADO');
+    if($('certKpiCancelado')) $('certKpiCancelado').textContent=count('CANCELADO');
+    if($('dashCertPendentes')) $('dashCertPendentes').textContent=count('PENDENTE')+count('AGUARDANDO_HORAS');
   }
 
-  function certificadosFiltrados() {
-    return store.certificados.filter((cert) => {
-      if (store.filtro !== 'TODOS' && String(cert.status).toUpperCase() !== store.filtro) return false;
-      const aluno = store.alunos.get(cert.aluno_id) || {};
-      const curso = store.cursos.get(Number(cert.curso_id)) || {};
-      return bateBusca(cert, aluno, curso);
-    });
+  function openWallet(id){
+    const x=state.carteiras.find(r=>r.aluno_id===id); if(!x) return toast('Carteira não encontrada.',true);
+    state.carteiraAtual=x;
+    $('horasModalTitulo').textContent=x.aluno_nome||'Gerenciar horas';
+    $('horasModalResumo').innerHTML=`<article><span>Cadastro</span><strong>${dateBR(x.cadastrado_em)}</strong></article><article><span>Horas automáticas</span><strong>${n(x.horas_automaticas)}h</strong></article><article><span>Ajustes da gestão</span><strong>${n(x.horas_adicionais)}h</strong></article><article><span>Reservadas</span><strong>${n(x.horas_reservadas)}h</strong></article><article><span>Utilizadas</span><strong>${n(x.horas_utilizadas)}h</strong></article><article><span>Saldo disponível</span><strong>${n(x.saldo_disponivel)}h</strong></article>`;
+    $('horasGestaoTotal').value=String(n(x.horas_adicionais));
+    $('horasGestaoExcepcional').checked=true;
+    $('horasGestaoJustificativa').value=x.justificativa_gestor||'';
+    $('horasGestaoAlerta').className='hours-manager-alert ok';
+    $('horasGestaoAlerta').textContent=`O aluno já possui ${n(x.horas_automaticas)}h automáticas. Este campo adiciona horas extras à carteira.`;
+    $('modalHorasGestao').setAttribute('aria-hidden','false');
+  }
+  async function saveWallet(e){
+    e.preventDefault(); const x=state.carteiraAtual; if(!x) return;
+    const hours=Math.max(0,Math.round(n($('horasGestaoTotal').value)/5)*5), reason=$('horasGestaoJustificativa').value.trim();
+    const btn=e.currentTarget.querySelector('button[type="submit"]');btn.disabled=true;
+    try{const {error}=await sb.rpc('gestor_definir_horas_aluno_v34',{p_aluno_id:x.aluno_id,p_horas_adicionais:hours,p_justificativa:reason||null});if(error)throw error;$('modalHorasGestao').setAttribute('aria-hidden','true');toast('Carteira atualizada.');await load();}catch(err){toast(err.message,true);}finally{btn.disabled=false;}
   }
 
-  function renderCertificadosGestao() {
-    const tbody = byId('tabCertificadosGestao')?.querySelector('tbody');
-    if (!tbody) return;
-    const all = store.certificados;
-    const count = (status) => all.filter((x) => String(x.status).toUpperCase() === status).length;
-    if (byId('certKpiPendente')) byId('certKpiPendente').textContent = count('PENDENTE') + count('AGUARDANDO_HORAS');
-    if (byId('certKpiEmitido')) byId('certKpiEmitido').textContent = count('EMITIDO');
-    if (byId('certKpiBloqueado')) byId('certKpiBloqueado').textContent = count('BLOQUEADO');
-    if (byId('certKpiCancelado')) byId('certKpiCancelado').textContent = count('CANCELADO');
-    if (byId('dashCertPendentes')) byId('dashCertPendentes').textContent = count('PENDENTE') + count('AGUARDANDO_HORAS');
-
-    const rows = certificadosFiltrados();
-    if (!rows.length) {
-      tbody.innerHTML = '<tr><td colspan="7">Nenhum certificado encontrado.</td></tr>';
-      return;
-    }
-
-    tbody.innerHTML = rows.map((cert) => {
-      const aluno = store.alunos.get(cert.aluno_id) || {};
-      const curso = store.cursos.get(Number(cert.curso_id)) || {};
-      const status = String(cert.status || 'PENDENTE').toUpperCase();
-      const hours = status === 'EMITIDO' ? num(cert.horas_emitidas) : num(cert.horas_solicitadas || cert.horas_emitidas);
-      const release = ['PENDENTE', 'BLOQUEADO', 'AGUARDANDO_HORAS'].includes(status)
-        ? `<button class="release" data-cert-action="LIBERAR" data-id="${cert.id}">${status === 'AGUARDANDO_HORAS' ? 'Liberar agora' : status === 'BLOQUEADO' ? 'Definir liberação' : `Definir liberação de ${hours}h`}</button>`
-        : '';
-      const block = ['EMITIDO', 'PENDENTE', 'AGUARDANDO_HORAS'].includes(status)
-        ? `<button class="block" data-cert-action="BLOQUEAR" data-id="${cert.id}">Bloquear</button>`
-        : '';
-      const reopen = status === 'BLOQUEADO' || status === 'CANCELADO'
-        ? `<button data-cert-action="REABRIR" data-id="${cert.id}">Reabrir</button>`
-        : '';
-      const cancel = status !== 'CANCELADO'
-        ? `<button class="cancel" data-cert-action="CANCELAR" data-id="${cert.id}">Cancelar</button>`
-        : '';
-      const remove = status !== 'EMITIDO'
-        ? `<button class="delete-request" data-cert-delete="${cert.id}">Excluir solicitação</button>`
-        : '';
-      const editPdf = `<button class="edit-pdf-action" data-cert-pdf-edit="${cert.id}">Editar certificado</button>`;
-      const pdf = status === 'EMITIDO'
-        ? `<button class="pdf-action" data-cert-pdf-download="${cert.id}">Baixar PDF</button>`
-        : '';
-      return `<tr>
-        <td><div class="cert-admin-student"><strong>${esc(cert.nome_aluno || aluno.nome || 'Aluno')}</strong><small>RA ${esc(aluno.ra || '—')} · ${esc(aluno.email || '')}</small></div></td>
-        <td><div class="cert-admin-course"><strong>${esc(cert.nome_curso || curso.titulo || 'Curso')}</strong><small>${status === 'AGUARDANDO_HORAS' && cert.liberar_em ? `Liberação prevista: ${dateBR(cert.liberar_em, true)}` : esc(cert.numero_certificado || 'Número após a liberação')}</small></div></td>
-        <td><strong>${hours}h</strong></td>
-        <td>${num(cert.nota_final)}%</td>
-        <td>${dateBR(cert.solicitado_em || cert.criado_em)}</td>
-        <td>${badge(status)}</td>
-        <td><div class="cert-admin-actions"><button data-cert-detail="${cert.id}">Detalhes</button>${editPdf}${pdf}${release}${block}${reopen}${cancel}${remove}</div></td>
-      </tr>`;
-    }).join('');
+  function openWhatsapp(id){
+    const c=state.certificados.find(x=>Number(x.id)===Number(id)); if(!c) return;
+    const a=aluno(c), course=curso(c);
+    const text=[
+      'Olá! Atendimento ALTITUDE CENTRO UNIVERSITÁRIO.',
+      '',
+      `Aluno: ${c.nome_aluno||a.nome||'—'}`,
+      `RA: ${a.ra||'—'}`,
+      `Curso: ${c.nome_curso||course.titulo||'—'}`,
+      `Carga solicitada: ${n(c.horas_emitidas||c.horas_solicitadas)} horas`,
+      `Protocolo: ${c.protocolo_pagamento||'—'}`,
+      `Situação do pagamento: ${String(c.pagamento_status||'AGUARDANDO_PAGAMENTO').replaceAll('_',' ')}`
+    ].join('\n');
+    window.open(`https://wa.me/${state.whatsapp}?text=${encodeURIComponent(text)}`,'_blank','noopener');
   }
 
-  function preencherOpcoesHoras(field, _max, selected) {
-    if (!field) return;
-    const current = Math.max(0, Math.round(num(selected) / 5) * 5);
-    field.min = '0';
-    field.step = '5';
-    field.value = String(current);
-  }
-
-  function atualizarAlertaHoras() {
-    const item = store.carteiraAtual;
-    const box = byId('horasGestaoAlerta');
-    if (!item || !box) return;
-    const total = num(byId('horasGestaoTotal')?.value);
-    const auto = num(item.horas_automaticas);
-    const minimum = num(item.horas_reservadas) + num(item.horas_utilizadas);
-    const exceptional = Boolean(byId('horasGestaoExcepcional')?.checked);
-    if (total < minimum) {
-      box.className = 'hours-manager-alert error';
-      box.textContent = `O mínimo atual é ${minimum}h, pois já existem horas reservadas ou utilizadas.`;
-    } else if (total > auto && !exceptional) {
-      box.className = 'hours-manager-alert warning';
-      box.textContent = `O limite automático é ${auto}h. Marque a liberação excepcional e informe a justificativa.`;
-    } else if (total > auto) {
-      box.className = 'hours-manager-alert warning';
-      box.textContent = `Liberação excepcional de ${total}h. A justificativa ficará registrada no histórico.`;
-    } else {
-      box.className = 'hours-manager-alert ok';
-      box.textContent = `Liberação dentro do período acadêmico: até ${auto}h disponíveis pelo cálculo de 8h/dia útil.`;
-    }
-  }
-
-  function ajustarHorasGestao(delta) {
-    const select = byId('horasGestaoTotal');
-    if (!select) return;
-    const minimum = num(store.carteiraAtual?.horas_reservadas) + num(store.carteiraAtual?.horas_utilizadas);
-    const next = Math.max(minimum, num(select.value) + Number(delta || 0));
-    select.value = String(Math.max(0, Math.round(next / 5) * 5));
-    atualizarAlertaHoras();
-  }
-
-  function abrirGerenciaHoras(alunoId, cursoId) {
-    const item = store.carteiras.find((row) => row.aluno_id === alunoId && Number(row.curso_id) === Number(cursoId));
-    if (!item) return toast('Carteira não encontrada.', true);
-    store.carteiraAtual = item;
-    byId('horasModalTitulo').textContent = `${item.aluno_nome} — ${item.curso_titulo}`;
-    byId('horasModalResumo').innerHTML = `
-      <article><span>Carga do curso</span><strong>${num(item.carga_curso)}h</strong></article>
-      <article><span>Limite automático atual</span><strong>${num(item.horas_automaticas)}h</strong></article>
-      <article><span>Horas reservadas</span><strong>${num(item.horas_reservadas)}h</strong></article>
-      <article><span>Horas utilizadas</span><strong>${num(item.horas_utilizadas)}h</strong></article>
-      <article><span>Saldo disponível</span><strong>${num(item.saldo_disponivel)}h</strong></article>
-      <article><span>Matrícula</span><strong>${dateBR(item.matricula_em)}</strong></article>`;
-    preencherOpcoesHoras(byId('horasGestaoTotal'), null, item.horas_validadas);
-    byId('horasGestaoExcepcional').checked = Boolean(item.liberacao_excepcional);
-    byId('horasGestaoJustificativa').value = item.justificativa_gestor || '';
-    atualizarAlertaHoras();
-    byId('modalHorasGestao').setAttribute('aria-hidden', 'false');
-  }
-
-  async function salvarGerenciaHoras(event) {
+  async function saveCertificateAdjustment(event){
     event.preventDefault();
-    const item = store.carteiraAtual;
-    if (!item) return;
-    const total = num(byId('horasGestaoTotal').value);
-    const exceptional = byId('horasGestaoExcepcional').checked;
-    const justification = byId('horasGestaoJustificativa').value.trim();
-    if (total < 0 || total % 5 !== 0) return toast('As horas devem ser um número igual ou maior que zero, de 5 em 5.', true);
-    const button = event.currentTarget.querySelector('button[type="submit"]');
-    button.disabled = true;
-    button.textContent = 'Salvando...';
-    try {
-      const { error } = await sb.rpc('gestor_definir_horas_curso', {
-        p_aluno_id: item.aluno_id,
-        p_curso_id: Number(item.curso_id),
-        p_horas_validadas: total,
-        p_excepcional: exceptional,
-        p_justificativa: justification || null
-      });
-      if (error) throw error;
-      toast(`${total}h validadas para ${item.aluno_nome}.`);
-      fecharModalHoras();
-      await carregarCertificadosGestao();
-    } catch (error) {
-      toast(`Não foi possível salvar as horas: ${error.message}`, true);
-    } finally {
-      button.disabled = false;
-      button.textContent = 'Salvar horas';
+    const c=state.certAtual;if(!c)return;
+    const hours=Math.max(5,Math.round(n($('certAjusteHoras').value)/5)*5);
+    const start=$('certAjusteInicio').value||null,end=$('certAjusteFim').value||null,obs=$('certAjusteObservacao').value.trim()||null;
+    const button=event.currentTarget.querySelector('button[type="submit"]');button.disabled=true;
+    try{
+      const {error}=await sb.rpc('gestor_ajustar_solicitacao_certificado_v34',{p_certificado_id:Number(c.id),p_horas:hours,p_periodo_inicio:start,p_periodo_fim:end,p_observacao:obs});
+      if(error)throw error;
+      toast('Carga e período atualizados.');await load();await details(Number(c.id));
+    }catch(error){toast(error.message,true);}finally{button.disabled=false;}
+  }
+
+  async function confirmPayment(id){
+    const c=state.certificados.find(x=>Number(x.id)===id); if(!c) return;
+    const ok=window.AltitudeDialog?await AltitudeDialog.confirm({title:'Confirmar pagamento',message:`Confirma o pagamento de ${money(c.valor_final)} para o protocolo ${c.protocolo_pagamento||'—'}?`,confirmText:'Confirmar pagamento'}):confirm('Confirmar pagamento?');
+    if(!ok) return;
+    const {error}=await sb.rpc('gestor_confirmar_pagamento_certificado_v34',{p_certificado_id:id,p_observacao:'Pagamento confirmado pela gestão.'});
+    if(error) return toast(error.message,true); toast('Pagamento confirmado. A solicitação já está pronta para liberação.'); await load();
+  }
+  async function decide(id, action){
+    const c=state.certificados.find(x=>Number(x.id)===id); if(!c) return;
+    let obs='';
+    if(action==='LIBERAR'){
+      const ok=window.AltitudeDialog?await AltitudeDialog.confirm({title:'Liberar certificado',message:'O pagamento está confirmado. O certificado será emitido usando o período contado desde o cadastro do aluno, respeitando 8 horas por dia.',confirmText:'Emitir e liberar'}):confirm('Liberar certificado?');
+      if(!ok) return; obs='Pagamento confirmado e certificado liberado pela gestão.';
+    }else{
+      obs=window.AltitudeDialog?await AltitudeDialog.prompt({title:`${action==='BLOQUEAR'?'Bloquear':action==='CANCELAR'?'Cancelar':'Reabrir'} certificado`,label:'Motivo ou observação',required:true,confirmText:'Salvar'}):prompt('Motivo:');
+      if(obs===null||obs===undefined) return;
     }
+    const {error}=await sb.rpc('gestor_decidir_certificado_v34',{p_certificado_id:id,p_acao:action,p_observacao:obs||null,p_periodo_inicio:null,p_periodo_fim:null});
+    if(error) return toast(error.message,true); toast(action==='LIBERAR'?'Certificado emitido e liberado.':'Situação atualizada.'); await load();
   }
 
-  async function decidirCertificado(id, action) {
-    const cert = store.certificados.find((x) => Number(x.id) === Number(id));
-    if (!cert) return;
-    const hours = num(cert.horas_solicitadas || cert.horas_emitidas);
-    const statusAtual = String(cert.status || 'PENDENTE').toUpperCase();
-
-    try {
-      if (action === 'LIBERAR') {
-        let modo = 'IMEDIATO';
-        let observacao = '';
-
-        if (statusAtual !== 'AGUARDANDO_HORAS') {
-          const escolha = await window.AltitudeDialog?.choice({
-            title: `Como liberar o certificado de ${hours}h?`,
-            message: 'Escolha o modo de liberação. No modo automático, o sistema conta 8 horas por dia útil. No modo imediato, a gestão credita a carga integral e o PDF é liberado agora.',
-            defaultValue: 'AUTOMATICO',
-            options: [
-              {
-                value: 'AUTOMATICO',
-                label: 'Liberação automática — 8h por dia útil',
-                description: 'O certificado fica EM CONTAGEM e será emitido automaticamente quando completar o período.'
-              },
-              {
-                value: 'IMEDIATO',
-                label: 'Liberação imediata — carga integral',
-                description: 'A gestão credita todas as horas solicitadas e o certificado passa para EMITIDO agora.'
-              }
-            ],
-            input: {
-              label: 'Observação da gestão (opcional)',
-              placeholder: 'Ex.: pagamento confirmado e carga autorizada.',
-              required: false
-            },
-            confirmText: 'Confirmar liberação'
-          });
-          if (!escolha) return;
-          modo = escolha.value;
-          observacao = escolha.text || '';
-        } else {
-          const confirmou = await window.AltitudeDialog?.confirm({
-            title: 'Liberar antes do prazo?',
-            message: `Este certificado está em contagem automática. Deseja creditar as ${hours}h restantes e emitir o PDF imediatamente?`,
-            confirmText: 'Liberar agora'
-          });
-          if (!confirmou) return;
-          modo = 'IMEDIATO';
-          observacao = 'Contagem automática encerrada pela gestão com crédito integral das horas.';
-        }
-
-        let result = await sb.rpc('gestor_liberar_certificado_v18', {
-          p_certificado_id: Number(id),
-          p_modo: modo,
-          p_observacao: observacao || null
-        });
-        if (result.error) throw result.error;
-
-        let updated = Array.isArray(result.data) ? result.data[0] : result.data;
-        const confirmacao = await sb.from('certificados').select('*').eq('id', Number(id)).maybeSingle();
-        if (confirmacao.error) throw confirmacao.error;
-        if (confirmacao.data) updated = confirmacao.data;
-        const novoStatus = String(updated?.status || '').toUpperCase();
-        if (!['EMITIDO', 'AGUARDANDO_HORAS'].includes(novoStatus)) {
-          throw new Error(`O banco manteve o status ${novoStatus || 'DESCONHECIDO'}. Execute a correção V18 no Supabase.`);
-        }
-
-        const position = store.certificados.findIndex((item) => Number(item.id) === Number(id));
-        if (position >= 0) store.certificados[position] = { ...store.certificados[position], ...updated };
-        renderCertificadosGestao();
-
-        if (novoStatus === 'EMITIDO') {
-          toast(`Certificado de ${hours}h emitido. O PDF já está disponível para o aluno.`);
-        } else {
-          toast(`Contagem iniciada. Liberação automática prevista para ${dateBR(updated.liberar_em, true)}.`);
-        }
-      } else {
-        const labels = { BLOQUEAR: 'bloquear', CANCELAR: 'cancelar', REABRIR: 'reabrir' };
-        const verb = labels[action] || action.toLowerCase();
-        const observation = await window.AltitudeDialog?.prompt({
-          title: `${verb.charAt(0).toUpperCase()}${verb.slice(1)} certificado`,
-          message: 'A observação ficará registrada somente no histórico administrativo da gestão.',
-          label: 'Motivo ou observação',
-          value: cert.observacao_gestor || '',
-          required: true,
-          confirmText: 'Salvar decisão',
-          danger: action === 'CANCELAR'
-        });
-        if (observation === null || observation === undefined) return;
-
-        const result = await sb.rpc('gestor_decidir_certificado', {
-          p_certificado_id: Number(id),
-          p_acao: action,
-          p_observacao: observation || null
-        });
-        if (result.error) throw result.error;
-        toast(`Certificado atualizado: ${verb}.`);
-      }
-
-      await carregarCertificadosGestao();
-      if (byId('modalCertificadoGestao')?.getAttribute('aria-hidden') === 'false') await abrirDetalhesCertificado(id);
-    } catch (error) {
-      const message = String(error.message || error);
-      toast(`Não foi possível atualizar o certificado: ${message}`, true);
-    }
+  async function details(id){
+    const c=state.certificados.find(x=>Number(x.id)===id); if(!c) return;
+    state.certAtual=c; const a=aluno(c), course=curso(c);
+    $('certModalTitulo').textContent=c.numero_certificado||c.protocolo_pagamento||`Solicitação #${id}`;
+    $('certModalResumo').innerHTML=`<article><span>Aluno</span><strong>${esc(c.nome_aluno||a.nome||'—')}</strong></article><article><span>RA / CPF</span><strong>${esc(a.ra||'—')} · ${esc(a.cpf||'—')}</strong></article><article><span>Curso</span><strong>${esc(c.nome_curso||course.titulo||'—')}</strong></article><article><span>Horas</span><strong>${n(c.horas_emitidas||c.horas_solicitadas)}h</strong></article><article><span>Pagamento</span><strong>${esc(String(c.pagamento_status||'AGUARDANDO_PAGAMENTO').replaceAll('_',' '))}</strong></article><article><span>Valor</span><strong>${money(c.valor_final)}</strong></article><article><span>Cupom</span><strong>${esc(c.cupom_codigo||'—')}</strong></article><article><span>Protocolo</span><strong>${esc(c.protocolo_pagamento||'—')}</strong></article><article><span>Pagamento confirmado em</span><strong>${dateBR(c.pagamento_confirmado_em,true)}</strong></article><article><span>Observação financeira</span><strong>${esc(c.pagamento_observacao||'—')}</strong></article>`;
+    const editable=['PENDENTE','AGUARDANDO_HORAS'].includes(String(c.status).toUpperCase()),form=$('formAjustarCertificadoV34');
+    if(form){form.hidden=!editable;if(editable){const period=suggestedPeriod(a.criado_em,n(c.horas_solicitadas));$('certAjusteHoras').value=String(n(c.horas_solicitadas)||5);$('certAjusteInicio').value=isoDate(c.periodo_inicio)||period.start;$('certAjusteFim').value=isoDate(c.periodo_fim)||period.end;$('certAjusteObservacao').value=c.observacao_gestor||'';}}
+    $('certModalAcoes').innerHTML=certActions(c,!editable);
+    const {data,error}=await sb.from('certificados_historico').select('*').eq('certificado_id',id).order('criado_em',{ascending:false});
+    $('certModalHistorico').innerHTML=error?`<div class="empty-state">${esc(error.message)}</div>`:(data||[]).map(h=>`<div class="cert-history-row"><span class="cert-history-dot"></span><div><strong>${esc(String(h.acao||'Atualização').replaceAll('_',' '))}</strong><span>${esc(h.observacao||'')}</span></div><small>${dateBR(h.criado_em,true)}</small></div>`).join('')||'<div class="empty-state">Sem histórico.</div>';
+    $('modalCertificadoGestao').setAttribute('aria-hidden','false');
+  }
+  async function pdf(id, preview=false){
+    const c=state.certificados.find(x=>Number(x.id)===id); if(!c||String(c.status).toUpperCase()!=='EMITIDO') return toast('O PDF só está disponível após a emissão.',true);
+    if(!window.AltitudeCertificatePDF) return toast('Gerador de PDF não carregado.',true);
+    const code=c.codigo_validacao||c.numero_certificado;
+    const opts={sb,cert:c,aluno:aluno(c),curso:curso(c),logoUrl:'../3-img/LOGO.png',validationUrl:`${location.origin}/Projeto/1-html/8-certificados.html?codigo=${encodeURIComponent(code)}`};
+    try{preview?await AltitudeCertificatePDF.preview(opts):await AltitudeCertificatePDF.download(opts);}catch(e){toast(e.message,true);}
   }
 
-  async function excluirSolicitacao(id) {
-    const cert = store.certificados.find((item) => Number(item.id) === Number(id));
-    if (!cert) return;
-    if (String(cert.status || '').toUpperCase() === 'EMITIDO') {
-      return toast('Certificados emitidos precisam ser bloqueados ou cancelados antes da exclusão.', true);
-    }
-
-    const aluno = store.alunos.get(cert.aluno_id) || {};
-    const curso = store.cursos.get(Number(cert.curso_id)) || {};
-    const horas = num(cert.horas_solicitadas || cert.horas_emitidas);
-    const nome = cert.nome_aluno || aluno.nome || 'Aluno';
-    const titulo = cert.nome_curso || curso.titulo || 'Curso';
-
-    const motivo = await window.AltitudeDialog?.prompt({
-      title: 'Excluir solicitação de certificado',
-      message: `A solicitação de ${horas}h de ${nome}, no curso ${titulo}, será removida. As horas reservadas ou utilizadas serão devolvidas ao crédito disponível do aluno.`,
-      label: 'Motivo da exclusão',
-      value: 'Solicitação excluída pela gestão.',
-      required: true,
-      confirmText: 'Continuar',
-      danger: true
+  async function wire(){
+    const profile=await window.GESTOR_AUTH_READY; if(!profile||Number(profile.nivel_acesso||1)<2) return;
+    const old=window.abrirAba; window.abrirAba=(id)=>{old?.(id);if(id==='certificados-gestao')load();};
+    $('certBusca')?.addEventListener('input',e=>{state.busca=e.target.value;renderWallets();renderCertificates();});
+    $('certFiltroStatus')?.addEventListener('change',e=>{state.filtro=e.target.value;renderCertificates();});
+    $('certProcessadosBusca')?.addEventListener('input',e=>{state.processadosBusca=e.target.value;renderProcessed();});
+    $('certProcessadosStatus')?.addEventListener('change',e=>{state.processadosStatus=e.target.value;renderProcessed();});
+    $('btnAtualizarCertificados')?.addEventListener('click',()=>load());
+    $('formGerenciarHoras')?.addEventListener('submit',saveWallet);
+    $('formAjustarCertificadoV34')?.addEventListener('submit',saveCertificateAdjustment);
+    $('horasMenos5')?.addEventListener('click',()=>{$('horasGestaoTotal').value=String(Math.max(0,n($('horasGestaoTotal').value)-5));});
+    $('horasMais5')?.addEventListener('click',()=>{$('horasGestaoTotal').value=String(n($('horasGestaoTotal').value)+5);});
+    ['horasFecharModal','horasCancelar'].forEach(id=>$(id)?.addEventListener('click',()=>$('modalHorasGestao').setAttribute('aria-hidden','true')));
+    $('certFecharModal')?.addEventListener('click',()=>$('modalCertificadoGestao').setAttribute('aria-hidden','true'));
+    document.addEventListener('click',e=>{
+      const w=e.target.closest('[data-wallet-v34]'); if(w)openWallet(w.dataset.walletV34);
+      const payBtn=e.target.closest('[data-cert-pay-v34]'); if(payBtn)confirmPayment(Number(payBtn.dataset.certPayV34));
+      const wa=e.target.closest('[data-cert-whatsapp-v34]'); if(wa)openWhatsapp(Number(wa.dataset.certWhatsappV34));
+      const act=e.target.closest('[data-cert-action-v34]'); if(act)decide(Number(act.dataset.id),act.dataset.certActionV34);
+      const det=e.target.closest('[data-cert-detail-v34]'); if(det)details(Number(det.dataset.certDetailV34));
+      const dl=e.target.closest('[data-cert-pdf-download-v34]'); if(dl)pdf(Number(dl.dataset.certPdfDownloadV34),false);
+      const pv=e.target.closest('[data-cert-pdf-preview-v34]'); if(pv)pdf(Number(pv.dataset.certPdfPreviewV34),true);
     });
-    if (!motivo) return;
-
-    const confirmou = await window.AltitudeDialog?.confirm({
-      title: 'Confirmar exclusão e devolução das horas',
-      message: `Ao excluir, o sistema recalculará a carteira e devolverá até ${horas}h ao saldo do aluno. Esta ação remove a solicitação da área ativa, mas mantém um registro administrativo.`,
-      confirmText: 'Excluir e devolver horas',
-      danger: true
-    });
-    if (!confirmou) return;
-
-    try {
-      const { data, error } = await sb.rpc('gestor_excluir_solicitacao_certificado', {
-        p_certificado_id: Number(id),
-        p_motivo: motivo.trim()
-      });
-      if (error) throw error;
-      fecharModalCertificado();
-      toast(`${Number(data?.horas_devolvidas || 0)}h devolvidas. Novo saldo disponível: ${Number(data?.saldo_disponivel || 0)}h.`);
-      await carregarCertificadosGestao();
-    } catch (error) {
-      toast(`Não foi possível excluir a solicitação: ${error.message}`, true);
-    }
+    load();
+    if(!window.__v34CertRealtime){window.__v34CertRealtime=true;const refresh=()=>setTimeout(()=>load({silent:true}),500);const ch=sb.channel('altitude-v34-certificados');['certificados','carteiras_horas_aluno_v34','packs_alunos_v34'].forEach(table=>ch.on('postgres_changes',{event:'*',schema:'public',table},refresh));ch.subscribe();}
   }
-
-  async function abrirDetalhesCertificado(id) {
-    const cert = store.certificados.find((x) => Number(x.id) === Number(id));
-    if (!cert) return;
-    store.atual = cert;
-    const aluno = store.alunos.get(cert.aluno_id) || {};
-    const curso = store.cursos.get(Number(cert.curso_id)) || {};
-    const wallet = mapaCarteiras().get(carteiraKey(cert.aluno_id, cert.curso_id)) || {};
-    const requested = num(cert.horas_solicitadas || cert.horas_emitidas);
-    byId('certModalTitulo').textContent = `${cert.nome_aluno || aluno.nome || 'Aluno'} — ${cert.nome_curso || curso.titulo || 'Curso'}`;
-    byId('certModalResumo').innerHTML = `
-      <article><span>Status</span><strong>${badge(cert.status)}</strong></article>
-      <article><span>RA</span><strong>${esc(aluno.ra || '—')}</strong></article>
-      <article><span>Horas solicitadas</span><strong>${requested} horas</strong></article>
-      <article><span>Horas emitidas</span><strong>${num(cert.horas_emitidas)} horas</strong></article>
-      <article><span>Saldo disponível</span><strong>${num(wallet.saldo_disponivel)} horas</strong></article>
-      <article><span>Nota final</span><strong>${num(cert.nota_final)}%</strong></article>
-      <article><span>Solicitação</span><strong>${dateBR(cert.solicitado_em || cert.criado_em, true)}</strong></article>
-      <article><span>Modo de liberação</span><strong>${esc(cert.modo_liberacao === 'AUTOMATICO' ? '8h por dia útil' : cert.modo_liberacao === 'IMEDIATO' ? 'Imediata' : 'Ainda não definido')}</strong></article>
-      <article><span>Previsão automática</span><strong>${dateBR(cert.liberar_em, true)}</strong></article>
-      <article><span>Emissão</span><strong>${dateBR(cert.emitido_em, true)}</strong></article>
-      <article><span>Período</span><strong>${cert.periodo_inicio ? `${dateBR(cert.periodo_inicio)} a ${dateBR(cert.periodo_fim)}` : 'Definido na liberação'}</strong></article>
-      <article><span>Número</span><strong>${esc(cert.numero_certificado || 'Aguardando emissão')}</strong></article>
-      <article><span>Código</span><strong>${esc(cert.codigo_validacao || 'Aguardando emissão')}</strong></article>
-      <article><span>Observação</span><strong>${esc(cert.observacao_gestor || '—')}</strong></article>`;
-
-    const status = String(cert.status).toUpperCase();
-    byId('certModalAcoes').innerHTML = `
-      ${['PENDENTE', 'BLOQUEADO', 'AGUARDANDO_HORAS'].includes(status) ? `<button class="release" data-cert-action="LIBERAR" data-id="${cert.id}">${status === 'AGUARDANDO_HORAS' ? 'Liberar agora' : 'Definir modo de liberação'}</button>` : ''}
-      ${['PENDENTE', 'EMITIDO', 'AGUARDANDO_HORAS'].includes(status) ? `<button class="block" data-cert-action="BLOQUEAR" data-id="${cert.id}">Bloquear</button>` : ''}
-      ${status === 'BLOQUEADO' || status === 'CANCELADO' ? `<button data-cert-action="REABRIR" data-id="${cert.id}">Reabrir</button>` : ''}
-      ${status !== 'CANCELADO' ? `<button class="cancel" data-cert-action="CANCELAR" data-id="${cert.id}">Cancelar</button>` : ''}
-      <button class="edit-pdf-action" data-cert-pdf-edit="${cert.id}">Editar dados do PDF</button>
-      ${status === 'EMITIDO' ? `<button class="pdf-action" data-cert-pdf-preview="${cert.id}">Visualizar PDF</button><button class="pdf-action" data-cert-pdf-download="${cert.id}">Baixar PDF</button>` : ''}
-      ${status !== 'EMITIDO' ? `<button class="delete-request" data-cert-delete="${cert.id}">Excluir solicitação</button>` : ''}
-      ${cert.codigo_validacao ? `<a class="topbar-link" href="8-certificados.html?codigo=${encodeURIComponent(cert.codigo_validacao)}" target="_blank">Abrir validação pública</a>` : ''}`;
-
-    const { data, error } = await sb.from('certificados_historico').select('*').eq('certificado_id', Number(id)).order('criado_em', { ascending: false });
-    byId('certModalHistorico').innerHTML = error
-      ? `<div class="empty-state">${esc(error.message)}</div>`
-      : (data || []).map((item) => `
-        <div class="cert-history-row"><span class="cert-history-dot"></span><div><strong>${esc(String(item.acao || 'ATUALIZAÇÃO').replaceAll('_', ' '))}</strong><span>${esc(item.status_anterior || '—')} → ${esc(item.status_novo || '—')}${item.observacao ? ` · ${esc(item.observacao)}` : ''}</span></div><small>${dateBR(item.criado_em, true)}</small></div>`).join('') || '<div class="empty-state">Sem histórico.</div>';
-    byId('modalCertificadoGestao').setAttribute('aria-hidden', 'false');
-  }
-
-  function certificadoContexto(id) {
-    const cert = store.certificados.find((item) => Number(item.id) === Number(id));
-    if (!cert) return null;
-    return {
-      cert,
-      aluno: store.alunos.get(cert.aluno_id) || {},
-      curso: store.cursos.get(Number(cert.curso_id)) || {}
-    };
-  }
-
-  function abrirEditorPdfCertificado(id) {
-    const context = certificadoContexto(id);
-    if (!context) return toast('Certificado não encontrado.', true);
-    const { cert, aluno, curso } = context;
-    store.pdfEditId = Number(id);
-    byId('certPdfEditorTitulo').textContent = `Editar certificado ${cert.numero_certificado || `#${cert.id}`}`;
-    byId('certPdfTituloDocumento').value = cert.titulo_documento || 'CERTIFICADO';
-    byId('certPdfSubtituloDocumento').value = cert.subtitulo_documento || 'DE CONCLUSÃO E APROVEITAMENTO';
-    byId('certPdfNomeAluno').value = cert.nome_aluno || aluno.nome || '';
-    byId('certPdfNomeCurso').value = cert.nome_curso || curso.titulo || '';
-    byId('certPdfNota').value = Number(cert.nota_final || 0);
-    byId('certPdfPeriodoInicio').value = cert.periodo_inicio || '';
-    byId('certPdfPeriodoFim').value = cert.periodo_fim || '';
-    byId('certPdfObservacao').value = '';
-    byId('certPdfEditorMeta').textContent = `Status: ${String(cert.status || 'PENDENTE').toUpperCase()} · Carga: ${num(cert.horas_emitidas || cert.horas_solicitadas)}h · Versão do PDF: ${Number(cert.versao_pdf || 1)}`;
-    byId('modalEditarPdfCertificado').setAttribute('aria-hidden', 'false');
-  }
-
-  function fecharEditorPdfCertificado() {
-    byId('modalEditarPdfCertificado')?.setAttribute('aria-hidden', 'true');
-    store.pdfEditId = null;
-  }
-
-  async function salvarEditorPdfCertificado(event) {
-    event.preventDefault();
-    const id = store.pdfEditId;
-    if (!id) return;
-    const button = byId('certPdfSalvar');
-    button.disabled = true;
-    button.textContent = 'Salvando...';
-    try {
-      const { data, error } = await sb.rpc('gestor_editar_certificado_pdf_v18', {
-        p_certificado_id: Number(id),
-        p_titulo_documento: byId('certPdfTituloDocumento').value.trim(),
-        p_subtitulo_documento: byId('certPdfSubtituloDocumento').value.trim(),
-        p_nome_aluno: byId('certPdfNomeAluno').value.trim(),
-        p_nome_curso: byId('certPdfNomeCurso').value.trim(),
-        p_nota_final: Number(byId('certPdfNota').value || 0),
-        p_periodo_inicio: byId('certPdfPeriodoInicio').value || null,
-        p_periodo_fim: byId('certPdfPeriodoFim').value || null,
-        p_observacao: byId('certPdfObservacao').value.trim() || null
-      });
-      if (error) throw error;
-      const updated = Array.isArray(data) ? data[0] : data;
-      const position = store.certificados.findIndex((item) => Number(item.id) === Number(id));
-      if (position >= 0 && updated) store.certificados[position] = { ...store.certificados[position], ...updated };
-      renderCertificadosGestao();
-      toast('Dados do certificado atualizados. A nova versão do PDF já pode ser visualizada.');
-      abrirEditorPdfCertificado(id);
-    } catch (error) {
-      toast(`Não foi possível editar o certificado: ${error.message}`, true);
-    } finally {
-      button.disabled = false;
-      button.textContent = 'Salvar alterações';
-    }
-  }
-
-  async function gerarPdfCertificadoGestor(id, preview = false) {
-    const context = certificadoContexto(id);
-    if (!context) return toast('Certificado não encontrado.', true);
-    const { cert, aluno, curso } = context;
-    if (String(cert.status || '').toUpperCase() !== 'EMITIDO') {
-      return toast('O PDF fica disponível somente depois que o status for EMITIDO.', true);
-    }
-    if (!window.AltitudeCertificatePDF) return toast('Gerador do certificado não carregou.', true);
-    const codigo = cert.codigo_validacao || cert.numero_certificado;
-    const validationUrl = `${window.location.origin}/Projeto/1-html/8-certificados.html?codigo=${encodeURIComponent(codigo)}`;
-    try {
-      toast(preview ? 'Abrindo pré-visualização...' : 'Preparando PDF...');
-      const options = {
-        sb, cert, aluno, curso,
-        logoUrl: '../3-img/LOGO.png',
-        validationUrl
-      };
-      if (preview) await window.AltitudeCertificatePDF.preview(options);
-      else await window.AltitudeCertificatePDF.download(options);
-    } catch (error) {
-      toast(`Não foi possível gerar o PDF: ${error.message}`, true);
-    }
-  }
-
-  function fecharModalCertificado() {
-    byId('modalCertificadoGestao')?.setAttribute('aria-hidden', 'true');
-  }
-
-  function fecharModalHoras() {
-    byId('modalHorasGestao')?.setAttribute('aria-hidden', 'true');
-    store.carteiraAtual = null;
-  }
-
-  async function wire() {
-    const profile = await window.GESTOR_AUTH_READY;
-    if (!profile || Number(profile.nivel_acesso || 1) < 2) return;
-
-    const previous = window.abrirAba;
-    window.abrirAba = function abrirAbaComCertificados(id) {
-      previous?.(id);
-      if (id === 'certificados-gestao') carregarCertificadosGestao();
-    };
-
-    byId('certBusca')?.addEventListener('input', (event) => {
-      store.busca = event.target.value;
-      renderCarteirasGestao();
-      renderCertificadosGestao();
-    });
-    byId('certFiltroStatus')?.addEventListener('change', (event) => {
-      store.filtro = event.target.value;
-      renderCertificadosGestao();
-    });
-    byId('btnAtualizarCertificados')?.addEventListener('click', carregarCertificadosGestao);
-    byId('certFecharModal')?.addEventListener('click', fecharModalCertificado);
-    byId('horasFecharModal')?.addEventListener('click', fecharModalHoras);
-    byId('horasCancelar')?.addEventListener('click', fecharModalHoras);
-    byId('formGerenciarHoras')?.addEventListener('submit', salvarGerenciaHoras);
-    byId('formEditarPdfCertificado')?.addEventListener('submit', salvarEditorPdfCertificado);
-    byId('certPdfEditorFechar')?.addEventListener('click', fecharEditorPdfCertificado);
-    byId('certPdfVisualizar')?.addEventListener('click', () => store.pdfEditId && gerarPdfCertificadoGestor(store.pdfEditId, true));
-    byId('certPdfBaixar')?.addEventListener('click', () => store.pdfEditId && gerarPdfCertificadoGestor(store.pdfEditId, false));
-    byId('horasGestaoTotal')?.addEventListener('input', atualizarAlertaHoras);
-    byId('horasGestaoTotal')?.addEventListener('change', () => {
-      const field = byId('horasGestaoTotal');
-      if (!field) return;
-      field.value = String(Math.max(0, Math.round(num(field.value) / 5) * 5));
-      atualizarAlertaHoras();
-    });
-    byId('horasGestaoExcepcional')?.addEventListener('change', atualizarAlertaHoras);
-    byId('horasMenos5')?.addEventListener('click', () => ajustarHorasGestao(-5));
-    byId('horasMais5')?.addEventListener('click', () => ajustarHorasGestao(5));
-    byId('modalCertificadoGestao')?.addEventListener('click', (event) => {
-      if (event.target.id === 'modalCertificadoGestao') fecharModalCertificado();
-    });
-    byId('modalHorasGestao')?.addEventListener('click', (event) => {
-      if (event.target.id === 'modalHorasGestao') fecharModalHoras();
-    });
-    byId('modalEditarPdfCertificado')?.addEventListener('click', (event) => {
-      if (event.target.id === 'modalEditarPdfCertificado') fecharEditorPdfCertificado();
-    });
-
-    document.addEventListener('click', (event) => {
-      const detail = event.target.closest('[data-cert-detail]');
-      if (detail) abrirDetalhesCertificado(Number(detail.dataset.certDetail));
-      const action = event.target.closest('[data-cert-action]');
-      if (action) decidirCertificado(Number(action.dataset.id), action.dataset.certAction);
-      const remove = event.target.closest('[data-cert-delete]');
-      if (remove) excluirSolicitacao(Number(remove.dataset.certDelete));
-      const wallet = event.target.closest('[data-wallet-manage]');
-      if (wallet) abrirGerenciaHoras(wallet.dataset.walletManage, Number(wallet.dataset.courseId));
-      const pdfEdit = event.target.closest('[data-cert-pdf-edit]');
-      if (pdfEdit) abrirEditorPdfCertificado(Number(pdfEdit.dataset.certPdfEdit));
-      const pdfDownload = event.target.closest('[data-cert-pdf-download]');
-      if (pdfDownload) gerarPdfCertificadoGestor(Number(pdfDownload.dataset.certPdfDownload), false);
-      const pdfPreview = event.target.closest('[data-cert-pdf-preview]');
-      if (pdfPreview) gerarPdfCertificadoGestor(Number(pdfPreview.dataset.certPdfPreview), true);
-    });
-
-    carregarCertificadosGestao();
-    if (!window.__altitudeCertificadosGestaoRealtime) {
-      window.__altitudeCertificadosGestaoRealtime = true;
-      const agendar = () => {
-        clearTimeout(store.realtimeTimer);
-        store.realtimeTimer = window.setTimeout(() => {
-          if (!document.hidden) carregarCertificadosGestao({ silent: true });
-        }, 650);
-      };
-      const channel = sb.channel('altitude-certificados-gestao-v18');
-      ['certificados', 'certificados_historico', 'carteiras_horas_curso']
-        .forEach((table) => channel.on('postgres_changes', { event: '*', schema: 'public', table }, agendar));
-      channel.subscribe();
-    }
-    if (!window.__altitudeCertificadosGestaoPolling) {
-      window.__altitudeCertificadosGestaoPolling = window.setInterval(() => {
-        if (!document.hidden && document.querySelector('#certificados-gestao.ativa')) carregarCertificadosGestao({ silent: true });
-      }, 30000);
-    }
-  }
-
-  document.addEventListener('DOMContentLoaded', wire);
+  document.addEventListener('DOMContentLoaded',wire);
 })();

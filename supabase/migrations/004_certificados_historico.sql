@@ -357,7 +357,7 @@ begin
     return jsonb_build_object(
       'encontrado', false,
       'valido', false,
-      'mensagem', 'Certificado não encontrado na base oficial do Instituto Altitude.'
+      'mensagem', 'Certificado não encontrado na base oficial da ALTITUDE CENTRO UNIVERSITÁRIO.'
     );
   end if;
 

@@ -97,7 +97,7 @@
       if (list) list.innerHTML = data.length ? data.map(c => `
         <button type="button" onclick="abrirAba('cursos')">
           <img src="${escapeHtml(c.capa_url || '../3-img/LOGO.png')}" alt="">
-          <span><strong>${escapeHtml(c.titulo)}</strong><small>${escapeHtml(c.categoria || 'SEM CATEGORIA')} · ${c.carga_horaria || 0}h</small></span>
+          <span><strong>${escapeHtml(c.titulo)}</strong><small>${escapeHtml(c.categoria || 'SEM CATEGORIA')}</small></span>
           <em class="${c.publicado ? 'live' : ''}">${c.publicado ? 'Publicado' : 'Rascunho'}</em>
         </button>`).join('') : '<p class="empty-state">Nenhum curso criado ainda.</p>';
 
@@ -234,7 +234,7 @@
       const { jsPDF } = window.jspdf;
       const doc = new jsPDF({ unit: 'mm', format: 'a4' });
       const margin = 18, width = 174;
-      doc.setFont('helvetica', 'bold'); doc.setFontSize(17); doc.text('INSTITUIÇÃO ALTITUDE', margin, 18);
+      doc.setFont('helvetica', 'bold'); doc.setFontSize(17); doc.text('ALTITUDE CENTRO UNIVERSITÁRIO', margin, 18);
       doc.setFontSize(15); doc.text(titulo, margin, 30, { maxWidth: width });
       doc.setDrawColor(14, 165, 163); doc.line(margin, 35, 192, 35);
       doc.setFont('helvetica', 'normal'); doc.setFontSize(11);
@@ -273,7 +273,7 @@
     try {
       const [courseRes, modulesRes, testsRes, materialsRes] = await Promise.all([
         sb.from('cursos').select('*').eq('id', courseId).single(),
-        sb.from('modulos').select('id,titulo,publicado,conteudo,pdf_url,carga_horaria').eq('curso_id', courseId).order('ordem'),
+        sb.from('modulos').select('id,titulo,publicado,conteudo,pdf_url').eq('curso_id', courseId).order('ordem'),
         sb.from('provas').select('id,titulo,modulo_id').eq('curso_id', courseId),
         sb.from('materiais').select('id,modulo_id,tipo').eq('curso_id', courseId)
       ]);
@@ -292,7 +292,6 @@
         return true;
       }
       let questionCount = 0;
-      const moduleHoursTotal = modules.reduce((sum, module) => sum + Math.max(0, Number(module.carga_horaria || 0)), 0);
       const modulesWithIndexedPdf = new Set(materials.filter(material => material.tipo === 'PDF').map(material => Number(material.modulo_id)));
       const pdfOnlyModules = modules.filter(module => module.pdf_url && !modulesWithIndexedPdf.has(Number(module.id))).length;
       const effectiveMaterialCount = materials.length + pdfOnlyModules;
@@ -313,12 +312,8 @@
 
         if (!String(course.titulo || '').trim()) missing.push('nome do curso');
         if (!String(course.descricao || '').trim()) missing.push('descrição');
-        if (!Number(course.carga_horaria)) missing.push('carga horária');
         if (!course.capa_url) missing.push('foto de capa');
         if (!modules.length) missing.push('ao menos um módulo');
-        if (modules.length && moduleHoursTotal !== Number(course.carga_horaria || 0)) {
-          missing.push(`divisão das horas dos módulos: ${moduleHoursTotal}h cadastradas para um curso de ${Number(course.carga_horaria || 0)}h`);
-        }
         if (modulesWithoutContent.length) missing.push(`conteúdo ou PDF em ${modulesWithoutContent.length} módulo(s)`);
         if (!tests.length) missing.push('prova vinculada ao curso');
         if (tests.length && !questionCount) missing.push('questões da prova');
@@ -331,8 +326,7 @@
           `✓ ${modules.length} módulo(s)`,
           `✓ ${effectiveMaterialCount} arquivo(s) ou PDF(s)`,
           `✓ ${tests.length} prova(s)`,
-          `✓ ${questionCount} questão(ões)`,
-          `✓ ${moduleHoursTotal}h distribuídas nos módulos`
+          `✓ ${questionCount} questão(ões)`
         ].join('\n');
 
         if (!confirm(`Publicar “${course.titulo}” em Cursos Profissionais?\n\n${checklist}\n\nOs módulos também serão liberados para os alunos matriculados.`)) return;
@@ -390,7 +384,7 @@
       const { data, error } = await sb.functions.invoke('criar-curso-ia', {
         body: {
           prompt,
-          carga_horaria: Number($('#iaCarga').value),
+          carga_horaria: 0,
           nivel: $('#iaNivel').value,
           quantidade_modulos: Number($('#iaModulos').value),
           quantidade_questoes: Number($('#iaQuestoes').value),
@@ -468,7 +462,7 @@
     setLoading(button, true, 'Importando...');
     try {
       const payload = validarCursoJson(input?.value || '');
-      const carga = Math.max(5, Math.min(200, Math.round(Number(payload.carga_horaria || 20) / 5) * 5));
+      const carga = 0;
       const { data: course, error: courseError } = await sb.from('cursos').insert({
         titulo: String(payload.titulo).trim(),
         descricao: String(payload.descricao || '').trim(),

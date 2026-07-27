@@ -978,7 +978,7 @@ begin
 
   if v_cert.id is null then
     return jsonb_build_object('encontrado', false, 'valido', false,
-      'mensagem', 'Certificado não encontrado na base oficial do Instituto Altitude.');
+      'mensagem', 'Certificado não encontrado na base oficial da ALTITUDE CENTRO UNIVERSITÁRIO.');
   end if;
 
   v_valido := v_cert.status = 'EMITIDO'

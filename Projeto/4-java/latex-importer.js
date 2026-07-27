@@ -11,50 +11,48 @@
 
   const CONTENT_TEMPLATE = String.raw`\documentclass[12pt,a4paper]{article}
 
-% DADOS DO CURSO
-\titulocurso{Auxiliar Administrativo}
-\areacurso{Área Administrativa}
-\cargahoraria{20}
+% ==================================================
+% DADOS GERAIS DO CURSO
+% ==================================================
+\titulocurso{Digite o título do curso}
+\areacurso{Digite a área do curso}
 \nivelcurso{BASICO}
 \notaminima{70}
-\descricaoCurso{Formação introdutória para atuação em rotinas administrativas.}
+\descricaoCurso{Digite uma descrição breve do curso.}
 
 \begin{document}
 
-\begin{altitudemodulo}{Fundamentos e Rotinas Administrativas}{1}
-\horasModulo{10}
-\descricaoModulo{Conceitos básicos, organização, documentos e rotinas do setor administrativo.}
-\videoModulo{https://www.youtube.com/}
+% ==================================================
+% MÓDULO 1
+% Duplique este bloco para criar novos módulos.
+% ==================================================
+\begin{altitudemodulo}{Digite o nome do módulo}{1}
+\descricaoModulo{Digite uma descrição breve do módulo.}
+% Vídeo opcional: remova o símbolo % da linha abaixo e informe o endereço.
+% \videoModulo{https://www.youtube.com/watch?v=...}
 
 \begin{conteudo}
-\section{Apresentação}
-O auxiliar administrativo presta apoio às atividades internas de uma organização.
+% ==================================================
+% TÍTULO
+% ==================================================
+\section{Digite o título}
 
-\section{Fundamentos da Administração}
-Administração é o processo de organizar recursos, pessoas, informações e atividades para alcançar objetivos.
+Digite o conteúdo de desenvolvimento aqui.
 
-\subsection{Funções básicas}
+% ==================================================
+% SUBTÍTULO
+% ==================================================
+\subsection{Digite o subtítulo}
+
+Continue o conteúdo aqui.
+
+% ==================================================
+% LISTA
+% ==================================================
 \begin{itemize}
-  \item \textbf{Planejar}: definir objetivos;
-  \item \textbf{Organizar}: distribuir tarefas e informações;
-  \item \textbf{Controlar}: acompanhar os resultados.
+  \item Primeiro item;
+  \item Segundo item;
 \end{itemize}
-\end{conteudo}
-\end{altitudemodulo}
-
-\begin{altitudemodulo}{Atendimento, Comunicação e Informática}{2}
-\horasModulo{10}
-\descricaoModulo{Atendimento profissional, comunicação, informática e ética no trabalho.}
-
-\begin{conteudo}
-\section{Atendimento Profissional}
-Atender bem significa acolher a pessoa com respeito, compreender sua necessidade e encaminhar corretamente sua demanda.
-
-\section{Informática Aplicada}
-O profissional utiliza editor de texto, planilhas, e-mail e sistemas de cadastro.
-
-\section{Ética Profissional}
-Agir com ética envolve honestidade, responsabilidade, respeito e sigilo.
 \end{conteudo}
 \end{altitudemodulo}
 
@@ -63,44 +61,25 @@ Agir com ética envolve honestidade, responsabilidade, respeito e sigilo.
   const PROOF_TEMPLATE = String.raw`\documentclass{article}
 \begin{document}
 
-% A prova fica separada do conteúdo. O número abaixo corresponde à ordem do módulo.
+% ==================================================
+% PROVA DO MÓDULO 1
+% Repita altitudequestao para adicionar outras questões.
+% Repita altitudeprova para criar a prova de outro módulo.
+% ==================================================
+
 \begin{altitudeprova}{1}
 
 \begin{altitudequestao}{1}
-\enunciado{Qual ação corresponde à função administrativa de planejar?}
-\alternativa{A}{Definir previamente objetivos e ações.}
-\alternativa{B}{Excluir todos os documentos.}
-\alternativa{C}{Ignorar os prazos.}
-\alternativa{D}{Evitar o atendimento ao público.}
-\alternativa{E}{Substituir todos os procedimentos.}
+\enunciado{Digite o enunciado da questão.}
+\alternativa{A}{Alternativa A.}
+\alternativa{B}{Alternativa B.}
+\alternativa{C}{Alternativa C.}
+\alternativa{D}{Alternativa D.}
+\alternativa{E}{Alternativa E.}
 \gabarito{A}
-\resolucao{Planejar significa definir objetivos e organizar previamente as ações necessárias.}
+\resolucao{Explique de forma objetiva por que a alternativa está correta.}
 \end{altitudequestao}
 
-\begin{altitudequestao}{2}
-\enunciado{Qual característica é adequada ao auxiliar administrativo?}
-\alternativa{A}{Desorganização.}
-\alternativa{B}{Falta de responsabilidade.}
-\alternativa{C}{Atenção aos detalhes.}
-\alternativa{D}{Divulgação de informações sigilosas.}
-\alternativa{E}{Descumprimento de prazos.}
-\gabarito{C}
-\resolucao{A atenção aos detalhes reduz erros e melhora a qualidade das rotinas administrativas.}
-\end{altitudequestao}
-
-\end{altitudeprova}
-
-\begin{altitudeprova}{2}
-\begin{altitudequestao}{3}
-\enunciado{Qual ferramenta é comum no setor administrativo?}
-\alternativa{A}{Editor de texto.}
-\alternativa{B}{Somente jogos eletrônicos.}
-\alternativa{C}{Apenas redes sociais.}
-\alternativa{D}{Nenhum recurso digital.}
-\alternativa{E}{Somente equipamentos industriais.}
-\gabarito{A}
-\resolucao{Editores de texto, planilhas, e-mail e sistemas de cadastro fazem parte das rotinas administrativas.}
-\end{altitudequestao}
 \end{altitudeprova}
 
 \end{document}`;
@@ -217,6 +196,22 @@ Agir com ética envolve honestidade, responsabilidade, respeito e sigilo.
     return displayMode ? `<div class="latex-equation">${esc(value)}</div>` : `<span class="latex-inline-math">${esc(value)}</span>`;
   }
 
+  function latexTableToHtml(raw) {
+    const rows = String(raw || '')
+      .replace(/\\(?:hline|toprule|midrule|bottomrule)\b/g, '')
+      .split(/\\\\/)
+      .map((row) => row.trim())
+      .filter(Boolean)
+      .map((row) => row.split('&').map((cell) => String(cell || '')
+        .replace(/\\(?:textbf|textit|emph|multicolumn)\*?(?:\{[^}]*\})?/g, '')
+        .replace(/\\[a-zA-Z@]+\*?(?:\[[^\]]*\])?/g, '')
+        .replace(/[{}]/g, '')
+        .replace(/\s+/g, ' ')
+        .trim()));
+    if (!rows.length) return '';
+    return `<div class="latex-table-wrap"><table class="latex-table"><tbody>${rows.map((row) => `<tr>${row.map((cell) => `<td>${esc(cell)}</td>`).join('')}</tr>`).join('')}</tbody></table></div>`;
+  }
+
   function latexToHtml(raw) {
     let source = removeComments(raw)
       .replace(/\\begin\{document\}|\\end\{document\}/g, '')
@@ -228,6 +223,23 @@ Agir com ética envolve honestidade, responsabilidade, respeito e sigilo.
       protectedValues.push(html);
       return token;
     };
+    source = source
+      .replace(/\\begin\{tabularx\}\{[^}]*\}\{[^}]*\}([\s\S]*?)\\end\{tabularx\}/g, (_, body) => protect(latexTableToHtml(body)))
+      .replace(/\\begin\{tabular\}\{[^}]*\}([\s\S]*?)\\end\{tabular\}/g, (_, body) => protect(latexTableToHtml(body)))
+      .replace(/\\begin\{tcolorbox\}(?:\[[\s\S]*?\])?/g, () => protect('<aside class="latex-info-box">'))
+      .replace(/\\end\{tcolorbox\}/g, () => protect('</aside>'))
+      .replace(/\\begin\{center\}/g, () => protect('<div class="latex-align-center">'))
+      .replace(/\\end\{center\}/g, () => protect('</div>'))
+      .replace(/\\begin\{flushright\}/g, () => protect('<div class="latex-align-right">'))
+      .replace(/\\end\{flushright\}/g, () => protect('</div>'))
+      .replace(/\\begin\{flushleft\}/g, () => protect('<div class="latex-align-left">'))
+      .replace(/\\end\{flushleft\}/g, () => protect('</div>'))
+      .replace(/\\begin\{itemize\}(?:\[[^\]]*\])?/g, '\\begin{itemize}')
+      .replace(/\\begin\{enumerate\}(?:\[[^\]]*\])?/g, '\\begin{enumerate}')
+      .replace(/\\(?:vspace|hspace)\*?\{[^}]*\}/g, '')
+      .replace(/\\(?:small|footnotesize|large|Large|LARGE|normalsize)\b/g, '')
+      .replace(/\\textcolor\{[^}]*\}\{([^{}]*)\}/g, '$1')
+      .replace(/\\color\{[^}]*\}/g, '');
     source = source
       .replace(/\\\[([\s\S]*?)\\\]/g, (_, value) => protect(mathHtml(value, true)))
       .replace(/\$\$([\s\S]*?)\$\$/g, (_, value) => protect(mathHtml(value, true)))
@@ -258,13 +270,21 @@ Agir com ética envolve honestidade, responsabilidade, respeito e sigilo.
       return `<p>${block.replaceAll('\n', '<br>')}</p>`;
     }).join('\n');
     protectedValues.forEach((html, index) => { source = source.replaceAll(`@@ALTITUDE_TOKEN_${index}@@`, html); });
+    source = source
+      .replace(/<p>\s*(<aside class="latex-info-box">)\s*<\/p>/g, '$1')
+      .replace(/<p>\s*(<\/aside>)\s*<\/p>/g, '$1')
+      .replace(/<p>\s*(<div class="latex-align-(?:center|right|left)">)\s*<\/p>/g, '$1')
+      .replace(/<p>\s*(<\/div>)\s*<\/p>/g, '$1')
+      .replace(/\?\s*,/g, '? ')
+      .replace(/!\s*,/g, '! ')
+      .replace(/\s+([,.;:!?])/g, '$1');
     return source;
   }
 
   function latexToPlain(raw) {
     const node = document.createElement('div');
     node.innerHTML = latexToHtml(raw);
-    return (node.textContent || '').replace(/\s+/g, ' ').trim();
+    return (node.textContent || '').replace(/\?\s*,/g, '? ').replace(/!\s*,/g, '! ').replace(/\s+([,.;:!?])/g, '$1').replace(/\s+/g, ' ').trim();
   }
 
   function standardMetadata(source, label) {
@@ -310,19 +330,11 @@ Agir com ética envolve honestidade, responsabilidade, respeito e sigilo.
     while ((match = sectionRegex.exec(body))) sections.push({ title: match[1], index: match.index });
     if (!sections.length) throw new Error('Nenhuma seção foi encontrada no material. Use \\section{Título} ou o modelo Altitude.');
 
-    const currentHours = Math.max(0, Math.min(200, Number($('#modalModulos')?.dataset.courseHours || 0)));
-    const commandHours = Math.max(0, Math.min(200, Number(firstCommand(clean, 'cargahoraria')) || 0));
-    const totalHours = commandHours || currentHours;
-    const targetCount = sections.length < 2
-      ? 1
-      : totalHours > 0
-        ? Math.min(sections.length, totalHours >= 40 ? 3 : 2)
-        : (sections.length >= 9 ? 3 : 2);
+    const targetCount = sections.length < 2 ? 1 : (sections.length >= 9 ? 3 : 2);
     const firstSection = sections[0].index;
     const usefulBody = body.slice(firstSection);
     const adjusted = sections.map((section) => ({ ...section, index: section.index - firstSection }));
     const modules = [];
-    let remainingHours = totalHours;
 
     for (let group = 0; group < targetCount; group += 1) {
       const startSection = Math.floor((group * adjusted.length) / targetCount);
@@ -331,14 +343,11 @@ Agir com ética envolve honestidade, responsabilidade, respeito e sigilo.
       const end = endSection < adjusted.length ? adjusted[endSection].index : usefulBody.length;
       const latex = usefulBody.slice(start, end).trim();
       const names = adjusted.slice(startSection, endSection).map((item) => item.title);
-      const groupsLeft = targetCount - group;
-      const hours = totalHours > 0 ? (groupsLeft === 1 ? remainingHours : Math.floor(remainingHours / groupsLeft)) : 0;
-      remainingHours -= hours;
       const plain = latexToPlain(latex);
       modules.push({
         titulo: groupModuleTitle(names, group),
         ordem: group + 1,
-        carga_horaria: hours,
+        carga_horaria: 0,
         descricao: plain.slice(0, 220),
         conteudo: plain,
         conteudo_latex: latex,
@@ -364,7 +373,7 @@ Agir com ética envolve honestidade, responsabilidade, respeito e sigilo.
         codigo: firstCommand(clean, 'codigocurso'),
         titulo: courseTitle,
         categoria: String(category).toUpperCase(),
-        carga_horaria: totalHours || null,
+        carga_horaria: null,
         descricao: description,
         nivel: firstCommand(clean, 'nivelcurso', 'BASICO').toUpperCase(),
         nota_minima: Math.min(100, Math.max(0, Number(firstCommand(clean, 'notaminima')) || 70))
@@ -382,7 +391,7 @@ Agir com ética envolve honestidade, responsabilidade, respeito e sigilo.
       codigo: firstCommand(clean, 'codigocurso'),
       titulo: latexToPlain(firstCommand(clean, 'titulocurso')),
       categoria: latexToPlain(firstCommand(clean, 'areacurso')).toUpperCase(),
-      carga_horaria: Math.min(200, Math.max(0, Number(firstCommand(clean, 'cargahoraria')) || Number($('#modalModulos')?.dataset.courseHours || 0))) || null,
+      carga_horaria: null,
       descricao: latexToPlain(firstCommand(clean, 'descricaoCurso')),
       nivel: firstCommand(clean, 'nivelcurso', 'BASICO').toUpperCase(),
       nota_minima: Math.min(100, Math.max(0, Number(firstCommand(clean, 'notaminima')) || 70))
@@ -394,7 +403,7 @@ Agir com ética envolve honestidade, responsabilidade, respeito e sigilo.
       return {
         titulo: latexToPlain(block.args[0]) || `Módulo ${index + 1}`,
         ordem: Number(block.args[1]) || index + 1,
-        carga_horaria: Math.max(0, Number(firstCommand(block.body, 'horasModulo')) || 0),
+        carga_horaria: 0,
         descricao: latexToPlain(firstCommand(block.body, 'descricaoModulo')) || plain.slice(0, 220),
         conteudo: plain,
         conteudo_latex: content,
@@ -404,19 +413,6 @@ Agir com ética envolve honestidade, responsabilidade, respeito e sigilo.
       };
     }).sort((a, b) => a.ordem - b.ordem);
 
-    const total = Number(course.carga_horaria || 0);
-    const explicit = modules.reduce((sum, module) => sum + Number(module.carga_horaria || 0), 0);
-    const missing = modules.filter((module) => !Number(module.carga_horaria)).length;
-    if (total > 0 && missing) {
-      let remaining = Math.max(0, total - explicit);
-      modules = modules.map((module, index) => {
-        if (module.carga_horaria) return module;
-        const missingAfter = modules.slice(index + 1).filter((item) => !Number(item.carga_horaria)).length;
-        const hours = missingAfter ? Math.floor(remaining / (missingAfter + 1)) : remaining;
-        remaining -= hours;
-        return { ...module, carga_horaria: hours };
-      });
-    }
     return { curso: course, modulos: modules, source: clean };
   }
 
@@ -484,25 +480,22 @@ Agir com ética envolve honestidade, responsabilidade, respeito e sigilo.
     const box = $('#latexPreviewSummary');
     if (!box || !content) return;
     const title = content.curso.titulo || $('#modalModulos')?.dataset.courseTitle || 'Curso atual';
-    const hours = content.modulos.reduce((sum, item) => sum + Number(item.carga_horaria || 0), 0) || content.curso.carga_horaria || 0;
     box.innerHTML = `
       <article><span>Curso</span><strong>${esc(title)}</strong></article>
       <article><span>Módulos</span><strong>${content.modulos.length}</strong></article>
-      <article><span>Questões</span><strong>${proof?.totalQuestions || 0}</strong></article>
-      <article><span>Carga</span><strong>${hours || '—'}h</strong></article>`;
+      <article><span>Questões</span><strong>${proof?.totalQuestions || 0}</strong></article>`;
   }
 
   function buildMaterialNode(content) {
     const courseTitle = content.curso.titulo || $('#modalModulos')?.dataset.courseTitle || 'Curso Altitude';
     const area = content.curso.categoria || 'Formação Profissional';
-    const hours = content.modulos.reduce((sum, item) => sum + Number(item.carga_horaria || 0), 0) || content.curso.carga_horaria || 0;
     const node = document.createElement('article');
     node.className = 'altitude-material-pdf';
     node.innerHTML = `
-      <div class="pdf-running-head"><span>Instituição Altitude</span><span>${esc(courseTitle)}</span></div>
+      <div class="pdf-running-head"><span>ALTITUDE CENTRO UNIVERSITÁRIO</span><span>${esc(courseTitle)}</span></div>
       <section class="pdf-cover">
-        <img src="../3-img/LOGO.png" alt="Instituição Altitude">
-        <div class="institution">Instituição Altitude</div>
+        <img src="../3-img/LOGO.png" alt="ALTITUDE CENTRO UNIVERSITÁRIO">
+        <div class="institution">ALTITUDE CENTRO UNIVERSITÁRIO</div>
         <div class="material">Material de Estudo</div>
         <h1>Curso de ${esc(courseTitle)}</h1>
       </section>
@@ -510,16 +503,15 @@ Agir com ética envolve honestidade, responsabilidade, respeito e sigilo.
         <b>Curso:</b><span>${esc(courseTitle)}</span>
         <b>Área de formação:</b><span>${esc(area)}</span>
         <b>Modalidade:</b><span>EAD / Semipresencial</span>
-        <b>Carga horária:</b><span>${hours} horas</span>
         <b>Finalidade do material:</b><span>Apoiar o estudo teórico do aluno e servir de base para avaliação de aprendizagem ao final do curso.</span>
       </section>
       ${content.modulos.map((module, index) => `
         <section class="pdf-module ${index === 0 ? 'first' : ''}">
-          <div class="pdf-running-head"><span>Instituição Altitude</span><span>${esc(courseTitle)}</span></div>
+          <div class="pdf-running-head"><span>ALTITUDE CENTRO UNIVERSITÁRIO</span><span>${esc(courseTitle)}</span></div>
           <h2>${index + 1}. ${esc(module.titulo)}</h2>
-          <div class="pdf-info-box"><b>Carga do módulo:</b><span>${Number(module.carga_horaria || 0)} horas</span><b>Descrição:</b><span>${esc(module.descricao || '')}</span></div>
+          <div class="pdf-info-box"><b>Descrição:</b><span>${esc(module.descricao || '')}</span></div>
           ${module.conteudo_html}
-          <div class="pdf-footer">Instituição Altitude | Material de Estudo | ${esc(courseTitle)}</div>
+          <div class="pdf-footer">ALTITUDE CENTRO UNIVERSITÁRIO | Material de Estudo | ${esc(courseTitle)}</div>
         </section>`).join('')}
       <div class="pdf-orientation"><strong>Orientação ao aluno:</strong> recomenda-se a leitura integral deste material antes da avaliação.</div>`;
     document.body.appendChild(node);
@@ -587,15 +579,13 @@ Agir com ética envolve honestidade, responsabilidade, respeito e sigilo.
   function simplePdfBlobFromContent(content) {
     const courseTitle = content.curso.titulo || $('#modalModulos')?.dataset.courseTitle || 'Curso Altitude';
     const area = content.curso.categoria || $('#modalModulos')?.dataset.courseCategory || 'Formação Profissional';
-    const totalHours = content.modulos.reduce((sum, item) => sum + Number(item.carga_horaria || 0), 0) || content.curso.carga_horaria || 0;
     const pages = [];
     const cover = [
-      { text: 'INSTITUIÇÃO ALTITUDE', size: 22, bold: true, color: '0.05 0.04 0.24', gap: 28 },
+      { text: 'ALTITUDE CENTRO UNIVERSITÁRIO', size: 22, bold: true, color: '0.05 0.04 0.24', gap: 28 },
       { text: 'Material de Estudo', size: 16, bold: true, color: '0.12 0.44 0.67', gap: 24 },
       { text: `Curso de ${courseTitle}`, size: 20, bold: true, color: '0.05 0.04 0.24', gap: 34 },
       { text: `Área de formação: ${area}`, size: 11, gap: 18 },
       { text: 'Modalidade: EAD / Semipresencial', size: 11, gap: 18 },
-      { text: `Carga horária: ${totalHours} horas`, size: 11, gap: 18 },
       { text: 'Finalidade: apoiar o estudo teórico e servir de base para a avaliação de aprendizagem.', size: 11, gap: 18 }
     ];
     pages.push(cover);
@@ -603,7 +593,6 @@ Agir com ética envolve honestidade, responsabilidade, respeito e sigilo.
       const blocks = pdfTextBlocks(module.conteudo_latex || module.conteudo || '');
       let current = [
         { text: `${moduleIndex + 1}. ${module.titulo}`, size: 18, bold: true, color: '0.12 0.44 0.67', gap: 24 },
-        { text: `Carga do módulo: ${Number(module.carga_horaria || 0)} horas`, size: 10, bold: true, gap: 16 },
         { text: `Descrição: ${module.descricao || 'Conteúdo programático do módulo.'}`, size: 10, gap: 20 }
       ];
       let used = 90;
@@ -644,7 +633,7 @@ Agir com ética envolve honestidade, responsabilidade, respeito e sigilo.
         y -= Math.max(2, (item.gap || 14) - (item.size || 10.5));
       });
       commands.push('/F1 8 Tf 0.35 0.40 0.45 rg');
-      commands.push(`1 0 0 1 58 28 Tm (${cp1252Octal(`Instituição Altitude | ${courseTitle}`)}) Tj`);
+      commands.push(`1 0 0 1 58 28 Tm (${cp1252Octal(`ALTITUDE CENTRO UNIVERSITÁRIO | ${courseTitle}`)}) Tj`);
       commands.push(`1 0 0 1 520 28 Tm (${index + 1}) Tj`);
       commands.push('ET');
       const stream = commands.join('\n');
@@ -685,7 +674,6 @@ Agir com ética envolve honestidade, responsabilidade, respeito e sigilo.
     const bottomLimit = pageHeight - 20;
     const courseTitle = content.curso.titulo || $('#modalModulos')?.dataset.courseTitle || 'Curso Altitude';
     const area = content.curso.categoria || $('#modalModulos')?.dataset.courseCategory || 'Formação Profissional';
-    const hours = content.modulos.reduce((sum, item) => sum + Number(item.carga_horaria || 0), 0) || content.curso.carga_horaria || 0;
     let y = 24;
     let pageNumber = 1;
 
@@ -700,7 +688,7 @@ Agir com ética envolve honestidade, responsabilidade, respeito e sigilo.
       doc.setFont('helvetica', 'normal');
       doc.setFontSize(8.5);
       doc.setTextColor(85, 85, 85);
-      doc.text('Instituição Altitude', marginLeft, 10);
+      doc.text('ALTITUDE CENTRO UNIVERSITÁRIO', marginLeft, 10);
       doc.text(courseTitle, pageWidth - marginRight, 10, { align: 'right', maxWidth: 95 });
       doc.line(marginLeft, pageHeight - 14, pageWidth - marginRight, pageHeight - 14);
       doc.text(`${pageNumber}`, pageWidth / 2, pageHeight - 9, { align: 'center' });
@@ -755,7 +743,6 @@ Agir com ética envolve honestidade, responsabilidade, respeito e sigilo.
     writeWrapped(`Curso: ${courseTitle}`, { bold: true, size: 11, after: 2 });
     writeWrapped(`Área de formação: ${area}`, { size: 10.5, after: 2 });
     writeWrapped('Modalidade: EAD / Semipresencial', { size: 10.5, after: 2 });
-    writeWrapped(`Carga horária: ${hours} horas`, { size: 10.5, after: 2 });
     writeWrapped('Finalidade: apoiar o estudo teórico e servir de base para a avaliação de aprendizagem.', { size: 10.5, after: 2 });
     drawHeaderFooter();
 
@@ -770,7 +757,6 @@ Agir com ética envolve honestidade, responsabilidade, respeito e sigilo.
       doc.roundedRect(marginLeft, y, contentWidth, boxHeight, 2, 2, 'FD');
       const boxStart = y;
       y += 8;
-      writeWrapped(`Carga do módulo: ${Number(module.carga_horaria || 0)} horas`, { size: 9.5, bold: true, after: 1 });
       writeWrapped(`Descrição: ${module.descricao || 'Conteúdo programático do módulo.'}`, { size: 9, after: 1 });
       y = Math.max(y, boxStart + boxHeight + 7);
 
@@ -909,7 +895,6 @@ Agir com ética envolve honestidade, responsabilidade, respeito e sigilo.
       const coursePayload = {};
       if (parsed.curso.titulo) coursePayload.titulo = parsed.curso.titulo;
       if (parsed.curso.categoria) coursePayload.categoria = String(parsed.curso.categoria).toUpperCase();
-      if (Number(parsed.curso.carga_horaria) > 0) coursePayload.carga_horaria = Number(parsed.curso.carga_horaria);
       if (parsed.curso.descricao) coursePayload.descricao = parsed.curso.descricao;
       if (Object.keys(coursePayload).length) {
         const { error: courseError } = await window.sb.from('cursos').update(coursePayload).eq('id', courseId);
@@ -1015,7 +1000,7 @@ Agir com ética envolve honestidade, responsabilidade, respeito e sigilo.
         const blob = await modulePdfBlob(module, { ...parsed.curso, titulo: courseTitle });
         module.pdf_url = await uploadPdf(blob, courseId, module);
       }
-      if (progress) progress.textContent = 'Salvando módulos, horas, prova, gabarito e resoluções…';
+      if (progress) progress.textContent = 'Salvando módulos, prova, gabarito e resoluções…';
       const data = await saveImportedCourseDirect(courseId, parsed, {
         replace,
         publishModules: options.publishAfter || Boolean($('#latexPublishModules')?.checked),

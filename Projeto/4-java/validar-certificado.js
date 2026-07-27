@@ -70,7 +70,7 @@ async function consultarCertificado(codigo) {
   botaoValidar.textContent = "Consultando...";
   resultadoValidacao.hidden = false;
   resultadoValidacao.className = "validation-result";
-  resultadoValidacao.innerHTML = `<div class="result-heading"><div class="result-icon">…</div><div><h2>Consultando a base oficial</h2><p>Aguarde a resposta do Instituto Altitude.</p></div></div>`;
+  resultadoValidacao.innerHTML = `<div class="result-heading"><div class="result-icon">…</div><div><h2>Consultando a base oficial</h2><p>Aguarde a resposta do ALTITUDE CENTRO UNIVERSITÁRIO.</p></div></div>`;
 
   try {
     const { data, error } = await window.sb.rpc("validar_certificado", { p_codigo: valor });

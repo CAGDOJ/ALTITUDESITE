@@ -79,7 +79,7 @@ function buildEmail(record: QueueRecord, siteUrl: string) {
       actionUrl = `${siteUrl}/Projeto/1-html/11-portaldoaluno.html#certificados`;
       break;
     case "CERTIFICADO_EMITIDO":
-      intro = "Seu certificado foi liberado pela Instituição Altitude.";
+      intro = "Seu certificado foi liberado pela ALTITUDE CENTRO UNIVERSITÁRIO.";
       detail = `
         <p><strong>Curso:</strong> ${curso}</p>
         <p><strong>Carga horária:</strong> ${horas}h</p>
@@ -120,7 +120,7 @@ function buildEmail(record: QueueRecord, siteUrl: string) {
         <p style="font-size:16px;line-height:1.6">${intro}</p>
         <div style="background:#f6fafc;border:1px solid #dbe6ee;border-radius:12px;padding:16px;margin:20px 0;font-size:15px;line-height:1.55">${detail}</div>
         <a href="${escapeHtml(actionUrl)}" style="display:inline-block;background:#11a9b4;color:#fff;text-decoration:none;font-weight:700;padding:13px 20px;border-radius:10px">${actionLabel}</a>
-        <p style="font-size:12px;line-height:1.5;color:#65798a;margin:24px 0 0">Esta é uma mensagem automática da Instituição Altitude. Não compartilhe códigos de autenticação ou senhas por e-mail.</p>
+        <p style="font-size:12px;line-height:1.5;color:#65798a;margin:24px 0 0">Esta é uma mensagem automática da ALTITUDE CENTRO UNIVERSITÁRIO. Não compartilhe códigos de autenticação ou senhas por e-mail.</p>
       </div>
     </div>
   </body></html>`;

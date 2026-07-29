@@ -306,7 +306,7 @@
 
     doc.addPage('a4', 'landscape');
     frame(doc, width, height);
-    doc.addImage(logo, 'PNG', width - 79, 23, 60, 9, undefined, 'FAST');
+    doc.addImage(logo, 'PNG', width - 79, 22, 60, 9, undefined, 'FAST');
     doc.setTextColor(27, 42, 56);
     doc.setFont('times', 'bold');
     doc.setFontSize(25);

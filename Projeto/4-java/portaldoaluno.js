@@ -162,9 +162,10 @@ function statusPill(status) {
   const normalized = String(status || "PENDENTE").toUpperCase();
   const success = ["ATIVA", "CONCLUIDA", "PAGO", "EMITIDO", "RESOLVIDO", "APROVADO", "VÁLIDO"].includes(normalized);
   const danger = ["CANCELADA", "CANCELADO", "BLOQUEADO", "INATIVO", "REPROVADO", "ESTORNADO"].includes(normalized);
-  const warning = ["PENDENTE", "AGUARDANDO_HORAS", "ABERTO", "EM_ANDAMENTO", "TRANCADA"].includes(normalized);
+  const warning = ["PENDENTE", "AGUARDANDO_HORAS", "AUTORIZADO_AGUARDANDO_DATA", "ABERTO", "EM_ANDAMENTO", "TRANCADA"].includes(normalized);
   const cls = success ? "success" : danger ? "danger" : warning ? "warning" : "neutral";
-  const label = normalized === "AGUARDANDO_HORAS" ? "Aguardando liberação" : normalized.replaceAll("_", " ").toLocaleLowerCase("pt-BR").replace(/^./, (c) => c.toUpperCase());
+  const labels = { AGUARDANDO_HORAS: "Aguardando a data de liberação", AUTORIZADO_AGUARDANDO_DATA: "Autorizado - aguardando a data" };
+  const label = labels[normalized] || normalized.replaceAll("_", " ").toLocaleLowerCase("pt-BR").replace(/^./, (c) => c.toUpperCase());
   return `<span class="status-pill ${cls}">${escapeHTML(label)}</span>`;
 }
 
@@ -398,7 +399,10 @@ function carteiraHorasCurso(_cursoId) {
 }
 
 function opcoesHorasDisponiveis(saldo) {
-  const limite = Math.max(0, Math.floor(Number(saldo || 0) / 5) * 5);
+  // O aluno informa a carga desejada mesmo antes de possuir todo o crédito.
+  // A data futura será calculada pelo banco com o limite global de 8h/dia.
+  const saldoArredondado = Math.max(5, Math.floor(Number(saldo || 0) / 5) * 5);
+  const limite = Math.max(500, saldoArredondado);
   const values = [];
   for (let horas = 5; horas <= limite; horas += 5) values.push(horas);
   return values;
@@ -446,7 +450,7 @@ function certificadoEstaLiberado(certificado) {
 
 function certificadoAguardandoPrazo(certificado) {
   const status = String(certificado?.status || "").toUpperCase();
-  return status === "AGUARDANDO_HORAS" || (status === "EMITIDO" && !certificadoEstaLiberado(certificado));
+  return ['AGUARDANDO_HORAS','AUTORIZADO_AGUARDANDO_DATA'].includes(status) || (status === "EMITIDO" && !certificadoEstaLiberado(certificado));
 }
 
 function certificadoCurso(cursoId) {
@@ -1079,25 +1083,24 @@ function mostrarResultadoProva(resultado) {
   const acertos = Number(resultado.acertos || 0);
   const erros = Math.max(0, total - acertos);
   const dataRealizacao = resultado.criado_em || resultado.realizado_em || resultado.finalizado_em;
+  const notaBruta = Number(resultado.nota || 0);
+  const notaFinal = notaBruta > 10 ? notaBruta / 10 : notaBruta;
+  const notaTexto = notaFinal.toLocaleString("pt-BR", { minimumFractionDigits: 1, maximumFractionDigits: 1 });
   setText("quizTitle", "Resultado da prova");
   if ($("quizProgressBar")) $("quizProgressBar").style.width = "100%";
   $("quizBody").innerHTML = `
-    <div class="quiz-result ${aprovado ? "approved" : "failed"}">
-      <div class="result-icon">${aprovado ? "✓" : "↻"}</div>
-      <h3>${aprovado ? "Você foi aprovado" : "Nova tentativa disponível"}</h3>
-      <strong>${Number(resultado.nota || 0)}%</strong>
+    <div class="quiz-result quiz-result-minimal ${aprovado ? "approved" : "failed"}">
+      <h3>Resultado da prova</h3>
       <dl class="quiz-result-summary">
+        <div><dt>Nota final</dt><dd>${notaTexto}</dd></div>
         <div><dt>Acertos</dt><dd>${acertos}${total ? ` de ${total}` : ""}</dd></div>
         <div><dt>Erros</dt><dd>${erros}</dd></div>
         <div><dt>Situação</dt><dd>${aprovado ? "Aprovado" : "Reprovado"}</dd></div>
         ${dataRealizacao ? `<div><dt>Realizada em</dt><dd>${new Date(dataRealizacao).toLocaleDateString("pt-BR")}</dd></div>` : ""}
       </dl>
-      <p>${aprovado
-        ? "Você já pode solicitar o certificado na aba Certificados."
-        : "Revise o conteúdo e faça uma nova tentativa."}</p>
-      <button class="primary-button" type="button" onclick="${aprovado ? "irParaCertificados()" : "refazerProva()"}">${aprovado ? "Solicitar certificado" : "Tentar novamente"}</button>
+      <button class="primary-button" type="button" onclick="fecharModal('prova')">Fechar</button>
     </div>`;
-  $("quizCounter").textContent = aprovado ? "Aprovado" : "Nova tentativa disponível";
+  $("quizCounter").textContent = "Resultado";
   $("btnQuestaoAnterior").style.display = "none";
   $("btnQuestaoProxima").style.display = "none";
 }
@@ -1117,7 +1120,7 @@ function irParaCertificados() {
 function rotuloAcaoCertificado(acao) {
   return ({
     SOLICITADO: "Solicitação enviada", LIBERADO: "Certificado liberado", EMITIDO: "Certificado emitido",
-    BLOQUEADO: "Certificado bloqueado", AGUARDANDO_HORAS: "Certificado aguardando liberação", CANCELADO: "Certificado cancelado", REABERTO: "Solicitação reaberta",
+    BLOQUEADO: "Certificado bloqueado", AGUARDANDO_HORAS: "Certificado aguardando a data", AUTORIZADO_AGUARDANDO_DATA: "Emissão autorizada", CANCELADO: "Certificado cancelado", REABERTO: "Solicitação reaberta",
     IMPORTADO: "Registro importado", CRIADO: "Registro criado", ATUALIZADO: "Registro atualizado"
   })[String(acao || "").toUpperCase()] || String(acao || "Atualização").replaceAll("_", " ");
 }
@@ -1125,10 +1128,11 @@ function rotuloAcaoCertificado(acao) {
 function mensagemPublicaHistoricoCertificado(item, certificado) {
   const status = String(item?.status_novo || certificado?.status || "").toUpperCase();
 
-  if (status === "AGUARDANDO_HORAS" || certificadoAguardandoPrazo(certificado)) {
-    return certificado?.liberar_em
-      ? `Aguardando o prazo para liberação. Previsão: ${dataBR(certificado.liberar_em, true)}.`
-      : "Aguardando o prazo para liberação do certificado.";
+  if (["AGUARDANDO_HORAS","AUTORIZADO_AGUARDANDO_DATA"].includes(status) || certificadoAguardandoPrazo(certificado)) {
+    const previsao = certificado?.previsao_liberacao || certificado?.data_final_prevista || certificado?.periodo_fim || certificado?.liberar_em;
+    return previsao
+      ? `Previsão de liberação: ${dataBR(previsao)}.`
+      : "Aguardando a data de liberação do certificado.";
   }
   if (status === "PENDENTE") return "Solicitação aguardando análise.";
   if (status === "BLOQUEADO") return "Certificado temporariamente indisponível.";
@@ -1285,57 +1289,43 @@ function renderCertificados() {
     const provaOk = Boolean(resultado?.aprovado && Number(resultado.nota) >= notaMinima);
     const carteira = carteiraHorasCurso(curso.id);
     const saldo = Number(carteira?.saldo_disponivel || 0);
-    const validadas = Number(carteira?.horas_validadas || 0);
-    const reservadas = Number(carteira?.horas_reservadas || 0);
-    const utilizadas = Number(carteira?.horas_utilizadas || 0);
     const certificadosCurso = certificadosDoCurso(curso.id);
     const emitido = certificadosCurso.find((item) => String(item.status).toUpperCase() === "EMITIDO");
     if (emitido) return "";
-    const pendente = certificadosCurso.find((item) => String(item.status).toUpperCase() === "PENDENTE");
+    const ativo = certificadosCurso.find((item) => ["PENDENTE","AGUARDANDO_HORAS","AUTORIZADO_AGUARDANDO_DATA"].includes(String(item.status).toUpperCase()));
     const bloqueado = certificadosCurso.find((item) => String(item.status).toUpperCase() === "BLOQUEADO");
-    const emContagem = certificadosCurso.find(certificadoAguardandoPrazo);
     const pronto = progressoOk && provaOk;
     const options = opcoesHorasDisponiveis(saldo);
 
     let actions = `<button class="secondary-button" type="button" disabled>Conclua os requisitos</button>`;
-    let help = "Conclua o conteúdo e a prova para solicitar horas.";
+    let help = "Conclua o conteúdo e a prova para solicitar o certificado.";
     let statusVisual = "BLOQUEADO";
 
-    if (emContagem) {
-      statusVisual = "AGUARDANDO_HORAS";
-      help = emContagem.liberar_em
-        ? `Certificado aguardando o prazo para liberação. Previsão: ${dataBR(emContagem.liberar_em, true)}.`
-        : "Certificado aguardando o prazo para liberação.";
+    if (ativo) {
+      const status = String(ativo.status || "").toUpperCase();
+      const previsao = ativo.previsao_liberacao || ativo.data_final_prevista || ativo.periodo_fim || ativo.liberar_em;
+      statusVisual = status;
+      help = previsao ? `Previsão de liberação: ${dataBR(previsao)}.` : "Aguardando a previsão de liberação.";
+      if (status === "AUTORIZADO_AGUARDANDO_DATA") help += " Emissão autorizada pela gestão.";
+      else if (!["PAGO","ISENTO"].includes(String(ativo.pagamento_status || "").toUpperCase())) help += " Pagamento pendente.";
+      else help += " Aguardando autorização da gestão.";
       actions = `<button class="secondary-button" type="button" disabled>Aguardando liberação</button>`;
-    } else if (pendente) {
-      statusVisual = "PENDENTE";
-      help = `${Number(pendente.horas_solicitadas || 0)}h reservadas. ${["PAGO","ISENTO"].includes(String(pendente.pagamento_status || "").toUpperCase()) ? "Pagamento confirmado; aguardando liberação." : "Aguardando pagamento pelo WhatsApp."}`;
-      actions = `<button class="secondary-button" type="button" disabled>Aguardando decisão</button>`;
     } else if (bloqueado) {
       statusVisual = "BLOQUEADO";
-      help = "A solicitação está temporariamente indisponível. Ao excluir a solicitação, as horas reservadas retornam ao saldo disponível.";
+      help = "A solicitação está temporariamente indisponível.";
       actions = `<button class="secondary-button" type="button" disabled>Solicitação bloqueada</button>`;
-    } else if (pronto && saldo >= 5) {
+    } else if (pronto) {
       statusVisual = "DISPONÍVEL";
-      help = `Você pode escolher de 5h até ${saldo}h. O restante permanecerá na carteira para outra emissão.`;
+      help = "Escolha a carga desejada. A previsão será calculada pelo limite global de 8 horas por dia.";
+      const defaultHours = options.includes(50) ? 50 : options[0];
       actions = `<div class="hours-request-control">
         <label for="horasSolicitadas-${Number(curso.id)}">Horas deste certificado</label>
-        <select id="horasSolicitadas-${Number(curso.id)}">${options.map((h) => `<option value="${h}"${h === Math.min(20, saldo) ? " selected" : ""}>${h} horas</option>`).join("")}</select>
+        <select id="horasSolicitadas-${Number(curso.id)}">${options.map((h) => `<option value="${h}"${h === defaultHours ? " selected" : ""}>${h} horas</option>`).join("")}</select>
         <label for="cupomSolicitacao-${Number(curso.id)}">Cupom de desconto <small>(opcional)</small></label>
         <input id="cupomSolicitacao-${Number(curso.id)}" class="certificate-coupon-before-request" type="text" maxlength="30" autocomplete="off" placeholder="Digite o cupom antes de solicitar">
-        <small class="coupon-request-help">O valor final será calculado antes do envio. Cupom integral libera o certificado automaticamente quando todos os requisitos estiverem válidos.</small>
+        <small class="coupon-request-help">Cupom integral zera o pagamento. A emissão ainda aguardará a data prevista e a autorização da gestão.</small>
         <button class="primary-button" type="button" onclick="solicitarCertificado(${Number(curso.id)})">Solicitar certificado</button>
       </div>`;
-    } else if (pronto && validadas === 0) {
-      statusVisual = "PENDENTE";
-      help = "Curso concluído e prova aprovada. Aguarde a gestão validar suas horas.";
-      actions = `<button class="secondary-button" type="button" disabled>Aguardando crédito de horas</button>`;
-    } else if (pronto && saldo < 5) {
-      statusVisual = utilizadas > 0 ? "CONCLUÍDO" : "PENDENTE";
-      help = reservadas > 0
-        ? `${reservadas}h estão reservadas em uma solicitação.`
-        : "Não há saldo disponível na sua carteira de horas.";
-      actions = `<button class="secondary-button" type="button" disabled>Sem saldo disponível</button>`;
     }
 
     const avaliacao = avaliacaoDoCurso(curso.id);
@@ -1353,7 +1343,6 @@ function renderCertificados() {
       <div class="certificate-requirements">
         <div class="requirement ${progressoOk ? "ok" : ""}"><b>${progressoOk ? "✓" : "1"}</b><span>Conteúdo 100% concluído</span></div>
         <div class="requirement ${provaOk ? "ok" : ""}"><b>${provaOk ? "✓" : "2"}</b><span>Prova com nota mínima de ${notaMinima}%</span></div>
-        <div class="requirement ${saldo >= 5 ? "ok" : ""}"><b>${saldo >= 5 ? "✓" : "3"}</b><span>Saldo disponível na carteira global</span></div>
       </div>
       <div class="certificate-card-footer"><span class="certificate-code">${escapeHTML(help)}</span><div class="certificate-actions">${actions}</div></div>
       ${avaliacaoHtml}
@@ -1437,14 +1426,15 @@ async function solicitarCertificado(cursoId) {
   const cupomInput = $(`cupomSolicitacao-${Number(cursoId)}`);
   const horas = Number(select?.value || 0);
   const cupom = String(cupomInput?.value || "").trim().toUpperCase();
-  if (!horas) return toast("Escolha a quantidade de horas do certificado.", "error");
-  const carteira = carteiraHorasCurso(cursoId);
-  const saldo = Number(carteira?.saldo_disponivel || 0);
-  if (horas > saldo) return toast(`Saldo insuficiente. Você possui ${saldo}h disponíveis.`, "error");
+  if (!horas || horas < 5 || horas % 5 !== 0) return toast("Escolha a quantidade de horas de 5 em 5.", "error");
+  const curso = state.cursos.find((item) => Number(item.id) === Number(cursoId)) || {};
+  const profissional = String(curso.tipo_curso || "PROFISSIONAL").toUpperCase() !== "TECNICO";
   const confirmou = window.AltitudeDialog
     ? await window.AltitudeDialog.confirm({
         title: `Solicitar certificado de ${horas}h`,
-        message: `Serão reservadas ${horas}h da carteira global. A cobrança é por certificado, e não pela quantidade de horas.${cupom ? ` O cupom ${cupom} será validado.` : ""}`,
+        message: profissional
+          ? `A solicitação será registrada mesmo que o saldo atual ainda não tenha todas as horas. O sistema calculará a data de liberação pelo limite global de 8 horas por dia.${cupom ? ` O cupom ${cupom} será validado antes do envio.` : ""}`
+          : `Confirmar a solicitação do certificado técnico de ${horas} horas?${cupom ? ` O cupom ${cupom} será validado.` : ""}`,
         confirmText: "Enviar solicitação"
       })
     : window.confirm(`Solicitar certificado de ${horas} horas?`);
@@ -1452,22 +1442,20 @@ async function solicitarCertificado(cursoId) {
   const button = document.activeElement instanceof HTMLButtonElement ? document.activeElement : null;
   if (button) { button.disabled = true; button.textContent = "Enviando..."; }
   try {
-    const { data, error } = await sb.rpc("solicitar_certificado_curso_v34", {
+    const rpc = profissional ? "solicitar_certificado_profissional_v34_3" : "solicitar_certificado_curso_v34";
+    const { data, error } = await sb.rpc(rpc, {
       p_curso_id: Number(cursoId), p_horas: horas, p_cupom: cupom || null
     });
     if (error) throw error;
     await Promise.all([carregarCertificados(), carregarHistoricoCertificados(), carregarCarteirasHoras()]);
     renderDashboard(); renderCertificados(); renderPagamentos(); window.renderSolicitacoesPagamentoV34?.();
+    const previsao = data?.previsao_liberacao || data?.data_final_prevista || data?.periodo_fim;
     const statusPagamento = String(data?.pagamento_status || "").toUpperCase();
-    const statusCertificado = String(data?.status || "").toUpperCase();
-    if (statusCertificado === "EMITIDO") {
-      toast("Cupom aplicado. Certificado emitido gratuitamente e liberado automaticamente.", "success");
-      abrirAba("certificados");
-    } else if (statusPagamento === "ISENTO") {
-      toast("Solicitação gratuita registrada. A emissão automática será concluída quando os dados obrigatórios estiverem válidos.", "success");
+    if (statusPagamento === "ISENTO") {
+      toast(`Solicitação gratuita registrada.${previsao ? ` Previsão de liberação: ${dataBR(previsao)}.` : ""} Aguarda a autorização da gestão.`, "success");
       abrirAba("certificados");
     } else {
-      toast("Solicitação registrada. Continue o pagamento na aba Pagamentos.", "success");
+      toast(`Solicitação registrada.${previsao ? ` Previsão de liberação: ${dataBR(previsao)}.` : ""}`, "success");
       abrirAba("pagamentos");
     }
   } catch (error) {
@@ -1988,6 +1976,7 @@ async function atualizarDadosPrincipais() {
   }
   state.atualizandoDados = true;
   try {
+    try { await sb.rpc("processar_certificados_prontos_v34_3"); } catch (_) { /* migration ainda não publicada */ }
     const tarefas = [
       ['cursos', carregarCursos],
       ['resultados', carregarResultados],

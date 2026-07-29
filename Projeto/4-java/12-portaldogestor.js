@@ -223,7 +223,7 @@ function renderAlunos(){
   const tbody = $('#tabAlunos tbody');
   if(!tbody) return;
 
-  const podeRedefinirSenha = Number(window.GESTOR_ATUAL?.nivel_acesso || 0) >= 4;
+  const podeRedefinirSenha = Number(window.GESTOR_ATUAL?.nivel_acesso || 0) >= 2;
   const data = getFilteredAln();
   const totalPages = Math.max(1, Math.ceil(data.length / pageAln.size));
   if(pageAln.idx>totalPages) pageAln.idx = totalPages;
@@ -301,16 +301,31 @@ async function salvarAluno(alunoData, isEdit = false, alunoId = null) {
     };
     
     if (isEdit && alunoId) {
-      console.log('📝 Editando aluno:', alunoId, dadosParaSalvar);
-      const { data, error } = await sb
-        .from('alunos')
-        .update(dadosParaSalvar)
-        .eq('user_id', alunoId)
-        .select();
-      
-      if (error) throw error;
-      result = data[0];
-      console.log('✅ Aluno editado:', result);
+      console.log('Editando aluno e sincronizando o Supabase Auth:', alunoId, dadosParaSalvar);
+      const { data: sessionData, error: sessionError } = await sb.auth.getSession();
+      if (sessionError || !sessionData?.session?.access_token) throw new Error('Sua sessão de gestão expirou. Entre novamente.');
+      const functionUrl = `${String(sb.supabaseUrl || 'https://qwidlndoyhzvsrggwsba.supabase.co').replace(/\/$/,'')}/functions/v1/gerenciar-gestor`;
+      const response = await fetch(functionUrl, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${sessionData.session.access_token}`,
+          'apikey': sb.supabaseKey
+        },
+        body: JSON.stringify({
+          acao: 'atualizar_acesso_aluno',
+          aluno_id: alunoId,
+          nome: dadosParaSalvar.nome,
+          email: dadosParaSalvar.email,
+          telefone: dadosParaSalvar.telefone,
+          status: dadosParaSalvar.status,
+          ra: dadosParaSalvar.ra
+        })
+      });
+      const payload = await response.json().catch(() => ({}));
+      if (!response.ok || !payload?.ok) throw new Error(payload?.error || `Falha ao sincronizar o acesso do aluno (${response.status}).`);
+      result = payload.aluno;
+      console.log('Aluno e Auth sincronizados:', result);
     } else {
       throw new Error('Novos alunos devem criar a conta pelo formulário público de cadastro.');
     }
@@ -323,26 +338,15 @@ async function salvarAluno(alunoData, isEdit = false, alunoId = null) {
 }
 
 async function alternarStatusAluno(alunoId, novoStatus) {
-  try {
-    console.log('🔄 Alternando status do aluno:', alunoId, novoStatus);
-    
-    const { data, error } = await sb
-      .from('alunos')
-      .update({ 
-        status: novoStatus, 
-        atualizado_em: new Date().toISOString() 
-      })
-      .eq('user_id', alunoId)
-      .select();
-    
-    if (error) throw error;
-    
-    console.log('✅ Status alterado com sucesso');
-    return data[0];
-  } catch (error) {
-    console.error('❌ Erro ao alterar status:', error);
-    throw error;
-  }
+  const aluno = alunos.find((item) => String(item.user_id || item.id) === String(alunoId));
+  if (!aluno) throw new Error('Aluno não encontrado.');
+  return salvarAluno({
+    nome: aluno.nome,
+    email: aluno.email,
+    telefone: aluno.telefone,
+    status: novoStatus,
+    ra: aluno.ra
+  }, true, alunoId);
 }
 
 
@@ -370,8 +374,8 @@ function gerarSenhaTemporariaAluno() {
 
 function abrirModalSenhaAluno(aluno) {
   if (!aluno) return;
-  if (Number(window.GESTOR_ATUAL?.nivel_acesso || 0) < 4) {
-    alert('Somente o gestor principal pode redefinir senhas.');
+  if (Number(window.GESTOR_ATUAL?.nivel_acesso || 0) < 2) {
+    alert('Seu acesso não permite redefinir senhas.');
     return;
   }
   senhaAlunoAtual = aluno;

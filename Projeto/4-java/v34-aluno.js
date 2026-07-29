@@ -55,11 +55,21 @@
     return true;
   }
 
+  async function loadActivePromotions() {
+    const rpc = await sb.rpc('obter_promocoes_aluno_v34_3');
+    if (!rpc.error) return rpc;
+    const fallback = await sb.from('promocoes_v34').select('*')
+      .eq('ativa', true)
+      .order('prioridade', { ascending: false })
+      .order('criado_em', { ascending: false });
+    return fallback;
+  }
+
   async function loadCommercialData() {
     if (!window.sb || !state?.aluno?.user_id) return;
     const [config, promotions, promotionStates, packs, studentPacks] = await Promise.all([
       sb.from('configuracoes_comerciais_v34').select('*').eq('id', 1).maybeSingle(),
-      sb.from('promocoes_v34').select('*').order('prioridade', { ascending: false }).order('criado_em', { ascending: false }),
+      loadActivePromotions(),
       sb.from('promocoes_alunos_v34').select('*').eq('aluno_id', state.aluno.user_id),
       sb.from('packs_v34').select('*').order('criado_em', { ascending: false }),
       sb.from('packs_alunos_v34').select('*').eq('aluno_id', state.aluno.user_id).order('criado_em', { ascending: false })
@@ -156,8 +166,7 @@
     if (error) return notify(error.message, true);
     await carregarCertificados();
     renderCertificados(); renderPagamentos(); renderPaymentRequests();
-    if (String(data?.status || '').toUpperCase() === 'EMITIDO') notify('Cupom integral aplicado. Certificado emitido gratuitamente e liberado automaticamente.');
-    else if (data?.emissao_automatica_pendente) notify('Cupom integral aplicado. Corrija os dados obrigatórios informados para concluir a emissão automática.');
+    if (Number(data?.valor_final || 0) === 0 || data?.aguarda_data_e_autorizacao) notify('Cupom integral aplicado. O certificado ficou gratuito e será liberado após a data prevista e a autorização da gestão.');
     else notify('Cupom aplicado ao pagamento.');
   }
 

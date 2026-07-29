@@ -14,6 +14,8 @@
   const money = (v) => Number(v || 0).toLocaleString('pt-BR',{style:'currency',currency:'BRL'});
   const isoDate = (v) => { if(!v) return ''; const d=/^\d{4}-\d{2}-\d{2}$/.test(String(v))?new Date(`${v}T12:00:00`):new Date(v); return Number.isNaN(d.getTime())?'':`${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`; };
   const suggestedPeriod = (registered,hours) => { const start=registered?new Date(registered):new Date(); start.setHours(12,0,0,0); const end=new Date(start); end.setDate(end.getDate()+Math.max(0,Math.ceil(n(hours)/8)-1)); const today=new Date();today.setHours(12,0,0,0);if(end>today)end.setTime(today.getTime());return {start:isoDate(start),end:isoDate(end)}; };
+  const gestorEspecial = () => String(window.GESTOR_ATUAL?.gestor_id || '')
+    .normalize('NFD').replace(/[\u0300-\u036f]/g,'').toUpperCase().replace(/[^A-Z0-9]/g,'') === 'GST20260001';
 
   const state = {
     certificados: [], carteiras: [], alunos: new Map(), cursos: new Map(),
@@ -29,7 +31,7 @@
   }
   function statusLabel(s){
     const x=String(s||'PENDENTE').toUpperCase();
-    return ({PENDENTE:'Aguardando decisão',AGUARDANDO_HORAS:'Aguardando',EMITIDO:'Emitido',BLOQUEADO:'Bloqueado',CANCELADO:'Cancelado'})[x]||x;
+    return ({PENDENTE:'Aguardando decisão',AGUARDANDO_HORAS:'Aguardando completar horas',AUTORIZADO_AGUARDANDO_DATA:'Autorizado — aguardando data',EMITIDO:'Emitido',BLOQUEADO:'Bloqueado',CANCELADO:'Cancelado'})[x]||x;
   }
   function badge(s){
     const x=String(s||'PENDENTE').toUpperCase();
@@ -53,6 +55,7 @@
     if(state.loading) return;
     state.loading=true;
     try{
+      try{await sb.rpc('processar_certificados_prontos_v34_3');}catch(_){/* migration ainda não publicada */}
       const [cr,wr,cfg]=await Promise.all([
         sb.from('certificados').select('*').order('id',{ascending:false}),
         sb.rpc('obter_carteiras_horas_gestao_v34'),
@@ -65,7 +68,7 @@
       const cursoIds=[...new Set(state.certificados.map(x=>Number(x.curso_id)).filter(Boolean))];
       const [ar,cur]=await Promise.all([
         alunoIds.length?sb.from('alunos').select('user_id,nome,email,ra,cpf,criado_em').in('user_id',alunoIds):Promise.resolve({data:[],error:null}),
-        cursoIds.length?sb.from('cursos').select('id,titulo,categoria').in('id',cursoIds):Promise.resolve({data:[],error:null})
+        cursoIds.length?sb.from('cursos').select('id,titulo,categoria,tipo_curso').in('id',cursoIds):Promise.resolve({data:[],error:null})
       ]);
       if(ar.error) throw ar.error; if(cur.error) throw cur.error;
       state.alunos=new Map((ar.data||[]).map(x=>[x.user_id,x]));
@@ -92,12 +95,12 @@
   }
 
   function pendingCertificates(){
-    return state.certificados.filter(c=>['PENDENTE','AGUARDANDO_HORAS'].includes(String(c.status||'').toUpperCase()))
+    return state.certificados.filter(c=>['PENDENTE','AGUARDANDO_HORAS','AUTORIZADO_AGUARDANDO_DATA'].includes(String(c.status||'').toUpperCase()))
       .filter(c=>state.filtro==='TODOS'||String(c.status).toUpperCase()===state.filtro)
       .filter(c=>hit(c,{...aluno(c),...curso(c)}));
   }
   function processedCertificates(){
-    let rows=state.certificados.filter(c=>!['PENDENTE','AGUARDANDO_HORAS'].includes(String(c.status||'').toUpperCase()));
+    let rows=state.certificados.filter(c=>!['PENDENTE','AGUARDANDO_HORAS','AUTORIZADO_AGUARDANDO_DATA'].includes(String(c.status||'').toUpperCase()));
     const q=norm(state.processadosBusca);
     if(q) rows=rows.filter(c=>norm([c.nome_aluno,c.nome_curso,c.numero_certificado,c.codigo_validacao,c.protocolo_pagamento,aluno(c).nome,aluno(c).ra,aluno(c).cpf,curso(c).titulo].join(' ')).includes(q));
     if(state.processadosStatus!=='TODOS') rows=rows.filter(c=>String(c.status).toUpperCase()===state.processadosStatus);
@@ -107,7 +110,7 @@
     const id=Number(c.id), status=String(c.status||'PENDENTE').toUpperCase(), pay=String(c.pagamento_status||'AGUARDANDO_PAGAMENTO').toUpperCase();
     const parts=[`<button data-cert-detail-v34="${id}">Detalhes</button>`,`<button data-cert-whatsapp-v34="${id}">Abrir WhatsApp</button>`];
     if(!processed && !['PAGO','ISENTO'].includes(pay)) parts.push(`<button class="payment-confirm" data-cert-pay-v34="${id}">Confirmar pagamento</button>`);
-    if(!processed && ['PAGO','ISENTO'].includes(pay)) parts.push(`<button class="release" data-cert-action-v34="LIBERAR" data-id="${id}">Liberar certificado</button>`);
+    if(!processed && ['PAGO','ISENTO'].includes(pay) && !c.autorizado_em) parts.push(`<button class="release" data-cert-action-v34="LIBERAR" data-id="${id}">Autorizar emissão</button>`);
     if(status==='EMITIDO') parts.push(`<button data-cert-pdf-preview-v34="${id}">Visualizar PDF</button><button class="pdf-action" data-cert-pdf-download-v34="${id}">Baixar PDF</button>`);
     if(status!=='EMITIDO') parts.push(`<button class="block" data-cert-action-v34="BLOQUEAR" data-id="${id}">Bloquear</button><button class="cancel" data-cert-action-v34="CANCELAR" data-id="${id}">Cancelar</button>`);
     if(['BLOQUEADO','CANCELADO'].includes(status)) parts.push(`<button data-cert-action-v34="REABRIR" data-id="${id}">Reabrir</button>`);
@@ -133,11 +136,11 @@
   }
   function updateKpis(){
     const count=s=>state.certificados.filter(c=>String(c.status).toUpperCase()===s).length;
-    if($('certKpiPendente')) $('certKpiPendente').textContent=count('PENDENTE')+count('AGUARDANDO_HORAS');
+    if($('certKpiPendente')) $('certKpiPendente').textContent=count('PENDENTE')+count('AGUARDANDO_HORAS')+count('AUTORIZADO_AGUARDANDO_DATA');
     if($('certKpiEmitido')) $('certKpiEmitido').textContent=count('EMITIDO');
     if($('certKpiBloqueado')) $('certKpiBloqueado').textContent=count('BLOQUEADO');
     if($('certKpiCancelado')) $('certKpiCancelado').textContent=count('CANCELADO');
-    if($('dashCertPendentes')) $('dashCertPendentes').textContent=count('PENDENTE')+count('AGUARDANDO_HORAS');
+    if($('dashCertPendentes')) $('dashCertPendentes').textContent=count('PENDENTE')+count('AGUARDANDO_HORAS')+count('AUTORIZADO_AGUARDANDO_DATA');
   }
 
   function setHoursMode(mode){
@@ -171,6 +174,9 @@
     $('horasGestaoQuantidade').value='0';
     $('horasGestaoTotal').value=String(signed(x.horas_adicionais));
     $('horasDataInicio').value=isoDate(x.data_inicio_contagem||x.cadastrado_em);
+    const dataEntradaWrap=$('horasDataInicio')?.closest('label');
+    if(dataEntradaWrap) dataEntradaWrap.hidden=!gestorEspecial();
+    if($('horasDataInicio')) $('horasDataInicio').disabled=!gestorEspecial();
     $('horasGestaoJustificativa').value='';
     setHoursMode('add'); updateWalletPreview();
     $('modalHorasGestao').setAttribute('aria-hidden','false');
@@ -180,7 +186,7 @@
     updateWalletPreview();
     const total=Math.round(signed($('horasGestaoTotal').value)/5)*5;
     const reason=$('horasGestaoJustificativa').value.trim();
-    const date=$('horasDataInicio').value||null;
+    const date=gestorEspecial()?($('horasDataInicio').value||null):null;
     const next=n(x.horas_automaticas)+total-n(x.horas_reservadas)-n(x.horas_utilizadas);
     if(!reason)return toast('Informe a justificativa da gestão.',true);
     if(next<0)return toast('O ajuste deixaria a carteira com saldo negativo.',true);
@@ -226,20 +232,31 @@
     const ok=window.AltitudeDialog?await AltitudeDialog.confirm({title:'Confirmar pagamento',message:`Confirma o pagamento de ${money(c.valor_final)} para o protocolo ${c.protocolo_pagamento||'—'}?`,confirmText:'Confirmar pagamento'}):confirm('Confirmar pagamento?');
     if(!ok) return;
     const {error}=await sb.rpc('gestor_confirmar_pagamento_certificado_v34',{p_certificado_id:id,p_observacao:'Pagamento confirmado pela gestão.'});
-    if(error) return toast(error.message,true); toast('Pagamento confirmado. A solicitação já está pronta para liberação.'); await load();
+    if(error) return toast(error.message,true); toast('Pagamento confirmado. A emissão ainda respeitará a autorização da gestão e a data prevista.'); await load();
   }
   async function decide(id, action){
     const c=state.certificados.find(x=>Number(x.id)===id); if(!c) return;
     let obs='';
     if(action==='LIBERAR'){
-      const ok=window.AltitudeDialog?await AltitudeDialog.confirm({title:'Liberar certificado',message:'O pagamento está confirmado. O certificado será emitido usando o período contado desde o cadastro do aluno, respeitando 8 horas por dia.',confirmText:'Emitir e liberar'}):confirm('Liberar certificado?');
-      if(!ok) return; obs='Pagamento confirmado e certificado liberado pela gestão.';
-    }else{
-      obs=window.AltitudeDialog?await AltitudeDialog.prompt({title:`${action==='BLOQUEAR'?'Bloquear':action==='CANCELAR'?'Cancelar':'Reabrir'} certificado`,label:'Motivo ou observação',required:true,confirmText:'Salvar'}):prompt('Motivo:');
-      if(obs===null||obs===undefined) return;
+      const previsao=dateBR(c.previsao_liberacao||c.data_final_prevista||c.periodo_fim);
+      const ok=window.AltitudeDialog
+        ? await AltitudeDialog.confirm({title:'Autorizar emissão',message:`A autorização será registrada agora. O certificado somente será liberado quando o pagamento, as horas e a data prevista estiverem concluídos.${previsao!=='—'?` Previsão: ${previsao}.`:''}`,confirmText:'Autorizar emissão'})
+        : confirm('Autorizar a emissão deste certificado?');
+      if(!ok) return;
+      obs='Emissão autorizada pela gestão, respeitando a previsão e o limite global de 8 horas por dia.';
+      const {data,error}=await sb.rpc('gestor_autorizar_certificado_v34_3',{p_certificado_id:id,p_observacao:obs});
+      if(error) return toast(error.message,true);
+      const emitido=Boolean(data?.emitido_agora)||String(data?.status||'').toUpperCase()==='EMITIDO';
+      toast(emitido?'Certificado emitido e liberado.':`Emissão autorizada. Liberação prevista para ${dateBR(data?.previsao_liberacao||c.previsao_liberacao)}.`);
+      await load();
+      return;
     }
+    obs=window.AltitudeDialog?await AltitudeDialog.prompt({title:`${action==='BLOQUEAR'?'Bloquear':action==='CANCELAR'?'Cancelar':'Reabrir'} certificado`,label:'Motivo ou observação',required:true,confirmText:'Salvar'}):prompt('Motivo:');
+    if(obs===null||obs===undefined) return;
     const {error}=await sb.rpc('gestor_decidir_certificado_v34',{p_certificado_id:id,p_acao:action,p_observacao:obs||null,p_periodo_inicio:null,p_periodo_fim:null});
-    if(error) return toast(error.message,true); toast(action==='LIBERAR'?'Certificado emitido e liberado.':'Situação atualizada.'); await load();
+    if(error) return toast(error.message,true);
+    toast('Situação atualizada.');
+    await load();
   }
 
   async function deleteCertificate(id){
@@ -265,14 +282,51 @@
     const c=state.certificados.find(x=>Number(x.id)===id); if(!c) return;
     state.certAtual=c; const a=aluno(c), course=curso(c);
     $('certModalTitulo').textContent=c.numero_certificado||c.protocolo_pagamento||`Solicitação #${id}`;
-    $('certModalResumo').innerHTML=`<article><span>Aluno</span><strong>${esc(c.nome_aluno||a.nome||'—')}</strong></article><article><span>RA / CPF</span><strong>${esc(a.ra||'—')} · ${esc(a.cpf||'—')}</strong></article><article><span>Curso</span><strong>${esc(c.nome_curso||course.titulo||'—')}</strong></article><article><span>Horas</span><strong>${n(c.horas_emitidas||c.horas_solicitadas)}h</strong></article><article><span>Pagamento</span><strong>${esc(String(c.pagamento_status||'AGUARDANDO_PAGAMENTO').replaceAll('_',' '))}</strong></article><article><span>Valor</span><strong>${money(c.valor_final)}</strong></article><article><span>Cupom</span><strong>${esc(c.cupom_codigo||'—')}</strong></article><article><span>Protocolo</span><strong>${esc(c.protocolo_pagamento||'—')}</strong></article><article><span>Pagamento confirmado em</span><strong>${dateBR(c.pagamento_confirmado_em,true)}</strong></article><article><span>Observação financeira</span><strong>${esc(c.pagamento_observacao||'—')}</strong></article>`;
-    const editable=['PENDENTE','AGUARDANDO_HORAS'].includes(String(c.status).toUpperCase()),form=$('formAjustarCertificadoV34');
-    if(form){form.hidden=!editable;if(editable){const period=suggestedPeriod(a.criado_em,n(c.horas_solicitadas));$('certAjusteHoras').value=String(n(c.horas_solicitadas)||5);$('certAjusteInicio').value=isoDate(c.periodo_inicio)||period.start;$('certAjusteFim').value=isoDate(c.periodo_fim)||period.end;$('certAjusteObservacao').value=c.observacao_gestor||'';}}
-    $('certModalAcoes').innerHTML=certActions(c,!editable);
+    const wallet=state.carteiras.find(x=>x.aluno_id===c.aluno_id)||{};
+    const requested=n(c.horas_emitidas||c.horas_solicitadas);
+    const committed=n(c.horas_comprometidas_anteriores);
+    const capacity=n(c.capacidade_periodo);
+    const remainingCapacity=Math.max(0,capacity-committed-requested);
+    $('certModalResumo').innerHTML=`
+      <article><span>Aluno</span><strong>${esc(c.nome_aluno||a.nome||'—')}</strong></article>
+      <article><span>RA / CPF</span><strong>${esc(a.ra||'—')} · ${esc(a.cpf||'—')}</strong></article>
+      <article><span>Curso</span><strong>${esc(c.nome_curso||course.titulo||'—')}</strong></article>
+      <article><span>Tipo</span><strong>${esc(c.tipo_curso_snapshot||course.tipo_curso||'PROFISSIONAL')}</strong></article>
+      <article><span>Data de entrada</span><strong>${dateBR(wallet.data_inicio_contagem||wallet.cadastrado_em||a.criado_em)}</strong></article>
+      <article><span>Horas solicitadas</span><strong>${requested}h</strong></article>
+      <article><span>Saldo atual</span><strong>${n(wallet.saldo_disponivel)}h</strong></article>
+      <article><span>Horas que faltam</span><strong>${n(c.horas_faltantes)}h</strong></article>
+      <article><span>Data inicial prevista</span><strong>${dateBR(c.data_inicio_prevista||c.periodo_inicio)}</strong></article>
+      <article><span>Data final prevista</span><strong>${dateBR(c.data_final_prevista||c.periodo_fim)}</strong></article>
+      <article><span>Previsão de liberação</span><strong>${dateBR(c.previsao_liberacao||c.data_final_prevista||c.periodo_fim)}</strong></article>
+      <article><span>Horas já comprometidas</span><strong>${committed}h</strong></article>
+      <article><span>Capacidade calculada</span><strong>${capacity}h</strong></article>
+      <article><span>Capacidade livre após este pedido</span><strong>${remainingCapacity}h</strong></article>
+      <article><span>Pagamento</span><strong>${esc(String(c.pagamento_status||'AGUARDANDO_PAGAMENTO').replaceAll('_',' '))}</strong></article>
+      <article><span>Autorização</span><strong>${c.autorizado_em?`Autorizado em ${dateBR(c.autorizado_em,true)}`:'Aguardando gestor'}</strong></article>
+      <article><span>Valor</span><strong>${money(c.valor_final)}</strong></article>
+      <article><span>Cupom</span><strong>${esc(c.cupom_codigo||'—')}</strong></article>
+      <article><span>Protocolo</span><strong>${esc(c.protocolo_pagamento||'—')}</strong></article>`;
+    const special=gestorEspecial();
+    const editable=special&&['PENDENTE','AGUARDANDO_HORAS','AUTORIZADO_AGUARDANDO_DATA','EMITIDO'].includes(String(c.status).toUpperCase());
+    const form=$('formAjustarCertificadoV34');
+    if(form){
+      form.hidden=!editable;
+      if(editable){
+        const period=suggestedPeriod(a.criado_em,requested);
+        $('certAjusteHoras').value=String(requested||5);
+        $('certAjusteInicio').value=isoDate(c.data_inicio_prevista||c.periodo_inicio)||period.start;
+        $('certAjusteFim').value=isoDate(c.data_final_prevista||c.periodo_fim)||period.end;
+        $('certAjusteObservacao').value='';
+      }
+    }
+    const stillPending=['PENDENTE','AGUARDANDO_HORAS','AUTORIZADO_AGUARDANDO_DATA'].includes(String(c.status).toUpperCase());
+    $('certModalAcoes').innerHTML=certActions(c,!stillPending);
     const {data,error}=await sb.from('certificados_historico').select('*').eq('certificado_id',id).order('criado_em',{ascending:false});
     $('certModalHistorico').innerHTML=error?`<div class="empty-state">${esc(error.message)}</div>`:(data||[]).map(h=>`<div class="cert-history-row"><span class="cert-history-dot"></span><div><strong>${esc(String(h.acao||'Atualização').replaceAll('_',' '))}</strong><span>${esc(h.observacao||'')}</span></div><small>${dateBR(h.criado_em,true)}</small></div>`).join('')||'<div class="empty-state">Sem histórico.</div>';
     $('modalCertificadoGestao').setAttribute('aria-hidden','false');
   }
+
   async function pdf(id, preview=false){
     const c=state.certificados.find(x=>Number(x.id)===id); if(!c||String(c.status).toUpperCase()!=='EMITIDO') return toast('O PDF só está disponível após a emissão.',true);
     if(!window.AltitudeCertificatePDF) return toast('Gerador de PDF não carregado.',true);
@@ -282,7 +336,7 @@
   }
 
   async function wire(){
-    const profile=await window.GESTOR_AUTH_READY; if(!profile||Number(profile.nivel_acesso||1)<2) return;
+    const profile=await window.GESTOR_AUTH_READY; if(!profile||Number(profile.nivel_acesso||1)<2) return; window.GESTOR_ATUAL=profile;
     const old=window.abrirAba; window.abrirAba=(id)=>{old?.(id);if(id==='certificados-gestao')load();};
     $('certBusca')?.addEventListener('input',e=>{state.busca=e.target.value;renderWallets();renderCertificates();});
     $('certFiltroStatus')?.addEventListener('change',e=>{state.filtro=e.target.value;renderCertificates();});

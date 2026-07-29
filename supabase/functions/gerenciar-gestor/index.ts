@@ -62,8 +62,8 @@ Deno.serve(async (req) => {
     if (callerError || !caller) return json({ ok: false, error: 'Acesso de gestão não autorizado.' }, 403);
 
     if (action === 'redefinir_senha_aluno') {
-      if (Number(caller.nivel_acesso) < 4) {
-        return json({ ok: false, error: 'Somente o gestor principal pode redefinir senhas de alunos.' }, 403);
+      if (Number(caller.nivel_acesso) < 2) {
+        return json({ ok: false, error: 'Seu acesso não permite redefinir senhas de alunos.' }, 403);
       }
 
       const alunoId = String(body.aluno_id || '').trim();
@@ -100,6 +100,81 @@ Deno.serve(async (req) => {
       }
 
       return json({ ok: true, aluno_id: aluno.user_id });
+    }
+
+    if (action === 'atualizar_acesso_aluno') {
+      if (Number(caller.nivel_acesso) < 2) {
+        return json({ ok: false, error: 'Seu acesso não permite alterar dados de acesso de alunos.' }, 403);
+      }
+
+      const alunoId = String(body.aluno_id || '').trim();
+      const email = String(body.email || '').trim().toLowerCase();
+      const nome = String(body.nome || '').trim();
+      const telefone = String(body.telefone || '').replace(/\D/g, '') || null;
+      const status = String(body.status || 'ATIVO').toUpperCase() === 'INATIVO' ? 'INATIVO' : 'ATIVO';
+      const ra = String(body.ra || '').trim().toUpperCase();
+      if (!alunoId) return json({ ok: false, error: 'Aluno não informado.' }, 400);
+      if (!email || !email.includes('@')) return json({ ok: false, error: 'Informe um e-mail válido.' }, 400);
+      if (!nome) return json({ ok: false, error: 'Informe o nome do aluno.' }, 400);
+
+      const { data: alunoAtual, error: alunoError } = await admin
+        .from('alunos')
+        .select('user_id,nome,email,telefone,status,ra')
+        .eq('user_id', alunoId)
+        .maybeSingle();
+      if (alunoError) throw alunoError;
+      if (!alunoAtual?.user_id) return json({ ok: false, error: 'Aluno não encontrado.' }, 404);
+
+      const { data: duplicateEmail, error: duplicateError } = await admin
+        .from('alunos')
+        .select('user_id')
+        .ilike('email', email)
+        .neq('user_id', alunoId)
+        .limit(1);
+      if (duplicateError) throw duplicateError;
+      if (duplicateEmail?.length) return json({ ok: false, error: 'Este e-mail já pertence a outro aluno.' }, 409);
+
+      const { error: authError } = await admin.auth.admin.updateUserById(alunoId, {
+        email,
+        email_confirm: true,
+        user_metadata: {
+          perfil: 'ALUNO',
+          nome,
+          status,
+          ra: ra || alunoAtual.ra || null
+        }
+      });
+      if (authError) throw authError;
+
+      const { data: alunoAtualizado, error: profileError } = await admin
+        .from('alunos')
+        .update({ nome, email, telefone, status, ra: ra || alunoAtual.ra, atualizado_em: new Date().toISOString() })
+        .eq('user_id', alunoId)
+        .select()
+        .single();
+      if (profileError) {
+        // Tenta desfazer o e-mail do Auth para evitar cadastros divergentes.
+        await admin.auth.admin.updateUserById(alunoId, {
+          email: alunoAtual.email,
+          email_confirm: true,
+          user_metadata: { perfil: 'ALUNO', nome: alunoAtual.nome, status: alunoAtual.status, ra: alunoAtual.ra || null }
+        }).catch(() => undefined);
+        throw profileError;
+      }
+
+      try {
+        await admin.from('auditoria_acessos_alunos_v34_3').insert({
+          aluno_id: alunoId,
+          alterado_por: callerId,
+          acao: 'ATUALIZAR_EMAIL_E_PERFIL',
+          valor_anterior: alunoAtual,
+          valor_novo: { nome, email, telefone, status, ra: ra || alunoAtual.ra }
+        });
+      } catch (_) {
+        // A alteração permanece válida mesmo antes da migration de auditoria.
+      }
+
+      return json({ ok: true, aluno: alunoAtualizado });
     }
 
     if (action === 'criar') {

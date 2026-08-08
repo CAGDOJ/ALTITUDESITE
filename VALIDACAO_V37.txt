@@ -1,0 +1,32 @@
+VALIDACAO ESTATICA V37 — 08/08/2026
+
+OK - 01 areas persistentes
+OK - 02 chamados sem letras soltas
+OK - 03 tablet 1120 JS
+OK - 04 acoes mobile em cartoes
+OK - 05 aba novos cursos
+OK - 06 filtros/recomendacoes
+OK - 07 concluidos separados
+OK - 08 teto 200h
+OK - 09 calculo/notificacoes horas
+OK - 10 prova aprovada sai do andamento
+OK - 11 fluxo whatsapp
+OK - 12 cadastro redireciona login
+OK - 13 excluir aluno
+OK - 14 gestor mobile largura total
+OK - 15 publicar mobile
+OK - 16 andamento sem aprovacao
+OK - 17 concluidos sem duplicidade
+OK - 18 KPIs reais
+OK - 19 rota /cursos/
+OK - 20 redefinicao de senha
+OK - 21 confirmar email cadastro
+OK - 22 corrigir email errado
+OK - 23 CPF existente oferece recuperacao
+OK - 24 mensagens login
+OK - 25 menu gestor nitido/clicavel
+OK - 26 login/cadastro no dropdown
+OK - 27 proximas acoes antes de cursos
+OK - 28 aba solicitar certificado
+
+Total: 28/28 verificacoes OK

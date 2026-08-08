@@ -20,10 +20,11 @@
     const m = (err?.message || '').toLowerCase();
     const s = err?.status || err?.cause?.status;
     if (m.includes('e-mail não cadastrado') || m.includes('email não cadastrado')) return 'E-mail não cadastrado.';
-    if (m.includes('senha incorreta')) return 'Senha incorreta ou e-mail ainda não confirmado.';
+    if (m.includes('conta inativa') || m.includes('cadastro inativo')) return 'Conta inativa. Entre em contato com a instituição para reativação.';
+    if (m.includes('senha incorreta')) return 'Senha incorreta.';
     if (m.includes('não encontrado')) return err.message;
-    if (m.includes('invalid login credentials')) return 'Senha incorreta ou e-mail ainda não confirmado.';
-    if (m.includes('email not confirmed')) return 'E-mail não confirmado. Verifique sua caixa de entrada.';
+    if (m.includes('email not confirmed') || m.includes('email_not_confirmed')) return 'E-mail ainda não confirmado. Use a confirmação recebida ou a opção “Cadastrei meu e-mail errado”.';
+    if (m.includes('invalid login credentials')) return 'Senha incorreta.';
     if (s === 429 || m.includes('rate limit')) return 'Muitas tentativas. Aguarde e tente novamente.';
     if (s >= 500) return 'Serviço indisponível no momento. Tente novamente.';
     return 'Não foi possível entrar. Verifique os dados e tente novamente.';
@@ -105,11 +106,20 @@
         await sb.auth.signOut({ scope: 'local' }).catch(() => {});
         const { data, error } = await sb.auth.signInWithPassword({ email, password });
         if (error || !data?.session) {
-          if ((error?.message || '').toLowerCase().includes('invalid login credentials')) {
-            throw new Error('Senha incorreta ou e-mail ainda não confirmado.');
+          const raw = String(error?.message || '').toLowerCase();
+          if (raw.includes('email not confirmed') || raw.includes('email_not_confirmed')) {
+            throw new Error('E-mail ainda não confirmado.');
           }
+          if (raw.includes('invalid login credentials')) throw new Error('Senha incorreta.');
           throw error || new Error('Credenciais inválidas.');
         }
+
+        const { data: alunoPerfil } = await sb.from('alunos').select('status').eq('user_id', data.user.id).maybeSingle();
+        if (String(alunoPerfil?.status || 'ATIVO').toUpperCase() !== 'ATIVO') {
+          await sb.auth.signOut().catch(() => {});
+          throw new Error('Conta inativa.');
+        }
+
         const params = new URLSearchParams(window.location.search);
         const cursoId = Number(params.get('curso') || localStorage.getItem('altitude_curso_pendente'));
         if (cursoId) {

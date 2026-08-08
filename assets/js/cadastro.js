@@ -10,6 +10,8 @@ const nomeEl = $("nome");
 const cpfEl = $("cpf");
 const nascEl = $("nascimento");
 const emailEl = $("email");
+const confEmailEl = $("confirma-email");
+const cadastroRecoveryBox = $("cadastroRecoveryBox");
 const senhaEl = $("senha");
 const confEl = $("confirma");
 const telEl = $("telefone");
@@ -21,6 +23,7 @@ const fb = {
   cpf: $("fb-cpf"),
   nascimento: $("fb-nascimento"),
   email: $("fb-email"),
+  confirmaEmail: $("fb-confirma-email"),
   senha: $("fb-senha"),
   confirma: $("fb-confirma"),
   telefone: $("fb-telefone"),
@@ -138,6 +141,17 @@ function validarEmail() {
   return true;
 }
 
+function validarConfirmacaoEmail() {
+  const email = (emailEl?.value || "").trim().toLowerCase();
+  const confirma = (confEmailEl?.value || "").trim().toLowerCase();
+  if (!confirma || confirma !== email) {
+    setInvalid(confEmailEl, fb.confirmaEmail, "Os e-mails não coincidem.");
+    return false;
+  }
+  setValid(confEmailEl, fb.confirmaEmail, "E-mails conferem.");
+  return true;
+}
+
 function validarSenha() {
   const v = senhaEl?.value || "";
   if (v.length < 8) {
@@ -188,6 +202,7 @@ function toggleSubmit() {
     validarCampoCPF() &&
     validarNascimento() &&
     validarEmail() &&
+    validarConfirmacaoEmail() &&
     validarSenha() &&
     validarConfirmacao() &&
     validarTelefone() &&
@@ -236,6 +251,13 @@ nascEl?.addEventListener("change", () => {
 
 emailEl?.addEventListener("input", () => {
   validarEmail();
+  validarConfirmacaoEmail();
+  if (cadastroRecoveryBox) cadastroRecoveryBox.hidden = true;
+  toggleSubmit();
+});
+
+confEmailEl?.addEventListener("input", () => {
+  validarConfirmacaoEmail();
   toggleSubmit();
 });
 
@@ -286,7 +308,8 @@ form?.addEventListener("submit", async (e) => {
     const disponibilidade = await checkRegistrationExists(payloadAluno.email, payloadAluno.cpf);
     if (disponibilidade.cpf_existe) {
       setInvalid(cpfEl, fb.cpf, "CPF já cadastrado.");
-      showMsg("Este CPF já está cadastrado.", "error");
+      showMsg("Este CPF já possui cadastro. Se você digitou o e-mail errado ou ainda não confirmou a conta, use a recuperação abaixo.", "error");
+      if (cadastroRecoveryBox) cadastroRecoveryBox.hidden = false;
       btnEnviar.disabled = false;
       btnEnviar.textContent = "Enviar";
       return;
@@ -294,9 +317,24 @@ form?.addEventListener("submit", async (e) => {
 
     if (disponibilidade.email_existe) {
       setInvalid(emailEl, fb.email, "E-mail já cadastrado.");
-      showMsg("Este e-mail já está cadastrado.", "error");
+      showMsg("Este e-mail já está cadastrado. Entre na conta ou use a recuperação de acesso.", "error");
+      if (cadastroRecoveryBox) cadastroRecoveryBox.hidden = false;
       btnEnviar.disabled = false;
       btnEnviar.textContent = "Enviar";
+      return;
+    }
+
+    const emailConfirmado = window.AltitudeDialog
+      ? await window.AltitudeDialog.confirm({
+          title: "Confirme seu e-mail",
+          message: `O link de ativação será enviado para ${payloadAluno.email}. Confirme se o endereço está correto.`,
+          confirmText: "O e-mail está correto"
+        })
+      : window.confirm(`O link de ativação será enviado para ${payloadAluno.email}. O e-mail está correto?`);
+    if (!emailConfirmado) {
+      btnEnviar.disabled = false;
+      btnEnviar.textContent = "Enviar";
+      emailEl?.focus();
       return;
     }
 
@@ -304,6 +342,7 @@ form?.addEventListener("submit", async (e) => {
       email: payloadAluno.email,
       password: senhaEl.value,
       options: {
+        emailRedirectTo: "https://www.portalaltitude.com.br/login/?confirmacao=sucesso",
         data: {
           perfil: "ALUNO",
           nome: payloadAluno.nome,

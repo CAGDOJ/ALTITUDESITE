@@ -21,6 +21,7 @@
   <link rel="stylesheet" href="/assets/css/28-v34-3-ajustes-especiais.css?v=34.3">
   <link rel="stylesheet" href="/assets/css/29-v34-4-cabecalho-avaliacao.css?v=34.4">
   <link rel="stylesheet" href="/assets/css/30-v36-ajustes.css?v=36">
+  <link rel="stylesheet" href="/assets/css/31-v37-final.css?v=37">
 </head>
 <body>
   <div class="portal-layout">
@@ -34,11 +35,12 @@
         <button class="menu-link ativo" data-aba="perfil"><span>01</span> Início</button>
         <button class="menu-link" data-aba="cursos"><span>02</span> Meus cursos</button>
         <button class="menu-link" data-aba="catalogo"><span>03</span> Novos cursos</button>
-        <button class="menu-link" data-aba="certificados"><span>04</span> Certificados</button>
-        <button class="menu-link" data-aba="pagamentos"><span>05</span> Pagamentos</button>
-        <button class="menu-link" data-aba="novidades"><span>06</span> Promoções</button>
-        <button class="menu-link" data-aba="atendimento"><span>07</span> Atendimento</button>
-        <button class="menu-link" data-aba="cadastro"><span>08</span> Meu cadastro</button>
+        <button class="menu-link certificate-request-nav" data-aba="solicitar-certificado" id="menuSolicitarCertificado" hidden><span>04</span> Solicitar certificado <b id="badgeSolicitarCertificado" class="menu-badge" hidden>0</b></button>
+        <button class="menu-link" data-aba="certificados"><span>05</span> Meus certificados</button>
+        <button class="menu-link" data-aba="pagamentos"><span>06</span> Pagamentos</button>
+        <button class="menu-link" data-aba="novidades"><span>07</span> Promoções</button>
+        <button class="menu-link" data-aba="atendimento"><span>08</span> Atendimento</button>
+        <button class="menu-link" data-aba="cadastro"><span>09</span> Meu cadastro</button>
       </nav>
 
       <div class="sidebar-help">
@@ -129,8 +131,9 @@
             <h2>Seu caminho até o certificado</h2>
             <div class="learning-steps">
               <div><b>1</b><span><strong>Estude os módulos</strong><small>Marque cada conteúdo concluído.</small></span></div>
-              <div><b>2</b><span><strong>Faça a prova</strong><small>Questões apresentadas uma por vez.</small></span></div>
-              <div><b>3</b><span><strong>Baixe o certificado</strong><small>PDF com QR Code de autenticação.</small></span></div>
+              <div><b>2</b><span><strong>Faça a prova</strong><small>Se aprovado, o curso deixa de ficar em andamento.</small></span></div>
+              <div><b>3</b><span><strong>Avalie e solicite</strong><small>Após a aprovação, avalie o curso e escolha as horas do certificado.</small></span></div>
+              <div><b>4</b><span><strong>Acompanhe a liberação</strong><small>Pagamento, previsão e PDF ficam disponíveis no portal.</small></span></div>
             </div>
           </article>
         </div>
@@ -210,21 +213,45 @@
         </div>
       </section>
 
-      <section class="aba" id="certificados">
+      <section class="aba" id="solicitar-certificado">
         <div class="page-heading certificate-heading">
           <div>
-            <span class="eyebrow">Conquistas</span>
-            <h1>Certificados</h1>
-            <p>Consulte sua carteira, solicite o documento e acompanhe o pagamento e a liberação.</p>
+            <span class="eyebrow">Próxima etapa</span>
+            <h1>Solicitar certificado</h1>
+            <p>Depois da aprovação na prova, avalie o curso, escolha até 200 horas e envie sua solicitação.</p>
           </div>
-          <a class="secondary-link" href="/certificados/" target="_blank">Validar um certificado</a>
+          <button type="button" class="secondary-link button-link" data-abrir-aba="certificados">Meus certificados</button>
+        </div>
+
+        <div class="info-banner certificate-request-flow-banner">
+          <strong>Fluxo do certificado</strong>
+          <span>Prova aprovada → avaliação do curso → escolha das horas → solicitação → WhatsApp para pagamento.</span>
         </div>
 
         <div class="section-block hours-wallet-overview">
           <div class="section-title">
-            <div><h2>Minha carteira de horas</h2><p>Escolha a quantidade desejada em cada solicitação. As horas são informadas de 5 em 5.</p></div>
+            <div><h2>Minha carteira de horas</h2><p>Cada certificado pode ter no máximo 200 horas. O sistema calcula a previsão sem criar lacunas ou sobreposição de datas.</p></div>
           </div>
-          <div id="resumoCarteiraHoras" class="hours-wallet-summary"></div>
+          <div id="resumoCarteiraHorasSolicitacao" class="hours-wallet-summary"></div>
+        </div>
+
+        <div class="section-block certificate-request-section">
+          <div class="section-title">
+            <div><h2>Cursos aptos e solicitações</h2><p>Somente cursos aprovados aparecem nesta etapa. Se faltar avaliação, você poderá fazê-la aqui.</p></div>
+            <span id="contadorSolicitacoesCertificado">0 cursos</span>
+          </div>
+          <div id="listaSolicitacaoCertificados" class="certificate-list"></div>
+        </div>
+      </section>
+
+      <section class="aba" id="certificados">
+        <div class="page-heading certificate-heading">
+          <div>
+            <span class="eyebrow">Conquistas</span>
+            <h1>Meus certificados</h1>
+            <p>Consulte documentos emitidos, acompanhe solicitações em andamento e veja o histórico.</p>
+          </div>
+          <a class="secondary-link" href="/certificados/" target="_blank">Validar um certificado</a>
         </div>
 
         <div class="info-banner certificate-security-banner">
@@ -242,7 +269,8 @@
 
         <div class="section-block certificate-request-section">
           <div class="section-title">
-            <div><h2>Solicitações e liberações</h2><p>Acompanhe os cursos concluídos, solicitações pendentes e documentos bloqueados.</p></div>
+            <div><h2>Solicitações em andamento</h2><p>Acompanhe pedidos já enviados, pagamentos, previsões e documentos bloqueados.</p></div>
+            <button type="button" class="text-button" data-abrir-aba="solicitar-certificado">Solicitar outro certificado</button>
           </div>
           <div id="listaCertificados" class="certificate-list"></div>
         </div>
@@ -497,7 +525,7 @@
   <script src="/assets/js/altitude-dialogs.js?v=17"></script>
   <script src="/assets/js/supabase-init.js?v=17"></script>
   <script src="/assets/js/certificado-pdf-v27.js?v=34.3"></script>
-  <script src="/assets/js/portaldoaluno.js?v=34.4"></script>
+  <script src="/assets/js/portaldoaluno.js?v=37"></script>
   <script src="/assets/js/06-responsive.js?v=17"></script>
   <script src="/assets/js/15-ajustes-finais.js?v=17" defer></script>
   <script src="/assets/js/v34-aluno.js?v=34.3" defer></script>

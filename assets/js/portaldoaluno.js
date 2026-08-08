@@ -37,7 +37,8 @@ const TITULOS_ABAS = {
   perfil: "Início",
   cursos: "Meus cursos",
   catalogo: "Novos cursos",
-  certificados: "Certificados",
+  "solicitar-certificado": "Solicitar certificado",
+  certificados: "Meus certificados",
   pagamentos: "Pagamentos",
   novidades: "Promoções",
   atendimento: "Atendimento",
@@ -474,13 +475,16 @@ function certificadoAtualCurso(cursoId) {
 }
 
 function cursoConcluido(curso) {
+  // V37: a aprovação na prova final encerra o curso para fins de listagem.
+  // O aluno só consegue fazer a prova depois de concluir o conteúdo.
   const resultado = melhorResultadoCurso(curso.id);
-  return clamp(curso.progresso) >= 100 && Boolean(resultado?.aprovado);
+  return Boolean(resultado?.aprovado);
 }
 
 function cursoEmAndamento(curso) {
   const status = String(curso.matricula_status || "ATIVA").toUpperCase();
-  return !["CANCELADA", "CANCELADO", "TRANCADA"].includes(status) && !cursoConcluido(curso);
+  const ativo = !["CANCELADA", "CANCELADO", "TRANCADA"].includes(status);
+  return ativo && !cursoConcluido(curso);
 }
 
 function renderDashboard() {
@@ -1179,7 +1183,10 @@ function refazerProva() {
 function irParaCertificados() {
   fecharModal("prova");
   fecharModal("curso");
-  abrirAba("certificados");
+  abrirAba("solicitar-certificado");
+  window.setTimeout(() => {
+    document.querySelector('#listaSolicitacaoCertificados .certificate-card')?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+  }, 100);
 }
 
 function rotuloAcaoCertificado(acao) {
@@ -1244,8 +1251,8 @@ function renderHistoricoCertificados() {
 }
 
 function renderResumoCarteiraHoras() {
-  const box = $("resumoCarteiraHoras");
-  if (!box) return;
+  const boxes = [$("resumoCarteiraHoras"), $("resumoCarteiraHorasSolicitacao")].filter(Boolean);
+  if (!boxes.length) return;
   const totais = state.carteirasHoras.reduce((acc, item) => {
     acc.validadas += Number(item.horas_validadas || 0);
     acc.reservadas += Number(item.horas_reservadas || 0);
@@ -1253,11 +1260,12 @@ function renderResumoCarteiraHoras() {
     acc.disponiveis += Number(item.saldo_disponivel || 0);
     return acc;
   }, { validadas: 0, reservadas: 0, utilizadas: 0, disponiveis: 0 });
-  box.innerHTML = `
+  const html = `
     <article><span>Horas acumuladas</span><strong>${totais.validadas}h</strong></article>
     <article><span>Saldo disponível</span><strong>${totais.disponiveis}h</strong></article>
     <article><span>Em análise</span><strong>${totais.reservadas}h</strong></article>
     <article><span>Já certificadas</span><strong>${totais.utilizadas}h</strong></article>`;
+  boxes.forEach((box) => { box.innerHTML = html; });
 }
 
 function rotuloMovimentoHoras(tipo) {
@@ -1335,86 +1343,124 @@ function renderCertificadosEmitidos() {
   }).join("");
 }
 
-function renderCertificados() {
-  const list = $("listaCertificados");
-  if (!list) return;
-  renderResumoCarteiraHoras();
-  renderCertificadosEmitidos();
+function certificadoEmitidoDoCurso(cursoId) {
+  return certificadosDoCurso(cursoId).find((item) => String(item.status || "").toUpperCase() === "EMITIDO") || null;
+}
 
-  if (!state.cursos.length) {
-    list.innerHTML = `<div class="empty-state">Nenhum curso matriculado.</div>`;
-    renderHistoricoCertificados();
-    return;
+function certificadoPendenteDoCurso(cursoId) {
+  return certificadosDoCurso(cursoId).find((item) => ["PENDENTE","AGUARDANDO_HORAS","AUTORIZADO_AGUARDANDO_DATA"].includes(String(item.status || "").toUpperCase())) || null;
+}
+
+function certificadoBloqueadoDoCurso(cursoId) {
+  return certificadosDoCurso(cursoId).find((item) => String(item.status || "").toUpperCase() === "BLOQUEADO") || null;
+}
+
+function cardSolicitacaoCertificado(curso) {
+  const progressoOk = clamp(curso.progresso) >= 100;
+  const resultado = melhorResultadoCurso(curso.id);
+  const notaMinima = Number(curso.nota_minima || 70);
+  const provaOk = Boolean(resultado?.aprovado && Number(resultado.nota) >= notaMinima);
+  const carteira = carteiraHorasCurso(curso.id);
+  const saldo = Number(carteira?.saldo_disponivel || 0);
+  const ativo = certificadoPendenteDoCurso(curso.id);
+  const bloqueado = certificadoBloqueadoDoCurso(curso.id);
+  const avaliacao = avaliacaoDoCurso(curso.id);
+  const pronto = provaOk && Boolean(avaliacao);
+  const options = opcoesHorasDisponiveis(saldo);
+
+  let actions = `<button class="secondary-button" type="button" disabled>Aguardando aprovação</button>`;
+  let help = "A solicitação fica disponível depois da aprovação na prova.";
+  let statusVisual = "BLOQUEADO";
+
+  if (ativo) {
+    const status = String(ativo.status || "").toUpperCase();
+    const previsao = ativo.previsao_liberacao || ativo.data_final_prevista || ativo.periodo_fim || ativo.liberar_em;
+    statusVisual = status;
+    help = previsao ? `Previsão de liberação: ${dataBR(previsao)}.` : "Aguardando a previsão de liberação.";
+    if (status === "AUTORIZADO_AGUARDANDO_DATA") help += " Emissão autorizada pela gestão.";
+    else if (!["PAGO","ISENTO"].includes(String(ativo.pagamento_status || "").toUpperCase())) help += " Pagamento pendente.";
+    else help += " Aguardando autorização da gestão.";
+    actions = `<button class="secondary-button" type="button" disabled>Aguardando liberação</button>`;
+  } else if (bloqueado) {
+    statusVisual = "BLOQUEADO";
+    help = "A solicitação está temporariamente indisponível.";
+    actions = `<button class="secondary-button" type="button" disabled>Solicitação bloqueada</button>`;
+  } else if (provaOk && !avaliacao) {
+    statusVisual = "AVALIAÇÃO PENDENTE";
+    help = "Você foi aprovado. Avalie o curso para liberar a solicitação do certificado.";
+    actions = `<button class="course-review-button primary-button" type="button" onclick="avaliarCurso(${Number(curso.id)})">Avaliar curso e continuar</button>`;
+  } else if (pronto) {
+    statusVisual = "DISPONÍVEL";
+    help = "Escolha até 200 horas. A previsão será calculada automaticamente, aproveitando o saldo anterior sem criar lacunas nem sobrepor datas.";
+    const defaultHours = options.includes(50) ? 50 : options[0];
+    actions = `<div class="hours-request-control">
+      <label for="horasSolicitadas-${Number(curso.id)}">Horas deste certificado</label>
+      <select id="horasSolicitadas-${Number(curso.id)}">${options.map((h) => `<option value="${h}"${h === defaultHours ? " selected" : ""}>${h} horas</option>`).join("")}</select>
+      <label for="cupomSolicitacao-${Number(curso.id)}">Cupom de desconto <small>(opcional)</small></label>
+      <input id="cupomSolicitacao-${Number(curso.id)}" class="certificate-coupon-before-request" type="text" maxlength="30" autocomplete="off" placeholder="Digite o cupom antes de solicitar">
+      <small class="coupon-request-help">Após solicitar, o portal abrirá o WhatsApp com a mensagem de pagamento preenchida. Cupom integral pode zerar o pagamento.</small>
+      <button class="primary-button request-certificate-main-action" type="button" onclick="solicitarCertificado(${Number(curso.id)})">Solicitar certificado</button>
+    </div>`;
   }
 
-  list.innerHTML = state.cursos.map((curso) => {
-    const progressoOk = clamp(curso.progresso) >= 100;
-    const resultado = melhorResultadoCurso(curso.id);
-    const notaMinima = Number(curso.nota_minima || 70);
-    const provaOk = Boolean(resultado?.aprovado && Number(resultado.nota) >= notaMinima);
-    const carteira = carteiraHorasCurso(curso.id);
-    const saldo = Number(carteira?.saldo_disponivel || 0);
-    const certificadosCurso = certificadosDoCurso(curso.id);
-    const emitido = certificadosCurso.find((item) => String(item.status).toUpperCase() === "EMITIDO");
-    if (emitido) return "";
-    const ativo = certificadosCurso.find((item) => ["PENDENTE","AGUARDANDO_HORAS","AUTORIZADO_AGUARDANDO_DATA"].includes(String(item.status).toUpperCase()));
-    const bloqueado = certificadosCurso.find((item) => String(item.status).toUpperCase() === "BLOQUEADO");
-    const avaliacao = avaliacaoDoCurso(curso.id);
-    const pronto = progressoOk && provaOk && Boolean(avaliacao);
-    const options = opcoesHorasDisponiveis(saldo);
+  const avaliacaoHtml = provaOk && avaliacao
+    ? `<div class="course-review-done"><span class="review-stars-static">${"★".repeat(Number(avaliacao.nota || 0))}${"☆".repeat(5 - Number(avaliacao.nota || 0))}</span><strong>Curso avaliado</strong></div>`
+    : "";
 
-    let actions = `<button class="secondary-button" type="button" disabled>Conclua os requisitos</button>`;
-    let help = "Conclua o conteúdo e a prova para solicitar o certificado.";
-    let statusVisual = "BLOQUEADO";
+  return `<article class="certificate-card hours-wallet-card" data-curso-certificado="${Number(curso.id)}">
+    <div class="certificate-card-top">
+      <div><span class="eyebrow">${escapeHTML(curso.categoria || "Certificação")}</span><h3>${escapeHTML(curso.titulo || "Curso")}</h3><p>${resultado ? `Melhor nota: ${Number(resultado.nota || 0)}%` : "Prova pendente"}</p></div>
+      ${statusPill(statusVisual)}
+    </div>
+    <div class="certificate-requirements">
+      <div class="requirement ${progressoOk ? "ok" : ""}"><b>${progressoOk ? "✓" : "1"}</b><span>Conteúdo 100% concluído</span></div>
+      <div class="requirement ${provaOk ? "ok" : ""}"><b>${provaOk ? "✓" : "2"}</b><span>Prova aprovada (mínimo ${notaMinima}%)</span></div>
+      <div class="requirement ${avaliacao ? "ok" : ""}"><b>${avaliacao ? "✓" : "3"}</b><span>Avaliação do curso</span></div>
+    </div>
+    <div class="certificate-card-footer"><span class="certificate-code">${escapeHTML(help)}</span><div class="certificate-actions">${actions}</div></div>
+    ${avaliacaoHtml}
+  </article>`;
+}
 
-    if (ativo) {
-      const status = String(ativo.status || "").toUpperCase();
-      const previsao = ativo.previsao_liberacao || ativo.data_final_prevista || ativo.periodo_fim || ativo.liberar_em;
-      statusVisual = status;
-      help = previsao ? `Previsão de liberação: ${dataBR(previsao)}.` : "Aguardando a previsão de liberação.";
-      if (status === "AUTORIZADO_AGUARDANDO_DATA") help += " Emissão autorizada pela gestão.";
-      else if (!["PAGO","ISENTO"].includes(String(ativo.pagamento_status || "").toUpperCase())) help += " Pagamento pendente.";
-      else help += " Aguardando autorização da gestão.";
-      actions = `<button class="secondary-button" type="button" disabled>Aguardando liberação</button>`;
-    } else if (bloqueado) {
-      statusVisual = "BLOQUEADO";
-      help = "A solicitação está temporariamente indisponível.";
-      actions = `<button class="secondary-button" type="button" disabled>Solicitação bloqueada</button>`;
-    } else if (progressoOk && provaOk && !avaliacao) {
-      statusVisual = "AVALIAÇÃO PENDENTE";
-      help = "Selecione as estrelas da avaliação para concluir o curso.";
-      actions = `<button class="course-review-button" type="button" onclick="avaliarCurso(${Number(curso.id)})">Avaliar este curso</button>`;
-    } else if (pronto) {
-      statusVisual = "DISPONÍVEL";
-      help = "Escolha até 200 horas. A previsão será calculada automaticamente, aproveitando o saldo de dias anteriores sem criar lacunas.";
-      const defaultHours = options.includes(50) ? 50 : options[0];
-      actions = `<div class="hours-request-control">
-        <label for="horasSolicitadas-${Number(curso.id)}">Horas deste certificado</label>
-        <select id="horasSolicitadas-${Number(curso.id)}">${options.map((h) => `<option value="${h}"${h === defaultHours ? " selected" : ""}>${h} horas</option>`).join("")}</select>
-        <label for="cupomSolicitacao-${Number(curso.id)}">Cupom de desconto <small>(opcional)</small></label>
-        <input id="cupomSolicitacao-${Number(curso.id)}" class="certificate-coupon-before-request" type="text" maxlength="30" autocomplete="off" placeholder="Digite o cupom antes de solicitar">
-        <small class="coupon-request-help">Cupom integral zera o pagamento. A emissão ainda aguardará a data prevista e a autorização da gestão.</small>
-        <button class="primary-button" type="button" onclick="solicitarCertificado(${Number(curso.id)})">Solicitar certificado</button>
-      </div>`;
-    }
+function atualizarMenuSolicitarCertificado() {
+  const menu = $("menuSolicitarCertificado");
+  const badge = $("badgeSolicitarCertificado");
+  if (!menu) return;
+  const pendentes = state.cursos.filter((curso) => cursoConcluido(curso) && !certificadoEmitidoDoCurso(curso.id));
+  const count = pendentes.length;
+  menu.hidden = count === 0;
+  if (badge) {
+    badge.textContent = String(count);
+    badge.hidden = count === 0;
+  }
+  setText("contadorSolicitacoesCertificado", `${count} ${count === 1 ? "curso" : "cursos"}`);
+}
 
-    const avaliacaoHtml = provaOk && avaliacao
-      ? `<div class="course-review-done"><span class="review-stars-static">${"★".repeat(Number(avaliacao.nota || 0))}${"☆".repeat(5 - Number(avaliacao.nota || 0))}</span><strong>Sua avaliação</strong></div>`
-      : "";
+function renderSolicitacoesCertificado() {
+  const list = $("listaSolicitacaoCertificados");
+  if (!list) return;
+  const cursos = state.cursos.filter((curso) => cursoConcluido(curso) && !certificadoEmitidoDoCurso(curso.id));
+  setText("contadorSolicitacoesCertificado", `${cursos.length} ${cursos.length === 1 ? "curso" : "cursos"}`);
+  if (!cursos.length) {
+    list.innerHTML = `<div class="empty-state certificate-request-empty"><strong>Nenhum certificado disponível para solicitar agora.</strong><span>Quando você for aprovado em uma prova, esta aba aparecerá automaticamente com a próxima etapa.</span><button type="button" class="secondary-button" onclick="abrirAba('cursos')">Voltar aos meus cursos</button></div>`;
+    return;
+  }
+  list.innerHTML = cursos.map(cardSolicitacaoCertificado).join("");
+}
 
-    return `<article class="certificate-card hours-wallet-card">
-      <div class="certificate-card-top">
-        <div><span class="eyebrow">${escapeHTML(curso.categoria || "Certificação")}</span><h3>${escapeHTML(curso.titulo || "Curso")}</h3><p>${resultado ? `Melhor nota: ${Number(resultado.nota || 0)}%` : "Prova pendente"}</p></div>
-        ${statusPill(statusVisual)}
-      </div>
-      <div class="certificate-requirements">
-        <div class="requirement ${progressoOk ? "ok" : ""}"><b>${progressoOk ? "✓" : "1"}</b><span>Conteúdo 100% concluído</span></div>
-        <div class="requirement ${provaOk ? "ok" : ""}"><b>${provaOk ? "✓" : "2"}</b><span>Prova com nota mínima de ${notaMinima}%</span></div>
-      </div>
-      <div class="certificate-card-footer"><span class="certificate-code">${escapeHTML(help)}</span><div class="certificate-actions">${actions}</div></div>
-      ${avaliacaoHtml}
-    </article>`;
-  }).join("");
+function renderCertificados() {
+  const list = $("listaCertificados");
+  renderResumoCarteiraHoras();
+  renderCertificadosEmitidos();
+  atualizarMenuSolicitarCertificado();
+  renderSolicitacoesCertificado();
+
+  if (list) {
+    const cursosComSolicitacao = state.cursos.filter((curso) => certificadoPendenteDoCurso(curso.id) || certificadoBloqueadoDoCurso(curso.id));
+    list.innerHTML = cursosComSolicitacao.length
+      ? cursosComSolicitacao.map(cardSolicitacaoCertificado).join("")
+      : `<div class="empty-state">Nenhuma solicitação em andamento. Depois de ser aprovado, use a aba <b>Solicitar certificado</b>.</div>`;
+  }
   renderHistoricoCertificados();
 }
 
@@ -1508,7 +1554,7 @@ async function registrarAvaliacaoImediata(modal, cursoId, nota) {
         mostrarResultadoProva(resultadoProva);
         window.setTimeout(() => {
           fecharModal("prova");
-          abrirAba("certificados");
+          abrirAba("solicitar-certificado");
           window.setTimeout(() => {
             document.querySelector(`#horasSolicitadas-${Number(cursoId)}`)?.closest('.certificate-card')?.scrollIntoView({ behavior: 'smooth', block: 'center' });
           }, 80);

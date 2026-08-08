@@ -25,6 +25,7 @@
   <link rel="stylesheet" href="/assets/css/27-v34-2-ajustes-finais.css?v=34.2">
   <link rel="stylesheet" href="/assets/css/29-v34-4-cabecalho-avaliacao.css?v=34.4">
   <link rel="stylesheet" href="/assets/css/30-v36-ajustes.css?v=36">
+  <link rel="stylesheet" href="/assets/css/31-v37-final.css?v=37">
 </head>
 
 <body>
@@ -94,6 +95,18 @@
                 <label for="email">E-mail</label>
                 <input id="email" name="email" type="email" autocomplete="email" placeholder="seunome@gmail.com" required>
                 <small class="feedback" id="fb-email" aria-live="polite"></small>
+            </div>
+
+            <div class="form-group email-confirm-grid">
+                <label for="confirma-email">Confirme seu e-mail</label>
+                <input id="confirma-email" name="email_confirm" type="email" autocomplete="email" placeholder="Digite o mesmo e-mail novamente" required>
+                <small class="feedback" id="fb-confirma-email" aria-live="polite"></small>
+            </div>
+
+            <div id="cadastroRecoveryBox" class="registration-recovery-box" hidden>
+              <strong>Já existe um cadastro com este CPF?</strong>
+              <span>Se o e-mail foi digitado errado ou a confirmação não chegou, você pode corrigir o acesso sem criar outra conta.</span>
+              <a href="/login/?corrigir-email=1">Corrigir e-mail ou reenviar confirmação</a>
             </div>
 
             <div class="form-group has-icon">
@@ -174,11 +187,11 @@
     <!-- Scripts -->
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <script src="/assets/js/supabase-init.js?v=17"></script>
-    <script src="/assets/js/cadastro.js?v=17"></script>
+    <script src="/assets/js/cadastro.js?v=37"></script>
   <script src="/assets/js/layout-public.js?v=17" defer></script>
   <script src="/assets/js/06-responsive.js?v=17"></script>
   <script src="/assets/js/v34-public.js?v=34.1" defer></script>
   <script src="/assets/js/public-header-v34-2.js?v=34.2" defer></script>
-  <script src="/assets/js/public-header-v34-4.js?v=34.4" defer></script>
+  <script src="/assets/js/public-header-v34-4.js?v=37" defer></script>
 </body>
 </html>

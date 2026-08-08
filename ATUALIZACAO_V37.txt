@@ -1,0 +1,130 @@
+ALTITUDE — DEV SITE V37
+Data: 08/08/2026
+Base: V36
+
+CHECKLIST CONSOLIDADO — 28 ATUALIZACOES
+
+01. Cadastro de novas areas
+    - Nova area no Criador de Cursos funciona.
+    - Nome normalizado em formato natural (ex.: Tecnologia da Informacao), sem forcar CAIXA ALTA.
+    - Persiste em areas_cursos_v36 quando a migration V36 esta ativa.
+
+02. Gestao de chamados
+    - Correcao de quebra de palavras/letras soltas.
+    - Historico e acoes usam layout legivel.
+
+03. Tablet
+    - Breakpoint unificado em 1120px no CSS e no JavaScript.
+    - Menu e tabelas operacionais passam para comportamento responsivo.
+
+04. Acoes de tabelas
+    - Cursos, certificados processados, certificados, chamados e alunos viram cartoes no tablet/celular.
+    - Botoes deixam de ficar espremidos/cortados.
+
+05. Novos cursos no Portal do Aluno
+    - Aba exclusiva para matricula em novos cursos.
+
+06. Recomendacoes e filtros
+    - Cursos relacionados as areas ja estudadas aparecem primeiro.
+    - Busca e filtro de area no catalogo do aluno.
+
+07. Concluidos x andamento
+    - Curso aprovado na prova final nao permanece em Cursos em andamento.
+    - Cursos concluidos possuem lista propria.
+
+08. Maximo de 200h por certificado
+    - Interface limita escolha a 200h.
+    - V36 inclui protecao no banco para novas solicitacoes/alteracoes.
+
+09. Calculo automatico de horas e datas
+    - V36 recalcula previsoes sem lacunas e sem sobreposicao.
+    - Aproveita capacidade restante de dias anteriores.
+    - Gestor recebe notificacoes explicando o calculo e saldo aproveitado.
+
+10. Prova aprovada
+    - Sai de Em andamento imediatamente.
+    - Reprovado continua em andamento e pode tentar novamente.
+
+11. Fluxo certificado
+    - Conteudo -> prova -> avaliacao -> solicitacao de horas/certificado -> WhatsApp de pagamento.
+
+12. Cadastro -> Login
+    - Cadastro redireciona ao login.
+    - Mostra situacao de confirmacao de e-mail e mensagens de acesso.
+
+13. Excluir aluno
+    - Botao na Gestao de Alunos para gestores nivel 4.
+    - Exige digitacao EXCLUIR + motivo.
+    - Edge Function gerenciar-gestor registra auditoria V37 e exclui perfil/Auth.
+
+14. Portal do Gestor mobile
+    - Conteudo usa a largura util da tela.
+    - Neutraliza regras antigas que espremiam a pagina.
+
+15. Publicar curso no celular/tablet
+    - Publicar fica como acao prioritaria e tocavel.
+    - Criador/importador mantem botao de publicar com largura total no mobile.
+
+16. Regra de Cursos em andamento
+    - Somente cursos sem aprovacao final.
+
+17. Cursos concluidos
+    - Separados de andamento e sem duplicidade entre as duas listas.
+
+18. Contadores do dashboard do aluno
+    - Andamento, provas aprovadas e certificados usam o estado real do curso/prova.
+
+19. URLs limpas
+    - /cursos/ substitui /profissional/.
+    - Sem pasta Projeto e sem prefixos numericos nas paginas publicas.
+
+20. Redefinicao de senha
+    - Link abre /login/?recovery=1.
+    - Tela possui Nova senha + Confirmar nova senha.
+    - Mensagens para link expirado/invalido e sucesso.
+    - Edge Function recuperar-senha suporta e-mail Altitude em portugues quando RESEND_API_KEY e EMAIL_FROM estao configurados.
+
+21. Confirmacao de e-mail no cadastro
+    - Campos E-mail + Confirmar e-mail.
+    - Confirmacao final do endereco antes do signUp.
+
+22. Cadastrei meu e-mail errado
+    - Tela propria no login para contas ainda nao confirmadas.
+    - Validacao com CPF + nascimento + senha cadastrada + novo e-mail duplicado.
+    - Edge Function corrigir-email-cadastro.
+
+23. CPF ja cadastrado / confirmacao pendente
+    - Cadastro oferece link para corrigir e-mail ou reenviar confirmacao em vez de apenas bloquear.
+
+24. Mensagens detalhadas de login
+    - Senha incorreta, e-mail nao cadastrado, e-mail nao confirmado, conta inativa, link expirado e redefinicao concluida.
+
+25. Menu do Gestor no celular
+    - Sidebar abre por cima, nitida e clicavel.
+    - Overlay sem blur.
+    - Tocar fora ou em uma opcao fecha o menu.
+
+26. Acessar/Cadastrar no dropdown mobile
+    - No celular o topo fica Logo + menu hamburger.
+    - Acessar e Cadastrar ficam centralizados no final do dropdown.
+
+27. Visao Geral do Gestor mobile
+    - Proximas acoes em cima.
+    - Ultimos cursos/Producao recente embaixo.
+    - Ambos com largura total e sem texto cortado.
+
+28. Aba Solicitar certificado apos aprovacao
+    - Nova aba "Solicitar certificado" aparece quando ha curso aprovado sem certificado emitido.
+    - Se a avaliacao estiver pendente, ela aparece como proxima etapa.
+    - Depois da avaliacao, mostra escolha de 5h a 200h e botao Solicitar certificado.
+    - Ao concluir a prova e avaliar, o portal leva diretamente para essa aba.
+    - Meus certificados fica separado para emitidos, historico e solicitacoes em andamento.
+
+DEPENDENCIAS DE BANCO / SUPABASE
+- Execute SQL_V36_EXECUTAR_SUPABASE.sql caso ainda nao tenha executado.
+- Execute SQL_V37_EXECUTAR_SUPABASE.sql.
+- Atualize as Edge Functions descritas em DEPLOY_V37_SUPABASE.txt.
+
+ARQUIVOS DE VERIFICACAO
+- supabase/VERIFICAR_V36.sql
+- supabase/VERIFICAR_V37.sql

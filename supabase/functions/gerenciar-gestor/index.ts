@@ -177,6 +177,65 @@ Deno.serve(async (req) => {
       return json({ ok: true, aluno: alunoAtualizado });
     }
 
+    if (action === 'excluir_aluno') {
+      if (Number(caller.nivel_acesso) < 4) {
+        return json({ ok: false, error: 'Somente a gestão de nível 4 pode excluir alunos.' }, 403);
+      }
+
+      const alunoId = String(body.aluno_id || '').trim();
+      const confirmacao = String(body.confirmacao || '').trim().toUpperCase();
+      const motivo = String(body.motivo || 'Exclusão solicitada pela gestão').trim();
+      if (!alunoId) return json({ ok: false, error: 'Aluno não informado.' }, 400);
+      if (confirmacao !== 'EXCLUIR') return json({ ok: false, error: 'Confirmação de exclusão inválida.' }, 400);
+
+      const { data: aluno, error: alunoError } = await admin
+        .from('alunos')
+        .select('*')
+        .eq('user_id', alunoId)
+        .maybeSingle();
+      if (alunoError) throw alunoError;
+      if (!aluno?.user_id) return json({ ok: false, error: 'Aluno não encontrado.' }, 404);
+
+      const relatedTables = [
+        'matriculas','pagamentos','certificados','chamados','resultados_provas','respostas_prova',
+        'progresso_modulos','avaliacoes_cursos','carteiras_horas_curso','movimentacoes_horas',
+        'packs_alunos_v34','cupons_usos_v34','carteiras_horas_aluno_v34','movimentacoes_horas_aluno_v34',
+        'promocoes_alunos_v34'
+      ];
+      const counts: Record<string, number> = {};
+      for (const table of relatedTables) {
+        try {
+          const { count } = await admin.from(table).select('*', { count: 'exact', head: true }).eq('aluno_id', alunoId);
+          counts[table] = count || 0;
+        } catch (_) { counts[table] = 0; }
+      }
+
+      try {
+        await admin.from('alunos_exclusoes_v37').insert({
+          aluno_id_original: alunoId,
+          nome: aluno.nome || null,
+          email: aluno.email || null,
+          cpf: aluno.cpf || null,
+          ra: aluno.ra || null,
+          motivo,
+          dados_aluno: aluno,
+          vinculos_resumo: counts,
+          excluido_por: callerId
+        });
+      } catch (archiveError) {
+        console.warn('Falha ao registrar auditoria de exclusão:', archiveError);
+      }
+
+      // A exclusão do perfil aciona os ON DELETE CASCADE existentes nas tabelas acadêmicas.
+      const { error: profileDeleteError } = await admin.from('alunos').delete().eq('user_id', alunoId);
+      if (profileDeleteError) throw profileDeleteError;
+
+      const { error: authDeleteError } = await admin.auth.admin.deleteUser(alunoId);
+      if (authDeleteError) throw authDeleteError;
+
+      return json({ ok: true, aluno_id: alunoId, vinculos_removidos: counts });
+    }
+
     if (action === 'criar') {
       if (Number(caller.nivel_acesso) < 4) return json({ ok: false, error: 'Somente gestores de nível 4 podem criar acessos.' }, 403);
       const email = String(body.email || '').trim().toLowerCase();

@@ -224,6 +224,7 @@ function renderAlunos(){
   if(!tbody) return;
 
   const podeRedefinirSenha = Number(window.GESTOR_ATUAL?.nivel_acesso || 0) >= 2;
+  const podeExcluirAluno = Number(window.GESTOR_ATUAL?.nivel_acesso || 0) >= 4;
   const data = getFilteredAln();
   const totalPages = Math.max(1, Math.ceil(data.length / pageAln.size));
   if(pageAln.idx>totalPages) pageAln.idx = totalPages;
@@ -242,6 +243,7 @@ function renderAlunos(){
         <button class="btn-mini primary-action-mini" data-act="edit" data-id="${a.id}">Editar dados</button>
         ${podeRedefinirSenha ? `<button class="btn-mini" data-act="password" data-id="${a.id}">Redefinir senha</button>` : ''}
         <button class="btn-mini" data-act="toggle" data-id="${a.id}">${a.status==='ATIVO'?'Inativar':'Ativar'}</button>
+        ${podeExcluirAluno ? `<button class="btn-mini student-delete-action" data-act="delete" data-id="${a.id}">Excluir aluno</button>` : ''}
       </td>
     </tr>`).join('');
   $('#pgInfo') && ($('#pgInfo').textContent = `${pageAln.idx} / ${totalPages}`);
@@ -440,6 +442,38 @@ async function redefinirSenhaAluno(event) {
   }
 }
 
+async function excluirAlunoGestao(aluno) {
+  if (!aluno?.user_id) throw new Error('Aluno não identificado.');
+  if (Number(window.GESTOR_ATUAL?.nivel_acesso || 0) < 4) throw new Error('Somente a gestão de nível 4 pode excluir alunos.');
+
+  const aviso = `Esta ação exclui o acesso e os vínculos acadêmicos de ${aluno.nome || 'este aluno'}. Um registro de auditoria será mantido. Digite EXCLUIR para confirmar.`;
+  const confirmacao = window.AltitudeDialog
+    ? await window.AltitudeDialog.prompt({ title:'Excluir aluno', label:aviso, placeholder:'EXCLUIR', required:true, confirmText:'Excluir definitivamente' })
+    : window.prompt(aviso, '');
+  if (String(confirmacao || '').trim().toUpperCase() !== 'EXCLUIR') return false;
+
+  const motivo = window.AltitudeDialog
+    ? await window.AltitudeDialog.prompt({ title:'Motivo da exclusão', label:'Informe um motivo para o registro de auditoria.', placeholder:'Ex.: cadastro duplicado', required:true, confirmText:'Continuar' })
+    : window.prompt('Informe o motivo da exclusão:', 'Cadastro removido pela gestão');
+  if (!String(motivo || '').trim()) return false;
+
+  const { data: sessionData, error: sessionError } = await sb.auth.getSession();
+  if (sessionError || !sessionData?.session?.access_token) throw new Error('Sua sessão de gestão expirou. Entre novamente.');
+  const functionUrl = `${String(sb.supabaseUrl || 'https://qwidlndoyhzvsrggwsba.supabase.co').replace(/\/$/,'')}/functions/v1/gerenciar-gestor`;
+  const response = await fetch(functionUrl, {
+    method:'POST',
+    headers:{
+      'Content-Type':'application/json',
+      'Authorization':`Bearer ${sessionData.session.access_token}`,
+      'apikey':sb.supabaseKey
+    },
+    body:JSON.stringify({ acao:'excluir_aluno', aluno_id:aluno.user_id, confirmacao:'EXCLUIR', motivo:String(motivo).trim() })
+  });
+  const payload = await response.json().catch(() => ({}));
+  if (!response.ok || !payload?.ok) throw new Error(payload?.error || `Falha ao excluir aluno (${response.status}).`);
+  return true;
+}
+
 function carregarAlunos(){
   if($('#alnBusca')){
     $('#alnBusca').addEventListener('input', ()=>{ pageAln.idx=1; renderAlunos(); });
@@ -487,6 +521,23 @@ function carregarAlunos(){
         abrirModalSenhaAluno(alunos[idx]);
       }
       
+      if(act==='delete'){
+        try {
+          mostrarCarregamento('Excluindo aluno...');
+          const excluido = await excluirAlunoGestao(alunos[idx]);
+          if (excluido) {
+            alunos.splice(idx, 1);
+            renderAlunos();
+            alert('Aluno excluído com sucesso.');
+          }
+        } catch (error) {
+          alert(`Não foi possível excluir o aluno. ${error.message}`);
+        } finally {
+          esconderCarregamento();
+        }
+        return;
+      }
+
       if(act==='toggle'){ 
         try {
           mostrarCarregamento('Alterando status...');

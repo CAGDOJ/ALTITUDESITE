@@ -20,8 +20,8 @@
 <!-- Supabase UMD + seus scripts (todos com defer) -->
 <script defer="" src="https://unpkg.com/@supabase/supabase-js@2"></script>
 <script defer="" src="/assets/js/supabase-init.js?v=17"></script>
-<script defer="" src="/assets/js/login-ui.js?v=33"></script>
-<script defer="" src="/assets/js/login.js?v=33"></script>
+<script defer="" src="/assets/js/login-ui.js?v=37"></script>
+<script defer="" src="/assets/js/login.js?v=37"></script>
 <script src="/assets/js/headerAuth.js?v=17" type="module"></script><!-- lik para identificação de login de user-->
 <!--CORPO DO SITE -->
 <!--CORPO DO SITE -->
@@ -34,6 +34,7 @@
   <link rel="stylesheet" href="/assets/css/27-v34-2-ajustes-finais.css?v=34.2">
   <link rel="stylesheet" href="/assets/css/29-v34-4-cabecalho-avaliacao.css?v=34.4">
   <link rel="stylesheet" href="/assets/css/30-v36-ajustes.css?v=36">
+  <link rel="stylesheet" href="/assets/css/31-v37-final.css?v=37">
 </head>
 <body>
 <!-- Cabeçalho para dispositivos móveis -->
@@ -102,10 +103,42 @@
   <small class="msg" id="recoveryMessage" aria-live="polite"></small>
 </section>
 
-<div class="login-options">
+<div class="login-options account-recovery-links">
 <a class="forgot" href="#" id="linkForgot">Esqueci minha senha</a>
-
+<a class="forgot" href="#" id="linkWrongEmail">Cadastrei meu e-mail errado</a>
 </div>
+
+<section class="wrong-email-pane" id="wrongEmailPane" hidden>
+  <h3>Corrigir e-mail de cadastro</h3>
+  <p>Disponível somente para contas que ainda não tiveram o e-mail confirmado. Para sua segurança, confirme seus dados e a senha cadastrada.</p>
+  <div class="wrong-email-grid">
+    <div class="form-group">
+      <label for="wrongEmailCpf">CPF</label>
+      <input id="wrongEmailCpf" inputmode="numeric" autocomplete="off" placeholder="000.000.000-00">
+    </div>
+    <div class="form-group">
+      <label for="wrongEmailBirth">Data de nascimento</label>
+      <input id="wrongEmailBirth" type="date" autocomplete="bday">
+    </div>
+    <div class="form-group span-2">
+      <label for="wrongEmailPassword">Senha cadastrada</label>
+      <input id="wrongEmailPassword" type="password" autocomplete="current-password" placeholder="Digite a senha que você cadastrou">
+    </div>
+    <div class="form-group">
+      <label for="wrongEmailNew">Novo e-mail</label>
+      <input id="wrongEmailNew" type="email" autocomplete="email" placeholder="novoemail@gmail.com">
+    </div>
+    <div class="form-group">
+      <label for="wrongEmailNew2">Confirmar novo e-mail</label>
+      <input id="wrongEmailNew2" type="email" autocomplete="email" placeholder="Repita o novo e-mail">
+    </div>
+  </div>
+  <div class="recovery-actions">
+    <button class="btn-login" id="btnFixWrongEmail" type="button">Corrigir e enviar confirmação</button>
+    <button class="btn-login secondary-button" id="btnResendConfirmation" type="button">Reenviar confirmação atual</button>
+  </div>
+  <small class="msg" id="wrongEmailMessage" aria-live="polite"></small>
+</section>
 
 </section>
 <!-- Rodapé -->
@@ -174,6 +207,6 @@
   <script src="/assets/js/06-responsive.js?v=17"></script>
   <script src="/assets/js/v34-public.js?v=34.1" defer></script>
   <script src="/assets/js/public-header-v34-2.js?v=34.2" defer></script>
-  <script src="/assets/js/public-header-v34-4.js?v=34.4" defer></script>
+  <script src="/assets/js/public-header-v34-4.js?v=37" defer></script>
 </body>
 </html>

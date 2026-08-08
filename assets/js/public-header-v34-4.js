@@ -29,6 +29,17 @@
   const mobile = header.querySelector('[data-public-mobile-menu]');
   if (!toggle || !mobile) return;
 
+  // V37: Acessar e Cadastrar ficam dentro do dropdown no celular.
+  const mobileNav = mobile.querySelector('nav');
+  if (mobileNav && !mobileNav.querySelector('.alt-public-header__mobile-actions')) {
+    const actions = document.createElement('div');
+    actions.className = 'alt-public-header__mobile-actions';
+    actions.innerHTML = `
+      <a class="mobile-login" href="/login/">Acessar</a>
+      <a class="mobile-signup" href="/cadastro/">Cadastrar</a>`;
+    mobileNav.appendChild(actions);
+  }
+
   const setOpen = (open) => {
     const next = Boolean(open);
     toggle.setAttribute('aria-expanded', String(next));
@@ -37,7 +48,11 @@
     header.classList.toggle('menu-open', next);
   };
 
-  toggle.addEventListener('click', () => setOpen(toggle.getAttribute('aria-expanded') !== 'true'));
+  toggle.addEventListener('click', (event) => {
+    event.preventDefault();
+    event.stopPropagation();
+    setOpen(toggle.getAttribute('aria-expanded') !== 'true');
+  });
   mobile.addEventListener('click', (event) => {
     if (event.target.closest('a')) setOpen(false);
   });

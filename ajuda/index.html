@@ -4,10 +4,9 @@
     <meta charset="UTF-8">
   <meta http-equiv="Content-Security-Policy" content="upgrade-insecure-requests; block-all-mixed-content">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Início - Altitude</title>
+    <title>Ajuda - Altitude</title>
   <link rel="icon" type="image/png" sizes="512x512" href="/assets/img/favicon-cloud.png?v=14">
 
-    
     <!-- faveicon-->
     <link rel="apple-touch-icon" sizes="180x180" href="/assets/img/apple-touch-icon.png?v=14">
     <link rel="icon" type="image/png" sizes="32x32" href="/assets/img/favicon-32x32.png?v=14">
@@ -16,15 +15,18 @@
 
     <!--Links para outros arquivos-->
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
-    <link rel="stylesheet" href="/assets/css/base-public.css?v=27">
-  <link rel="stylesheet" href="/assets/css/1-index.css?v=27">
-  <link rel="stylesheet" href="/assets/css/17-public-v25.css?v=27">
+    <link rel="stylesheet" href="/assets/css/7-ajuda.css?v=17"> <!-- Link para o CSS atualizado -->
+
+
+<!--CORPO DO SITE -->    
+<!--CORPO DO SITE -->
+<!--CORPO DO SITE -->
+  <link rel="stylesheet" href="/assets/css/base-public.css?v=17">
 
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2" defer></script>
-  <script src="/assets/js/supabase-init.js?v=27" defer></script>
-  <script src="/assets/js/headerAuth.js?v=27" defer></script>
-  <link rel="stylesheet" href="/assets/css/06-responsive.css?v=27">
-  <link rel="stylesheet" href="/assets/css/18-public-v27.css?v=27">
+  <script src="/assets/js/supabase-init.js?v=17" defer></script>
+  <script src="/assets/js/headerAuth.js?v=17" defer></script>
+  <link rel="stylesheet" href="/assets/css/06-responsive.css?v=17">
   <link rel="stylesheet" href="/assets/css/22-public-header-v31.css?v=31">
   <link rel="stylesheet" href="/assets/css/25-v34-final.css?v=34">
   <link rel="stylesheet" href="/assets/css/26-v34-emissao.css?v=34.1">
@@ -34,7 +36,8 @@
 </head>
 <body>
 
-    <!-- Cabeçalho para moibile-->
+
+    <!-- Cabeçalho para dispositivos móveis -->
 <header class="alt-public-header" data-alt-public-header>
   <div class="alt-public-header__inner">
     <a class="alt-public-header__brand" href="/" aria-label="Altitude — Início">
@@ -68,49 +71,29 @@
   </div>
 </header>
 
-
-    <main class="home-main">
-      <section class="home-hero">
-        <div class="home-hero-copy">
-          <span class="home-eyebrow">ALTITUDE CENTRO UNIVERSITÁRIO</span>
-          <h1>Aprenda no seu ritmo e transforme conhecimento em novas oportunidades.</h1>
-          <p>Encontre cursos profissionais, estude por módulos, faça a avaliação e acompanhe certificados autenticados diretamente no Portal do Aluno.</p>
-          <div class="home-actions">
-            <a class="home-primary" href="/cursos/">Ver cursos</a>
-            <a class="home-secondary" href="/cadastro/">Criar minha conta</a>
-          </div>
-        </div>
-        <aside class="home-path">
-          <strong>Como funciona</strong>
-          <ol>
-            <li><b>1</b><span>Escolha o curso e faça sua inscrição.</span></li>
-            <li><b>2</b><span>Leia os conteúdos, PDFs e materiais.</span></li>
-            <li><b>3</b><span>Conclua a prova e solicite seu certificado.</span></li>
-          </ol>
-        </aside>
+    <main class="help-page">
+      <section class="help-hero">
+        <span class="page-eyebrow">CENTRAL DE AJUDA</span>
+        <h1>Encontre rapidamente o que precisa.</h1>
+        <p>Confira as orientações principais sobre acesso, estudo, provas, certificados e atendimento.</p>
       </section>
 
-      <section class="home-intro">
-        <div>
-          <span class="home-eyebrow">SOBRE A ALTITUDE</span>
-          <h2>Educação acessível, organizada e verificável</h2>
-          <p>O ALTITUDE CENTRO UNIVERSITÁRIO oferece cursos livres para qualificação, atualização profissional e desenvolvimento pessoal. A plataforma reúne estudo, avaliação, atendimento e certificados com QR Code em um único ambiente.</p>
-        </div>
-        <div class="home-feature-grid">
-          <article><strong>Conteúdo objetivo</strong><p>Módulos claros, com PDFs, imagens, vídeos e materiais complementares.</p></article>
-          <article><strong>Acompanhamento</strong><p>Progresso, provas, chamados e certificados ficam registrados no portal.</p></article>
-          <article><strong>Autenticidade</strong><p>Os certificados emitidos possuem código único e validação pela base oficial.</p></article>
-        </div>
+      <section class="help-grid">
+        <article><h2>Como acessar o portal?</h2><p>Use o e-mail e a senha cadastrados. No celular, abra o menu e toque em <b>Entrar</b>.</p><a href="/login/">Ir para o login</a></article>
+        <article><h2>Onde ficam meus cursos?</h2><p>Após a inscrição, o curso aparece em <b>Meus cursos</b>. Abra a sala de estudo e conclua os módulos em ordem.</p><a href="/cursos/">Ver cursos</a></article>
+        <article><h2>Quando faço a prova?</h2><p>A prova é liberada depois que o conteúdo obrigatório chega a 100%. A nota mínima aparece no próprio curso.</p></article>
+        <article><h2>Como recebo o certificado?</h2><p>Depois da aprovação, escolha a quantidade de horas disponível e envie a solicitação. O PDF será liberado somente após a validação do gestor.</p><a href="/certificados/">Validar certificado</a></article>
+        <article><h2>Pagamento</h2><p>As orientações e os pagamentos são tratados diretamente com a instituição pelo WhatsApp oficial.</p><a href="https://wa.me/5591983640933" target="_blank" rel="noopener">Falar no WhatsApp</a></article>
+        <article><h2>Problema no cadastro?</h2><p>Entre no Portal do Aluno e abra um chamado em <b>Atendimento</b>. Informe o assunto e descreva o problema.</p></article>
       </section>
 
-      <section class="home-contact">
-        <div><span class="home-eyebrow light">ATENDIMENTO E PAGAMENTOS</span><h2>Fale diretamente com a instituição</h2><p>O atendimento financeiro e as orientações de pagamento são realizados pelo WhatsApp oficial da Altitude.</p></div>
+      <section class="help-contact">
+        <div><span class="page-eyebrow light">ATENDIMENTO HUMANO</span><h2>Ainda precisa de ajuda?</h2><p>Fale com a equipe da Altitude pelo WhatsApp.</p></div>
         <a href="https://wa.me/5591983640933" target="_blank" rel="noopener"><i class="fab fa-whatsapp"></i> Abrir WhatsApp</a>
       </section>
     </main>
 
-
-    <!-- Rodapé -->
+   <!-- Rodapé -->
     <footer class="rodape">
   <div class="footer-container">
     <div class="footer-column logo-info">
@@ -140,8 +123,7 @@
         <li><a href="/contrato/">Termos de Contrato</a></li>
         <li><a href="/politicadeprivacidade/">Política de Privacidade</a></li>
         <li><a href="#">Registro MEC</a></li>
-        <li><a href="https://solucoes.receita.fazenda.gov.br/Servicos/cnpjreva/comprovante" target="_blank" rel="noopener">Comprovante de Inscrição no CNPJ</a></li>
-      </ul>
+      <li><a href="https://solucoes.receita.fazenda.gov.br/Servicos/cnpjreva/comprovante" target="_blank" rel="noopener">Comprovante de Inscrição no CNPJ</a></li></ul>
     </div>
   </div>
   <div class="footer-payments">
@@ -153,14 +135,10 @@
     <p>&copy; 2026 - ALTITUDE CENTRO UNIVERSITÁRIO</p>
   </div>
 </footer>
-    
-
-  <script src="/assets/js/layout-public.js?v=27" defer></script>
-  <script src="/assets/js/06-responsive.js?v=27"></script>
+  <script src="/assets/js/layout-public.js?v=17" defer></script>
+  <script src="/assets/js/06-responsive.js?v=17"></script>
   <script src="/assets/js/v34-public.js?v=34.1" defer></script>
   <script src="/assets/js/public-header-v34-2.js?v=34.2" defer></script>
   <script src="/assets/js/public-header-v34-4.js?v=34.4" defer></script>
 </body>
-   
 </html>
-

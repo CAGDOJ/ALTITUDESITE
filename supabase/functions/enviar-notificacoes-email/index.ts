@@ -58,7 +58,7 @@ function buildEmail(record: QueueRecord, siteUrl: string) {
         <p><strong>Assunto:</strong> ${escapeHtml(data.assunto || "")}</p>
         <p><strong>Mensagem:</strong> ${mensagem}</p>`;
       actionLabel = "Abrir Portal de Gestão";
-      actionUrl = `${siteUrl}/Projeto/1-html/14-login-gestor.html`;
+      actionUrl = `${siteUrl}/login-gestor/`;
       break;
     case "CHAMADO_ATUALIZADO_ALUNO":
       intro = "Seu chamado recebeu uma atualização da equipe Altitude.";
@@ -67,7 +67,7 @@ function buildEmail(record: QueueRecord, siteUrl: string) {
         <p><strong>Status:</strong> ${status}</p>
         ${mensagem ? `<p><strong>Resposta:</strong> ${mensagem}</p>` : ""}`;
       actionLabel = "Acompanhar chamado";
-      actionUrl = `${siteUrl}/Projeto/1-html/11-portaldoaluno.html#atendimento`;
+      actionUrl = `${siteUrl}/portaldoaluno/#atendimento`;
       break;
     case "CERTIFICADO_EM_CONTAGEM":
       intro = "Sua solicitação de certificado foi recebida e está em processamento.";
@@ -76,7 +76,7 @@ function buildEmail(record: QueueRecord, siteUrl: string) {
         <p><strong>Carga solicitada:</strong> ${horas}h</p>
         <p>Você receberá uma nova mensagem quando o documento estiver disponível.</p>`;
       actionLabel = "Acompanhar certificado";
-      actionUrl = `${siteUrl}/Projeto/1-html/11-portaldoaluno.html#certificados`;
+      actionUrl = `${siteUrl}/portaldoaluno/#certificados`;
       break;
     case "CERTIFICADO_EMITIDO":
       intro = "Seu certificado foi liberado pela ALTITUDE CENTRO UNIVERSITÁRIO.";
@@ -85,7 +85,7 @@ function buildEmail(record: QueueRecord, siteUrl: string) {
         <p><strong>Carga horária:</strong> ${horas}h</p>
         <p>O PDF e o QR Code de autenticação já estão disponíveis no Portal do Aluno.</p>`;
       actionLabel = "Baixar certificado";
-      actionUrl = `${siteUrl}/Projeto/1-html/11-portaldoaluno.html#certificados`;
+      actionUrl = `${siteUrl}/portaldoaluno/#certificados`;
       break;
     case "CERTIFICADO_BLOQUEADO":
       intro = "Há uma atualização na situação do seu certificado.";
@@ -94,7 +94,7 @@ function buildEmail(record: QueueRecord, siteUrl: string) {
         <p><strong>Status:</strong> Bloqueado</p>
         ${mensagem ? `<p><strong>Observação:</strong> ${mensagem}</p>` : ""}`;
       actionLabel = "Consultar situação";
-      actionUrl = `${siteUrl}/Projeto/1-html/11-portaldoaluno.html#certificados`;
+      actionUrl = `${siteUrl}/portaldoaluno/#certificados`;
       break;
     case "CERTIFICADO_CANCELADO":
       intro = "Sua solicitação de certificado foi cancelada.";
@@ -102,7 +102,7 @@ function buildEmail(record: QueueRecord, siteUrl: string) {
         <p><strong>Curso:</strong> ${curso}</p>
         ${mensagem ? `<p><strong>Motivo:</strong> ${mensagem}</p>` : ""}`;
       actionLabel = "Consultar certificados";
-      actionUrl = `${siteUrl}/Projeto/1-html/11-portaldoaluno.html#certificados`;
+      actionUrl = `${siteUrl}/portaldoaluno/#certificados`;
       break;
   }
 

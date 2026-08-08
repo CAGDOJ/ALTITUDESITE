@@ -1,0 +1,177 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta http-equiv="Content-Security-Policy" content="upgrade-insecure-requests; block-all-mixed-content">
+  <title>Cursos - Altitude</title>
+  <link rel="icon" type="image/png" sizes="512x512" href="/assets/img/favicon-cloud.png?v=14">
+
+  <meta name="description" content="Cursos da Altitude com conteúdo, avaliação e certificado verificável.">
+  <link rel="apple-touch-icon" sizes="180x180" href="/assets/img/apple-touch-icon.png?v=14">
+  <link rel="icon" type="image/png" sizes="32x32" href="/assets/img/favicon-32x32.png?v=14">
+  <link rel="icon" type="image/png" sizes="16x16" href="/assets/img/favicon-16x16.png?v=14">
+  <link rel="manifest" href="/assets/img/site.webmanifest">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+  <link rel="stylesheet" href="/assets/css/base-public.css?v=27">
+  <link rel="stylesheet" href="/assets/css/2-profissinal.css?v=27">
+  <link rel="stylesheet" href="/assets/css/17-public-v25.css?v=27">
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2" defer></script>
+  <script src="/assets/js/supabase-init.js?v=27" defer></script>
+  <script src="/assets/js/headerAuth.js?v=27" defer></script>
+  <script src="/assets/js/cursos-profissionais.js?v=32" defer></script>
+  <link rel="stylesheet" href="/assets/css/06-responsive.css?v=27">
+  <link rel="stylesheet" href="/assets/css/18-public-v27.css?v=27">
+  <link rel="stylesheet" href="/assets/css/22-public-header-v31.css?v=31">
+  <link rel="stylesheet" href="/assets/css/23-v32-integrado.css?v=32">
+  <link rel="stylesheet" href="/assets/css/25-v34-final.css?v=34">
+  <link rel="stylesheet" href="/assets/css/26-v34-emissao.css?v=34.1">
+  <link rel="stylesheet" href="/assets/css/27-v34-2-ajustes-finais.css?v=34.2">
+  <link rel="stylesheet" href="/assets/css/29-v34-4-cabecalho-avaliacao.css?v=34.4">
+  <link rel="stylesheet" href="/assets/css/30-v36-ajustes.css?v=36">
+</head>
+<body>
+<header class="alt-public-header" data-alt-public-header>
+  <div class="alt-public-header__inner">
+    <a class="alt-public-header__brand" href="/" aria-label="Altitude — Início">
+      <img src="/assets/img/LOGO.png" alt="Altitude">
+    </a>
+    <nav class="alt-public-header__nav" aria-label="Navegação principal">
+      <ul>
+        <li><a data-nav-link href="/">Início</a></li>
+        <li><a data-nav-link href="/cursos/">Cursos</a></li>
+        <li><a data-nav-link href="/certificados/">Certificados</a></li>
+        <li><a data-nav-link href="/sobrenos/">Sobre Nós</a></li>
+        <li><a data-nav-link href="/ajuda/">Ajuda</a></li>
+      </ul>
+    </nav>
+    <div class="alt-public-header__actions">
+      <a class="alt-public-header__login" href="/login/">Acessar</a>
+      <a class="alt-public-header__signup" href="/cadastro/">Cadastrar</a>
+    </div>
+    <button class="alt-public-header__toggle" type="button" data-public-menu-toggle aria-expanded="false" aria-controls="altPublicMobileMenu" aria-label="Abrir menu">
+      <span></span>
+    </button>
+    <div class="alt-public-header__mobile" id="altPublicMobileMenu" data-public-mobile-menu hidden>
+      <nav aria-label="Navegação móvel">
+        <a data-nav-link href="/">Início</a>
+        <a data-nav-link href="/cursos/">Cursos</a>
+        <a data-nav-link href="/certificados/">Certificados</a>
+        <a data-nav-link href="/sobrenos/">Sobre Nós</a>
+        <a data-nav-link href="/ajuda/">Ajuda</a>
+      </nav>
+    </div>
+  </div>
+</header>
+
+
+  <main class="catalog-main">
+    <section class="catalog-hero">
+      <div>
+        <span class="catalog-kicker">Formação Altitude</span>
+        <h1>Escolha sua formação e comece agora</h1>
+        <p> </p>
+        <div class="hero-actions">
+          <a href="#catalogo" class="catalog-primary-link">Ver cursos</a>
+          <a href="/certificados/" class="catalog-secondary-link">Validar certificado</a>
+        </div>
+      </div>
+      <div class="catalog-steps" aria-label="Etapas para concluir um curso">
+        <div><b>1</b><span><strong>Escolha e inscreva-se</strong><small>A matrícula vincula o curso à sua conta.</small></span></div>
+        <div><b>2</b><span><strong>Estude os materiais</strong><small>PDFs, textos, imagens e vídeos por módulo.</small></span></div>
+        <div><b>3</b><span><strong>Faça a avaliação</strong><small>Após a aprovação, emita o certificado.</small></span></div>
+      </div>
+    </section>
+
+    <section class="course-finder-section" aria-labelledby="tituloCargas">
+      <div class="section-heading-compact">
+        <span class="catalog-kicker">Encontre sua formação</span>
+        <h2 id="tituloCargas">Escolha o tipo de formação</h2>
+        <p></p>
+      </div>
+      <div class="course-finder-controls">
+        <div class="finder-group course-type-only">
+          <span class="finder-group-title">Tipo de curso</span>
+          <div class="course-type-tabs" id="filtrosTipoCurso">
+            <button type="button" class="course-type-tab active" data-tipo="PROFISSIONAL"><strong>Cursos</strong><span>Cursos livres e capacitações</span></button>
+            <button type="button" class="course-type-tab" data-tipo="TECNICO"><strong>Cursos Técnicos</strong><span>Formações de maior duração</span></button>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <section id="catalogo" class="catalog-section" aria-labelledby="tituloCursos">
+      <div class="catalog-heading">
+        <div>
+          <span class="catalog-kicker">Catálogo atualizado</span>
+          <h2 id="tituloCursos">Cursos</h2>
+          <p></p>
+        </div>
+        <div class="catalog-tools">
+          <input id="buscaCursosPublicos" type="search" placeholder="Buscar curso..." aria-label="Buscar curso">
+          <select id="filtroCategoriaPublica" aria-label="Filtrar por categoria"><option value="">Todas as áreas</option></select>
+          <select id="ordenarCursosPublicos" aria-label="Ordenar cursos">
+            <option value="ALTA">Em alta</option>
+            <option value="AVALIACAO">Melhor avaliação</option>
+            <option value="MATRICULAS">Mais inscritos</option>
+            <option value="RECENTES">Mais recentes</option>
+            
+          </select>
+        </div>
+      </div>
+
+      <div id="catalogStatus" class="catalog-status">Carregando cursos publicados...</div>
+      <div id="catalogoCursos" class="catalog-grid" aria-live="polite"></div>
+    </section>
+  </main>
+
+  <div id="modalCursoPublico" class="catalog-modal" aria-hidden="true">
+    <div class="catalog-modal-sheet" role="dialog" aria-modal="true" aria-labelledby="modalCursoTitulo">
+      <button id="fecharModalCursoPublico" class="catalog-modal-close" type="button" aria-label="Fechar">×</button>
+      <div class="catalog-modal-media">
+        <img id="modalCursoCapa" class="catalog-modal-cover" src="/assets/img/LOGO.png" alt="">
+        <span id="modalCursoEmAlta" class="hot-badge" hidden>Em alta</span>
+      </div>
+      <div class="catalog-modal-content">
+        <span id="modalCursoCategoria" class="catalog-kicker">Curso</span>
+        <h2 id="modalCursoTitulo">Curso profissional</h2>
+        <div id="modalCursoRating" class="modal-rating"></div>
+        <p id="modalCursoDescricao"></p>
+        <div class="catalog-modal-meta">
+          <span id="modalCursoNivel">Básico</span>
+          <span id="modalCursoModulos">0 módulos</span>
+          <span id="modalCursoMateriais">0 materiais</span>
+          <span id="modalCursoQuestoes">0 questões</span>
+        </div>
+        <div class="catalog-info-box">
+          <strong>Seu caminho até o certificado</strong>
+          <p>Matricule-se, conclua os módulos, faça a prova e alcance a nota mínima definida para o curso.</p>
+        </div>
+        <button id="btnInscreverCurso" class="catalog-primary-button" type="button">Inscrever-se neste curso</button>
+      </div>
+    </div>
+  </div>
+
+  <div id="catalogToast" class="catalog-toast" role="status" aria-live="polite"></div>
+
+  <footer class="rodape">
+    <div class="footer-container">
+      <div class="footer-column logo-info">
+        <img src="/assets/img/LOGO.png" alt="Logo Altitude" class="footer-logo">
+        <p>Portal Altitude</p><p>Aprender é alcançar novos horizontes</p><p>CNPJ: 45.628.030/0001-85</p>
+      </div>
+      <div class="footer-column redes-sociais"><h3>Redes Sociais</h3><ul><li><a href="https://www.instagram.com/altitudeltda/"><i class="fab fa-instagram"></i> Instagram</a></li></ul></div>
+      <div class="footer-column contato"><h3>Entre em contato</h3><ul><li><a href="https://wa.me/5591983640933"><i class="fab fa-whatsapp"></i> WhatsApp</a></li><li><a href="https://wa.me/5591983640933"><i class="fas fa-phone-alt"></i> Telefone</a></li></ul></div>
+      <div class="footer-column links-rapidos"><h3>Links Rápidos</h3><ul><li><a href="https://www.reclameaqui.com.br/reclamar/">Reclame Aqui</a></li><li><a href="/certificados/">Validar Certificado</a></li><li><a href="/contrato/">Termos de Contrato</a></li><li><a href="/politicadeprivacidade/">Política de Privacidade</a></li><li><a href="https://solucoes.receita.fazenda.gov.br/Servicos/cnpjreva/comprovante" target="_blank" rel="noopener">Comprovante de Inscrição no CNPJ</a></li></ul></div>
+    </div>
+    <div class="footer-payments"><img src="/assets/img/PIX.png" alt="PIX" class="payment-icon"><img src="/assets/img/paypal.png" alt="PayPal" class="payment-icon"><img src="/assets/img/PICPAY.png" alt="PicPay" class="payment-icon"></div>
+    <div class="footer-bottom"><p>&copy; 2026 - ALTITUDE CENTRO UNIVERSITÁRIO</p></div>
+  </footer>
+
+  <script src="/assets/js/layout-public.js?v=27" defer></script>
+  <script src="/assets/js/06-responsive.js?v=27"></script>
+  <script src="/assets/js/v34-public.js?v=34.1" defer></script>
+  <script src="/assets/js/public-header-v34-2.js?v=34.2" defer></script>
+  <script src="/assets/js/public-header-v34-4.js?v=34.4" defer></script>
+</body>
+</html>

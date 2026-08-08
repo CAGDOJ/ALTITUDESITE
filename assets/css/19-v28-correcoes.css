@@ -1,0 +1,192 @@
+/* =========================================================
+   PORTAL ALTITUDE V28 — correções de estabilidade e layout
+   ========================================================= */
+
+/* A lista de cursos nunca deve esmagar o título letra por letra. */
+#cursos > .card {
+  width: 100%;
+  max-width: 100%;
+  overflow-x: auto !important;
+  -webkit-overflow-scrolling: touch;
+}
+#tabCursos {
+  width: 100% !important;
+  min-width: 1080px !important;
+  table-layout: auto !important;
+}
+#tabCursos col.course-col-code { width: 72px; }
+#tabCursos col.course-col-title { width: 330px; }
+#tabCursos col.course-col-area { width: 150px; }
+#tabCursos col.course-col-modules { width: 90px; }
+#tabCursos col.course-col-published { width: 105px; }
+#tabCursos col.course-col-actions { width: 310px; }
+#tabCursos .col-curso {
+  width: 330px !important;
+  min-width: 330px !important;
+}
+#tabCursos .col-area {
+  width: 150px !important;
+  min-width: 150px !important;
+  overflow-wrap: normal !important;
+  word-break: normal !important;
+}
+#tabCursos .col-acoes {
+  width: 310px !important;
+  min-width: 310px !important;
+}
+#tabCursos .curso-info {
+  width: 100%;
+  min-width: 0;
+  align-items: center;
+}
+#tabCursos .curso-textos {
+  min-width: 0;
+  width: calc(100% - 78px);
+}
+#tabCursos .curso-titulo,
+#tabCursos .curso-sub {
+  white-space: normal !important;
+  word-break: normal !important;
+  overflow-wrap: break-word !important;
+  hyphens: none !important;
+}
+#tabCursos .curso-titulo {
+  line-height: 1.28;
+  font-size: 14px;
+}
+#tabCursos .course-action-cell {
+  min-width: 310px !important;
+  grid-template-columns: repeat(2, minmax(140px, 1fr)) !important;
+}
+
+/* O construtor ocupa a tela toda e possui apenas uma rolagem clara por painel. */
+#modalModulos {
+  z-index: 12000 !important;
+}
+#modalModulos .course-builder-modal {
+  position: relative;
+  width: 100vw !important;
+  height: 100dvh !important;
+  max-width: none !important;
+  max-height: none !important;
+}
+#modalModulos .normal-builder-panel,
+#modalModulos .latex-builder-panel {
+  min-height: 0;
+}
+#modalModulos .easy-course-builder {
+  grid-template-columns: minmax(420px, 46%) minmax(500px, 54%) !important;
+}
+#modalModulos .builder-create-panel,
+#modalModulos .builder-list-panel {
+  scrollbar-gutter: stable;
+}
+#modalModulos .builder-mode-switch {
+  overflow-x: auto;
+  scrollbar-width: thin;
+}
+#modalModulos .builder-mode-switch button {
+  white-space: nowrap;
+}
+#modalModulos .builder-primary-actions {
+  position: sticky;
+  bottom: -1px;
+  z-index: 5;
+  padding: 10px 0 2px;
+  background: linear-gradient(to bottom, rgba(255,255,255,0), #fff 16px);
+}
+#modalModulos .normal-material-preview,
+#modalModulos .normal-pdf-preview-frame {
+  min-height: 420px;
+}
+#modalModulos .builder-empty-state[data-retry="true"] button {
+  margin-top: 10px;
+  min-height: 40px;
+  padding: 8px 14px;
+  border: 1px solid #0ea5a3;
+  border-radius: 8px;
+  background: #0ea5a3;
+  color: #fff;
+  font-weight: 800;
+  cursor: pointer;
+}
+
+/* Horas validadas: campo livre, sem teto, mantendo passos de 5h. */
+#horasGestaoTotal {
+  width: 100%;
+  min-height: 44px;
+  border: 1px solid #c7d6e2;
+  border-radius: 9px;
+  padding: 9px 12px;
+  background: #fff;
+  color: #173a57;
+  font: inherit;
+  font-weight: 800;
+  text-align: center;
+  box-sizing: border-box;
+}
+#horasGestaoTotal:focus {
+  outline: 3px solid rgba(14,165,163,.14);
+  border-color: #0ea5a3;
+}
+
+@media (max-width: 1150px) {
+  #tabCursos { min-width: 980px !important; }
+  #tabCursos .col-curso { width: 285px !important; min-width: 285px !important; }
+  #tabCursos .col-area { width: 125px !important; min-width: 125px !important; }
+  #tabCursos .col-acoes { width: 300px !important; min-width: 300px !important; }
+  #modalModulos .easy-course-builder {
+    grid-template-columns: minmax(360px, 44%) minmax(470px, 56%) !important;
+  }
+}
+
+@media (max-width: 900px) {
+  #modalModulos .easy-course-builder {
+    display: block !important;
+    overflow-y: auto !important;
+  }
+  #modalModulos .builder-create-panel,
+  #modalModulos .builder-list-panel {
+    overflow: visible !important;
+  }
+  #modalModulos .builder-create-panel {
+    border-right: 0 !important;
+    border-bottom: 1px solid #d8e4ed !important;
+  }
+  #modalModulos .normal-material-preview,
+  #modalModulos .normal-pdf-preview-frame {
+    min-height: 460px;
+  }
+}
+
+@media (max-width: 700px) {
+  #tabCursos { min-width: 930px !important; }
+  #modalModulos .course-builder-header {
+    align-items: center;
+  }
+  #modalModulos .course-builder-header h3 {
+    font-size: 17px !important;
+  }
+  #modalModulos .builder-mode-switch {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+  }
+  #modalModulos .builder-mode-switch button {
+    width: 100%;
+  }
+  #modalModulos .builder-create-panel,
+  #modalModulos .builder-list-panel {
+    padding: 10px !important;
+  }
+  #modalModulos .normal-material-preview,
+  #modalModulos .normal-pdf-preview-frame {
+    min-height: 58vh;
+  }
+  .hours-stepper {
+    grid-template-columns: 1fr 1fr !important;
+  }
+  .hours-stepper #horasGestaoTotal {
+    grid-column: 1 / -1;
+    grid-row: 1;
+  }
+}

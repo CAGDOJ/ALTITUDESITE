@@ -1,0 +1,184 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+  <meta http-equiv="Content-Security-Policy" content="upgrade-insecure-requests; block-all-mixed-content">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Cadastrar - Altitude</title>
+  <link rel="icon" type="image/png" sizes="512x512" href="/assets/img/favicon-cloud.png?v=14">
+
+
+    <!-- favicon -->
+    <link rel="apple-touch-icon" sizes="180x180" href="/assets/img/apple-touch-icon.png?v=14">
+    <link rel="icon" type="image/png" sizes="32x32" href="/assets/img/favicon-32x32.png?v=14">
+    <link rel="icon" type="image/png" sizes="16x16" href="/assets/img/favicon-16x16.png?v=14">
+    <link rel="manifest" href="/assets/img/site.webmanifest">
+
+    <!-- CSS -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+    <link rel="stylesheet" href="/assets/css/5-cadastro.css?v=17">
+  <link rel="stylesheet" href="/assets/css/base-public.css?v=17">
+  <link rel="stylesheet" href="/assets/css/06-responsive.css?v=17">
+  <link rel="stylesheet" href="/assets/css/22-public-header-v31.css?v=31">
+  <link rel="stylesheet" href="/assets/css/25-v34-final.css?v=34">
+  <link rel="stylesheet" href="/assets/css/26-v34-emissao.css?v=34.1">
+  <link rel="stylesheet" href="/assets/css/27-v34-2-ajustes-finais.css?v=34.2">
+  <link rel="stylesheet" href="/assets/css/29-v34-4-cabecalho-avaliacao.css?v=34.4">
+  <link rel="stylesheet" href="/assets/css/30-v36-ajustes.css?v=36">
+</head>
+
+<body>
+
+    <!-- Cabeçalho mobile -->
+<header class="alt-public-header" data-alt-public-header>
+  <div class="alt-public-header__inner">
+    <a class="alt-public-header__brand" href="/" aria-label="Altitude — Início">
+      <img src="/assets/img/LOGO.png" alt="Altitude">
+    </a>
+    <nav class="alt-public-header__nav" aria-label="Navegação principal">
+      <ul>
+        <li><a data-nav-link href="/">Início</a></li>
+        <li><a data-nav-link href="/cursos/">Cursos</a></li>
+        <li><a data-nav-link href="/certificados/">Certificados</a></li>
+        <li><a data-nav-link href="/sobrenos/">Sobre Nós</a></li>
+        <li><a data-nav-link href="/ajuda/">Ajuda</a></li>
+      </ul>
+    </nav>
+    <div class="alt-public-header__actions">
+      <a class="alt-public-header__login" href="/login/">Acessar</a>
+      <a class="alt-public-header__signup" href="/cadastro/">Cadastrar</a>
+    </div>
+    <button class="alt-public-header__toggle" type="button" data-public-menu-toggle aria-expanded="false" aria-controls="altPublicMobileMenu" aria-label="Abrir menu">
+      <span></span>
+    </button>
+    <div class="alt-public-header__mobile" id="altPublicMobileMenu" data-public-mobile-menu hidden>
+      <nav aria-label="Navegação móvel">
+        <a data-nav-link href="/">Início</a>
+        <a data-nav-link href="/cursos/">Cursos</a>
+        <a data-nav-link href="/certificados/">Certificados</a>
+        <a data-nav-link href="/sobrenos/">Sobre Nós</a>
+        <a data-nav-link href="/ajuda/">Ajuda</a>
+      </nav>
+    </div>
+  </div>
+</header>
+
+
+    <!-- Conteúdo principal -->
+    <main class="login-container">
+      <section class="register-card" id="register-card">
+        <h1 class="login-title">Comece agora gratuitamente</h1>
+
+        <div id="form-msg" class="form-alert" aria-live="polite" hidden></div>
+
+        <form id="form-cadastro" novalidate>
+            <div class="form-group">
+                <label for="nome">Nome completo</label>
+                <input id="nome" name="name" type="text" autocomplete="name" placeholder="Digite seu nome completo" required style="text-transform: uppercase;">
+                <small class="feedback" id="fb-nome" aria-live="polite"></small>
+            </div>
+
+            <div class="form-group">
+                <label for="cpf">CPF</label>
+                <input id="cpf" name="cpf" inputmode="numeric" autocomplete="off" placeholder="000.000.000-00" required>
+                <small class="feedback" id="fb-cpf" aria-live="polite"></small>
+            </div>
+
+            <div class="form-group">
+                <label for="nascimento">Data de nascimento</label>
+                <input id="nascimento" name="nascimento" type="date" required>
+                <small class="feedback" id="fb-nascimento" aria-live="polite"></small>
+            </div>
+
+            <div class="form-group">
+                <label for="email">E-mail</label>
+                <input id="email" name="email" type="email" autocomplete="email" placeholder="seunome@gmail.com" required>
+                <small class="feedback" id="fb-email" aria-live="polite"></small>
+            </div>
+
+            <div class="form-group has-icon">
+                <label for="senha">Senha</label>
+                <div class="password-input-wrap">
+                    <input id="senha" name="password" type="password" autocomplete="new-password" placeholder="Mínimo 8 caracteres" minlength="8" required>
+                    <button type="button" class="toggle-pass" data-target="senha" aria-label="Mostrar senha" aria-pressed="false">
+                        <i class="fa-regular fa-eye" aria-hidden="true"></i>
+                    </button>
+                </div>
+                <small class="feedback" id="fb-senha" aria-live="polite"></small>
+            </div>
+
+            <div class="form-group has-icon">
+                <label for="confirma">Confirme a senha</label>
+                <div class="password-input-wrap">
+                    <input id="confirma" name="confirm" type="password" autocomplete="new-password" placeholder="Repita a senha" minlength="8" required>
+                    <button type="button" class="toggle-pass" data-target="confirma" aria-label="Mostrar senha" aria-pressed="false">
+                        <i class="fa-regular fa-eye" aria-hidden="true"></i>
+                    </button>
+                </div>
+                <small class="feedback" id="fb-confirma" aria-live="polite"></small>
+            </div>
+
+            <div class="form-group">
+                <label for="telefone">Telefone (WhatsApp) — com DDD</label>
+                <input id="telefone" name="tel" inputmode="tel" autocomplete="tel-national" placeholder="(00) 00000-0000" required>
+                <small class="feedback" id="fb-telefone" aria-live="polite"></small>
+            </div>
+
+            <div class="form-group">
+                <label for="objetivo">Qual seu objetivo?</label>
+                <select id="objetivo" name="objetivo" required>
+                    <option value="" selected disabled>Selecione…</option>
+                    <option>Certificado para horas complementares</option>
+                    <option>Aprender um novo tema</option>
+                    <option>Reciclagem profissional</option>
+                </select>
+                <small class="feedback" id="fb-objetivo" aria-live="polite"></small>
+            </div>
+
+            <div class="terms">
+                <label class="check">
+                    <input id="termos" type="checkbox" checked>
+                    <span>
+                        Eu li e concordo com os
+                        <a href="/contrato/" target="_blank">Termos de Contrato</a>
+                        e a
+                        <a href="/politicadeprivacidade/" target="_blank">Política de Privacidade</a>.
+                    </span>
+                </label>
+            </div>
+
+            <button id="btn-enviar" class="btn-login" type="submit" disabled>Enviar</button>
+
+            <div class="login-options">
+                <span>Já tenho uma conta — <a href="/login/">Fazer login</a></span>
+            </div>
+        </form>
+          </section>
+    </main>
+
+    <!-- Rodapé -->
+    <footer class="rodape">
+    <div class="footer-container">
+      <div class="footer-column logo-info">
+        <img src="/assets/img/LOGO.png" alt="Logo Altitude" class="footer-logo">
+        <p>Portal Altitude</p><p>Aprender é alcançar novos horizontes</p><p>CNPJ: 45.628.030/0001-85</p>
+      </div>
+      <div class="footer-column redes-sociais"><h3>Redes Sociais</h3><ul><li><a href="https://www.instagram.com/altitudeltda/"><i class="fab fa-instagram"></i> Instagram</a></li></ul></div>
+      <div class="footer-column contato"><h3>Entre em contato</h3><ul><li><a href="https://wa.me/5591983640933"><i class="fab fa-whatsapp"></i> WhatsApp</a></li><li><a href="https://wa.me/5591983640933"><i class="fas fa-phone-alt"></i> Telefone</a></li></ul></div>
+      <div class="footer-column links-rapidos"><h3>Links Rápidos</h3><ul><li><a href="https://www.reclameaqui.com.br/reclamar/">Reclame Aqui</a></li><li><a href="/certificados/">Validar Certificado</a></li><li><a href="/contrato/">Termos de Contrato</a></li><li><a href="/politicadeprivacidade/">Política de Privacidade</a></li><li><a href="https://solucoes.receita.fazenda.gov.br/Servicos/cnpjreva/comprovante" target="_blank" rel="noopener">Comprovante de Inscrição no CNPJ</a></li></ul></div>
+    </div>
+    <div class="footer-payments"><img src="/assets/img/PIX.png" alt="PIX" class="payment-icon"><img src="/assets/img/paypal.png" alt="PayPal" class="payment-icon"><img src="/assets/img/PICPAY.png" alt="PicPay" class="payment-icon"></div>
+    <div class="footer-bottom"><p>&copy; 2026 - ALTITUDE CENTRO UNIVERSITÁRIO</p></div>
+  </footer>
+
+    <!-- Scripts -->
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <script src="/assets/js/supabase-init.js?v=17"></script>
+    <script src="/assets/js/cadastro.js?v=17"></script>
+  <script src="/assets/js/layout-public.js?v=17" defer></script>
+  <script src="/assets/js/06-responsive.js?v=17"></script>
+  <script src="/assets/js/v34-public.js?v=34.1" defer></script>
+  <script src="/assets/js/public-header-v34-2.js?v=34.2" defer></script>
+  <script src="/assets/js/public-header-v34-4.js?v=34.4" defer></script>
+</body>
+</html>

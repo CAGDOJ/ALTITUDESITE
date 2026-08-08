@@ -49,7 +49,7 @@ Deno.serve(async (req: Request) => {
     const anonKey = Deno.env.get("SUPABASE_ANON_KEY")!;
     const serviceKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
     const siteUrl = (Deno.env.get("SITE_URL") || "https://www.portalaltitude.com.br").replace(/\/$/, "");
-    const redirectTo = `${siteUrl}/Projeto/1-html/4-login.html?recovery=1`;
+    const redirectTo = `${siteUrl}/login/?recovery=1`;
     const admin = createClient(supabaseUrl, serviceKey, { auth: { persistSession: false, autoRefreshToken: false } });
     const anon = createClient(supabaseUrl, anonKey, { auth: { persistSession: false, autoRefreshToken: false } });
 

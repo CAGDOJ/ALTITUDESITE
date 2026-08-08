@@ -1,0 +1,338 @@
+/* =========================================================
+   ALTITUDE V34.3 - AJUSTES ESPECIAIS
+   Somente correcoes de contraste, acoes, tabelas, previsao
+   e legibilidade solicitadas para esta versao.
+   ========================================================= */
+
+:root{
+  --v343-navy:#07314f;
+  --v343-navy-2:#0a3d62;
+  --v343-navy-3:#0b456b;
+  --v343-cyan:#16a9bc;
+  --v343-cyan-soft:rgba(82,192,217,.18);
+  --v343-line:#d7e4ec;
+  --v343-danger:#c33b48;
+  --v343-success:#158456;
+}
+
+/* ---------- Barras laterais: volta ao padrão escuro e legível ---------- */
+body:has(.gestor-topbar) #gestorSidebar,
+body:has(.gestor-topbar) .sidebar{
+  background:linear-gradient(180deg,#082f5b 0%,#062746 100%)!important;
+  color:#fff!important;
+}
+body:has(.gestor-topbar) #gestorSidebar .nav-item,
+body:has(.gestor-topbar) .sidebar .nav-item{
+  display:flex!important;
+  align-items:center!important;
+  gap:11px!important;
+  width:100%!important;
+  min-height:46px!important;
+  padding:11px 13px!important;
+  border:1px solid transparent!important;
+  border-radius:11px!important;
+  background:transparent!important;
+  color:#dce8f4!important;
+  box-shadow:none!important;
+  text-align:left!important;
+  white-space:normal!important;
+}
+body:has(.gestor-topbar) #gestorSidebar .nav-item:hover,
+body:has(.gestor-topbar) .sidebar .nav-item:hover{
+  background:rgba(255,255,255,.09)!important;
+  color:#fff!important;
+}
+body:has(.gestor-topbar) #gestorSidebar .nav-item.ativa,
+body:has(.gestor-topbar) .sidebar .nav-item.ativa{
+  background:rgba(82,192,217,.20)!important;
+  border-color:rgba(82,192,217,.34)!important;
+  color:#fff!important;
+  box-shadow:inset 3px 0 0 #52c0d9!important;
+}
+body:has(.gestor-topbar) #gestorSidebar .sidebar-bottom button,
+body:has(.gestor-topbar) #gestorSidebar .sidebar-bottom a{
+  background:transparent!important;
+  border:0!important;
+  color:#c8d8e8!important;
+  box-shadow:none!important;
+}
+body:has(.gestor-topbar) #gestorSidebar .sidebar-bottom button:hover,
+body:has(.gestor-topbar) #gestorSidebar .sidebar-bottom a:hover{color:#fff!important}
+
+body:has(.student-topbar) .student-sidebar{
+  background:linear-gradient(180deg,#07314f 0%,#0a3d62 100%)!important;
+  color:#fff!important;
+}
+body:has(.student-topbar) .student-sidebar .menu-link{
+  display:flex!important;
+  align-items:center!important;
+  gap:12px!important;
+  width:100%!important;
+  min-height:48px!important;
+  padding:11px 13px!important;
+  border:1px solid transparent!important;
+  border-radius:12px!important;
+  background:transparent!important;
+  color:rgba(255,255,255,.84)!important;
+  box-shadow:none!important;
+  text-align:left!important;
+}
+body:has(.student-topbar) .student-sidebar .menu-link:hover{
+  background:rgba(255,255,255,.09)!important;
+  color:#fff!important;
+}
+body:has(.student-topbar) .student-sidebar .menu-link.ativo{
+  background:rgba(82,192,217,.19)!important;
+  border-color:rgba(82,192,217,.32)!important;
+  color:#fff!important;
+  box-shadow:inset 3px 0 0 #52c0d9!important;
+}
+body:has(.student-topbar) .student-sidebar .menu-link span{
+  background:rgba(255,255,255,.10)!important;
+  color:#fff!important;
+}
+body:has(.student-topbar) .student-sidebar .menu-link.ativo span{
+  background:#52c0d9!important;
+  color:#07314f!important;
+}
+body:has(.student-topbar) .student-sidebar .sidebar-help button{
+  background:#fff!important;
+  border-color:#fff!important;
+  color:#07314f!important;
+}
+body:has(.student-topbar) .student-sidebar .btn-sair{
+  background:transparent!important;
+  border-color:rgba(255,255,255,.22)!important;
+  color:#fff!important;
+}
+
+/* ---------- Regra global: nenhuma tabela da gestão cria scroll lateral ---------- */
+body:has(.gestor-topbar) .card,
+body:has(.gestor-topbar) .certificate-admin-table-wrap,
+body:has(.gestor-topbar) .table-card{
+  width:100%!important;
+  max-width:100%!important;
+  min-width:0!important;
+  overflow-x:hidden!important;
+}
+body:has(.gestor-topbar) table.tabela{
+  width:100%!important;
+  max-width:100%!important;
+  min-width:0!important;
+  table-layout:fixed!important;
+}
+body:has(.gestor-topbar) table.tabela th,
+body:has(.gestor-topbar) table.tabela td{
+  min-width:0!important;
+  word-break:normal!important;
+  overflow-wrap:anywhere!important;
+  hyphens:none!important;
+  vertical-align:middle!important;
+}
+body:has(.gestor-topbar) table.tabela button{
+  max-width:100%!important;
+  word-break:normal!important;
+  overflow-wrap:normal!important;
+  hyphens:none!important;
+}
+
+/* ---------- Gestão de alunos: ações compactas, completas e verticais ---------- */
+@media (min-width:801px){
+  #tabAlunos th:nth-child(1),#tabAlunos td:nth-child(1){width:10%!important}
+  #tabAlunos th:nth-child(2),#tabAlunos td:nth-child(2){width:23%!important}
+  #tabAlunos th:nth-child(3),#tabAlunos td:nth-child(3){width:22%!important}
+  #tabAlunos th:nth-child(4),#tabAlunos td:nth-child(4){width:15%!important}
+  #tabAlunos th:nth-child(5),#tabAlunos td:nth-child(5){width:10%!important}
+  #tabAlunos th:nth-child(6),#tabAlunos td:nth-child(6){width:20%!important}
+  #tabAlunos td.student-actions{
+    display:grid!important;
+    grid-template-columns:1fr!important;
+    gap:6px!important;
+    width:auto!important;
+    padding:10px!important;
+  }
+  #tabAlunos td.student-actions button{
+    display:flex!important;
+    align-items:center!important;
+    justify-content:center!important;
+    width:100%!important;
+    min-width:0!important;
+    min-height:36px!important;
+    padding:7px 10px!important;
+    font-size:12px!important;
+    line-height:1.15!important;
+    white-space:nowrap!important;
+  }
+  #tabAlunos .student-name-cell{font-weight:800!important;overflow-wrap:break-word!important}
+}
+
+/* ---------- Cursos: 3 ações por linha, 2 linhas, todos os nomes inteiros ---------- */
+@media (min-width:901px){
+  #tabCursos th:nth-child(1),#tabCursos td:nth-child(1){width:5%!important}
+  #tabCursos th:nth-child(2),#tabCursos td:nth-child(2){width:27%!important}
+  #tabCursos th:nth-child(3),#tabCursos td:nth-child(3){width:15%!important}
+  #tabCursos th:nth-child(4),#tabCursos td:nth-child(4){width:7%!important}
+  #tabCursos th:nth-child(5),#tabCursos td:nth-child(5){width:8%!important}
+  #tabCursos th:nth-child(6),#tabCursos td:nth-child(6){width:38%!important}
+  #tabCursos td.course-action-cell,
+  #tabCursos td:last-child>div,
+  #tabCursos .course-action-cell{
+    display:grid!important;
+    grid-template-columns:repeat(3,minmax(0,1fr))!important;
+    gap:6px!important;
+    width:100%!important;
+    min-width:0!important;
+  }
+  #tabCursos td.course-action-cell button,
+  #tabCursos td:last-child>div button,
+  #tabCursos .course-action-cell button{
+    display:flex!important;
+    align-items:center!important;
+    justify-content:center!important;
+    width:100%!important;
+    min-width:0!important;
+    min-height:38px!important;
+    padding:7px 5px!important;
+    font-size:11.5px!important;
+    line-height:1.15!important;
+    white-space:nowrap!important;
+  }
+}
+
+/* ---------- Certificados: colunas proporcionais e ações verticais ---------- */
+@media (min-width:901px){
+  #tabCertificadosGestao th:nth-child(1),#tabCertificadosGestao td:nth-child(1),
+  #tabCertificadosProcessados th:nth-child(1),#tabCertificadosProcessados td:nth-child(1){width:18%!important}
+  #tabCertificadosGestao th:nth-child(2),#tabCertificadosGestao td:nth-child(2),
+  #tabCertificadosProcessados th:nth-child(2),#tabCertificadosProcessados td:nth-child(2){width:20%!important}
+  #tabCertificadosGestao th:nth-child(3),#tabCertificadosGestao td:nth-child(3),
+  #tabCertificadosProcessados th:nth-child(3),#tabCertificadosProcessados td:nth-child(3){width:7%!important}
+  #tabCertificadosGestao th:nth-child(4),#tabCertificadosGestao td:nth-child(4),
+  #tabCertificadosProcessados th:nth-child(4),#tabCertificadosProcessados td:nth-child(4){width:12%!important}
+  #tabCertificadosGestao th:nth-child(5),#tabCertificadosGestao td:nth-child(5),
+  #tabCertificadosProcessados th:nth-child(5),#tabCertificadosProcessados td:nth-child(5){width:10%!important}
+  #tabCertificadosGestao th:nth-child(6),#tabCertificadosGestao td:nth-child(6),
+  #tabCertificadosProcessados th:nth-child(6),#tabCertificadosProcessados td:nth-child(6){width:11%!important}
+  #tabCertificadosGestao th:nth-child(7),#tabCertificadosGestao td:nth-child(7),
+  #tabCertificadosProcessados th:nth-child(7),#tabCertificadosProcessados td:nth-child(7){width:22%!important}
+  .cert-admin-actions{
+    display:grid!important;
+    grid-template-columns:1fr!important;
+    gap:6px!important;
+    width:100%!important;
+    min-width:0!important;
+  }
+  .cert-admin-actions button{
+    width:100%!important;
+    min-width:0!important;
+    min-height:34px!important;
+    padding:6px 8px!important;
+    font-size:11.5px!important;
+    line-height:1.15!important;
+    white-space:nowrap!important;
+  }
+}
+
+/* Carteiras de horas: compacto e sem data quebrada. */
+@media (min-width:901px){
+  #tabCarteirasHorasGestao th:nth-child(1),#tabCarteirasHorasGestao td:nth-child(1){width:22%!important}
+  #tabCarteirasHorasGestao th:nth-child(2),#tabCarteirasHorasGestao td:nth-child(2){width:11%!important;white-space:nowrap!important}
+  #tabCarteirasHorasGestao th:nth-child(3),#tabCarteirasHorasGestao td:nth-child(3){width:11%!important}
+  #tabCarteirasHorasGestao th:nth-child(4),#tabCarteirasHorasGestao td:nth-child(4){width:11%!important}
+  #tabCarteirasHorasGestao th:nth-child(5),#tabCarteirasHorasGestao td:nth-child(5){width:10%!important}
+  #tabCarteirasHorasGestao th:nth-child(6),#tabCarteirasHorasGestao td:nth-child(6){width:10%!important}
+  #tabCarteirasHorasGestao th:nth-child(7),#tabCarteirasHorasGestao td:nth-child(7){width:11%!important}
+  #tabCarteirasHorasGestao th:nth-child(8),#tabCarteirasHorasGestao td:nth-child(8){width:14%!important}
+  #tabCarteirasHorasGestao td:nth-child(8) button{width:100%!important;white-space:nowrap!important}
+}
+
+/* ---------- Chamados: aluno/assunto ganham espaço; ações empilhadas ---------- */
+@media (min-width:901px){
+  #tabChamados th:nth-child(1),#tabChamados td:nth-child(1){width:11%!important}
+  #tabChamados th:nth-child(2),#tabChamados td:nth-child(2){width:18%!important}
+  #tabChamados th:nth-child(3),#tabChamados td:nth-child(3){width:20%!important}
+  #tabChamados th:nth-child(4),#tabChamados td:nth-child(4){width:8%!important}
+  #tabChamados th:nth-child(5),#tabChamados td:nth-child(5){width:8%!important}
+  #tabChamados th:nth-child(6),#tabChamados td:nth-child(6){width:8%!important}
+  #tabChamados th:nth-child(7),#tabChamados td:nth-child(7){width:8%!important}
+  #tabChamados th:nth-child(8),#tabChamados td:nth-child(8){width:7%!important}
+  #tabChamados th:nth-child(9),#tabChamados td:nth-child(9){width:12%!important}
+  #tabChamados .ticket-row-actions{display:grid!important;grid-template-columns:1fr!important;gap:6px!important;width:100%!important}
+  #tabChamados .ticket-row-actions button{width:100%!important;min-width:0!important;white-space:nowrap!important;padding:7px 6px!important;font-size:11px!important}
+}
+
+/* ---------- Modal de resultado: simples e legível ---------- */
+#modalResultadoProva .review-modal,
+#modalResultadoProva .modal__sheet{
+  width:min(520px,calc(100vw - 28px))!important;
+  max-width:520px!important;
+}
+#modalResultadoProva .exam-result-summary{
+  display:grid!important;
+  gap:9px!important;
+  padding:0!important;
+  border:0!important;
+  background:transparent!important;
+}
+#modalResultadoProva .exam-result-summary article{
+  display:flex!important;
+  align-items:center!important;
+  justify-content:space-between!important;
+  gap:18px!important;
+  padding:10px 0!important;
+  border:0!important;
+  border-bottom:1px solid var(--v343-line)!important;
+  border-radius:0!important;
+  background:transparent!important;
+  box-shadow:none!important;
+}
+
+/* ---------- Detalhes da previsão para o gestor ---------- */
+.certificate-forecast-grid{
+  display:grid!important;
+  grid-template-columns:repeat(2,minmax(0,1fr))!important;
+  gap:10px!important;
+  margin:12px 0!important;
+}
+.certificate-forecast-grid article{
+  min-width:0!important;
+  padding:12px!important;
+  border:1px solid var(--v343-line)!important;
+  border-radius:11px!important;
+  background:#f8fbfd!important;
+}
+.certificate-forecast-grid span,.certificate-forecast-grid strong{display:block!important}
+.certificate-forecast-grid span{font-size:11px!important;color:#60758a!important}
+.certificate-forecast-grid strong{margin-top:4px!important;color:var(--v343-navy)!important}
+
+/* ---------- Mobile: tabelas viram cards, nunca scroll horizontal ---------- */
+@media (max-width:800px){
+  #tabCarteirasHorasGestao,#tabCertificadosGestao,#tabCertificadosProcessados,#tabChamados,#tabAlunos,#tabCursos{
+    display:block!important;width:100%!important;min-width:0!important
+  }
+  #tabCarteirasHorasGestao thead,#tabCertificadosGestao thead,#tabCertificadosProcessados thead,#tabChamados thead,#tabAlunos thead,#tabCursos thead{display:none!important}
+  #tabCarteirasHorasGestao tbody,#tabCertificadosGestao tbody,#tabCertificadosProcessados tbody,#tabChamados tbody,#tabAlunos tbody,#tabCursos tbody{display:grid!important;gap:12px!important}
+  #tabCarteirasHorasGestao tr,#tabCertificadosGestao tr,#tabCertificadosProcessados tr,#tabChamados tr,#tabAlunos tr,#tabCursos tr{
+    display:grid!important;grid-template-columns:1fr!important;width:100%!important;min-width:0!important;padding:14px!important;border:1px solid var(--v343-line)!important;border-radius:14px!important;background:#fff!important
+  }
+  #tabCarteirasHorasGestao td,#tabCertificadosGestao td,#tabCertificadosProcessados td,#tabChamados td,#tabAlunos td,#tabCursos td{
+    display:flex!important;align-items:flex-start!important;justify-content:space-between!important;gap:12px!important;width:100%!important;min-width:0!important;padding:9px 0!important;border-bottom:1px solid #edf2f5!important;text-align:right!important
+  }
+  #tabCarteirasHorasGestao td::before,#tabCertificadosGestao td::before,#tabCertificadosProcessados td::before,#tabChamados td::before,#tabAlunos td::before,#tabCursos td::before{
+    content:attr(data-label);flex:0 0 96px!important;color:#60758a!important;font-size:10px!important;font-weight:800!important;text-align:left!important
+  }
+  #tabCarteirasHorasGestao td:last-child,#tabCertificadosGestao td:last-child,#tabCertificadosProcessados td:last-child,#tabChamados td:last-child,#tabAlunos td:last-child,#tabCursos td:last-child{display:block!important;border-bottom:0!important;text-align:left!important}
+  #tabCarteirasHorasGestao td:last-child::before,#tabCertificadosGestao td:last-child::before,#tabCertificadosProcessados td:last-child::before,#tabChamados td:last-child::before,#tabAlunos td:last-child::before,#tabCursos td:last-child::before{display:block!important;margin-bottom:8px!important}
+  .student-actions,.course-action-cell,.cert-admin-actions,.ticket-row-actions{display:grid!important;grid-template-columns:1fr!important;gap:7px!important;width:100%!important;min-width:0!important}
+  .student-actions button,.course-action-cell button,.cert-admin-actions button,.ticket-row-actions button{width:100%!important;min-height:40px!important;white-space:normal!important}
+  .certificate-forecast-grid{grid-template-columns:1fr!important}
+}
+
+/* Resultado da prova gerado pelo portal. */
+#modalProva .quiz-result-minimal{max-width:520px!important;margin:0 auto!important;padding:8px 0 18px!important;text-align:left!important}
+#modalProva .quiz-result-minimal h3{margin:0 0 14px!important;color:var(--v343-navy)!important;font-size:22px!important;text-align:left!important}
+#modalProva .quiz-result-summary{display:grid!important;gap:0!important;margin:0 0 18px!important;padding:0!important;border:0!important;background:transparent!important}
+#modalProva .quiz-result-summary>div{display:flex!important;align-items:center!important;justify-content:space-between!important;gap:18px!important;padding:11px 0!important;border-bottom:1px solid var(--v343-line)!important}
+#modalProva .quiz-result-summary dt{color:#60758a!important;font-weight:700!important}
+#modalProva .quiz-result-summary dd{margin:0!important;color:var(--v343-navy)!important;font-weight:900!important;text-align:right!important}
+#modalProva .quiz-result-minimal>.primary-button{width:100%!important;min-height:44px!important}

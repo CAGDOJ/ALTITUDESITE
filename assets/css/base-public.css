@@ -1,0 +1,809 @@
+/* Ajustes estruturais compartilhados — mantém a identidade visual Altitude */
+:root {
+  --azul-claro: #52C0D9;
+  --azul-escuro: #0A3D62;
+  --branco: #FFFFFF;
+}
+
+html {
+  box-sizing: border-box;
+  width: 100%;
+  max-width: 100%;
+  overflow-x: hidden;
+}
+
+*, *::before, *::after {
+  box-sizing: inherit;
+}
+
+body {
+  width: 100%;
+  max-width: 100%;
+  min-height: 100vh;
+  margin: 0;
+  overflow-x: hidden;
+}
+
+img, svg, video, canvas, iframe {
+  max-width: 100%;
+}
+
+input, select, textarea, button {
+  max-width: 100%;
+  font: inherit;
+}
+
+main, section, footer, header, nav, .footer-container, .top-bar {
+  min-width: 0;
+  max-width: 100%;
+}
+
+/* Cabeçalho desktop padronizado */
+.old-header {
+  display: block;
+  width: 100%;
+  padding: 12px 24px;
+  background: var(--branco);
+  border-bottom: 2px solid var(--azul-claro);
+  box-shadow: 0 4px 8px rgba(0, 0, 0, .14);
+  position: relative;
+  z-index: 1000;
+}
+
+.old-header .top-bar {
+  width: 100%;
+  max-width: 1200px;
+  min-height: 68px;
+  margin: 0 auto;
+  display: grid;
+  grid-template-columns: 170px minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 22px;
+}
+
+.old-header .institution-logo,
+.old-header .institution-logo a {
+  display: flex;
+  align-items: center;
+}
+
+.old-header .institution-logo .logo {
+  display: block;
+  position: static;
+  width: 150px;
+  height: auto;
+  margin: 0;
+  transform: none;
+}
+
+.old-header .navbar {
+  min-width: 0;
+}
+
+.old-header .navbar ul {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-wrap: nowrap;
+  gap: 8px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.old-header .navbar li {
+  position: relative;
+  flex: 0 0 auto;
+}
+
+.old-header .navbar a {
+  display: block;
+  white-space: nowrap;
+}
+
+.old-header .header-buttons {
+  position: static;
+  right: auto;
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  flex-wrap: nowrap;
+  gap: 10px;
+  margin: 0;
+}
+
+.old-header .header-buttons a {
+  white-space: nowrap;
+}
+
+/* Cabeçalho móvel padronizado */
+.new-header {
+  display: none;
+  width: 100%;
+  min-height: 70px;
+  padding: 10px 16px;
+  background: var(--branco);
+  border-bottom: 2px solid var(--azul-claro);
+  box-shadow: 0 3px 8px rgba(0, 0, 0, .12);
+  align-items: center;
+  justify-content: space-between;
+  position: relative;
+  z-index: 1100;
+}
+
+.new-header .logo,
+.new-header .logo a {
+  display: flex;
+  align-items: center;
+}
+
+.new-header .logo img {
+  display: block;
+  width: 132px;
+  height: auto;
+}
+
+.new-header .menu-icon {
+  width: 42px;
+  height: 42px;
+  padding: 6px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  position: relative;
+  cursor: pointer;
+  border-radius: 6px;
+  outline: none;
+}
+
+.new-header .menu-icon:focus-visible {
+  box-shadow: 0 0 0 3px rgba(82, 192, 217, .3);
+}
+
+.new-header .menu-icon > img {
+  display: block;
+  width: 30px;
+  height: 30px;
+  object-fit: contain;
+}
+
+.new-header .dropdown-menu {
+  display: none;
+  position: absolute;
+  top: calc(100% + 10px);
+  right: 0;
+  width: min(290px, calc(100vw - 32px));
+  padding: 8px;
+  background: var(--branco);
+  border: 1px solid var(--azul-claro);
+  border-radius: 8px;
+  box-shadow: 0 10px 28px rgba(10, 61, 98, .18);
+  z-index: 1200;
+}
+
+.new-header .dropdown-menu.active {
+  display: block;
+}
+
+.new-header .dropdown-menu ul {
+  display: block;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.new-header .dropdown-menu li {
+  margin: 0;
+}
+
+.new-header .dropdown-menu a {
+  display: block;
+  padding: 11px 12px;
+  color: var(--azul-escuro);
+  text-decoration: none;
+  font-weight: 700;
+  border-radius: 5px;
+}
+
+.new-header .dropdown-menu a:hover,
+.new-header .dropdown-menu a:focus {
+  color: var(--branco);
+  background: var(--azul-claro);
+}
+
+/* Conteúdo e rodapé */
+main {
+  width: 100%;
+}
+
+main p,
+main li,
+.footer-column p,
+.footer-column li,
+.footer-column a {
+  overflow-wrap: anywhere;
+}
+
+.rodape {
+  width: 100%;
+  max-width: 100%;
+  box-sizing: border-box;
+}
+
+.rodape .footer-container {
+  width: 100%;
+  max-width: 1200px;
+  margin-left: auto;
+  margin-right: auto;
+}
+
+.rodape .footer-column {
+  min-width: 0;
+}
+
+.rodape .footer-logo {
+  max-width: 150px;
+  height: auto;
+}
+
+.rodape .footer-payments {
+  max-width: 100%;
+  flex-wrap: wrap;
+}
+
+.legal-page {
+  width: min(100% - 32px, 1000px);
+  min-height: 45vh;
+  margin: 0 auto;
+  padding: 56px 0;
+  color: var(--azul-escuro);
+}
+
+.legal-page h1 {
+  margin: 0 0 18px;
+  color: var(--azul-claro);
+  text-align: center;
+}
+
+.legal-page p {
+  margin: 0 auto;
+  text-align: center;
+  color: var(--azul-escuro);
+}
+
+@media (max-width: 1050px) {
+  .old-header .top-bar {
+    grid-template-columns: 145px minmax(0, 1fr) auto;
+    gap: 12px;
+  }
+
+  .old-header .institution-logo .logo {
+    width: 132px;
+  }
+
+  .old-header .navbar ul {
+    gap: 2px;
+  }
+
+  .old-header .navbar a {
+    padding-left: 8px;
+    padding-right: 8px;
+    font-size: 14px;
+  }
+}
+
+@media (max-width: 900px) {
+  .old-header {
+    display: none !important;
+  }
+
+  .new-header {
+    display: flex !important;
+  }
+
+  main {
+    padding-left: 16px;
+    padding-right: 16px;
+  }
+
+  .rodape {
+    padding-left: 24px;
+    padding-right: 24px;
+  }
+}
+
+@media (max-width: 600px) {
+  .new-header .logo img {
+    width: 118px;
+  }
+
+  main {
+    padding-left: 14px;
+    padding-right: 14px;
+  }
+
+  .rodape {
+    padding: 36px 18px 20px;
+  }
+
+  .rodape .footer-container {
+    display: grid;
+    grid-template-columns: 1fr;
+    gap: 22px;
+  }
+
+  .rodape .footer-column {
+    width: 100%;
+    margin-left: 0;
+    margin-right: 0;
+  }
+}
+
+/* Definições completas para páginas que não possuíam CSS próprio do cabeçalho */
+.old-header .navbar a {
+  color: var(--azul-claro);
+  padding: 10px 12px;
+  border-radius: 5px;
+  text-decoration: none;
+  font-size: 16px;
+  font-weight: 700;
+  transition: background-color .2s ease, color .2s ease, box-shadow .2s ease;
+}
+
+.old-header .navbar a:hover,
+.old-header .navbar a:focus {
+  color: var(--branco);
+  background: var(--azul-claro);
+  box-shadow: 0 4px 8px rgba(0, 0, 0, .14);
+}
+
+.old-header .dropdown-content {
+  display: none;
+  position: absolute;
+  top: calc(100% + 8px);
+  left: 0;
+  width: 170px;
+  padding: 6px;
+  background: var(--branco);
+  border: 1px solid var(--azul-claro);
+  border-radius: 6px;
+  box-shadow: 0 8px 20px rgba(0, 0, 0, .15);
+  z-index: 1200;
+}
+
+.old-header .dropdown:hover .dropdown-content,
+.old-header .dropdown:focus-within .dropdown-content {
+  display: block;
+}
+
+.old-header .dropdown-content a {
+  padding: 10px;
+  font-size: 14px;
+  text-align: left;
+}
+
+.old-header .header-buttons .btn-outline,
+.old-header .header-buttons .btn-primary {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 38px;
+  padding: 7px 15px;
+  border-radius: 5px;
+  text-decoration: none;
+  font-size: 14px;
+  font-weight: 700;
+}
+
+.old-header .header-buttons .btn-outline {
+  color: var(--azul-claro);
+  background: transparent;
+  border: 2px solid var(--azul-claro);
+}
+
+.old-header .header-buttons .btn-primary {
+  color: var(--branco);
+  background: var(--azul-claro);
+  border: 2px solid var(--azul-claro);
+}
+
+.old-header .header-buttons .btn-outline:hover,
+.old-header .header-buttons .btn-outline:focus,
+.old-header .header-buttons .btn-primary:hover,
+.old-header .header-buttons .btn-primary:focus {
+  color: var(--branco);
+  background: var(--azul-escuro);
+  border-color: var(--azul-escuro);
+}
+
+.rodape .footer-payments {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 20px;
+  margin: 24px auto 0;
+}
+
+.rodape .payment-icon {
+  display: block;
+  width: 80px;
+  max-height: 48px;
+  object-fit: contain;
+}
+
+.rodape ul {
+  padding-left: 0;
+  list-style: none;
+}
+
+.rodape a {
+  text-decoration: none;
+}
+
+body {
+  font-family: Arial, Helvetica, sans-serif;
+  line-height: 1.6;
+}
+
+.rodape {
+  padding: 52px 32px 20px;
+  color: var(--branco);
+  background: var(--azul-escuro);
+}
+
+.rodape .footer-container {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 28px;
+  align-items: start;
+}
+
+.rodape .footer-column {
+  margin: 0;
+}
+
+.rodape h3 {
+  margin: 0 0 12px;
+  color: var(--azul-claro);
+}
+
+.rodape p,
+.rodape li,
+.rodape a {
+  color: var(--branco);
+}
+
+.rodape p {
+  margin: 5px 0;
+}
+
+.rodape .footer-bottom {
+  max-width: 1200px;
+  margin: 24px auto 0;
+  padding-top: 16px;
+  border-top: 1px solid rgba(255, 255, 255, .18);
+  text-align: center;
+}
+
+@media (max-width: 900px) {
+  .rodape .footer-container {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+@media (max-width: 600px) {
+  .rodape .footer-container {
+    grid-template-columns: 1fr;
+  }
+}
+
+/* --------------------------------------------------------------------------
+   Rodapé público único — usado em Cadastro, Termos, Privacidade e catálogo
+   -------------------------------------------------------------------------- */
+body {
+  display: flex;
+  flex-direction: column;
+  min-height: 100vh;
+  background-color: #f5f7fb;
+}
+
+body > main {
+  flex: 1 0 auto;
+}
+
+body > .rodape {
+  flex: 0 0 auto;
+  margin-top: auto;
+}
+
+.rodape {
+  display: block;
+  width: 100%;
+  padding: 48px 28px 20px;
+  color: #ffffff;
+  background: #0a3d62;
+  border-top: 4px solid #52c0d9;
+}
+
+.rodape .footer-container {
+  display: grid;
+  grid-template-columns: minmax(220px, 1.35fr) repeat(3, minmax(150px, 1fr));
+  gap: 28px;
+  width: min(1200px, 100%);
+  margin: 0 auto;
+  padding: 0;
+  align-items: start;
+}
+
+.rodape .footer-column,
+.rodape .footer-column.logo-info,
+.rodape .footer-column.redes-sociais,
+.rodape .footer-column.contato,
+.rodape .footer-column.links-rapidos {
+  width: auto;
+  min-width: 0;
+  margin: 0;
+  padding: 0;
+  text-align: left;
+}
+
+.rodape .footer-logo {
+  display: block;
+  width: 150px;
+  max-width: 100%;
+  height: auto;
+  margin: 0 0 12px;
+  object-fit: contain;
+}
+
+.rodape h3 {
+  margin: 0 0 12px;
+  color: #7ed4f2;
+  font-size: 1rem;
+  line-height: 1.25;
+}
+
+.rodape p,
+.rodape li,
+.rodape a {
+  margin: 0;
+  color: #eef6fb;
+  font-size: .88rem;
+  line-height: 1.65;
+  overflow-wrap: anywhere;
+}
+
+.rodape p + p {
+  margin-top: 4px;
+}
+
+.rodape ul {
+  display: grid;
+  gap: 7px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.rodape a {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  text-decoration: none;
+  transition: color .2s ease;
+}
+
+.rodape a:hover,
+.rodape a:focus-visible {
+  color: #7ed4f2;
+}
+
+.rodape .footer-payments {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-wrap: wrap;
+  gap: 18px;
+  width: min(1200px, 100%);
+  margin: 28px auto 0;
+  padding-top: 20px;
+  border-top: 1px solid rgba(255, 255, 255, .14);
+}
+
+.rodape .payment-icon {
+  display: block;
+  width: 72px;
+  height: 38px;
+  max-height: 38px;
+  object-fit: contain;
+  object-position: center;
+  filter: saturate(.92);
+}
+
+.rodape .footer-bottom {
+  width: min(1200px, 100%);
+  margin: 20px auto 0;
+  padding-top: 15px;
+  border-top: 1px solid rgba(255, 255, 255, .14);
+  text-align: center;
+}
+
+.rodape .footer-bottom p {
+  color: #c7dce8;
+  font-size: .8rem;
+  text-align: center;
+}
+
+@media (max-width: 900px) {
+  .rodape {
+    padding: 40px 22px 18px;
+  }
+
+  .rodape .footer-container {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 26px 22px;
+  }
+}
+
+@media (max-width: 600px) {
+  .rodape {
+    padding: 34px 18px 18px;
+  }
+
+  .rodape .footer-container {
+    grid-template-columns: 1fr;
+    gap: 22px;
+  }
+
+  .rodape .footer-column,
+  .rodape .footer-column.logo-info,
+  .rodape .footer-column.redes-sociais,
+  .rodape .footer-column.contato,
+  .rodape .footer-column.links-rapidos {
+    text-align: left;
+  }
+
+  .rodape .footer-payments {
+    justify-content: flex-start;
+    gap: 14px;
+  }
+
+  .rodape .payment-icon {
+    width: 64px;
+    height: 34px;
+  }
+}
+
+/* Páginas institucionais com o mesmo alinhamento e rodapé */
+.legal-page{
+  width:min(100% - 32px,1080px);
+  min-height:clamp(320px,52vh,620px);
+  margin:34px auto 54px;
+  padding:clamp(26px,5vw,52px);
+  border:1px solid #d9e4ec;
+  border-radius:18px;
+  background:#fff;
+  box-shadow:0 12px 34px rgba(10,61,98,.07);
+}
+.legal-page h1{margin:0;color:#0a3d62;font-size:clamp(1.8rem,4vw,2.6rem);line-height:1.2}
+@media(max-width:600px){.legal-page{width:min(100% - 22px,1080px);margin:22px auto 34px;padding:24px 18px;border-radius:14px}}
+
+/* Ajuste 03: posição idêntica do botão móvel em todas as páginas públicas */
+@media (max-width: 900px) {
+  .new-header {
+    display: grid !important;
+    grid-template-columns: minmax(0, 1fr) 42px;
+    gap: 12px;
+  }
+
+  .new-header .logo {
+    min-width: 0;
+    width: 100%;
+    justify-content: flex-start;
+  }
+
+  .new-header .menu-icon {
+    justify-self: end;
+    align-self: center;
+    flex: 0 0 42px;
+    margin: 0;
+    inset: auto;
+    transform: none;
+  }
+
+  .new-header .menu-icon > img {
+    margin: 0;
+    inset: auto;
+    transform: none;
+  }
+}
+
+
+/* ALTITUDE 09 — acessos no menu móvel */
+.new-header .dropdown-menu .mobile-menu-divider {
+  height: 1px;
+  margin: 7px 6px;
+  background: #dbe7ef;
+  pointer-events: none;
+}
+
+.new-header .dropdown-menu .mobile-auth-link a {
+  border: 1px solid #c9dbe7;
+  justify-content: center;
+  text-align: center;
+}
+
+.new-header .dropdown-menu .mobile-auth-primary a {
+  border-color: #0d4b73;
+  background: #0d4b73;
+  color: #fff;
+}
+
+.new-header .dropdown-menu .mobile-auth-primary a:hover,
+.new-header .dropdown-menu .mobile-auth-primary a:focus {
+  border-color: #168fa8;
+  background: #168fa8;
+}
+
+/* Botão de senha discreto e acessível (login/cadastro). */
+.form-group.has-icon,
+.password-input-wrap {
+  position: relative;
+}
+
+.password-input-wrap {
+  width: 100%;
+}
+
+.password-input-wrap input,
+.form-group.has-icon > input {
+  padding-right: 52px !important;
+}
+
+.password-input-wrap .toggle-pass,
+.form-group.has-icon > .toggle-pass {
+  position: absolute !important;
+  right: 7px !important;
+  top: 50% !important;
+  transform: translateY(-50%) !important;
+  display: inline-grid !important;
+  place-items: center !important;
+  width: 38px !important;
+  min-width: 38px !important;
+  height: 38px !important;
+  min-height: 38px !important;
+  margin: 0 !important;
+  padding: 0 !important;
+  border: 1px solid transparent !important;
+  border-radius: 10px !important;
+  background: transparent !important;
+  color: #587087 !important;
+  box-shadow: none !important;
+  cursor: pointer;
+  z-index: 2;
+}
+
+.form-group.has-icon > .toggle-pass {
+  top: 35px !important;
+  transform: none !important;
+}
+
+.password-input-wrap .toggle-pass:hover,
+.form-group.has-icon > .toggle-pass:hover {
+  border-color: #c6dce8 !important;
+  background: #eef7fa !important;
+  color: #0d4b73 !important;
+}
+
+.password-input-wrap .toggle-pass:focus-visible,
+.form-group.has-icon > .toggle-pass:focus-visible {
+  outline: 3px solid rgba(26, 168, 183, .22) !important;
+  outline-offset: 1px;
+}
+
+.password-input-wrap .toggle-pass i,
+.form-group.has-icon > .toggle-pass i {
+  font-size: 17px;
+  line-height: 1;
+  pointer-events: none;
+}

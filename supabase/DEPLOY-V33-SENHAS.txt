@@ -17,7 +17,7 @@ ALTITUDE V33 — DEPLOY DAS SENHAS
    https://www.portalaltitude.com.br
 
    Redirect URL permitida:
-   https://www.portalaltitude.com.br/Projeto/1-html/4-login.html?recovery=1
+   https://www.portalaltitude.com.br/login/?recovery=1
 
 5) Alternativa: configure um SMTP próprio em Authentication > SMTP Settings.
 

@@ -1,0 +1,31 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta http-equiv="Content-Security-Policy" content="upgrade-insecure-requests; block-all-mixed-content">
+  <title>Validar Carteirinha - Altitude</title>
+  <link rel="icon" type="image/png" sizes="512x512" href="/assets/img/favicon-cloud.png?v=14">
+
+  <link rel="icon" href="/assets/img/favicon.ico?v=14">
+  <link rel="stylesheet" href="/assets/css/13-validar-carteirinha.css?v=17">
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2" defer></script>
+  <script src="/assets/js/supabase-init.js?v=17" defer></script>
+  <script src="/assets/js/validar-carteirinha.js?v=17" defer></script>
+  <link rel="stylesheet" href="/assets/css/06-responsive.css?v=17">
+  <link rel="stylesheet" href="/assets/css/26-v34-emissao.css?v=34.1">
+  <link rel="stylesheet" href="/assets/css/27-v34-2-ajustes-finais.css?v=34.2">
+  <link rel="stylesheet" href="/assets/css/30-v36-ajustes.css?v=36">
+</head>
+<body>
+  <main class="validation-shell">
+    <a href="/"><img src="/assets/img/LOGO.png" alt="Altitude"></a>
+    <section class="validation-card">
+      <div id="cardValidationLoading" class="validation-loading">Consultando a base oficial...</div>
+      <div id="cardValidationResult" hidden></div>
+    </section>
+    <p class="validation-foot">A validação confirma o vínculo acadêmico atual. Não exibe CPF, telefone ou e-mail.</p>
+  </main>
+  <script src="/assets/js/06-responsive.js?v=17"></script>
+</body>
+</html>

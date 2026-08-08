@@ -1,0 +1,329 @@
+/* =========================================================
+   ALTITUDE V34.2 — AJUSTES FINAIS PONTUAIS
+   Legibilidade, responsividade, cabeçalho público único,
+   prova mobile, sala de estudo e remoção de rolagem lateral.
+   ========================================================= */
+
+:root{
+  --v342-navy:#07314f;
+  --v342-navy-2:#0b456b;
+  --v342-cyan:#16a9bc;
+  --v342-cyan-2:#39b4cd;
+  --v342-line:#d6e3ec;
+  --v342-soft:#f5f9fc;
+  --v342-success:#138a57;
+  --v342-danger:#c63b48;
+  --v342-warning:#b46b08;
+}
+
+html,body{max-width:100%;overflow-x:hidden!important}
+*,*::before,*::after{box-sizing:border-box}
+button,a,input,select,textarea{font:inherit}
+
+/* ---------- Cabeçalho público: exatamente o mesmo em todas as páginas ---------- */
+@media (min-width:901px){
+  body>.old-header{
+    position:sticky!important;top:0!important;z-index:1000!important;
+    display:block!important;width:100%!important;height:96px!important;
+    min-height:96px!important;padding:0 28px!important;margin:0!important;
+    background:#fff!important;border-bottom:1px solid var(--v342-line)!important;
+    box-shadow:0 5px 18px rgba(7,49,79,.07)!important;
+  }
+  body>.old-header .top-bar{
+    width:min(1200px,100%)!important;height:96px!important;min-height:96px!important;
+    margin:0 auto!important;padding:0!important;
+    display:grid!important;grid-template-columns:190px minmax(0,1fr) 220px!important;
+    align-items:center!important;gap:18px!important;
+  }
+  body>.old-header .institution-logo,
+  body>.old-header .institution-logo a{
+    position:static!important;display:flex!important;align-items:center!important;
+    justify-content:flex-start!important;width:190px!important;height:96px!important;
+    margin:0!important;padding:0!important;transform:none!important;
+  }
+  body>.old-header .institution-logo img,
+  body>.old-header .institution-logo img.logo{
+    position:static!important;display:block!important;width:150px!important;height:48px!important;
+    max-width:150px!important;max-height:48px!important;margin:0!important;padding:0!important;
+    object-fit:contain!important;object-position:left center!important;transform:none!important;
+  }
+  body>.old-header .navbar{position:static!important;justify-self:center!important;margin:0!important;padding:0!important;min-width:0!important}
+  body>.old-header .navbar ul{display:flex!important;align-items:center!important;justify-content:center!important;gap:34px!important;margin:0!important;padding:0!important;list-style:none!important;flex-wrap:nowrap!important}
+  body>.old-header .navbar li{margin:0!important;padding:0!important;flex:0 0 auto!important}
+  body>.old-header .navbar a{
+    display:flex!important;align-items:center!important;justify-content:center!important;
+    height:96px!important;min-height:96px!important;padding:3px 0 0!important;margin:0!important;
+    border:0!important;border-bottom:3px solid transparent!important;border-radius:0!important;
+    background:transparent!important;color:#099bb4!important;box-shadow:none!important;
+    font-size:15px!important;font-weight:800!important;line-height:1!important;white-space:nowrap!important;text-decoration:none!important;
+  }
+  body>.old-header .navbar a.active,
+  body>.old-header .navbar a[aria-current="page"]{color:var(--v342-navy)!important;border-bottom-color:var(--v342-cyan)!important}
+  body>.old-header .header-buttons{position:static!important;display:flex!important;align-items:center!important;justify-content:flex-end!important;gap:10px!important;width:220px!important;margin:0!important;padding:0!important}
+  body>.old-header .header-buttons a{display:inline-flex!important;align-items:center!important;justify-content:center!important;min-width:96px!important;min-height:42px!important;height:42px!important;padding:0 14px!important;border-radius:9px!important;font-size:14px!important;font-weight:800!important;line-height:1!important;text-decoration:none!important;white-space:nowrap!important}
+  body>.new-header{display:none!important}
+}
+
+@media (max-width:900px){
+  body>.old-header{display:none!important}
+  body>.new-header{position:sticky!important;top:0!important;z-index:1000!important;display:grid!important;grid-template-columns:minmax(0,1fr) 44px!important;align-items:center!important;width:100%!important;height:70px!important;min-height:70px!important;padding:8px 16px!important;margin:0!important;border-bottom:1px solid var(--v342-line)!important;background:#fff!important;box-shadow:0 4px 16px rgba(7,49,79,.08)!important}
+  body>.new-header .logo,body>.new-header .logo a{display:flex!important;align-items:center!important;height:54px!important}
+  body>.new-header .logo img{display:block!important;width:142px!important;height:44px!important;max-height:44px!important;object-fit:contain!important;object-position:left center!important;margin:0!important;transform:none!important}
+  body>.new-header .menu-icon{position:relative!important;inset:auto!important;display:grid!important;place-items:center!important;width:44px!important;height:44px!important;padding:6px!important;margin:0!important}
+  body>.new-header .menu-icon>img{position:static!important;width:28px!important;height:28px!important;margin:0!important}
+}
+
+/* ---------- Botões institucionais ---------- */
+body:has(.gestor-topbar) button:not(.modal-close):not(.review-modal-close),
+body:has(.student-topbar) button:not(.modal-close):not(.review-modal-close){
+  border:1px solid #bcd3df;border-radius:10px;background:#fff;color:var(--v342-navy);
+  font-weight:800;box-shadow:none;word-break:normal;overflow-wrap:normal;hyphens:none;
+}
+body:has(.gestor-topbar) button.primary-action,
+body:has(.gestor-topbar) .primary-action,
+body:has(.student-topbar) .primary-button,
+body:has(.student-topbar) .exam-button{background:var(--v342-cyan)!important;border-color:var(--v342-cyan)!important;color:#fff!important}
+body:has(.gestor-topbar) .success-action,
+body:has(.gestor-topbar) .release,
+body:has(.gestor-topbar) .payment-confirm{background:var(--v342-success)!important;border-color:var(--v342-success)!important;color:#fff!important}
+body:has(.gestor-topbar) .cancel,
+body:has(.gestor-topbar) .block,
+body:has(.gestor-topbar) .danger-action,
+body:has(.gestor-topbar) [data-cert-delete-v342]{background:#fff3f4!important;border-color:#efb8bd!important;color:var(--v342-danger)!important}
+
+/* ---------- Portal do gestor: respiro do topo e largura segura ---------- */
+body:has(.gestor-topbar) .conteudo{min-width:0!important;width:auto!important;max-width:100%!important;overflow-x:hidden!important}
+@media (min-width:901px){
+  body:has(.gestor-topbar) .gestor-topbar{display:none!important}
+  body:has(.gestor-topbar) .aba.ativa{padding-top:28px!important}
+  body:has(.gestor-topbar) #dashboard.aba.ativa{padding-top:22px!important}
+}
+body:has(.gestor-topbar) .aba,body:has(.gestor-topbar) .card,body:has(.gestor-topbar) .panel,body:has(.gestor-topbar) .section-block{min-width:0!important;max-width:100%!important}
+body:has(.gestor-topbar) .page-heading{gap:18px!important;margin-bottom:18px!important}
+body:has(.gestor-topbar) .page-heading h2,body:has(.gestor-topbar) .aba>h2:first-child{margin-top:0!important;margin-bottom:7px!important;line-height:1.15!important}
+body:has(.gestor-topbar) .toolbar{flex-wrap:wrap!important;gap:10px!important}
+body:has(.gestor-topbar) .toolbar>*{min-width:0!important}
+
+/* ---------- Tabelas: nenhuma rolagem horizontal ---------- */
+body:has(.gestor-topbar) .card,
+body:has(.gestor-topbar) .table-card,
+body:has(.gestor-topbar) .certificate-admin-table-wrap,
+body:has(.gestor-topbar) #chamados>.card{overflow-x:hidden!important;max-width:100%!important}
+body:has(.gestor-topbar) table{max-width:100%!important}
+body:has(.gestor-topbar) .tabela{width:100%!important;table-layout:fixed!important}
+body:has(.gestor-topbar) .tabela th,body:has(.gestor-topbar) .tabela td{min-width:0!important;word-break:normal!important;overflow-wrap:break-word!important;hyphens:none!important}
+
+/* Gestão de alunos: ações verticais e nome com espaço. */
+@media (min-width:801px){
+  #tabAlunos th:nth-child(1),#tabAlunos td:nth-child(1){width:11%!important}
+  #tabAlunos th:nth-child(2),#tabAlunos td:nth-child(2){width:24%!important}
+  #tabAlunos th:nth-child(3),#tabAlunos td:nth-child(3){width:25%!important}
+  #tabAlunos th:nth-child(4),#tabAlunos td:nth-child(4){width:16%!important}
+  #tabAlunos th:nth-child(5),#tabAlunos td:nth-child(5){width:9%!important}
+  #tabAlunos th:nth-child(6),#tabAlunos td:nth-child(6){width:15%!important;min-width:0!important}
+  #tabAlunos .student-name-cell{font-weight:800;line-height:1.35;overflow-wrap:break-word!important}
+  #tabAlunos .student-actions{display:grid!important;grid-template-columns:1fr!important;gap:7px!important;min-width:0!important;width:auto!important}
+  #tabAlunos .student-actions button{width:100%!important;min-width:0!important;min-height:38px!important;padding:7px 8px!important;white-space:normal!important}
+}
+
+/* Cursos: espaço para o curso e ações compactas sem barra. */
+@media (min-width:901px){
+  #tabCursos{width:100%!important;table-layout:fixed!important}
+  #tabCursos th:nth-child(1),#tabCursos td:nth-child(1){width:6%!important}
+  #tabCursos th:nth-child(2),#tabCursos td:nth-child(2){width:30%!important}
+  #tabCursos th:nth-child(3),#tabCursos td:nth-child(3){width:18%!important}
+  #tabCursos th:nth-child(4),#tabCursos td:nth-child(4){width:8%!important}
+  #tabCursos th:nth-child(5),#tabCursos td:nth-child(5){width:9%!important}
+  #tabCursos th:nth-child(6),#tabCursos td:nth-child(6){width:29%!important}
+  #tabCursos td:last-child>div{display:grid!important;grid-template-columns:repeat(2,minmax(0,1fr))!important;gap:7px!important;min-width:0!important}
+  #tabCursos td:last-child button{width:100%!important;min-width:0!important;min-height:38px!important;padding:7px 6px!important;font-size:12px!important;white-space:normal!important}
+  #tabCursos th{white-space:normal!important;word-break:normal!important;overflow-wrap:normal!important}
+}
+
+/* Certificados processados: cartões em grade, sem arrastar para o lado. */
+@media (min-width:801px){
+  #tabCertificadosProcessados{display:block!important;width:100%!important;table-layout:auto!important}
+  #tabCertificadosProcessados thead{display:none!important}
+  #tabCertificadosProcessados tbody{display:grid!important;gap:12px!important;width:100%!important}
+  #tabCertificadosProcessados tr{display:grid!important;grid-template-columns:minmax(160px,1.25fr) minmax(160px,1.15fr) 70px 95px 95px 115px minmax(130px,.85fr)!important;gap:12px!important;align-items:center!important;width:100%!important;padding:15px!important;border:1px solid var(--v342-line)!important;border-radius:14px!important;background:#fff!important}
+  #tabCertificadosProcessados td{display:block!important;width:auto!important;min-width:0!important;padding:0!important;border:0!important;overflow:visible!important}
+  #tabCertificadosProcessados td::before{content:attr(data-label);display:block;margin-bottom:5px;color:#60758a;font-size:10px;font-weight:800;letter-spacing:.05em;text-transform:none}
+  #tabCertificadosProcessados .cert-admin-actions{display:grid!important;grid-template-columns:1fr!important;gap:6px!important;width:100%!important;min-width:0!important}
+  #tabCertificadosProcessados .cert-admin-actions button{width:100%!important;min-width:0!important;min-height:36px!important;padding:7px 6px!important;font-size:12px!important}
+}
+@media (max-width:1120px) and (min-width:801px){
+  #tabCertificadosProcessados tr{grid-template-columns:1fr 1fr 90px 105px!important}
+  #tabCertificadosProcessados td:nth-child(7){grid-column:1/-1!important}
+  #tabCertificadosProcessados .cert-admin-actions{grid-template-columns:repeat(3,minmax(0,1fr))!important}
+}
+
+/* Chamados: cartão legível também no desktop. */
+#tabChamados{min-width:0!important;width:100%!important}
+@media (min-width:801px){
+  #tabChamados{display:block!important}
+  #tabChamados thead{display:none!important}
+  #tabChamados tbody{display:grid!important;gap:12px!important}
+  #tabChamados tr{display:grid!important;grid-template-columns:1fr 1.35fr 1.7fr .75fr!important;gap:14px 18px!important;padding:16px!important;border:1px solid var(--v342-line)!important;border-radius:14px!important;background:#fff!important}
+  #tabChamados td{display:block!important;width:auto!important;min-width:0!important;padding:0!important;border:0!important;text-align:left!important;overflow-wrap:break-word!important}
+  #tabChamados td::before{content:attr(data-label);display:block!important;margin-bottom:5px;color:#60758a;font-size:10px;font-weight:800;letter-spacing:.05em;text-transform:none;text-align:left!important}
+  #tabChamados td:nth-child(9){grid-column:1/-1!important}
+  #tabChamados .ticket-row-actions{display:grid!important;grid-template-columns:repeat(2,minmax(0,190px))!important;gap:8px!important}
+  #tabChamados .ticket-row-actions button{width:100%!important;min-width:0!important}
+}
+
+/* Tipos de curso e pagamentos: texto e ações separados. */
+.type-course-card,.payment-card{display:grid!important;grid-template-columns:minmax(0,1fr) minmax(210px,auto)!important;gap:20px!important;align-items:center!important;min-width:0!important}
+.type-course-card>div:first-child,.payment-card>div:first-child{min-width:0!important}
+.type-course-card h4,.payment-card h4,.type-course-card p,.payment-card p,.type-course-card small,.payment-card small{word-break:normal!important;overflow-wrap:break-word!important;hyphens:none!important}
+.type-course-card .card-actions,.payment-card .card-actions{display:grid!important;grid-template-columns:1fr!important;gap:8px!important;min-width:190px!important}
+.type-course-card .card-actions button,.payment-card .card-actions button{width:100%!important;min-width:0!important;white-space:normal!important}
+.payment-group-v342{display:grid;gap:14px;margin:10px 0 22px}
+.payment-group-v342>header{display:flex;align-items:center;justify-content:space-between;gap:12px;padding:4px 1px}
+.payment-group-v342>header h4{margin:0;color:var(--v342-navy);font-size:18px}
+.payment-group-v342>header span{font-size:12px;color:#63788c}
+.payment-card.payment-unpaid{border-left:5px solid var(--v342-danger)!important}
+.payment-card.payment-pending{border-left:5px solid #d9941e!important}
+.payment-card.payment-confirmed{border-left:5px solid var(--v342-success)!important}
+.payment-card .payment-status-chip{display:inline-flex;width:max-content;margin-top:10px;padding:5px 9px;border-radius:999px;font-size:12px;font-weight:800}
+.payment-card.payment-unpaid .payment-status-chip{background:#fff1f2;color:var(--v342-danger)}
+.payment-card.payment-pending .payment-status-chip{background:#fff7e7;color:#9b5c00}
+.payment-card.payment-confirmed .payment-status-chip{background:#e8f8ef;color:var(--v342-success)}
+
+@media (max-width:760px){
+  .type-course-card,.payment-card{grid-template-columns:1fr!important;align-items:stretch!important}
+  .type-course-card .card-actions,.payment-card .card-actions{min-width:0!important;width:100%!important}
+}
+
+/* ---------- Sala de estudo ---------- */
+@media (min-width:1101px){
+  .study-modal{width:min(1240px,calc(100vw - 44px))!important;max-width:1240px!important;height:min(860px,calc(100dvh - 28px))!important;max-height:calc(100dvh - 28px)!important;overflow:hidden!important}
+  .study-body{display:grid!important;grid-template-columns:330px minmax(0,1fr)!important;min-height:0!important;overflow:hidden!important}
+  .module-sidebar{width:auto!important;min-width:0!important;overflow-y:auto!important;overflow-x:hidden!important;padding:18px!important}
+  .module-list{overflow:visible!important;max-height:none!important}
+  .module-list button,.module-item{height:auto!important;min-height:66px!important;white-space:normal!important;word-break:normal!important;overflow-wrap:break-word!important}
+  .lesson-area{min-width:0!important;overflow-y:auto!important;overflow-x:hidden!important;padding:24px 28px!important}
+}
+
+.study-mobile-toggle{display:none}
+@media (max-width:600px){
+  #modalCurso{padding:0!important}
+  .study-modal{width:100vw!important;height:100dvh!important;max-width:none!important;max-height:none!important;border-radius:0!important;display:grid!important;grid-template-rows:auto auto minmax(0,1fr)!important;overflow:hidden!important}
+  .study-header{padding:14px 16px!important}
+  .study-progress-row{padding:8px 16px!important}
+  .study-body{position:relative!important;display:block!important;min-height:0!important;overflow-y:auto!important;overflow-x:hidden!important;padding:0!important}
+  .study-mobile-toggle{display:flex!important;align-items:center!important;justify-content:space-between!important;width:calc(100% - 24px)!important;margin:12px!important;padding:12px 14px!important;background:#fff!important;color:var(--v342-navy)!important;border:1px solid var(--v342-line)!important}
+  .module-sidebar{display:none!important;position:static!important;width:auto!important;max-height:none!important;margin:0 12px 12px!important;padding:12px!important;border:1px solid var(--v342-line)!important;border-radius:14px!important;overflow:visible!important;background:#f8fbfd!important}
+  .study-body.modules-open .module-sidebar{display:block!important}
+  .module-sidebar-title{display:none!important}
+  .module-list{display:grid!important;gap:8px!important;max-height:none!important;overflow:visible!important}
+  .module-list button,.module-item{height:auto!important;min-height:58px!important;white-space:normal!important;word-break:normal!important;overflow-wrap:break-word!important}
+  .lesson-area{min-width:0!important;padding:16px!important;overflow:visible!important}
+  .lesson-content{max-width:100%!important;overflow-x:hidden!important}
+  .lesson-actions{display:grid!important;grid-template-columns:1fr!important;gap:8px!important}
+}
+
+/* ---------- Prova no celular: rodapé sempre visível ---------- */
+@media (max-width:600px){
+  #modalProva{padding:0!important;align-items:stretch!important}
+  #modalProva .quiz-modal{width:100vw!important;height:100dvh!important;max-width:none!important;max-height:none!important;margin:0!important;border-radius:0!important;display:grid!important;grid-template-rows:auto 5px minmax(0,1fr) auto!important;overflow:hidden!important;background:#fff!important}
+  #modalProva .quiz-header{min-width:0!important;padding:14px 16px!important}
+  #modalProva .quiz-header h2{font-size:20px!important;line-height:1.25!important;word-break:normal!important;overflow-wrap:break-word!important}
+  #modalProva #quizBody{min-height:0!important;overflow-y:auto!important;overflow-x:hidden!important;padding:16px!important;padding-bottom:24px!important;-webkit-overflow-scrolling:touch!important}
+  #modalProva .quiz-question{min-width:0!important}
+  #modalProva .quiz-question h3{font-size:18px!important;line-height:1.4!important;white-space:normal!important;word-break:normal!important;overflow-wrap:break-word!important;user-select:text!important}
+  #modalProva .quiz-options{display:grid!important;grid-template-columns:1fr!important;gap:10px!important;width:100%!important;height:auto!important;max-height:none!important;overflow:visible!important}
+  #modalProva .quiz-option{display:grid!important;grid-template-columns:24px 30px minmax(0,1fr)!important;align-items:start!important;gap:10px!important;width:100%!important;height:auto!important;min-height:64px!important;padding:14px!important;overflow:visible!important;white-space:normal!important;word-break:normal!important;overflow-wrap:break-word!important}
+  #modalProva .quiz-option span:last-child{min-width:0!important;white-space:normal!important;word-break:normal!important;overflow-wrap:break-word!important}
+  #modalProva .quiz-footer{position:relative!important;z-index:5!important;display:grid!important;grid-template-columns:minmax(0,1fr) auto minmax(0,1fr)!important;align-items:center!important;gap:8px!important;width:100%!important;margin:0!important;padding:10px 12px calc(10px + env(safe-area-inset-bottom))!important;border-top:1px solid var(--v342-line)!important;background:#fff!important;box-shadow:0 -7px 18px rgba(7,49,79,.08)!important}
+  #modalProva .quiz-footer button{display:flex!important;min-width:0!important;min-height:44px!important;padding:8px!important;align-items:center!important;justify-content:center!important}
+  #modalProva #quizCounter{font-size:11px!important;white-space:nowrap!important}
+}
+
+/* Promoção desktop: imagem sem corte. */
+@media (min-width:761px){
+  .v34-promotion-dialog{grid-template-columns:minmax(360px,46%) minmax(0,1fr)!important;max-height:80vh!important}
+  .v34-promotion-dialog>img{width:100%!important;height:100%!important;max-height:80vh!important;object-fit:contain!important;object-position:center!important;background:#eef8fb!important}
+}
+
+/* ---------- Material de estudo HTML/prévia minimalista ---------- */
+.altitude-material-pdf .pdf-cover{padding:30px 24px!important;border:0!important;border-radius:0!important;background:#fff!important;box-shadow:none!important;text-align:center!important}
+.altitude-material-pdf .pdf-cover img{display:block!important;width:min(220px,55%)!important;height:auto!important;margin:0 auto 8px!important;object-fit:contain!important}
+.altitude-material-pdf .pdf-cover .institution{display:none!important}
+.altitude-material-pdf .pdf-cover .material{margin:0 0 18px!important;color:var(--v342-cyan)!important;font-size:13px!important;font-weight:800!important}
+.altitude-material-pdf .pdf-cover h1{margin:0!important;color:var(--v342-navy)!important;font-size:24px!important}
+.altitude-material-pdf .pdf-info-box{display:grid!important;grid-template-columns:max-content minmax(0,1fr)!important;gap:8px 12px!important;margin:0 28px 24px!important;padding:22px 0!important;border:0!important;border-top:1px solid var(--v342-line)!important;border-bottom:1px solid var(--v342-line)!important;border-radius:0!important;background:#fff!important;box-shadow:none!important}
+
+/* Mobile geral das tabelas/cards. */
+@media (max-width:800px){
+  body:has(.gestor-topbar) .aba.ativa{padding-top:18px!important}
+  #tabAlunos,#tabCursos,#tabCertificadosProcessados,#tabChamados{display:block!important;width:100%!important;min-width:0!important}
+  #tabAlunos thead,#tabCursos thead,#tabCertificadosProcessados thead,#tabChamados thead{display:none!important}
+  #tabAlunos tbody,#tabCursos tbody,#tabCertificadosProcessados tbody,#tabChamados tbody{display:grid!important;gap:12px!important}
+  #tabAlunos tr,#tabCursos tr,#tabCertificadosProcessados tr,#tabChamados tr{display:grid!important;grid-template-columns:1fr!important;gap:0!important;padding:14px!important;border:1px solid var(--v342-line)!important;border-radius:14px!important;background:#fff!important}
+  #tabAlunos td,#tabCursos td,#tabCertificadosProcessados td,#tabChamados td{display:flex!important;align-items:flex-start!important;justify-content:space-between!important;gap:12px!important;width:auto!important;min-width:0!important;padding:9px 0!important;border-bottom:1px solid #edf2f5!important;text-align:right!important;overflow-wrap:break-word!important}
+  #tabAlunos td::before,#tabCursos td::before,#tabCertificadosProcessados td::before,#tabChamados td::before{content:attr(data-label);display:block!important;flex:0 0 92px!important;color:#60758a!important;font-size:10px!important;font-weight:800!important;text-align:left!important}
+  #tabAlunos td:last-child,#tabCursos td:last-child,#tabCertificadosProcessados td:last-child,#tabChamados td:last-child{display:block!important;border-bottom:0!important;text-align:left!important}
+  #tabAlunos td:last-child::before,#tabCursos td:last-child::before,#tabCertificadosProcessados td:last-child::before,#tabChamados td:last-child::before{margin-bottom:8px!important}
+  #tabAlunos .student-actions,#tabCursos td:last-child>div,#tabCertificadosProcessados .cert-admin-actions,#tabChamados .ticket-row-actions{display:grid!important;grid-template-columns:1fr!important;gap:8px!important;width:100%!important;min-width:0!important}
+}
+
+/* ---------- Complementos V34.2: ações sem estourar e cupom antes da solicitação ---------- */
+@media (min-width:901px){
+  #tabCursos .course-action-cell{
+    display:grid!important;
+    grid-template-columns:repeat(2,minmax(0,1fr))!important;
+    gap:7px!important;
+    width:auto!important;
+    min-width:0!important;
+  }
+  #tabCursos .course-action-cell button{
+    width:100%!important;
+    min-width:0!important;
+    min-height:38px!important;
+    padding:7px 6px!important;
+    white-space:normal!important;
+    word-break:normal!important;
+  }
+}
+
+.hours-request-control{
+  display:grid!important;
+  grid-template-columns:minmax(0,1fr)!important;
+  gap:7px!important;
+  width:min(100%,340px)!important;
+  min-width:0!important;
+}
+.hours-request-control label{color:var(--v342-navy)!important;font-size:12px!important;font-weight:800!important}
+.hours-request-control select,
+.hours-request-control .certificate-coupon-before-request{
+  width:100%!important;
+  min-width:0!important;
+  min-height:42px!important;
+  padding:9px 11px!important;
+  border:1px solid #bfd3df!important;
+  border-radius:9px!important;
+  background:#fff!important;
+  color:var(--v342-navy)!important;
+}
+.hours-request-control .coupon-request-help{display:block!important;color:#60758a!important;font-size:11px!important;line-height:1.4!important}
+
+/* As áreas específicas não criam uma segunda rolagem horizontal. */
+#cursos,#alunos,#certificados-gestao,#pagamentos-gestao,#tipos-curso,#chamados,
+#cursos .card,#alunos .card,#certificados-gestao .card,#chamados .card{
+  max-width:100%!important;
+  min-width:0!important;
+  overflow-x:hidden!important;
+}
+
+/* Ações que antes apareciam com o estilo cinza padrão do navegador. */
+[data-wallet-v34],
+[data-open-ticket],
+.ticket-open,
+.course-build-button{
+  background:var(--v342-cyan)!important;
+  border-color:var(--v342-cyan)!important;
+  color:#fff!important;
+}
+[data-wallet-v34]:hover,
+.ticket-open:hover,
+.course-build-button:hover{background:var(--v342-navy-2)!important;border-color:var(--v342-navy-2)!important}

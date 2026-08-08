@@ -95,7 +95,7 @@ begin
 end;
 $$;
 
--- 4. Reassocia e ativa o gestor principal informado pelo projeto.
+-- 4. Reassocia e ativa o gestor principal informado no cadastro.
 do $$
 declare
   v_user_id uuid;

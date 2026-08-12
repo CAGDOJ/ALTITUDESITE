@@ -30,7 +30,10 @@ const state = {
   questaoIndex: 0,
   logoDataUrl: null,
   atualizandoDados: false,
-  atualizacaoPendente: false
+  atualizacaoPendente: false,
+  recompensas: [],
+  opcoesEmbaralhadas: {},
+  embaralharAlternativas: false
 };
 
 const TITULOS_ABAS = {
@@ -179,7 +182,12 @@ function statusPill(status) {
   const danger = ["CANCELADA", "CANCELADO", "BLOQUEADO", "INATIVO", "REPROVADO", "ESTORNADO"].includes(normalized);
   const warning = ["PENDENTE", "AGUARDANDO_HORAS", "AUTORIZADO_AGUARDANDO_DATA", "ABERTO", "EM_ANDAMENTO", "TRANCADA"].includes(normalized);
   const cls = success ? "success" : danger ? "danger" : warning ? "warning" : "neutral";
-  const labels = { AGUARDANDO_HORAS: "Aguardando a data de liberação", AUTORIZADO_AGUARDANDO_DATA: "Autorizado - aguardando a data" };
+  const labels = {
+    AGUARDANDO_HORAS: "Aguardando horas",
+    AUTORIZADO_AGUARDANDO_DATA: "Aguardando data de liberação",
+    AGUARDANDO_PAGAMENTO: "Aguardando pagamento",
+    PRONTO_PARA_LIBERACAO: "Pronto para liberação"
+  };
   const label = labels[normalized] || normalized.replaceAll("_", " ").toLocaleLowerCase("pt-BR").replace(/^./, (c) => c.toUpperCase());
   return `<span class="status-pill ${cls}">${escapeHTML(label)}</span>`;
 }
@@ -356,6 +364,63 @@ function avaliacaoDoCurso(cursoId) {
   return state.avaliacoes.find((item) => Number(item.curso_id) === Number(cursoId)) || null;
 }
 
+async function carregarRecompensas() {
+  try {
+    const { data, error } = await sb.from("recompensas_niveis_v39").select("*").eq("ativo", true).order("ordem").order("cursos_necessarios");
+    if (error) throw error;
+    state.recompensas = data || [];
+  } catch (error) {
+    console.warn("Recompensas V39 indisponíveis:", error.message);
+    state.recompensas = [];
+  }
+}
+
+function tipoRecompensaCurso(curso) {
+  const raw = String(curso?.tipo_curso || "PROFISSIONAL").normalize("NFD").replace(/[\u0300-\u036f]/g, "").toUpperCase();
+  if (raw.includes("POS")) return "POS_GRADUACAO";
+  if (raw.includes("SUPERIOR") || raw.includes("GRADUACAO")) return "SUPERIOR";
+  if (raw.includes("TECN")) return "TECNICO";
+  return "PROFISSIONAL";
+}
+
+function renderRecompensasAluno() {
+  const box = $("studentRewardBox");
+  if (!box) return;
+  const concluidos = state.cursos.filter(cursoConcluido);
+  const contagem = concluidos.reduce((acc, curso) => {
+    const tipo = tipoRecompensaCurso(curso);
+    acc[tipo] = (acc[tipo] || 0) + 1;
+    return acc;
+  }, {});
+  const prioridade = ["POS_GRADUACAO", "SUPERIOR", "TECNICO", "PROFISSIONAL"];
+  const configurados = state.recompensas.length ? state.recompensas : [
+    { tipo_curso:"PROFISSIONAL", faixa:"Bronze", nivel:"I", cursos_necessarios:1, ordem:10 },
+    { tipo_curso:"TECNICO", faixa:"Prata", nivel:"I", cursos_necessarios:1, ordem:20 },
+    { tipo_curso:"SUPERIOR", faixa:"Ouro", nivel:"I", cursos_necessarios:1, ordem:30 },
+    { tipo_curso:"POS_GRADUACAO", faixa:"Diamante", nivel:"I", cursos_necessarios:1, ordem:40 }
+  ];
+  let atual = null, proximo = null, tipoAtual = "PROFISSIONAL", nivelConquistado = true;
+  for (const tipo of prioridade) {
+    const qtd = Number(contagem[tipo] || 0);
+    if (!qtd) continue;
+    const niveis = configurados.filter(x => String(x.tipo_curso).toUpperCase() === tipo).sort((a,b)=>Number(a.cursos_necessarios)-Number(b.cursos_necessarios));
+    const elegiveis = niveis.filter(x => qtd >= Number(x.cursos_necessarios || 0));
+    if (elegiveis.length) { atual = elegiveis[elegiveis.length-1]; proximo = niveis.find(x => Number(x.cursos_necessarios) > qtd) || null; tipoAtual = tipo; break; }
+  }
+  if (!atual) {
+    const base = configurados.filter(x => String(x.tipo_curso).toUpperCase() === "PROFISSIONAL").sort((a,b)=>Number(a.cursos_necessarios)-Number(b.cursos_necessarios))[0];
+    atual = base || { faixa:"Bronze", nivel:"I", cursos_necessarios:1, tipo_curso:"PROFISSIONAL" };
+    proximo = atual; tipoAtual = "PROFISSIONAL"; nivelConquistado = false;
+  }
+  const qtd = Number(contagem[tipoAtual] || 0);
+  const alvo = Number(proximo?.cursos_necessarios || atual.cursos_necessarios || 1);
+  const falta = Math.max(0, alvo - qtd);
+  const classe = String(atual.faixa || "Bronze").normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase();
+  box.innerHTML = `<div class="reward-coin reward-${escapeHTML(classe)}"><span>${escapeHTML(atual.nivel || "I")}</span></div>
+    <div class="reward-copy"><small>${nivelConquistado ? "Recompensa atual" : "Próxima recompensa"}</small><strong>${escapeHTML(atual.nome || `${atual.faixa || "Bronze"} ${atual.nivel || "I"}`)}</strong>
+    <span>${qtd} ${qtd === 1 ? "curso concluído" : "cursos concluídos"}${falta ? ` · faltam ${falta} para o próximo nível` : ""}</span></div>`;
+}
+
 function alunoPodeTerCarteirinha() {
   return state.cursos.some((curso) => {
     const resultado = melhorResultadoCurso(curso.id);
@@ -502,6 +567,7 @@ function renderDashboard() {
   setText("kpiHorasEmitidas", `${horas} horas certificadas`);
   setText("progressoGeralTexto", `${progressoGeral}%`);
   if ($("progressoGeralBarra")) $("progressoGeralBarra").style.width = `${progressoGeral}%`;
+  renderRecompensasAluno();
 
   const continuar = cursosAtivos
     .filter((item) => clamp(item.progresso) < 100 || !melhorResultadoCurso(item.id)?.aprovado)
@@ -681,16 +747,34 @@ function renderSalaEstudo() {
   `).join("");
 
   renderModuloAtual();
-  const approved = Boolean(melhorResultadoCurso(curso.id)?.aprovado);
+  const resultado = melhorResultadoCurso(curso.id);
+  const approved = Boolean(resultado?.aprovado);
+  const avaliacao = avaliacaoDoCurso(curso.id);
   const examButton = $("btnAbrirProva");
   if (examButton) {
     examButton.disabled = progress < 100;
     examButton.textContent = approved ? "Ver resultado da prova" : progress >= 100 ? "Fazer prova" : "Conclua os módulos";
   }
+
   const finishPanel = $("courseCompletionPanel");
-  if (finishPanel) finishPanel.hidden = progress < 100;
-  const finishButton = $("btnIrParaProva");
-  if (finishButton) finishButton.textContent = approved ? "Ver resultado da prova" : "Fazer prova agora";
+  if (!finishPanel) return;
+  finishPanel.hidden = progress < 100;
+  if (progress < 100) return;
+
+  if (!approved) {
+    finishPanel.innerHTML = `<div><span class="eyebrow">Conteúdo finalizado</span><strong>Você concluiu os estudos deste curso.</strong><small>Agora faça a prova para concluir esta etapa.</small></div>
+      <div class="course-completion-actions"><button type="button" class="primary-button" onclick="abrirProva()">Fazer prova agora</button></div>`;
+    return;
+  }
+
+  if (!avaliacao) {
+    finishPanel.innerHTML = `<div><span class="eyebrow">Prova aprovada</span><strong>Você foi aprovado neste curso.</strong><small>Avalie o curso para liberar a etapa do certificado.</small></div>
+      <div class="course-completion-actions"><button type="button" class="primary-button" onclick="avaliarCurso(${Number(curso.id)})">Avaliar curso</button><button type="button" class="secondary-button" onclick="abrirProva()">Ver resultado da prova</button></div>`;
+    return;
+  }
+
+  finishPanel.innerHTML = `<div><span class="eyebrow">Curso concluído</span><strong>Parabéns! Você concluiu o curso, foi aprovado e já realizou a avaliação.</strong><small>Escolha se deseja solicitar o certificado agora ou continuar estudando.</small></div>
+    <div class="course-completion-actions final-actions"><button type="button" class="primary-button" onclick="solicitarCertificadoCursoAtual()">Solicitar certificado</button><button type="button" class="secondary-button" onclick="continuarEstudando()">Continuar estudando</button></div>`;
 }
 
 function selecionarModulo(index) {
@@ -864,11 +948,18 @@ async function baixarMaterialCompletoCurso() {
       if (y + needed <= height - 18) return;
       doc.addPage(); y = 20;
     };
-    const writeLines = (text, size = 10, bold = false, spacing = 5, indent = 0) => {
+    const writeLines = (text, size = 10, bold = false, spacing = 5, indent = 0, justify = false) => {
       doc.setFont("helvetica", bold ? "bold" : "normal");
       doc.setFontSize(size);
-      const lines = doc.splitTextToSize(String(text || ""), width - margin * 2 - indent);
-      for (const line of lines) { newPageIfNeeded(spacing + 2); doc.text(line, margin + indent, y); y += spacing; }
+      const maxWidth = width - margin * 2 - indent;
+      const lines = doc.splitTextToSize(String(text || ""), maxWidth);
+      lines.forEach((line, index) => {
+        newPageIfNeeded(spacing + 2);
+        const shouldJustify = justify && !bold && lines.length > 1 && index < lines.length - 1;
+        doc.text(line, margin + indent, y, shouldJustify ? { maxWidth, align: "justify" } : undefined);
+        y += spacing;
+      });
+      if (justify && lines.length) y += 1.5;
     };
 
     // Capa minimalista: sem caixas ou molduras pesadas.
@@ -908,7 +999,7 @@ async function baixarMaterialCompletoCurso() {
         const heading = line.match(/^#{2,4}\s+(.+)$/);
         if (heading) { doc.setTextColor(7,59,90); writeLines(heading[1],13,true,7); doc.setTextColor(45,61,75); return; }
         const item = line.replace(/^-\s*/, '• ');
-        writeLines(item,10,false,5,currentIndent);
+        writeLines(item,10,false,5,currentIndent,true);
       });
     });
 
@@ -1033,6 +1124,8 @@ async function abrirProva() {
 
     state.prova = data;
     state.respostas = {};
+    state.opcoesEmbaralhadas = {};
+    state.embaralharAlternativas = state.resultados.some((item) => Number(item.curso_id) === Number(state.cursoAtual?.id));
     $("btnQuestaoAnterior").style.display = "inline-flex";
     $("btnQuestaoProxima").style.display = "inline-flex";
     state.questaoIndex = 0;
@@ -1054,28 +1147,36 @@ function renderQuestao() {
   if ($("quizProgressBar")) $("quizProgressBar").style.width = `${progress}%`;
   setText("quizCounter", `Questão ${state.questaoIndex + 1} de ${total}`);
 
-  const options = ["A", "B", "C", "D", "E"]
-    .map((letter) => ({ letter, text: questao[letter.toLowerCase()] }))
+  let options = ["A", "B", "C", "D", "E"]
+    .map((letter) => ({ originalLetter: letter, text: questao[letter.toLowerCase()] }))
     .filter((option) => String(option.text || "").trim());
+  if (state.embaralharAlternativas) {
+    if (!state.opcoesEmbaralhadas[questao.id]) {
+      const shuffled = [...options];
+      for (let i = shuffled.length - 1; i > 0; i -= 1) {
+        const j = Math.floor(Math.random() * (i + 1));
+        [shuffled[i], shuffled[j]] = [shuffled[j], shuffled[i]];
+      }
+      state.opcoesEmbaralhadas[questao.id] = shuffled;
+    }
+    options = state.opcoesEmbaralhadas[questao.id];
+  }
   const selected = state.respostas[questao.id];
   $("quizBody").innerHTML = `
     <div class="quiz-question">
       <span class="quiz-question-number">Questão ${state.questaoIndex + 1}</span>
       <h3>${escapeHTML(questao.enunciado)}</h3>
       <div class="quiz-options">
-        ${options.map((option) => `
-          <label class="quiz-option ${selected === option.letter ? "selected" : ""}">
-            <input type="radio" name="quizOption" value="${option.letter}" ${selected === option.letter ? "checked" : ""}>
-            <b>${option.letter}</b>
-            <span>${escapeHTML(option.text)}</span>
-          </label>
-        `).join("")}
+        ${options.map((option, index) => {
+          const displayLetter = String.fromCharCode(65 + index);
+          return `<button type="button" class="quiz-option ${selected === option.originalLetter ? "selected" : ""}" data-quiz-answer="${escapeHTML(option.originalLetter)}" aria-pressed="${selected === option.originalLetter}"><b>${displayLetter}</b><span>${escapeHTML(option.text)}</span></button>`;
+        }).join("")}
       </div>
     </div>`;
 
-  document.querySelectorAll('input[name="quizOption"]').forEach((input) => {
-    input.addEventListener("change", () => {
-      state.respostas[questao.id] = input.value;
+  document.querySelectorAll('[data-quiz-answer]').forEach((button) => {
+    button.addEventListener("click", () => {
+      state.respostas[questao.id] = button.dataset.quizAnswer;
       renderQuestao();
     });
   });
@@ -1167,7 +1268,7 @@ function mostrarResultadoProva(resultado) {
         <div><dt>Situação</dt><dd>${aprovado ? "Aprovado" : "Reprovado"}</dd></div>
         ${dataRealizacao ? `<div><dt>Realizada em</dt><dd>${new Date(dataRealizacao).toLocaleDateString("pt-BR")}</dd></div>` : ""}
       </dl>
-      <button class="primary-button" type="button" onclick="${aprovado ? "irParaCertificados()" : "fecharModal(\'prova\')"}">${aprovado ? "Solicitar certificado" : "Fechar"}</button>
+      <button class="primary-button" type="button" onclick="fecharModal('prova')">Fechar</button>
     </div>`;
   $("quizCounter").textContent = "Resultado";
   $("btnQuestaoAnterior").style.display = "none";
@@ -1180,31 +1281,62 @@ function refazerProva() {
   abrirProva();
 }
 
-function irParaCertificados() {
+function irParaCertificados(cursoId = null) {
+  const id = Number(cursoId || state.cursoAtual?.id || 0);
   fecharModal("prova");
   fecharModal("curso");
   abrirAba("solicitar-certificado");
   window.setTimeout(() => {
-    document.querySelector('#listaSolicitacaoCertificados .certificate-card')?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    const target = id ? document.querySelector(`[data-curso-certificado="${id}"]`) : document.querySelector('#listaSolicitacaoCertificados .certificate-card');
+    target?.scrollIntoView({ behavior: 'smooth', block: 'start' });
   }, 100);
+}
+
+function solicitarCertificadoCursoAtual() {
+  const id = Number(state.cursoAtual?.id || 0);
+  if (!id) return;
+  irParaCertificados(id);
+}
+
+function continuarEstudando() {
+  fecharModal("prova");
+  fecharModal("curso");
+  abrirAba("cursos");
+}
+
+function statusEfetivoCertificado(certificado) {
+  const original = String(certificado?.status || "PENDENTE").toUpperCase();
+  if (["CANCELADO","BLOQUEADO","EMITIDO"].includes(original)) return original;
+  const faltam = Math.max(0, Number(certificado?.horas_faltantes || 0));
+  if (faltam > 0) return "AGUARDANDO_HORAS";
+  const pagamento = String(certificado?.pagamento_status || "").toUpperCase();
+  if (pagamento && !["PAGO","ISENTO"].includes(pagamento)) return "AGUARDANDO_PAGAMENTO";
+  if (original === "AUTORIZADO_AGUARDANDO_DATA") return original;
+  if (certificado?.autorizado_em && (certificado?.previsao_liberacao || certificado?.data_final_prevista || certificado?.periodo_fim || certificado?.liberar_em)) return "AUTORIZADO_AGUARDANDO_DATA";
+  if (["PENDENTE","REABERTO"].includes(original) && ["PAGO","ISENTO"].includes(pagamento)) return "PRONTO_PARA_LIBERACAO";
+  return original;
 }
 
 function rotuloAcaoCertificado(acao) {
   return ({
     SOLICITADO: "Solicitação enviada", LIBERADO: "Certificado liberado", EMITIDO: "Certificado emitido",
-    BLOQUEADO: "Certificado bloqueado", AGUARDANDO_HORAS: "Certificado aguardando a data", AUTORIZADO_AGUARDANDO_DATA: "Emissão autorizada", CANCELADO: "Certificado cancelado", REABERTO: "Solicitação reaberta",
+    BLOQUEADO: "Certificado bloqueado", AGUARDANDO_HORAS: "Certificado aguardando horas", AUTORIZADO_AGUARDANDO_DATA: "Certificado aguardando a data", CANCELADO: "Certificado cancelado", REABERTO: "Solicitação reaberta",
     IMPORTADO: "Registro importado", CRIADO: "Registro criado", ATUALIZADO: "Registro atualizado"
   })[String(acao || "").toUpperCase()] || String(acao || "Atualização").replaceAll("_", " ");
 }
 
 function mensagemPublicaHistoricoCertificado(item, certificado) {
-  const status = String(item?.status_novo || certificado?.status || "").toUpperCase();
+  const statusHistorico = String(item?.status_novo || "").toUpperCase();
+  const status = certificado ? statusEfetivoCertificado(certificado) : statusHistorico;
 
-  if (["AGUARDANDO_HORAS","AUTORIZADO_AGUARDANDO_DATA"].includes(status) || certificadoAguardandoPrazo(certificado)) {
+  if (status === "AGUARDANDO_HORAS") {
+    const faltam = Number(certificado?.horas_faltantes || 0);
+    const previsao = certificado?.previsao_liberacao || certificado?.data_final_prevista || certificado?.periodo_fim;
+    return `${faltam > 0 ? `Faltam ${faltam}h para completar a carga solicitada.` : "Aguardando completar as horas solicitadas."}${previsao ? ` Previsão estimada: ${dataBR(previsao)}.` : ""}`;
+  }
+  if (status === "AUTORIZADO_AGUARDANDO_DATA" || (String(certificado?.status || "").toUpperCase() === "EMITIDO" && !certificadoEstaLiberado(certificado))) {
     const previsao = certificado?.previsao_liberacao || certificado?.data_final_prevista || certificado?.periodo_fim || certificado?.liberar_em;
-    return previsao
-      ? `Previsão de liberação: ${dataBR(previsao)}.`
-      : "Aguardando a data de liberação do certificado.";
+    return previsao ? `Aguardando a data de liberação: ${dataBR(previsao)}.` : "Aguardando a data de liberação do certificado.";
   }
   if (status === "PENDENTE") return "Solicitação aguardando análise.";
   if (status === "BLOQUEADO") return "Certificado temporariamente indisponível.";
@@ -1358,8 +1490,7 @@ function certificadoBloqueadoDoCurso(cursoId) {
 function cardSolicitacaoCertificado(curso) {
   const progressoOk = clamp(curso.progresso) >= 100;
   const resultado = melhorResultadoCurso(curso.id);
-  const notaMinima = Number(curso.nota_minima || 70);
-  const provaOk = Boolean(resultado?.aprovado && Number(resultado.nota) >= notaMinima);
+  const provaOk = Boolean(resultado?.aprovado);
   const carteira = carteiraHorasCurso(curso.id);
   const saldo = Number(carteira?.saldo_disponivel || 0);
   const ativo = certificadoPendenteDoCurso(curso.id);
@@ -1373,14 +1504,25 @@ function cardSolicitacaoCertificado(curso) {
   let statusVisual = "BLOQUEADO";
 
   if (ativo) {
-    const status = String(ativo.status || "").toUpperCase();
+    const status = statusEfetivoCertificado(ativo);
     const previsao = ativo.previsao_liberacao || ativo.data_final_prevista || ativo.periodo_fim || ativo.liberar_em;
     statusVisual = status;
-    help = previsao ? `Previsão de liberação: ${dataBR(previsao)}.` : "Aguardando a previsão de liberação.";
-    if (status === "AUTORIZADO_AGUARDANDO_DATA") help += " Emissão autorizada pela gestão.";
-    else if (!["PAGO","ISENTO"].includes(String(ativo.pagamento_status || "").toUpperCase())) help += " Pagamento pendente.";
-    else help += " Aguardando autorização da gestão.";
-    actions = `<button class="secondary-button" type="button" disabled>Aguardando liberação</button>`;
+    if (status === "AGUARDANDO_HORAS") {
+      const faltam = Number(ativo.horas_faltantes || 0);
+      help = `${faltam > 0 ? `Faltam ${faltam}h para completar as ${Number(ativo.horas_solicitadas || 0)}h solicitadas.` : "Aguardando completar as horas solicitadas."}${previsao ? ` Previsão estimada: ${dataBR(previsao)}.` : ""}`;
+      actions = `<button class="secondary-button" type="button" disabled>Aguardando horas</button>`;
+    } else if (status === "AGUARDANDO_PAGAMENTO") {
+      statusVisual = "AGUARDANDO_PAGAMENTO";
+      help = "A solicitação está aguardando a confirmação do pagamento.";
+      actions = `<button class="secondary-button" type="button" disabled>Aguardando pagamento</button>`;
+    } else if (status === "AUTORIZADO_AGUARDANDO_DATA") {
+      help = previsao ? `Horas completas e emissão autorizada. Aguardando a data de liberação: ${dataBR(previsao)}.` : "Horas completas. Aguardando a data de liberação.";
+      actions = `<button class="secondary-button" type="button" disabled>Aguardando data</button>`;
+    } else {
+      statusVisual = "PRONTO_PARA_LIBERACAO";
+      help = "Horas e pagamento conferidos. A solicitação está pronta para liberação pela gestão.";
+      actions = `<button class="secondary-button" type="button" disabled>Pronto para liberação</button>`;
+    }
   } else if (bloqueado) {
     statusVisual = "BLOQUEADO";
     help = "A solicitação está temporariamente indisponível.";
@@ -1550,18 +1692,12 @@ async function registrarAvaliacaoImediata(modal, cursoId, nota) {
 
     window.setTimeout(() => {
       fecharModalAvaliacao(modal);
-      if (obrigatoria && resultadoProva) {
-        mostrarResultadoProva(resultadoProva);
-        window.setTimeout(() => {
-          fecharModal("prova");
-          abrirAba("solicitar-certificado");
-          window.setTimeout(() => {
-            document.querySelector(`#horasSolicitadas-${Number(cursoId)}`)?.closest('.certificate-card')?.scrollIntoView({ behavior: 'smooth', block: 'center' });
-          }, 80);
-          toast("Curso aprovado e avaliado. Agora escolha as horas do certificado.", "success");
-        }, 1100);
-      }
-    }, 700);
+      renderSalaEstudo();
+      renderSolicitacoesCertificado();
+      toast(obrigatoria && resultadoProva
+        ? "Avaliação registrada. Curso concluído — escolha solicitar o certificado ou continuar estudando."
+        : "Avaliação registrada. O curso está concluído.", "success");
+    }, 500);
   } catch (error) {
     modal.dataset.salvando = "false";
     picker?.classList.remove("is-saving");
@@ -2062,7 +2198,7 @@ function renderCarteirinha() {
       <div class="digital-card-top"><img src="/assets/img/LOGO.png" alt="Altitude"><span>${new Date().getFullYear()}</span></div>
       <div class="digital-card-body">
         <img src="${escapeHTML(imgAluno(state.aluno.foto_url))}" alt="Foto do aluno">
-        <div class="digital-card-data"><strong class="student-card-name">${escapeHTML(String(state.aluno.nome || "Aluno").toUpperCase())}</strong><span class="student-card-ra"><b>RA</b> ${escapeHTML(state.aluno.ra || "—")}</span><span>Status: ${escapeHTML(state.aluno.status || "ATIVO")}</span><span>ALTITUDE CENTRO UNIVERSITÁRIO</span></div>
+        <div class="digital-card-data"><strong class="student-card-name">${escapeHTML(String(state.aluno.nome || "Aluno").toUpperCase())}</strong><span class="student-card-ra"><b>RA</b> ${escapeHTML(state.aluno.ra || "—")}</span><span><b>CPF</b> ${escapeHTML(maskCpf(state.aluno.cpf))}</span><span>Status: ${escapeHTML(state.aluno.status || "ATIVO")}</span><span>ALTITUDE CENTRO UNIVERSITÁRIO</span></div>
       </div>
       <div class="digital-card-footer">
         <div><strong>CARTEIRINHA DIGITAL</strong><span>Documento verificável na base oficial</span></div>
@@ -2132,8 +2268,9 @@ async function baixarCarteirinhaPDF() {
     const infoY = 21 + Math.min(3,nameLines.length)*4.1 + 2;
     doc.setFont("helvetica","normal"); doc.setFontSize(5.2); doc.setTextColor(210,228,241);
     doc.text(`RA: ${state.aluno.ra || "—"}`, 28, infoY);
-    doc.text(`STATUS: ${state.aluno.status || "ATIVO"}`, 28, infoY + 4);
-    doc.text("ALTITUDE CENTRO UNIVERSITÁRIO", 28, infoY + 8);
+    doc.text(`CPF: ${maskCpf(state.aluno.cpf)}`, 28, infoY + 3.5);
+    doc.text(`STATUS: ${state.aluno.status || "ATIVO"}`, 28, infoY + 7);
+    doc.text("ALTITUDE CENTRO UNIVERSITÁRIO", 28, infoY + 10.5);
 
     doc.setFillColor(255,255,255); doc.roundedRect(w - 21, h - 21, 17, 17, 1.5, 1.5, "F");
     doc.addImage(qr, "PNG", w - 20, h - 20, 15, 15);
@@ -2169,6 +2306,7 @@ async function atualizarDadosPrincipais() {
       ['cursos', carregarCursos],
       ['resultados', carregarResultados],
       ['avaliações', carregarAvaliacoes],
+      ['recompensas', carregarRecompensas],
       ['certificados', carregarCertificados],
       ['histórico', carregarHistoricoCertificados],
       ['carteira de horas', carregarCarteirasHoras],
@@ -2354,6 +2492,8 @@ window.copiarCodigoCertificado = copiarCodigoCertificado;
 window.baixarCarteirinhaPDF = baixarCarteirinhaPDF;
 window.refazerProva = refazerProva;
 window.irParaCertificados = irParaCertificados;
+window.solicitarCertificadoCursoAtual = solicitarCertificadoCursoAtual;
+window.continuarEstudando = continuarEstudando;
 window.baixarMaterialCompletoCurso = baixarMaterialCompletoCurso;
 
 iniciarPortal();

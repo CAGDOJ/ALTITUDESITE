@@ -18,12 +18,13 @@
   <script src="/assets/js/altitude-dialogs.js?v=17"></script>
   <script src="/assets/js/supabase-init.js?v=17" defer></script>
   <script src="/assets/js/gestor-guard.js?v=17" defer></script>
-  <script src="/assets/js/12-portaldogestor.js?v=37" defer></script>
+  <script src="/assets/js/12-portaldogestor.js?v=39" defer></script>
   <script src="/assets/js/latex-importer.js?v=34.1" defer></script>
   <script src="/assets/js/gestor-enhancements.js?v=37" defer></script>
   <script src="/assets/js/gestor-acessos.js?v=34.2" defer></script>
   <script src="/assets/js/certificado-pdf-v27.js?v=34.3" defer></script>
-  <script src="/assets/js/gestor-certificados.js?v=34.3" defer></script>
+  <script src="/assets/js/gestor-certificados.js?v=39" defer></script>
+  <script src="/assets/js/v39-gestor-extra.js?v=39" defer></script>
   <link rel="stylesheet" href="/assets/css/base-portal.css?v=29">
   <link rel="stylesheet" href="/assets/css/06-responsive.css?v=29">
   <link rel="stylesheet" href="/assets/css/15-ajustes-finais.css?v=29">
@@ -42,6 +43,7 @@
   <link rel="stylesheet" href="/assets/css/30-v36-ajustes.css?v=36">
   <link rel="stylesheet" href="/assets/css/31-v37-final.css?v=37">
   <link rel="stylesheet" href="/assets/css/32-v38-mobile-gestao.css?v=38">
+  <link rel="stylesheet" href="/assets/css/33-v39-final.css?v=39">
 </head>
 
 <body class="gestor-auth-pending">
@@ -59,6 +61,7 @@
         <button class="nav-item" data-min-level="2" data-tab="certificados-gestao" onclick="abrirAba('certificados-gestao')"><span>✓</span> Certificados</button>
         <button class="nav-item" data-min-level="2" data-tab="pagamentos-gestao" onclick="abrirAba('pagamentos-gestao')"><span>R$</span> Pagamentos</button>
         <button class="nav-item" data-min-level="3" data-tab="tipos-curso" onclick="abrirAba('tipos-curso')"><span>▤</span> Tipos de curso</button>
+        <button class="nav-item" data-min-level="3" data-tab="recompensas" onclick="abrirAba('recompensas')"><span>◎</span> Recompensas</button>
         <button class="nav-item" data-min-level="4" data-tab="usuarios" onclick="abrirAba('usuarios')"><span aria-hidden="true">👥</span> Equipe e acessos</button>
         <button class="nav-item" data-min-level="1" data-tab="chamados" onclick="abrirAba('chamados')"><span>✉</span> Atendimento</button>
         <button class="nav-item" data-min-level="3" data-tab="comercial" onclick="abrirAba('comercial')"><span>◆</span> Comercial e promoções</button>
@@ -226,6 +229,7 @@
             <select id="curFiltroArea"></select>
           </label>
           <button id="btnNovaArea">+ Nova área</button>
+          <button id="btnGerenciarAreas" type="button">Gerenciar áreas</button>
           <button id="btnExportCursos">Exportar CSV</button>
         </div>
         <div class="card">
@@ -266,6 +270,13 @@
               <button type="submit">Salvar</button>
             </div>
           </form>
+        </div>
+      </div>
+
+      <div class="modal" id="modalGerenciarAreas" aria-hidden="true">
+        <div class="modal__sheet v39-area-manager-sheet">
+          <div class="section-heading"><div><span>Catálogo acadêmico</span><h3>Gerenciar áreas</h3><p>Renomeie ou exclua áreas. Áreas em uso por cursos não podem ser excluídas.</p></div><button type="button" id="fecharGerenciarAreas">Fechar</button></div>
+          <div id="listaGerenciarAreas" class="v39-area-manager-list"></div>
         </div>
       </div>
 
@@ -826,7 +837,7 @@
 
         <div class="section-heading certificate-hours-heading">
           <div><span>Carteira acadêmica</span><h3>Gerência de horas dos alunos</h3><p>Consulte o saldo geral de cada aluno. O cálculo automático encadeia os certificados sem lacunas ou sobreposição, reaproveitando as horas livres do último dia já utilizado.</p></div>
-          <button type="button" class="primary-action" id="btnRecalcularHorasAutomatico">Recalcular períodos automaticamente</button>
+
         </div>
         <div id="horasAutoNotificacoes" class="hours-auto-notifications" aria-live="polite"></div>
         <div class="card certificate-admin-table-wrap">
@@ -966,6 +977,32 @@
         <div class="section-heading"><div><span>Packs</span><h3>Pagamentos de packs</h3><p>O pack libera somente a quantidade adquirida; o aluno escolhe os cursos depois.</p></div></div>
         <div id="listaPacksPagamentosGestao" class="commercial-card-grid"></div>
       </section>
+
+      <section id="recompensas" class="aba" data-min-level="3">
+        <div class="page-heading"><div><span>Engajamento do aluno</span><h2>Recompensas e níveis</h2><p>Configure medalhas por tipo de formação, quantidade de cursos concluídos e nível.</p></div><button type="button" class="primary-action" id="btnNovaRecompensaV39">+ Novo nível</button></div>
+        <div class="reward-admin-help">
+          <article><strong>Bronze</strong><span>Cursos profissionais</span></article>
+          <article><strong>Prata</strong><span>Cursos técnicos</span></article>
+          <article><strong>Ouro</strong><span>Ensino superior</span></article>
+          <article><strong>Diamante</strong><span>Pós-graduação</span></article>
+        </div>
+        <div id="listaRecompensasV39" class="reward-admin-grid"></div>
+      </section>
+
+      <div class="modal" id="modalRecompensaV39" aria-hidden="true">
+        <div class="modal__sheet">
+          <div class="section-heading"><div><span>Recompensa</span><h3 id="recompensaModalTituloV39">Novo nível</h3></div><button type="button" id="fecharRecompensaV39">Fechar</button></div>
+          <form id="formRecompensaV39" class="surface-admin-form">
+            <input type="hidden" id="recompensaIdV39">
+            <div class="grid2"><label>Tipo de formação<select id="recompensaTipoV39"><option value="PROFISSIONAL">Profissional</option><option value="TECNICO">Técnico</option><option value="SUPERIOR">Superior</option><option value="POS_GRADUACAO">Pós-graduação</option></select></label><label>Faixa<input id="recompensaFaixaV39" required placeholder="Bronze"></label></div>
+            <div class="grid3"><label>Nível<input id="recompensaNivelV39" required placeholder="I"></label><label>Cursos necessários<input id="recompensaCursosV39" type="number" min="1" required></label><label>Ordem<input id="recompensaOrdemV39" type="number" min="0" value="0"></label></div>
+            <label>Nome exibido<input id="recompensaNomeV39" placeholder="Bronze I"></label>
+            <label>Imagem/ícone (URL opcional)<input id="recompensaImagemV39" type="url" placeholder="https://..."></label>
+            <label><input id="recompensaAtivaV39" type="checkbox" checked> Nível ativo</label>
+            <button type="submit">Salvar nível</button>
+          </form>
+        </div>
+      </div>
 
       <section id="tipos-curso" class="aba" data-min-level="3">
         <div class="page-heading"><div><span>Catálogo público</span><h2>Tipos de curso</h2><p>Crie, edite e controle a visibilidade e as inscrições de cada tipo de formação.</p></div><button type="button" class="primary-action" id="btnNovoTipoCursoV34">Novo tipo</button></div>
@@ -1136,6 +1173,6 @@
   <script src="/assets/js/06-responsive.js?v=17"></script>
   <script src="/assets/js/15-ajustes-finais.js?v=17" defer></script>
   <script src="/assets/js/v34-gestor.js?v=34.1" defer></script>
-  <script src="/assets/js/v34-emissao-gestor.js?v=34.2" defer></script>
+  <script src="/assets/js/v34-emissao-gestor.js?v=39" defer></script>
 </body>
 </html>

@@ -10,7 +10,7 @@
   function openModal(id){$(id)?.setAttribute('aria-hidden','false');}
   function closeModal(id){$(id)?.setAttribute('aria-hidden','true');}
   function payLabel(value){return ({AGUARDANDO_PAGAMENTO:'Aguardando pagamento',PAGAMENTO_INFORMADO:'Pagamento informado',PAGO:'Pago - pronto para liberação',ISENTO:'Isento - pronto para liberação',CANCELADO:'Cancelado',PENDENTE:'Aguardando pagamento'})[String(value||'').toUpperCase()]||String(value||'Pendente').replaceAll('_',' ');}
-  function titleForTab(id){return ({dashboard:'Visão geral',cursos:'Cursos e conteúdos',alunos:'Alunos','certificados-gestao':'Certificados','pagamentos-gestao':'Pagamentos','tipos-curso':'Tipos de curso',usuarios:'Equipe e acessos',chamados:'Atendimento',comercial:'Comercial e promoções'})[id]||'Portal de Gestão';}
+  function titleForTab(id){return ({dashboard:'Visão geral',cursos:'Cursos e conteúdos',alunos:'Alunos','certificados-gestao':'Certificados','pagamentos-gestao':'Pagamentos','tipos-curso':'Tipos de curso',recompensas:'Recompensas',usuarios:'Equipe e acessos',chamados:'Atendimento',comercial:'Comercial e promoções'})[id]||'Portal de Gestão';}
   function removeEmojis(){document.querySelectorAll('main h1,main h2,main h3,main button').forEach(el=>{if(el.children.length)return;el.textContent=el.textContent.replace(/[\u{1F300}-\u{1FAFF}\u{2600}-\u{27BF}]/gu,'').replace(/\s{2,}/g,' ').trim();});}
   async function loadPayments(){
     if(state.loading)return;state.loading=true;

@@ -32,7 +32,18 @@
   }
   function statusLabel(s){
     const x=String(s||'PENDENTE').toUpperCase();
-    return ({PENDENTE:'Aguardando decisão',AGUARDANDO_HORAS:'Aguardando completar horas',AUTORIZADO_AGUARDANDO_DATA:'Autorizado — aguardando data',EMITIDO:'Emitido',BLOQUEADO:'Bloqueado',CANCELADO:'Cancelado'})[x]||x;
+    return ({PENDENTE:'Aguardando decisão',AGUARDANDO_HORAS:'Aguardando horas',AGUARDANDO_PAGAMENTO:'Aguardando pagamento',PRONTO_PARA_LIBERACAO:'Pronto para liberação',AUTORIZADO_AGUARDANDO_DATA:'Aguardando data de liberação',EMITIDO:'Emitido',BLOQUEADO:'Bloqueado',CANCELADO:'Cancelado'})[x]||x;
+  }
+  function statusEfetivo(cert){
+    const original=String(cert?.status||'PENDENTE').toUpperCase();
+    if(['CANCELADO','BLOQUEADO','EMITIDO'].includes(original)) return original;
+    if(n(cert?.horas_faltantes)>0) return 'AGUARDANDO_HORAS';
+    const pay=String(cert?.pagamento_status||'').toUpperCase();
+    if(pay && !['PAGO','ISENTO'].includes(pay)) return 'AGUARDANDO_PAGAMENTO';
+    if(original==='AUTORIZADO_AGUARDANDO_DATA') return original;
+    if(cert?.autorizado_em && (cert?.previsao_liberacao||cert?.data_final_prevista||cert?.periodo_fim||cert?.liberar_em)) return 'AUTORIZADO_AGUARDANDO_DATA';
+    if(['PENDENTE','REABERTO'].includes(original) && ['PAGO','ISENTO'].includes(pay)) return 'PRONTO_PARA_LIBERACAO';
+    return original;
   }
   function badge(s){
     const x=String(s||'PENDENTE').toUpperCase();
@@ -163,7 +174,7 @@
       <td data-label="Aluno"><div class="cert-admin-student"><strong>${esc(c.nome_aluno||a.nome||'Aluno')}</strong><small>RA ${esc(a.ra||'—')} · CPF ${esc(a.cpf||'—')}</small></div></td>
       <td data-label="Curso"><div class="cert-admin-course"><strong>${esc(c.nome_curso||course.titulo||'Curso')}</strong><small>${esc(c.numero_certificado||c.protocolo_pagamento||'Aguardando número')}</small></div></td>
       <td data-label="Horas"><strong>${hours}h</strong></td><td data-label="Pagamento">${paymentBadge(c.pagamento_status)}</td>
-      ${processed?`<td data-label="Situação">${badge(c.status)}</td><td data-label="Atualização">${dateBR(c.atualizado_em||c.emitido_em,true)}</td>`:`<td data-label="Solicitado em">${dateBR(c.solicitado_em||c.criado_em)}</td><td data-label="Situação">${badge(c.status)}</td>`}
+      ${processed?`<td data-label="Situação">${badge(statusEfetivo(c))}</td><td data-label="Atualização">${dateBR(c.atualizado_em||c.emitido_em,true)}</td>`:`<td data-label="Solicitado em">${dateBR(c.solicitado_em||c.criado_em)}</td><td data-label="Situação">${badge(statusEfetivo(c))}</td>`}
       <td data-label="Ações">${certActions(c,processed)}</td></tr>`;
   }
   function renderCertificates(){

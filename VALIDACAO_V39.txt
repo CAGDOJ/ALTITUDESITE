@@ -1,0 +1,12 @@
+ALTITUDE V39 — VALIDAÇÃO TÉCNICA
+
+Validações executadas antes do empacotamento:
+- Sintaxe de todos os arquivos JavaScript em assets/js: OK (node --check).
+- Sintaxe/transpilação da Edge Function gerenciar-gestor: OK (TypeScript transpileModule).
+- HTML principal de Portal do Aluno, Portal do Gestor e Login: parseado sem falha.
+- Chaves { } de todos os CSS: balanceadas.
+- Versionamento de cache atualizado nos arquivos alterados principais: portaldoaluno.js, v34-aluno.js, 12-portaldogestor.js, gestor-certificados.js, v34-emissao-gestor.js, login-ui.js e CSS V39.
+- Botão manual de recálculo removido do HTML.
+- V39 contém migration 024 e SQL separado para recompensas.
+
+Observação: funções que dependem do Supabase online (exclusão real de aluno, RLS, recompensas persistidas e dados reais) exigem publicar/aplicar os itens descritos em DEPLOY_V39_SUPABASE.txt para teste ponta a ponta.

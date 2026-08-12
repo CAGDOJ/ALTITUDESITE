@@ -24,6 +24,7 @@
   function openRecovery() {
     $("wrongEmailPane")?.setAttribute("hidden", "");
     $("loginBlock")?.setAttribute("hidden", "");
+    document.querySelector(".account-recovery-links")?.setAttribute("hidden", "");
     $("forgotPane")?.removeAttribute("hidden");
     const title = $("boxTitle");
     if (title) title.textContent = "Redefinir senha";
@@ -34,6 +35,7 @@
   function backToLogin() {
     $("forgotPane")?.setAttribute("hidden", "");
     $("wrongEmailPane")?.setAttribute("hidden", "");
+    document.querySelector(".account-recovery-links")?.removeAttribute("hidden");
     $("loginBlock")?.removeAttribute("hidden");
     const title = $("boxTitle");
     if (title) title.textContent = "Informe seu Login";
@@ -46,6 +48,7 @@
   function openWrongEmail() {
     $("forgotPane")?.setAttribute("hidden", "");
     $("loginBlock")?.setAttribute("hidden", "");
+    document.querySelector(".account-recovery-links")?.setAttribute("hidden", "");
     $("wrongEmailPane")?.removeAttribute("hidden");
     const title = $("boxTitle");
     if (title) title.textContent = "Corrigir e-mail";

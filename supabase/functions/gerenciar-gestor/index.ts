@@ -226,7 +226,30 @@ Deno.serve(async (req) => {
         console.warn('Falha ao registrar auditoria de exclusão:', archiveError);
       }
 
-      // A exclusão do perfil aciona os ON DELETE CASCADE existentes nas tabelas acadêmicas.
+      // Remove os vínculos em ordem explícita. Não dependemos de ON DELETE CASCADE,
+      // pois bancos antigos podem ter constraints diferentes.
+      const chamadosIds = (await admin.from('chamados').select('id').eq('aluno_id', alunoId)).data?.map((x:any)=>x.id) || [];
+      if (chamadosIds.length) await admin.from('chamado_interacoes').delete().in('chamado_id', chamadosIds);
+      const certIds = (await admin.from('certificados').select('id').eq('aluno_id', alunoId)).data?.map((x:any)=>x.id) || [];
+      if (certIds.length) {
+        await admin.from('certificados_historico').delete().in('certificado_id', certIds);
+        await admin.from('movimentacoes_horas').delete().in('certificado_id', certIds);
+      }
+      const resultIds = (await admin.from('resultados_provas').select('id').eq('aluno_id', alunoId)).data?.map((x:any)=>x.id) || [];
+      if (resultIds.length) await admin.from('respostas_prova').delete().in('resultado_id', resultIds);
+      const deleteByAluno = [
+        'respostas_prova','progresso_modulos','avaliacoes_cursos','pagamentos',
+        'cupons_usos_v34','movimentacoes_horas_aluno_v34','carteiras_horas_aluno_v34',
+        'movimentacoes_horas','carteiras_horas_curso','packs_alunos_v34','promocoes_alunos_v34',
+        'resultados_provas','certificados_historico','certificados','chamados','matriculas'
+      ];
+      for (const table of deleteByAluno) {
+        const { error } = await admin.from(table).delete().eq('aluno_id', alunoId);
+        if (error && !/does not exist|column .* does not exist/i.test(error.message || '')) {
+          console.warn(`Falha ao limpar ${table}:`, error.message);
+        }
+      }
+
       const { error: profileDeleteError } = await admin.from('alunos').delete().eq('user_id', alunoId);
       if (profileDeleteError) throw profileDeleteError;
 

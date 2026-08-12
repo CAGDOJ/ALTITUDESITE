@@ -1450,7 +1450,7 @@ function gerarRaLocal(){
     const paragraphs = String(content).replace(/\r/g,'').split(/\n\s*\n|\n/).map(item => item.trim()).filter(Boolean);
     paragraphs.forEach(paragraph => {
       const bullet = /^[-•*]\s+/.test(paragraph);
-      write(bullet ? `• ${paragraph.replace(/^[-•*]\s+/, '')}` : paragraph, { size:10.5, indent: bullet ? 4 : 0, after: bullet ? 1.5 : 3 });
+      write(bullet ? `• ${paragraph.replace(/^[-•*]\s+/, '')}` : paragraph, { size:10.5, indent: bullet ? 4 : 0, after: bullet ? 1.5 : 3, align: bullet ? 'left' : 'justify' });
     });
     headerFooter();
     return doc.output('blob');

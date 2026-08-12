@@ -1,0 +1,161 @@
+/* =====================================================================
+   ALTITUDE V38 — CORREÇÕES MOBILE DA GESTÃO
+   59. Cards de alunos não ultrapassam o container
+   60. Menu hambúrguer sempre disponível em celular/tablet
+   61. Mais espaçamento entre cards de cursos no mobile
+   Carregado por último para vencer regras antigas.
+   ===================================================================== */
+
+@media (max-width:1120px){
+  /* 60 — Topbar e botão hambúrguer devem existir em celular e tablet. */
+  body:has(.gestor-topbar) .gestor-topbar{
+    display:grid!important;
+    grid-template-columns:48px minmax(0,1fr) auto!important;
+    align-items:center!important;
+    gap:10px!important;
+    width:calc(100% + 32px)!important;
+    max-width:none!important;
+    min-width:0!important;
+    min-height:68px!important;
+    margin:0 -16px 18px!important;
+    padding:10px 16px!important;
+    box-sizing:border-box!important;
+    position:relative!important;
+    z-index:120!important;
+    visibility:visible!important;
+    opacity:1!important;
+  }
+  body:has(.gestor-topbar) #btnMenuGestor,
+  body:has(.gestor-topbar) .mobile-menu{
+    display:grid!important;
+    place-items:center!important;
+    position:relative!important;
+    inset:auto!important;
+    width:48px!important;
+    height:48px!important;
+    min-width:48px!important;
+    min-height:48px!important;
+    margin:0!important;
+    padding:0!important;
+    border:1px solid #cfe0ea!important;
+    border-radius:12px!important;
+    background:#fff!important;
+    color:#07314f!important;
+    font-size:25px!important;
+    line-height:1!important;
+    visibility:visible!important;
+    opacity:1!important;
+    pointer-events:auto!important;
+    z-index:130!important;
+  }
+  body:has(.gestor-topbar) #gestorSidebar{
+    z-index:9300!important;
+  }
+  body:has(.gestor-topbar) #gestorSidebarOverlay{
+    z-index:9200!important;
+  }
+
+  /* 59 — tabela de alunos vira cartões contidos, sem vazamento. */
+  body:has(.gestor-topbar) .responsive-table-shell:has(#tabAlunos),
+  body:has(.gestor-topbar) #alunos .card{
+    width:100%!important;
+    max-width:100%!important;
+    min-width:0!important;
+    overflow:visible!important;
+    box-sizing:border-box!important;
+  }
+  #tabAlunos,
+  #tabAlunos tbody,
+  #tabAlunos tr,
+  #tabAlunos td,
+  #tabAlunos td > *,
+  #tabAlunos .student-actions,
+  #tabAlunos .student-actions > *{
+    max-width:100%!important;
+    min-width:0!important;
+    box-sizing:border-box!important;
+  }
+  #tabAlunos{
+    width:100%!important;
+    table-layout:auto!important;
+  }
+  #tabAlunos tbody{
+    width:100%!important;
+    grid-template-columns:repeat(2,minmax(0,1fr))!important;
+    gap:18px!important;
+  }
+  #tabAlunos tr{
+    width:100%!important;
+    overflow:hidden!important;
+    padding:16px!important;
+  }
+  #tabAlunos td{
+    width:100%!important;
+    overflow:hidden!important;
+    overflow-wrap:anywhere!important;
+    word-break:normal!important;
+  }
+  #tabAlunos td:last-child,
+  #tabAlunos td:last-child > div,
+  #tabAlunos .student-actions{
+    width:100%!important;
+    max-width:100%!important;
+    min-width:0!important;
+    margin:0!important;
+  }
+  #tabAlunos .student-actions{
+    display:grid!important;
+    grid-template-columns:1fr!important;
+    gap:8px!important;
+  }
+  #tabAlunos .student-actions button{
+    display:flex!important;
+    align-items:center!important;
+    justify-content:center!important;
+    width:100%!important;
+    max-width:100%!important;
+    min-width:0!important;
+    min-height:46px!important;
+    margin:0!important;
+    padding:10px 12px!important;
+    box-sizing:border-box!important;
+    white-space:normal!important;
+  }
+
+  /* 61 — mantém o layout aprovado dos cursos; somente aumenta o respiro. */
+  #tabCursos tbody{
+    gap:20px!important;
+  }
+  #tabCursos tr{
+    margin:0!important;
+  }
+}
+
+@media (max-width:720px){
+  body:has(.gestor-topbar) .gestor-topbar{
+    width:calc(100% + 24px)!important;
+    margin:0 -12px 16px!important;
+    padding:9px 12px!important;
+  }
+  #tabAlunos tbody{
+    grid-template-columns:1fr!important;
+    gap:18px!important;
+  }
+  #tabAlunos tr{
+    padding:14px!important;
+  }
+  #tabAlunos td{
+    display:grid!important;
+    grid-template-columns:minmax(0,1fr)!important;
+    gap:4px!important;
+    padding:10px 0!important;
+  }
+  #tabAlunos td::before{
+    width:auto!important;
+    max-width:100%!important;
+    flex:none!important;
+  }
+  #tabCursos tbody{
+    gap:22px!important;
+  }
+}

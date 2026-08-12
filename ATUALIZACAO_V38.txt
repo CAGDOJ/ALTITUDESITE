@@ -1,0 +1,23 @@
+ALTITUDE — V38 — CORREÇÕES MOBILE DA GESTÃO
+Data: 12/08/2026
+
+Aplicado sobre a V37.
+
+59. GESTÃO DE ALUNOS NO CELULAR
+- Cards de alunos passam a respeitar 100% da largura disponível.
+- Removidos min-widths conflitantes que faziam ações e campos ultrapassarem o card.
+- Ações permanecem empilhadas e com o padrão visual aprovado.
+
+60. MENU HAMBÚRGUER NO CELULAR E TABLET
+- O topo da Gestão e o botão de menu são forçados a aparecer até 1120px.
+- Botão fica visível, clicável e acima das camadas de conteúdo.
+- Sidebar continua abrindo por cima da página com overlay.
+
+61. CURSOS NO CELULAR
+- Mantido o layout de cursos aprovado.
+- Aumentado apenas o espaçamento vertical entre os cards.
+
+AJUSTE VISUAL ADICIONAL
+- Removidos os símbolos de peça de xadrez em Alunos/Equipe e trocados por ícones coerentes.
+
+Esta atualização NÃO exige novo SQL no Supabase.

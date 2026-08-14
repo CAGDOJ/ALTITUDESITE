@@ -1,0 +1,220 @@
+/* =====================================================================
+   ALTITUDE V40 — AJUSTES 62–74
+   Prioridade: sincronização silenciosa, ações legíveis, menu minimalista,
+   certificados pendentes primeiro e correção de e-mail.
+   ===================================================================== */
+:root{
+  --v40-navy:#0b3a61;
+  --v40-cyan:#21aec1;
+  --v40-line:#d5e2e9;
+  --v40-muted:#65798a;
+  --v40-surface:#ffffff;
+  --v40-soft:#f6f9fb;
+  --v40-ok:#1f8a55;
+  --v40-ok-bg:#effaf4;
+  --v40-warn:#9a6a00;
+  --v40-warn-bg:#fff8e8;
+  --v40-danger:#ba3540;
+  --v40-danger-bg:#fff4f5;
+}
+
+/* 62/69/70/71 — aviso de sincronização só quando realmente necessário. */
+.portal-sync-notice:not(.show){display:none!important}
+.portal-sync-notice.show{
+  position:fixed!important;
+  left:50%!important;
+  bottom:calc(18px + env(safe-area-inset-bottom))!important;
+  transform:translateX(-50%)!important;
+  width:min(520px,calc(100vw - 32px))!important;
+  max-width:520px!important;
+  padding:12px 14px!important;
+  display:flex!important;
+  align-items:center!important;
+  gap:12px!important;
+  border-radius:14px!important;
+  box-shadow:0 12px 32px rgba(7,49,79,.14)!important;
+  z-index:9999!important;
+}
+.portal-sync-notice.show:not(.error){background:#eef9fb!important;border:1px solid #b9e5eb!important;color:#17465b!important}
+.portal-sync-notice.show.error{background:var(--v40-danger-bg)!important;border:1px solid #efbcc1!important;color:#8e2630!important}
+.portal-sync-notice span{flex:1;line-height:1.35!important}
+.portal-sync-notice button{flex:0 0 auto;min-height:40px!important;padding:8px 14px!important;border-radius:10px!important}
+@media(max-width:720px){
+  .portal-sync-notice.show{bottom:calc(76px + env(safe-area-inset-bottom))!important;align-items:stretch!important;flex-direction:column!important}
+  .portal-sync-notice button{width:100%!important}
+}
+
+/* 64/72 — sidebar do gestor minimalista em PC, tablet e celular. */
+.sidebar{
+  box-shadow:none!important;
+  border-right:1px solid rgba(255,255,255,.08)!important;
+}
+.brand-gestor{padding:18px 18px 16px!important;margin-bottom:8px!important;border-bottom:1px solid rgba(255,255,255,.12)!important}
+.brand-gestor img{width:44px!important;height:44px!important;border-radius:10px!important;object-fit:contain!important;background:#fff!important;padding:5px!important}
+.gestor-nav{display:grid!important;gap:3px!important;padding:8px 10px 14px!important}
+.gestor-nav .nav-item{
+  min-height:42px!important;
+  padding:9px 11px!important;
+  gap:10px!important;
+  border:0!important;
+  border-radius:10px!important;
+  background:transparent!important;
+  box-shadow:none!important;
+  color:rgba(255,255,255,.86)!important;
+  font-size:14px!important;
+  font-weight:700!important;
+  letter-spacing:0!important;
+}
+.gestor-nav .nav-item span{
+  width:21px!important;
+  min-width:21px!important;
+  height:21px!important;
+  display:grid!important;
+  place-items:center!important;
+  color:rgba(211,239,245,.9)!important;
+  font-family:Arial,sans-serif!important;
+  font-size:15px!important;
+  line-height:1!important;
+  filter:none!important;
+}
+.gestor-nav .nav-item:hover{background:rgba(255,255,255,.055)!important;color:#fff!important}
+.gestor-nav .nav-item.ativa{
+  background:rgba(42,174,196,.16)!important;
+  color:#fff!important;
+  box-shadow:inset 3px 0 0 var(--v40-cyan)!important;
+  outline:1px solid rgba(72,194,213,.42)!important;
+}
+.gestor-nav .nav-item.ativa span{color:#aee9f1!important}
+.sidebar-bottom{border-top:1px solid rgba(255,255,255,.12)!important;padding:14px 16px!important}
+.manager-identity{font-size:12px!important;line-height:1.25!important}
+
+/* 63/73 — padrão FINAL de ações: vertical, legível, sem esmagar texto. */
+#tabCursos td[data-label="Ações"],
+#tabCertificadosGestao td[data-label="Ações"],
+#tabCertificadosProcessados td[data-label="Ações"],
+#tabAlunos td[data-label="Ações"]{
+  vertical-align:top!important;
+}
+#tabCursos .course-action-cell,
+#tabCertificadosGestao .cert-admin-actions,
+#tabCertificadosProcessados .cert-admin-actions,
+#tabAlunos .student-actions{
+  display:grid!important;
+  grid-template-columns:1fr!important;
+  gap:7px!important;
+  width:152px!important;
+  min-width:152px!important;
+  max-width:152px!important;
+  align-content:start!important;
+}
+#tabCursos .course-action-cell button,
+#tabCertificadosGestao .cert-admin-actions button,
+#tabCertificadosProcessados .cert-admin-actions button,
+#tabAlunos .student-actions button{
+  width:100%!important;
+  min-width:0!important;
+  max-width:100%!important;
+  min-height:36px!important;
+  height:auto!important;
+  padding:7px 9px!important;
+  margin:0!important;
+  display:flex!important;
+  align-items:center!important;
+  justify-content:center!important;
+  text-align:center!important;
+  white-space:normal!important;
+  word-break:normal!important;
+  overflow-wrap:normal!important;
+  line-height:1.18!important;
+  font-size:12px!important;
+  font-weight:800!important;
+  border-radius:7px!important;
+  box-sizing:border-box!important;
+}
+#tabCursos .course-action-cell .gc-del,
+#tabCertificadosGestao .cert-admin-actions .block,
+#tabCertificadosGestao .cert-admin-actions .cancel,
+#tabCertificadosProcessados .cert-admin-actions .danger-action,
+#tabAlunos .student-actions .student-delete-action{
+  background:var(--v40-danger-bg)!important;
+  border-color:#efb8be!important;
+  color:var(--v40-danger)!important;
+}
+#tabCursos .course-action-cell .course-build-button{background:#43a9bb!important;color:white!important;border-color:#43a9bb!important}
+#tabCursos .course-action-cell .gc-publish.is-live{background:var(--v40-ok-bg)!important;color:#247449!important;border-color:#b9e7cc!important}
+
+@media(min-width:1121px){
+  #tabCursos{width:100%!important;table-layout:fixed!important}
+  #tabCursos th:nth-child(1),#tabCursos td:nth-child(1){width:56px!important}
+  #tabCursos th:nth-child(2),#tabCursos td:nth-child(2){width:auto!important}
+  #tabCursos th:nth-child(3),#tabCursos td:nth-child(3){width:135px!important}
+  #tabCursos th:nth-child(4),#tabCursos td:nth-child(4){width:70px!important}
+  #tabCursos th:nth-child(5),#tabCursos td:nth-child(5){width:82px!important}
+  #tabCursos th:nth-child(6),#tabCursos td:nth-child(6){width:168px!important}
+}
+@media(max-width:1120px){
+  #tabCursos .course-action-cell,
+  #tabCertificadosGestao .cert-admin-actions,
+  #tabCertificadosProcessados .cert-admin-actions,
+  #tabAlunos .student-actions{width:100%!important;min-width:0!important;max-width:100%!important}
+}
+
+/* 65 — Certificados processados não vazam e mantêm leitura no desktop. */
+@media(min-width:901px){
+  #tabCertificadosProcessados{width:100%!important;table-layout:fixed!important}
+  #tabCertificadosProcessados th:nth-child(1),#tabCertificadosProcessados td:nth-child(1){width:20%!important}
+  #tabCertificadosProcessados th:nth-child(2),#tabCertificadosProcessados td:nth-child(2){width:18%!important}
+  #tabCertificadosProcessados th:nth-child(3),#tabCertificadosProcessados td:nth-child(3){width:7%!important}
+  #tabCertificadosProcessados th:nth-child(4),#tabCertificadosProcessados td:nth-child(4){width:11%!important}
+  #tabCertificadosProcessados th:nth-child(5),#tabCertificadosProcessados td:nth-child(5){width:11%!important}
+  #tabCertificadosProcessados th:nth-child(6),#tabCertificadosProcessados td:nth-child(6){width:13%!important}
+  #tabCertificadosProcessados th:nth-child(7),#tabCertificadosProcessados td:nth-child(7){width:168px!important}
+  #tabCertificadosProcessados td{overflow:hidden!important;overflow-wrap:anywhere!important}
+}
+
+/* 66/74 — solicitações pendentes primeiro e status individual bem evidente. */
+#certificados-gestao .certificate-requests-heading{
+  margin-top:8px!important;
+  padding:16px 18px!important;
+  border:1px solid #bedde6!important;
+  border-radius:14px 14px 0 0!important;
+  background:linear-gradient(180deg,#f7fcfd,#eef8fa)!important;
+}
+#certificados-gestao .certificate-requests-heading span{color:var(--v40-cyan)!important;font-weight:900!important}
+#certificados-gestao .certificate-requests-heading h3{font-size:22px!important;color:#0a3151!important;margin-top:3px!important}
+#certificados-gestao .certificate-pending-card{
+  margin-top:0!important;
+  border-top-left-radius:0!important;
+  border-top-right-radius:0!important;
+  border-color:#bedde6!important;
+  box-shadow:0 8px 22px rgba(20,74,106,.06)!important;
+}
+#tabCertificadosGestao tbody tr,
+#tabCertificadosProcessados tbody tr{position:relative!important}
+#tabCertificadosGestao tbody tr.certificate-status-row,
+#tabCertificadosProcessados tbody tr.certificate-status-row{border-left:4px solid transparent!important}
+#tabCertificadosGestao tbody tr.certificate-status-row.is-ready,
+#tabCertificadosProcessados tbody tr.certificate-status-row.is-ready{border-left-color:var(--v40-ok)!important;background:linear-gradient(90deg,var(--v40-ok-bg),#fff 22%)!important}
+#tabCertificadosGestao tbody tr.certificate-status-row.is-waiting,
+#tabCertificadosProcessados tbody tr.certificate-status-row.is-waiting{border-left-color:#d6a322!important;background:linear-gradient(90deg,var(--v40-warn-bg),#fff 22%)!important}
+#tabCertificadosGestao tbody tr.certificate-status-row.is-error,
+#tabCertificadosProcessados tbody tr.certificate-status-row.is-error{border-left-color:var(--v40-danger)!important;background:linear-gradient(90deg,var(--v40-danger-bg),#fff 22%)!important}
+#tabCertificadosGestao td[data-label="Situação"] .badge,
+#tabCertificadosProcessados td[data-label="Situação"] .badge{font-weight:900!important;padding:7px 10px!important;border-radius:999px!important}
+#certificados-gestao .certificate-hours-heading{margin-top:28px!important;padding-top:20px!important;border-top:1px solid var(--v40-line)!important}
+#certificados-gestao .certificate-processed-heading{margin-top:34px!important;padding-top:22px!important;border-top:1px solid var(--v40-line)!important}
+#certificados-gestao .certificate-processed-heading h3{font-size:20px!important}
+#certificados-gestao .hours-auto-note{background:#fff!important;border:1px solid var(--v40-line)!important;box-shadow:none!important}
+
+/* Em cards mobile/tablet, status também ganha destaque sem quebrar layout. */
+@media(max-width:900px){
+  #tabCertificadosGestao tbody tr.certificate-status-row,
+  #tabCertificadosProcessados tbody tr.certificate-status-row{border-left-width:5px!important}
+}
+
+/* 67 — mensagens da correção de e-mail devem caber e ser compreensíveis. */
+#wrongEmailMessage{max-width:100%!important;overflow-wrap:anywhere!important;line-height:1.35!important;margin-top:8px!important}
+
+/* Pequeno refinamento geral de densidade para a gestão. */
+#certificados-gestao .card,#cursos .card,#alunos .card{box-shadow:none!important}
+#certificados-gestao .section-heading p,#cursos .page-heading p,#alunos .page-heading p{color:var(--v40-muted)!important}

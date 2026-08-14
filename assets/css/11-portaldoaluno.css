@@ -818,3 +818,15 @@ a{color:inherit}
 .lesson-module-image img{display:block;width:100%;max-height:520px;object-fit:contain;border-radius:10px;background:#f4f8fb}
 .lesson-module-image figcaption{padding:9px 4px 2px;color:#61778a;font-size:12px;text-align:center}
 @media(max-width:640px){.lesson-module-image{margin:12px 0;padding:7px}.lesson-module-image img{max-height:360px}}
+
+/* V39.1 HOTFIX — sincronização mobile/tablet
+   Erros de rede transitórios são tratados em segundo plano. Se houver erro real,
+   o aviso não deve cobrir o painel nem ocupar uma área exagerada da tela. */
+.portal-sync-notice{max-width:min(88vw,560px)!important;padding:11px 13px!important;font-size:13px!important}
+.portal-sync-notice:not(.error){display:none!important}
+@media(max-width:700px){
+  .portal-sync-notice{left:14px!important;right:14px!important;bottom:14px!important;max-width:none!important;transform:translateY(20px)!important;flex-direction:row!important;align-items:center!important;gap:10px!important}
+  .portal-sync-notice.show{transform:translateY(0)!important}
+  .portal-sync-notice span{min-width:0;flex:1;line-height:1.4}
+  .portal-sync-notice button{width:auto!important;flex:0 0 auto;padding:8px 10px!important}
+}

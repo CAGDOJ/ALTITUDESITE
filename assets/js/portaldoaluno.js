@@ -33,7 +33,9 @@ const state = {
   atualizacaoPendente: false,
   recompensas: [],
   opcoesEmbaralhadas: {},
-  embaralharAlternativas: false
+  embaralharAlternativas: false,
+  cargaPrincipalConcluida: false,
+  falhasConsecutivasSync: 0
 };
 
 const TITULOS_ABAS = {
@@ -81,6 +83,24 @@ function mensagemDeSincronizacao(message, error = false) {
   box.classList.add('show');
   clearTimeout(box._timer);
   box._timer = setTimeout(() => box.classList.remove('show'), error ? 7000 : 3500);
+}
+
+function ocultarMensagemDeSincronizacao() {
+  const box = document.getElementById('portalSyncNotice');
+  if (!box) return;
+  clearTimeout(box._timer);
+  box.classList.remove('show', 'error');
+}
+
+function portalTemDadosVisiveis() {
+  return Boolean(
+    state.cargaPrincipalConcluida ||
+    state.cursos.length ||
+    state.resultados.length ||
+    state.certificados.length ||
+    state.pagamentos.length ||
+    state.carteiraGlobal
+  );
 }
 
 function escapeHTML(value = "") {
@@ -2293,11 +2313,11 @@ function filtrarCursos(query) {
   if (normalized) abrirAba("cursos");
 }
 
-async function atualizarDadosPrincipais() {
-  if (!state.aluno?.user_id) return;
+async function atualizarDadosPrincipais(options = {}) {
+  if (!state.aluno?.user_id) return false;
   if (state.atualizandoDados) {
     state.atualizacaoPendente = true;
-    return;
+    return false;
   }
   state.atualizandoDados = true;
   try {
@@ -2319,30 +2339,45 @@ async function atualizarDadosPrincipais() {
     const falhas = resultados
       .map((resultado, index) => ({ resultado, nome: tarefas[index][0] }))
       .filter(({ resultado }) => resultado.status === 'rejected');
+    const sucessos = resultados.length - falhas.length;
 
     falhas.forEach(({ resultado, nome }) => console.warn(`Falha temporária em ${nome}:`, resultado.reason?.message || resultado.reason));
 
-    // Renderiza uma única vez ao final. Como as consultas não podem mais se
-    // sobrepor, os cards não apagam e voltam durante Realtime/polling.
-    renderCarteirinha();
-    renderDashboard();
-    renderCursos();
-    renderCertificados();
-    renderPagamentos();
+    // Se ao menos uma fonte respondeu, preservamos o que já estava carregado e
+    // renderizamos sem transformar uma falha parcial de rede em erro para o aluno.
+    if (sucessos > 0) {
+      state.cargaPrincipalConcluida = true;
+      state.falhasConsecutivasSync = 0;
 
-    if (falhas.length && falhas.length < tarefas.length) {
-      mensagemDeSincronizacao('Algumas informações estão sendo sincronizadas. A atualização continuará automaticamente.');
+      renderCarteirinha();
+      renderDashboard();
+      renderCursos();
+      renderCertificados();
+      renderPagamentos();
+
+      // Corrige o falso alerta: se uma primeira tentativa falhou e a repetição
+      // automática funcionou, o aviso desaparece imediatamente.
+      ocultarMensagemDeSincronizacao();
+      return true;
     }
-    if (falhas.length === tarefas.length) {
-      const erro = new Error('Não foi possível sincronizar os dados agora.');
-      erro.code = 'SYNC_FAILED';
-      throw erro;
+
+    state.falhasConsecutivasSync += 1;
+
+    // Em polling/realtime ou quando já existem dados na tela, uma queda curta de
+    // conexão é tratada silenciosamente. Os dados existentes NÃO são apagados.
+    if (options.silent || portalTemDadosVisiveis()) {
+      console.warn('Sincronização temporariamente indisponível; mantendo dados já carregados.');
+      return false;
     }
+
+    const erro = new Error('Não foi possível sincronizar os dados agora.');
+    erro.code = 'SYNC_FAILED';
+    throw erro;
   } finally {
     state.atualizandoDados = false;
     if (state.atualizacaoPendente) {
       state.atualizacaoPendente = false;
-      window.setTimeout(atualizarDadosPrincipais, 180);
+      window.setTimeout(() => atualizarDadosPrincipais({ silent: true }), 180);
     }
   }
 }
@@ -2410,7 +2445,7 @@ function configurarAtualizacaoPeriodicaAluno() {
     emExecucao = true;
     try {
       // A liberação automática é processada exclusivamente pelo Cron do Supabase.
-      await atualizarDadosPrincipais();
+      await atualizarDadosPrincipais({ silent: true });
       await carregarChamados();
       renderCarteirinha();
     } catch (error) {
@@ -2435,7 +2470,7 @@ function configurarTempoRealAluno() {
     clearTimeout(timer);
     timer = setTimeout(async () => {
       try {
-        await atualizarDadosPrincipais();
+        await atualizarDadosPrincipais({ silent: true });
         await carregarChamados();
         renderCarteirinha();
       } catch (error) {
@@ -2468,16 +2503,28 @@ async function iniciarPortal() {
   } catch (error) {
     console.error(error);
     if (error?.code === 'PROFILE_NOT_FOUND') return;
-    mensagemDeSincronizacao('Não foi possível concluir a sincronização. O portal tentará novamente automaticamente.', true);
-    window.setTimeout(async () => {
+
+    // Não mostra erro imediatamente. Em celular/tablet a troca de rede, suspensão
+    // da aba ou atraso do navegador pode derrubar a primeira rodada e a seguinte
+    // funcionar normalmente. Tentamos novamente antes de incomodar o aluno.
+    let recuperou = false;
+    for (let tentativa = 1; tentativa <= 3 && !recuperou; tentativa += 1) {
+      await esperar(700 * tentativa);
       try {
         if (!state.user) state.user = await obterUsuarioLogado();
         if (state.user && !state.aluno) await carregarAluno();
-        if (state.aluno) await atualizarDadosPrincipais();
+        if (state.aluno) recuperou = Boolean(await atualizarDadosPrincipais({ silent: true }));
       } catch (retryError) {
-        console.warn('Nova tentativa do portal:', retryError.message);
+        console.warn(`Nova tentativa ${tentativa} do portal:`, retryError.message);
       }
-    }, 2500);
+    }
+
+    if (recuperou || portalTemDadosVisiveis()) {
+      ocultarMensagemDeSincronizacao();
+      return;
+    }
+
+    mensagemDeSincronizacao('Não foi possível carregar os dados agora. Verifique sua conexão e tente novamente.', true);
   }
 }
 

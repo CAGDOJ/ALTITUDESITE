@@ -23,7 +23,7 @@
   <script src="/assets/js/gestor-enhancements.js?v=37" defer></script>
   <script src="/assets/js/gestor-acessos.js?v=34.2" defer></script>
   <script src="/assets/js/certificado-pdf-v27.js?v=34.3" defer></script>
-  <script src="/assets/js/gestor-certificados.js?v=39" defer></script>
+  <script src="/assets/js/gestor-certificados.js?v=40" defer></script>
   <script src="/assets/js/v39-gestor-extra.js?v=39" defer></script>
   <link rel="stylesheet" href="/assets/css/base-portal.css?v=29">
   <link rel="stylesheet" href="/assets/css/06-responsive.css?v=29">
@@ -43,7 +43,8 @@
   <link rel="stylesheet" href="/assets/css/30-v36-ajustes.css?v=36">
   <link rel="stylesheet" href="/assets/css/31-v37-final.css?v=37">
   <link rel="stylesheet" href="/assets/css/32-v38-mobile-gestao.css?v=38">
-  <link rel="stylesheet" href="/assets/css/33-v39-final.css?v=39">
+  <link rel="stylesheet" href="/assets/css/33-v39-final.css?v=40">
+  <link rel="stylesheet" href="/assets/css/34-v40-ajustes.css?v=40">
 </head>
 
 <body class="gestor-auth-pending">
@@ -55,16 +56,16 @@
         <div><strong>ALTITUDE</strong><span>Portal de Gestão</span></div>
       </div>
       <nav class="gestor-nav">
-        <button class="nav-item ativa" data-min-level="1" data-tab="dashboard" onclick="abrirAba('dashboard')"><span>⌂</span> Visão geral</button>
-        <button class="nav-item" data-min-level="2" data-tab="cursos" onclick="abrirAba('cursos')"><span>▣</span> Cursos e conteúdos</button>
-        <button class="nav-item" data-min-level="2" data-tab="alunos" onclick="abrirAba('alunos')"><span aria-hidden="true">👤</span> Alunos</button>
-        <button class="nav-item" data-min-level="2" data-tab="certificados-gestao" onclick="abrirAba('certificados-gestao')"><span>✓</span> Certificados</button>
-        <button class="nav-item" data-min-level="2" data-tab="pagamentos-gestao" onclick="abrirAba('pagamentos-gestao')"><span>R$</span> Pagamentos</button>
-        <button class="nav-item" data-min-level="3" data-tab="tipos-curso" onclick="abrirAba('tipos-curso')"><span>▤</span> Tipos de curso</button>
-        <button class="nav-item" data-min-level="3" data-tab="recompensas" onclick="abrirAba('recompensas')"><span>◎</span> Recompensas</button>
-        <button class="nav-item" data-min-level="4" data-tab="usuarios" onclick="abrirAba('usuarios')"><span aria-hidden="true">👥</span> Equipe e acessos</button>
-        <button class="nav-item" data-min-level="1" data-tab="chamados" onclick="abrirAba('chamados')"><span>✉</span> Atendimento</button>
-        <button class="nav-item" data-min-level="3" data-tab="comercial" onclick="abrirAba('comercial')"><span>◆</span> Comercial e promoções</button>
+        <button class="nav-item ativa" data-min-level="1" data-tab="dashboard" onclick="abrirAba('dashboard')"><span aria-hidden="true">⌂</span> Visão geral</button>
+        <button class="nav-item" data-min-level="2" data-tab="cursos" onclick="abrirAba('cursos')"><span aria-hidden="true">▦</span> Cursos e conteúdos</button>
+        <button class="nav-item" data-min-level="2" data-tab="alunos" onclick="abrirAba('alunos')"><span aria-hidden="true">○</span> Alunos</button>
+        <button class="nav-item" data-min-level="2" data-tab="certificados-gestao" onclick="abrirAba('certificados-gestao')"><span aria-hidden="true">✓</span> Certificados</button>
+        <button class="nav-item" data-min-level="2" data-tab="pagamentos-gestao" onclick="abrirAba('pagamentos-gestao')"><span aria-hidden="true">$</span> Pagamentos</button>
+        <button class="nav-item" data-min-level="3" data-tab="tipos-curso" onclick="abrirAba('tipos-curso')"><span aria-hidden="true">▤</span> Tipos de curso</button>
+        <button class="nav-item" data-min-level="3" data-tab="recompensas" onclick="abrirAba('recompensas')"><span aria-hidden="true">◇</span> Recompensas</button>
+        <button class="nav-item" data-min-level="4" data-tab="usuarios" onclick="abrirAba('usuarios')"><span aria-hidden="true">◎</span> Equipe e acessos</button>
+        <button class="nav-item" data-min-level="1" data-tab="chamados" onclick="abrirAba('chamados')"><span aria-hidden="true">□</span> Atendimento</button>
+        <button class="nav-item" data-min-level="3" data-tab="comercial" onclick="abrirAba('comercial')"><span aria-hidden="true">◈</span> Comercial e promoções</button>
       </nav>
       <div class="sidebar-bottom">
         <div class="manager-identity"><span>GESTOR LOGADO</span><strong id="gestorNomeAtual">GESTOR ALTITUDE</strong><small id="gestorIdAtual">—</small></div>
@@ -835,6 +836,16 @@
           </select>
         </div>
 
+        <div class="section-heading certificate-requests-heading">
+          <div><span>Solicitações</span><h3>Certificados aguardando decisão</h3><p>O PDF só será disponibilizado ao aluno depois da liberação abaixo.</p></div>
+        </div>
+        <div class="card certificate-admin-table-wrap certificate-pending-card">
+          <table class="tabela" id="tabCertificadosGestao">
+            <thead><tr><th>Aluno</th><th>Curso</th><th>Horas</th><th>Pagamento</th><th>Solicitação</th><th>Status</th><th>Ações</th></tr></thead>
+            <tbody></tbody>
+          </table>
+        </div>
+
         <div class="section-heading certificate-hours-heading">
           <div><span>Carteira acadêmica</span><h3>Gerência de horas dos alunos</h3><p>Consulte o saldo geral de cada aluno. O cálculo automático encadeia os certificados sem lacunas ou sobreposição, reaproveitando as horas livres do último dia já utilizado.</p></div>
 
@@ -847,15 +858,6 @@
           </table>
         </div>
 
-        <div class="section-heading certificate-requests-heading">
-          <div><span>Solicitações</span><h3>Certificados aguardando decisão</h3><p>O PDF só será disponibilizado ao aluno depois da liberação abaixo.</p></div>
-        </div>
-        <div class="card certificate-admin-table-wrap">
-          <table class="tabela" id="tabCertificadosGestao">
-            <thead><tr><th>Aluno</th><th>Curso</th><th>Horas</th><th>Pagamento</th><th>Solicitação</th><th>Status</th><th>Ações</th></tr></thead>
-            <tbody></tbody>
-          </table>
-        </div>
         <div class="section-heading certificate-processed-heading">
           <div><span>Histórico</span><h3>Certificados processados</h3><p>Emitidos, liberados, bloqueados, cancelados e reemitidos.</p></div>
         </div>

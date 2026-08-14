@@ -155,8 +155,27 @@
           novo_email: fix ? novoEmail : null
         }
       });
-      if (error) throw error;
-      if (!data?.ok) throw new Error(data?.error || "Não foi possível concluir a solicitação.");
+      if (error) {
+        let mensagem = error.message || "Não foi possível concluir a solicitação.";
+        let etapa = "";
+        try {
+          if (error.context) {
+            const resposta = await error.context.json();
+            mensagem = resposta?.error || resposta?.message || mensagem;
+            etapa = resposta?.etapa || "";
+          }
+        } catch (contextError) {
+          console.warn("Não foi possível ler o retorno da Edge Function:", contextError);
+        }
+        const err = new Error(mensagem);
+        err.etapa = etapa;
+        throw err;
+      }
+      if (!data?.ok) {
+        const err = new Error(data?.error || "Não foi possível concluir a solicitação.");
+        err.etapa = data?.etapa || "";
+        throw err;
+      }
       setMessage("wrongEmailMessage", fix
         ? "E-mail corrigido. Enviamos uma nova confirmação para o endereço informado."
         : `Nova confirmação enviada${data?.email_mascarado ? ` para ${data.email_mascarado}` : ""}.`, true);
@@ -167,10 +186,12 @@
       }
     } catch (error) {
       const raw = String(error?.message || "");
+      const etapa = String(error?.etapa || "");
       const msg = /confirmed|confirmad/i.test(raw)
         ? "Este e-mail já foi confirmado. Para trocar o endereço de uma conta ativa, entre no portal ou procure a gestão."
         : raw || "Não foi possível validar os dados.";
-      setMessage("wrongEmailMessage", msg, false);
+      console.error("Correção de e-mail falhou:", { etapa, mensagem: msg, erro: error });
+      setMessage("wrongEmailMessage", etapa ? `${msg} (${etapa})` : msg, false);
     } finally {
       if (button) { button.disabled = false; button.textContent = original; }
     }

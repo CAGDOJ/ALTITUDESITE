@@ -1,0 +1,21 @@
+ALTITUDE DEV SITE — V40
+Atualizações aplicadas desde a V39
+
+62. Falso aviso de sincronização na Gestão: falhas parciais deixam de gerar alerta quando os dados já estão visíveis.
+63. Cursos e conteúdos: coluna Ações refeita para botões verticais, legíveis e sem texto esmagado.
+64. Menu lateral do gestor: visual minimalista e ícones monocromáticos/coerentes em PC, tablet e celular.
+65. Certificados processados: tabela ajustada no desktop para não vazar e preservar a coluna de ações.
+66. Certificados: cada solicitação recebe destaque individual conforme o estado (verde pronto/emitido, amarelo aguardando, vermelho erro/bloqueio).
+67. Correção de e-mail: frontend passa a mostrar a mensagem e a etapa reais devolvidas pela Edge Function, em vez de erro técnico genérico.
+68. Edge Function corrigir-email-cadastro atualizada: CORS completo, chaves novas com fallback legado, diagnóstico por etapa e busca de CPF formatado ou não.
+69. Portal do Aluno mobile: sincronização em segundo plano não exibe falso erro quando os dados principais carregaram.
+70. Portal do Aluno: carregamento parcial preserva dados e re-renderiza fontes que responderam sem apagar a interface.
+71. Sala de estudo em tablet: mesma correção de sincronização silenciosa e sem alerta vermelho indevido.
+72. Menu lateral da Gestão refinado para uma aparência mais limpa/minimalista em todos os tamanhos.
+73. Padrão de Ações reforçado em Cursos, Certificados e Alunos para impedir sobreposição/quebra.
+74. Aba Certificados reorganizada: certificados aguardando decisão aparecem primeiro; gerência de horas vem depois; processados/histórico ficam por último.
+
+OBSERVAÇÃO DE IMPLANTAÇÃO
+- Esta versão inclui atualização de código da Edge Function supabase/functions/corrigir-email-cadastro/index.ts.
+- Na função corrigir-email-cadastro, mantenha "Verify JWT with legacy secret" DESLIGADO, pois o fluxo é usado por conta ainda não autenticada/confirmada.
+- Republique a função após enviar os arquivos do site.

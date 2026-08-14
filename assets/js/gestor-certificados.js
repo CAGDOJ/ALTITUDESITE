@@ -50,6 +50,15 @@
     const cls=x==='EMITIDO'?'resolvido':x==='BLOQUEADO'?'urgente':x==='CANCELADO'?'cancelado':'media';
     return `<span class="badge ${cls}">${esc(statusLabel(x))}</span>`;
   }
+
+  function certificateTone(cert){
+    const status=statusEfetivo(cert);
+    const pay=String(cert?.pagamento_status||'').toUpperCase();
+    if(['BLOQUEADO','CANCELADO'].includes(status)) return 'is-error';
+    if(status==='PRONTO_PARA_LIBERACAO' || status==='EMITIDO') return 'is-ready';
+    if(status==='PENDENTE' && ['PAGO','ISENTO'].includes(pay) && n(cert?.horas_faltantes)===0) return 'is-ready';
+    return 'is-waiting';
+  }
   function paymentBadge(s){
     const x=String(s||'AGUARDANDO_PAGAMENTO').toUpperCase();
     const label=({AGUARDANDO_PAGAMENTO:'Aguardando pagamento',PAGAMENTO_INFORMADO:'Pagamento informado',PAGO:'Pago',ISENTO:'Isento',CANCELADO:'Cancelado'})[x]||x;
@@ -96,7 +105,12 @@
         state.notificacoesHorasDisponiveis = false;
       }
       renderWallets(); renderCertificates(); renderProcessed(); renderHoursNotifications(); updateKpis();
-    }catch(e){console.error(e); if(!options.silent) toast(`Não foi possível atualizar: ${e.message}`,true);}
+    }catch(e){
+      console.error(e);
+      const jaTemDados = state.certificados.length || state.carteiras.length || state.alunos.size || state.cursos.size;
+      // Não exibe falso erro em refresh/realtime quando os dados já estão visíveis.
+      if(!options.silent && !jaTemDados) toast(`Não foi possível carregar os dados: ${e.message}`,true);
+    }
     finally{state.loading=false;}
   }
 
@@ -170,7 +184,9 @@
   }
   function certRow(c, processed=false){
     const a=aluno(c), course=curso(c), hours=n(c.horas_emitidas||c.horas_solicitadas);
-    return `<tr>
+    const tone=certificateTone(c);
+    const statusText=statusLabel(statusEfetivo(c));
+    return `<tr class="certificate-status-row ${tone}" data-status-text="${esc(statusText)}">
       <td data-label="Aluno"><div class="cert-admin-student"><strong>${esc(c.nome_aluno||a.nome||'Aluno')}</strong><small>RA ${esc(a.ra||'—')} · CPF ${esc(a.cpf||'—')}</small></div></td>
       <td data-label="Curso"><div class="cert-admin-course"><strong>${esc(c.nome_curso||course.titulo||'Curso')}</strong><small>${esc(c.numero_certificado||c.protocolo_pagamento||'Aguardando número')}</small></div></td>
       <td data-label="Horas"><strong>${hours}h</strong></td><td data-label="Pagamento">${paymentBadge(c.pagamento_status)}</td>

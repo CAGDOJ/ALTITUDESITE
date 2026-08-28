@@ -728,17 +728,23 @@ async function abrirCurso(cursoId) {
   $("lessonContent").innerHTML = "";
 
   try {
-    let { data, error } = await sb.rpc("obter_modulos_curso_v12", { p_curso_id: Number(cursoId) });
+    let { data, error } = await sb.rpc("obter_modulos_curso_v41", { p_curso_id: Number(cursoId) });
+    if (error && /obter_modulos_curso_v41|function/i.test(error.message || "")) {
+      ({ data, error } = await sb.rpc("obter_modulos_curso_v12", { p_curso_id: Number(cursoId) }));
+    }
     if (error && /obter_modulos_curso_v12|function/i.test(error.message || "")) {
       ({ data, error } = await sb.rpc("obter_modulos_curso", { p_curso_id: Number(cursoId) }));
     }
     if (error) throw error;
-    state.modulos = (data || []).map((modulo) => ({
+    state.modulos = (data || []).map((modulo, index) => ({
       ...modulo,
+      ordem: Number(modulo.ordem || index + 1),
+      conteudo_latex: modulo.conteudo_latex || modulo.conteudo || "",
       materiais: Array.isArray(modulo.materiais) ? modulo.materiais : [],
       concluido: Boolean(modulo.concluido)
-    }));
+    })).sort((a, b) => Number(a.ordem || 0) - Number(b.ordem || 0));
     renderSalaEstudo();
+    window.altitudeAnalyticsV41?.send?.("study_open", curso.titulo || "Curso", { curso_id:Number(curso.id), modulos:state.modulos.length });
   } catch (error) {
     console.error(error);
     $("studyModuleList").innerHTML = `<div class="empty-state">Não foi possível abrir o conteúdo. Execute a migração SQL mais recente no Supabase.<br><small>${escapeHTML(error.message)}</small></div>`;
@@ -759,12 +765,13 @@ function renderSalaEstudo() {
     return;
   }
 
-  list.innerHTML = state.modulos.map((modulo, index) => `
-    <button type="button" class="module-item ${index === state.moduloIndex ? "ativo" : ""} ${modulo.concluido ? "concluido" : ""}" onclick="selecionarModulo(${index})">
-      <span class="module-number">${modulo.concluido ? "✓" : index + 1}</span>
-      <span><strong>${escapeHTML(modulo.titulo || `Módulo ${index + 1}`)}</strong><small>${modulo.concluido ? "Concluído" : "Pendente"}</small></span>
-    </button>
-  `).join("");
+  list.innerHTML = state.modulos.map((modulo, index) => {
+    const numero = Number(modulo.ordem || index + 1);
+    return `<button type="button" class="module-item ${index === state.moduloIndex ? "ativo" : ""} ${modulo.concluido ? "concluido" : ""}" onclick="selecionarModulo(${index})">
+      <span class="module-number">${modulo.concluido ? "✓" : numero}</span>
+      <span><strong>${escapeHTML(modulo.titulo || `Módulo ${numero}`)}</strong><small>Módulo ${numero} · ${modulo.concluido ? "Concluído" : "Pendente"}</small></span>
+    </button>`;
+  }).join("");
 
   renderModuloAtual();
   const resultado = melhorResultadoCurso(curso.id);
@@ -801,6 +808,8 @@ function selecionarModulo(index) {
   if (index < 0 || index >= state.modulos.length) return;
   state.moduloIndex = index;
   renderSalaEstudo();
+  const modulo = state.modulos[index];
+  window.altitudeAnalyticsV41?.send?.("module_open", modulo?.titulo || `Módulo ${index + 1}`, { curso_id:Number(state.cursoAtual?.id || 0), modulo_id:modulo?.modulo_id || null, ordem:Number(modulo?.ordem || index + 1) });
 }
 
 function youtubeEmbed(url) {
@@ -817,102 +826,193 @@ function materialIcon(type) {
 }
 
 
-function cleanLatexForStudent(value) {
-  let text = String(value || "").replace(/\r/g, "");
-  if (!text) return "";
+function latexImageWidthPercent(options = "") {
+  const raw = String(options || "");
+  const width = /width\s*=\s*([^,\]]+)/i.exec(raw)?.[1]?.trim() || "";
+  if (!width) return 88;
+  const ratio = /([0-9]+(?:[.,][0-9]+)?)\s*\\(?:textwidth|linewidth)/i.exec(width);
+  if (ratio) return Math.max(20, Math.min(100, Number(ratio[1].replace(",", ".")) * 100));
+  if (/\\(?:textwidth|linewidth)/i.test(width)) return 100;
+  const pct = /([0-9]+(?:[.,][0-9]+)?)\s*%/.exec(width);
+  if (pct) return Math.max(20, Math.min(100, Number(pct[1].replace(",", "."))));
+  return 88;
+}
 
-  text = text
+function latexInlineHtml(value = "") {
+  let html = escapeHTML(String(value || "")
+    .replace(/\\%/g, "%")
+    .replace(/\\&/g, "&")
+    .replace(/\\_/g, "_")
+    .replace(/~/g, " "));
+  for (let pass = 0; pass < 4; pass += 1) {
+    html = html
+      .replace(/\\textbf\{([^{}]*)\}/gi, "<strong>$1</strong>")
+      .replace(/\\(?:textit|emph)\{([^{}]*)\}/gi, "<em>$1</em>")
+      .replace(/\\underline\{([^{}]*)\}/gi, "<u>$1</u>")
+      .replace(/\\textcolor\{[^{}]*\}\{([^{}]*)\}/gi, "$1");
+  }
+  html = html
+    .replace(/\\(?:Large|LARGE|large|small|normalsize|bfseries|itshape|selectfont)\b/gi, "")
+    .replace(/\\(?:label|ref|cite)\{[^{}]*\}/gi, "")
+    .replace(/\\\\/g, '<span class="latex-inline-break"></span>')
+    .replace(/\$([^$\n]+)\$/g, '<span class="latex-inline-math">$1</span>')
+    .replace(/[{}]/g, "");
+  return html.trim();
+}
+
+function studentContentHtml(value) {
+  let source = String(value || "").replace(/\r/g, "");
+  if (!source.trim()) return "";
+
+  const protectedHtml = [];
+  const protect = (html) => {
+    const token = `@@ALTITUDE_HTML_${protectedHtml.length}@@`;
+    protectedHtml.push(html);
+    return `\n${token}\n`;
+  };
+  const figureHtml = (body = "") => {
+    const image = /\\includegraphics(?:\[([^\]]*)\])?\{([^{}]+)\}/i.exec(body);
+    if (!image) return "";
+    const url = safeUrl(String(image[2] || "").trim());
+    if (!url) return "";
+    const caption = /\\caption\{([^{}]*)\}/i.exec(body)?.[1] || "";
+    const width = latexImageWidthPercent(image[1] || "");
+    return `<figure class="lesson-latex-figure" style="width:min(${width}%,100%)"><img src="${escapeHTML(url)}" alt="${escapeHTML(caption || "Imagem do módulo")}" loading="lazy"><figcaption${caption ? "" : " hidden"}>${latexInlineHtml(caption)}</figcaption></figure>`;
+  };
+
+  // Imagens remotas via LaTeX. O arquivo não precisa ser importado para o site.
+  source = source.replace(/\\begin\{figure\*?\}(?:\[[^\]]*\])?([\s\S]*?)\\end\{figure\*?\}/gi, (_, body) => protect(figureHtml(body)));
+  source = source.replace(/\\includegraphics(?:\[([^\]]*)\])?\{([^{}]+)\}/gi, (_, options, rawUrl) => {
+    const url = safeUrl(String(rawUrl || "").trim());
+    if (!url) return "";
+    const width = latexImageWidthPercent(options || "");
+    return protect(`<figure class="lesson-latex-figure" style="width:min(${width}%,100%)"><img src="${escapeHTML(url)}" alt="Imagem do módulo" loading="lazy"><figcaption hidden></figcaption></figure>`);
+  });
+
+  source = source
     .replace(/^[\s\S]*?\\begin\{document\}/i, "")
     .replace(/\\end\{document\}[\s\S]*$/i, "")
     .replace(/\\(?:documentclass|usepackage|geometry|definecolor|titleformat|titlespacing|setlength|pagestyle|fancyhf|fancyhead|fancyfoot|renewcommand|onehalfspacing|Justifying)\*?(?:\[[^\]]*\])?\{[^{}]*\}/gi, "")
     .replace(/\\(?:vspace|hspace)\*?\{[^{}]*\}/gi, "")
-    .replace(/\\includegraphics(?:\[[^\]]*\])?\{[^{}]*\}/gi, "")
-    .replace(/\\begin\{itemize\}(\[[^\]]*\])?/gi, (_, options = "") => {
-      const left = /leftmargin\s*=\s*([^,\]]+)/i.exec(options)?.[1]?.trim() || "";
-      return `\n@@LIST:${left}@@\n`;
-    })
-    .replace(/\\begin\{enumerate\}(\[[^\]]*\])?/gi, (_, options = "") => {
-      const left = /leftmargin\s*=\s*([^,\]]+)/i.exec(options)?.[1]?.trim() || "";
-      return `\n@@OLIST:${left}@@\n`;
-    })
+    .replace(/\\begin\{itemize\}(\[[^\]]*\])?/gi, (_, options = "") => `\n@@LIST:${/leftmargin\s*=\s*([^,\]]+)/i.exec(options)?.[1]?.trim() || ""}@@\n`)
+    .replace(/\\begin\{enumerate\}(\[[^\]]*\])?/gi, (_, options = "") => `\n@@OLIST:${/leftmargin\s*=\s*([^,\]]+)/i.exec(options)?.[1]?.trim() || ""}@@\n`)
     .replace(/\\end\{(?:itemize|enumerate)\}/gi, "\n@@ENDLIST@@\n")
-    .replace(/\\begin\{(?:center|tcolorbox|tabularx|tabular)\}(?:\[[\s\S]*?\])?/gi, "\n")
-    .replace(/\\end\{(?:center|tcolorbox|tabularx|tabular)\}/gi, "\n")
+    .replace(/\\begin\{tcolorbox\}(?:\[[\s\S]*?\])?/gi, "\n@@BOXOPEN@@\n")
+    .replace(/\\end\{tcolorbox\}/gi, "\n@@BOXCLOSE@@\n")
+    .replace(/\\begin\{center\}/gi, "\n@@CENTEROPEN@@\n")
+    .replace(/\\end\{center\}/gi, "\n@@CENTERCL@@\n")
+    .replace(/\\begin\{flushright\}/gi, "\n@@RIGHTOPEN@@\n")
+    .replace(/\\end\{flushright\}/gi, "\n@@RIGHTCL@@\n")
+    .replace(/\\begin\{flushleft\}/gi, "\n@@LEFTOPEN@@\n")
+    .replace(/\\end\{flushleft\}/gi, "\n@@LEFTCL@@\n")
+    .replace(/\\begin\{(?:tabularx|tabular)\}(?:\{[^{}]*\}){0,2}/gi, "\n")
+    .replace(/\\end\{(?:tabularx|tabular)\}/gi, "\n")
     .replace(/^\s*\[[^\]\n]*(?:colback|colframe|boxrule|arc|left|right|top|bottom)[^\]\n]*\]\s*$/gim, "")
     .replace(/\\section\*?\{([^{}]+)\}/gi, "\n## $1\n")
     .replace(/\\subsection\*?\{([^{}]+)\}/gi, "\n### $1\n")
     .replace(/\\subsubsection\*?\{([^{}]+)\}/gi, "\n#### $1\n")
+    .replace(/\\paragraph\{([^{}]+)\}/gi, "\n#### $1\n")
     .replace(/\\item\s*/gi, "\n- ")
-    .replace(/\\(?:textbf|textit|emph|underline)\{([^{}]*)\}/gi, "$1")
-    .replace(/\\textcolor\{[^{}]*\}\{([^{}]*)\}/gi, "$1")
     .replace(/\\color\{[^{}]*\}/gi, "")
-    .replace(/\\(?:Large|LARGE|large|small|normalsize|bfseries|itshape|selectfont)\b/gi, "")
-    .replace(/\\\\/g, "\n")
-    .replace(/\\textbar\b/gi, "|")
-    .replace(/\\%/g, "%")
-    .replace(/\\&/g, "&")
-    .replace(/~+/g, " ")
-    .replace(/\$+/g, "")
-    .replace(/[{}]/g, "")
-    .replace(/^\s*(?:tcolorbox|center|altgray|altblue|altlight|linegray)\s*$/gim, "")
-    .replace(/^\s*\d+(?:\.\d+)?cm\s*$/gim, "")
-    .replace(/[ \t]+\n/g, "\n")
     .replace(/\n{3,}/g, "\n\n")
     .trim();
-  return text;
-}
 
-function studentContentHtml(value) {
-  const text = cleanLatexForStudent(value);
-  if (!text) return "";
-  const lines = text.split("\n");
+  const lines = source.split("\n");
   const out = [];
   let paragraph = [];
   let list = [];
   let listType = "ul";
   let listMargin = "";
-  let orderedIndex = 0;
-
-  const safeCssDimension = (value) => /^\d+(?:[.,]\d+)?(?:cm|mm|pt|px|em|rem|in)$/i.test(String(value || '').trim())
-    ? String(value).trim().replace(',', '.') : '';
+  const safeCssDimension = (raw) => /^\d+(?:[.,]\d+)?(?:cm|mm|pt|px|em|rem|in)$/i.test(String(raw || "").trim()) ? String(raw).trim().replace(",", ".") : "";
   const flushParagraph = () => {
     const joined = paragraph.join(" ").replace(/\s+/g, " ").trim();
-    if (joined) out.push(`<p>${escapeHTML(joined)}</p>`);
+    if (joined) out.push(`<p>${latexInlineHtml(joined)}</p>`);
     paragraph = [];
   };
   const flushList = () => {
     if (list.length) {
       const margin = safeCssDimension(listMargin);
-      out.push(`<${listType} class="latex-list${margin ? ' has-custom-leftmargin' : ''}"${margin ? ` style="margin-left:${margin}"` : ''}>${list.map((item) => `<li>${escapeHTML(item)}</li>`).join("")}</${listType}>`);
+      out.push(`<${listType} class="latex-list${margin ? " has-custom-leftmargin" : ""}"${margin ? ` style="margin-left:${margin}"` : ""}>${list.map((item) => `<li>${latexInlineHtml(item)}</li>`).join("")}</${listType}>`);
     }
-    list = []; listMargin = ''; orderedIndex = 0;
+    list = []; listMargin = ""; listType = "ul";
   };
 
   lines.forEach((raw) => {
     const line = raw.trim();
     if (!line) { flushParagraph(); return; }
+    if (/^@@ALTITUDE_HTML_\d+@@$/.test(line)) { flushParagraph(); flushList(); out.push(line); return; }
     const open = /^@@(O?LIST):([^@]*)@@$/.exec(line);
-    if (open) { flushParagraph(); flushList(); listType = open[1] === 'OLIST' ? 'ol' : 'ul'; listMargin = open[2] || ''; return; }
-    if (line === '@@ENDLIST@@') { flushParagraph(); flushList(); listType = 'ul'; return; }
-    const heading = line.match(/^(#{2,4})\s+(.+)$/);
-    if (heading) {
-      flushParagraph(); flushList();
-      const level = heading[1].length <= 2 ? 3 : 4;
-      out.push(`<h${level} class="latex-heading">${escapeHTML(heading[2])}</h${level}>`);
-      return;
-    }
-    if (/^-\s+/.test(line)) {
-      flushParagraph();
-      let item = line.replace(/^-\s+/, "");
-      if (listType === 'ol') item = item.replace(/^\d+[.)]\s*/, '');
-      list.push(item); orderedIndex += 1;
-      return;
-    }
-    flushList();
+    if (open) { flushParagraph(); flushList(); listType = open[1] === "OLIST" ? "ol" : "ul"; listMargin = open[2] || ""; return; }
+    if (line === "@@ENDLIST@@") { flushParagraph(); flushList(); return; }
+    if (line === "@@BOXOPEN@@") { flushParagraph(); flushList(); out.push('<aside class="latex-info-box">'); return; }
+    if (line === "@@BOXCLOSE@@") { flushParagraph(); flushList(); out.push('</aside>'); return; }
+    if (line === "@@CENTEROPEN@@") { flushParagraph(); out.push('<div class="latex-align-center">'); return; }
+    if (line === "@@CENTERCL@@") { flushParagraph(); out.push('</div>'); return; }
+    if (line === "@@RIGHTOPEN@@") { flushParagraph(); out.push('<div class="latex-align-right">'); return; }
+    if (line === "@@RIGHTCL@@") { flushParagraph(); out.push('</div>'); return; }
+    if (line === "@@LEFTOPEN@@") { flushParagraph(); out.push('<div class="latex-align-left">'); return; }
+    if (line === "@@LEFTCL@@") { flushParagraph(); out.push('</div>'); return; }
+    const heading = /^(#{2,4})\s+(.+)$/.exec(line);
+    if (heading) { flushParagraph(); flushList(); const level = heading[1].length <= 2 ? 3 : 4; out.push(`<h${level} class="latex-heading">${latexInlineHtml(heading[2])}</h${level}>`); return; }
+    if (/^-\s+/.test(line)) { flushParagraph(); list.push(line.replace(/^-\s+/, "")); return; }
     paragraph.push(line);
   });
   flushParagraph(); flushList();
-  return out.join("");
+
+  let html = out.join("\n");
+  protectedHtml.forEach((valueHtml, index) => { html = html.replaceAll(`@@ALTITUDE_HTML_${index}@@`, valueHtml); });
+  return html;
+}
+
+function cleanLatexForStudent(value) {
+  const html = studentContentHtml(value);
+  if (!html) return "";
+  const node = document.createElement("div");
+  node.innerHTML = html;
+  return String(node.textContent || "").replace(/\s+/g, " ").trim();
+}
+
+function latexBlocksForStudentPdf(value) {
+  let source = String(value || "").replace(/\r/g, "");
+  const images = [];
+  const makeImageToken = (options, rawUrl, caption = "") => {
+    const url = safeUrl(String(rawUrl || "").trim());
+    if (!url) return "";
+    const index = images.push({ url, caption:String(caption || "").trim(), widthPercent:latexImageWidthPercent(options || "") }) - 1;
+    return `\n@@IMG:${index}@@\n`;
+  };
+  source = source.replace(/\\begin\{figure\*?\}(?:\[[^\]]*\])?([\s\S]*?)\\end\{figure\*?\}/gi, (_, body) => {
+    const img = /\\includegraphics(?:\[([^\]]*)\])?\{([^{}]+)\}/i.exec(body);
+    if (!img) return "";
+    const caption = /\\caption\{([^{}]*)\}/i.exec(body)?.[1] || "";
+    return makeImageToken(img[1], img[2], caption);
+  });
+  source = source.replace(/\\includegraphics(?:\[([^\]]*)\])?\{([^{}]+)\}/gi, (_, options, url) => makeImageToken(options, url));
+  source = source
+    .replace(/^[\s\S]*?\\begin\{document\}/i, "").replace(/\\end\{document\}[\s\S]*$/i, "")
+    .replace(/\\begin\{(itemize|enumerate)\}(?:\[[^\]]*\])?([\s\S]*?)\\end\{\1\}/gi, (_, type, body) => String(body).split(/\\item\s*/).slice(1).map((item, i) => `\n@@LI@@${type.toLowerCase()==="enumerate" ? `${i+1}. ` : "• "}${item.trim()}\n`).join(""))
+    .replace(/\\section\*?\{([^{}]*)\}/gi, "\n@@H2@@$1\n")
+    .replace(/\\subsection\*?\{([^{}]*)\}/gi, "\n@@H3@@$1\n")
+    .replace(/\\subsubsection\*?\{([^{}]*)\}/gi, "\n@@H4@@$1\n")
+    .replace(/\\paragraph\{([^{}]*)\}/gi, "\n@@H4@@$1\n")
+    .replace(/\\item\s*/gi, "\n@@LI@@• ")
+    .replace(/\\(?:textbf|textit|emph|underline)\{([^{}]*)\}/gi, "$1")
+    .replace(/\\textcolor\{[^{}]*\}\{([^{}]*)\}/gi, "$1")
+    .replace(/\\(?:label|ref|cite)\{[^{}]*\}/gi, "")
+    .replace(/\\(?:begin|end)\{[^{}]+\}(?:\[[^\]]*\])?/gi, "\n")
+    .replace(/\\(?:vspace|hspace)\*?\{[^{}]*\}/gi, "")
+    .replace(/\\[a-zA-Z@]+\*?(?:\[[^\]]*\])?/g, "")
+    .replace(/\\\\/g, "\n").replace(/~/g, " ").replace(/\$+/g, "").replace(/[{}]/g, "")
+    .replace(/\n{3,}/g, "\n\n");
+  return source.split(/\n+/).map((line) => line.trim()).filter(Boolean).map((line) => {
+    if (line.startsWith("@@H2@@")) return { type:"h2", text:line.slice(6).trim() };
+    if (line.startsWith("@@H3@@")) return { type:"h3", text:line.slice(6).trim() };
+    if (line.startsWith("@@H4@@")) return { type:"h4", text:line.slice(6).trim() };
+    if (line.startsWith("@@LI@@")) return { type:"li", text:line.slice(6).trim() };
+    const imageMatch = /^@@IMG:(\d+)@@$/.exec(line);
+    if (imageMatch) return { type:"image", ...images[Number(imageMatch[1])] };
+    return { type:"p", text:line.replace(/\s+/g, " ").trim() };
+  });
 }
 
 function uniqueModuleResources(modulo) {
@@ -943,6 +1043,30 @@ function uniqueModuleResources(modulo) {
   return resources;
 }
 
+async function carregarImagemRemotaParaPdf(url) {
+  const safe = safeUrl(url);
+  if (!safe) throw new Error("URL de imagem inválida.");
+  const response = await fetch(safe, { mode:"cors", cache:"force-cache" });
+  if (!response.ok) throw new Error(`Imagem indisponível (${response.status}).`);
+  const blob = await response.blob();
+  const objectUrl = URL.createObjectURL(blob);
+  try {
+    const image = await new Promise((resolve, reject) => {
+      const img = new Image();
+      img.onload = () => resolve(img);
+      img.onerror = () => reject(new Error("Não foi possível ler a imagem."));
+      img.src = objectUrl;
+    });
+    const maxSide = 1800;
+    const scale = Math.min(1, maxSide / Math.max(image.naturalWidth || image.width, image.naturalHeight || image.height));
+    const canvas = document.createElement("canvas");
+    canvas.width = Math.max(1, Math.round((image.naturalWidth || image.width) * scale));
+    canvas.height = Math.max(1, Math.round((image.naturalHeight || image.height) * scale));
+    canvas.getContext("2d").drawImage(image, 0, 0, canvas.width, canvas.height);
+    return { dataUrl:canvas.toDataURL("image/jpeg", .90), width:canvas.width, height:canvas.height };
+  } finally { URL.revokeObjectURL(objectUrl); }
+}
+
 async function baixarMaterialCompletoCurso() {
   if (!state.cursoAtual || !state.modulos.length) return toast("Nenhum material disponível.", "error");
   if (!window.jspdf?.jsPDF) return toast("Gerador de PDF não carregado.", "error");
@@ -952,10 +1076,11 @@ async function baixarMaterialCompletoCurso() {
   if (button) { button.disabled = true; button.textContent = "Gerando material..."; }
   try {
     const { jsPDF } = window.jspdf;
-    const doc = new jsPDF({ orientation: "portrait", unit: "mm", format: "a4" });
+    const doc = new jsPDF({ orientation:"portrait", unit:"mm", format:"a4", compress:true });
     const width = doc.internal.pageSize.getWidth();
     const height = doc.internal.pageSize.getHeight();
     const margin = 18;
+    const contentWidth = width - margin * 2;
     let y = 20;
     let logo = null;
     try {
@@ -964,72 +1089,76 @@ async function baixarMaterialCompletoCurso() {
       logo = await new Promise((resolve) => { const reader = new FileReader(); reader.onload = () => resolve(reader.result); reader.readAsDataURL(blob); });
     } catch (_) {}
 
-    const newPageIfNeeded = (needed = 12) => {
-      if (y + needed <= height - 18) return;
-      doc.addPage(); y = 20;
-    };
-    const writeLines = (text, size = 10, bold = false, spacing = 5, indent = 0, justify = false) => {
-      doc.setFont("helvetica", bold ? "bold" : "normal");
-      doc.setFontSize(size);
-      const maxWidth = width - margin * 2 - indent;
-      const lines = doc.splitTextToSize(String(text || ""), maxWidth);
+    const addPage = () => { doc.addPage(); y = 20; };
+    const ensure = (needed = 12) => { if (y + needed > height - 18) addPage(); };
+    const writeLines = (text, size = 10, bold = false, spacing = 5, indent = 0, justify = false, color = [45,61,75]) => {
+      const value = String(text || "").trim(); if (!value) return;
+      doc.setFont("helvetica", bold ? "bold" : "normal"); doc.setFontSize(size); doc.setTextColor(...color);
+      const maxWidth = contentWidth - indent;
+      const lines = doc.splitTextToSize(value, maxWidth);
       lines.forEach((line, index) => {
-        newPageIfNeeded(spacing + 2);
-        const shouldJustify = justify && !bold && lines.length > 1 && index < lines.length - 1;
-        doc.text(line, margin + indent, y, shouldJustify ? { maxWidth, align: "justify" } : undefined);
-        y += spacing;
+        ensure(spacing + 2);
+        const opts = justify && !bold && lines.length > 1 && index < lines.length - 1 ? { maxWidth, align:"justify" } : undefined;
+        doc.text(line, margin + indent, y, opts); y += spacing;
       });
-      if (justify && lines.length) y += 1.5;
+      y += bold ? 2 : 1.2;
+    };
+    const drawRemoteImage = async (block) => {
+      try {
+        const image = await carregarImagemRemotaParaPdf(block.url);
+        let imageWidth = contentWidth * Math.max(.2, Math.min(1, Number(block.widthPercent || 88) / 100));
+        let imageHeight = imageWidth * (image.height / image.width);
+        const maxHeight = 125;
+        if (imageHeight > maxHeight) { const ratio = maxHeight / imageHeight; imageHeight *= ratio; imageWidth *= ratio; }
+        ensure(imageHeight + (block.caption ? 12 : 6));
+        const x = (width - imageWidth) / 2;
+        doc.addImage(image.dataUrl, "JPEG", x, y, imageWidth, imageHeight, undefined, "FAST"); y += imageHeight + 4;
+        if (block.caption) { doc.setFont("helvetica","normal"); doc.setFontSize(8.5); doc.setTextColor(90,108,120); const lines=doc.splitTextToSize(String(block.caption),contentWidth*.85); doc.text(lines,width/2,y,{align:"center"}); y += lines.length*4+3; }
+      } catch (error) {
+        console.warn("Imagem do material não pôde ser incorporada ao PDF:", block.url, error.message);
+        writeLines(`Imagem indisponível no PDF: ${block.caption || block.url}`, 8.5, false, 4, 0, false, [105,120,132]);
+      }
     };
 
-    // Capa minimalista: sem caixas ou molduras pesadas.
-    if (logo) doc.addImage(logo,'PNG',(width-66)/2,20,66,18,undefined,'FAST');
-    doc.setTextColor(17,168,182);
-    doc.setFont('helvetica','bold');
-    doc.setFontSize(11.5);
-    doc.text('Material de estudo',width/2,47,{align:'center'});
-    doc.setTextColor(7,59,90);
-    doc.setFontSize(18);
-    const coverLines = doc.splitTextToSize(`Curso de ${state.cursoAtual.titulo || 'Curso'}`,width-50);
-    doc.text(coverLines,width/2,60,{align:'center'});
-    const coverBottom = 60 + Math.max(0,coverLines.length-1)*8;
-    doc.setDrawColor(207,220,229);
-    doc.setLineWidth(.35);
-    doc.line(margin,coverBottom+12,width-margin,coverBottom+12);
-    y=coverBottom+27;
-    writeLines(`Curso: ${state.cursoAtual.titulo || 'Curso'}`,10.5,true,6);
-    writeLines(`Área de formação: ${state.cursoAtual.categoria || 'Formação profissional'}`,10,false,6);
-    writeLines('Finalidade: apoiar o estudo teórico e servir de base para a avaliação de aprendizagem.',10,false,6);
+    // Capa institucional.
+    if (logo) doc.addImage(logo, 'PNG', (width - 66) / 2, 20, 66, 18, undefined, 'FAST');
+    doc.setTextColor(17,168,182); doc.setFont('helvetica','bold'); doc.setFontSize(11.5); doc.text('Material de estudo', width/2, 47, {align:'center'});
+    doc.setTextColor(7,59,90); doc.setFontSize(18);
+    const coverLines = doc.splitTextToSize(`Curso de ${state.cursoAtual.titulo || 'Curso'}`, width - 50); doc.text(coverLines, width/2, 60, {align:'center'});
+    const coverBottom = 60 + Math.max(0, coverLines.length - 1) * 8;
+    doc.setDrawColor(207,220,229); doc.setLineWidth(.35); doc.line(margin, coverBottom + 12, width - margin, coverBottom + 12);
+    y = coverBottom + 27;
+    writeLines(`Curso: ${state.cursoAtual.titulo || 'Curso'}`, 10.5, true, 6);
+    writeLines(`Área de formação: ${state.cursoAtual.categoria || 'Formação profissional'}`, 10, false, 6);
+    writeLines('Finalidade: apoiar o estudo teórico e servir de base para a avaliação de aprendizagem.', 10, false, 6);
 
-    state.modulos.forEach((modulo, index) => {
-      doc.addPage(); y=22;
-      doc.setTextColor(7,59,90); writeLines(`${index + 1}. ${modulo.titulo || `Conteúdo ${index + 1}`}`,16,true,8);
-      doc.setTextColor(45,61,75);
-      const clean = cleanLatexForStudent(modulo.conteudo || modulo.conteudo_latex || "");
-      let currentIndent = 0;
-      clean.split(/\n+/).map((line) => line.trim()).filter(Boolean).forEach((line) => {
-        const open = /^@@(?:O?LIST):([^@]*)@@$/.exec(line);
-        if (open) {
-          const val = open[1] || '';
-          const num = Number((val.match(/[\d.,]+/)||['4'])[0].replace(',','.'));
-          currentIndent = /cm/i.test(val) ? num*10 : /mm/i.test(val) ? num : 4;
-          return;
-        }
-        if (line === '@@ENDLIST@@') { currentIndent = 0; return; }
-        const heading = line.match(/^#{2,4}\s+(.+)$/);
-        if (heading) { doc.setTextColor(7,59,90); writeLines(heading[1],13,true,7); doc.setTextColor(45,61,75); return; }
-        const item = line.replace(/^-\s*/, '• ');
-        writeLines(item,10,false,5,currentIndent,true);
-      });
-    });
+    const modules = [...state.modulos].sort((a,b)=>Number(a.ordem||0)-Number(b.ordem||0));
+    for (let index = 0; index < modules.length; index += 1) {
+      const modulo = modules[index];
+      const numero = Number(modulo.ordem || index + 1);
+      addPage();
+      writeLines(`Módulo ${numero} — ${modulo.titulo || `Conteúdo ${numero}`}`, 16, true, 8, 0, false, [7,59,90]);
+      const descricao = cleanLatexForStudent(modulo.descricao || "");
+      if (descricao) writeLines(descricao, 9.5, false, 5, 0, true, [96,116,130]);
+      const blocks = latexBlocksForStudentPdf(modulo.conteudo_latex || modulo.conteudo || "");
+      for (const block of blocks) {
+        if (block.type === "image") { await drawRemoteImage(block); continue; }
+        if (block.type === "h2") writeLines(block.text, 13.5, true, 7, 0, false, [7,59,90]);
+        else if (block.type === "h3") writeLines(block.text, 12, true, 6, 0, false, [13,67,99]);
+        else if (block.type === "h4") writeLines(block.text, 11, true, 5.5, 0, false, [20,77,105]);
+        else if (block.type === "li") writeLines(block.text, 10, false, 5, 5, true);
+        else writeLines(block.text, 10, false, 5, 0, true);
+      }
+    }
 
     const totalPages = doc.getNumberOfPages();
     for (let page = 1; page <= totalPages; page += 1) {
       doc.setPage(page); doc.setFont("helvetica", "normal"); doc.setFontSize(8); doc.setTextColor(100,115,128);
-      doc.text(`Altitude Centro Universitário - ${page} de ${totalPages}`, width / 2, height - 9, { align: "center" });
+      doc.text(`Altitude Centro Universitário - ${page} de ${totalPages}`, width / 2, height - 9, { align:"center" });
     }
     const filename = `material-${String(state.cursoAtual.titulo || "curso").normalize("NFD").replace(/[\u0300-\u036f]/g, "").replace(/[^a-zA-Z0-9]+/g, "-").replace(/^-|-$/g, "").toLowerCase()}.pdf`;
     doc.save(filename);
+    window.altitudeAnalyticsV41?.send?.("material_completo", state.cursoAtual.titulo || "Curso", { curso_id:Number(state.cursoAtual.id), modulos:modules.length });
   } catch (error) {
     console.error("Material completo:", error); toast(`Não foi possível gerar o material: ${error.message}`, "error");
   } finally { if (button) { button.disabled = false; button.textContent = original; } }
@@ -1039,14 +1168,15 @@ function renderModuloAtual() {
   const modulo = state.modulos[state.moduloIndex];
   if (!modulo) return;
 
-  setText("lessonPosition", `Conteúdo ${state.moduloIndex + 1} de ${state.modulos.length}`);
-  setText("lessonTitle", modulo.titulo || `Módulo ${state.moduloIndex + 1}`);
+  const numeroModulo = Number(modulo.ordem || state.moduloIndex + 1);
+  setText("lessonPosition", `Módulo ${numeroModulo} de ${state.modulos.length}`);
+  setText("lessonTitle", modulo.titulo || `Módulo ${numeroModulo}`);
   setText("lessonDescription", cleanLatexForStudent(modulo.descricao) || "Estude os materiais abaixo e marque o conteúdo como concluído.");
 
   const recursos = uniqueModuleResources(modulo);
   const content = $("lessonContent");
-  const blocoTextoHtml = studentContentHtml(modulo.conteudo || modulo.conteudo_latex || "");
-  const blocoTexto = blocoTextoHtml ? `<article class="lesson-written-content"><h3>Conteúdo do módulo</h3>${blocoTextoHtml}</article>` : "";
+  const blocoTextoHtml = studentContentHtml(modulo.conteudo_latex || modulo.conteudo || "");
+  const blocoTexto = blocoTextoHtml ? `<article class="lesson-written-content"><span class="lesson-module-order">Módulo ${numeroModulo}</span><h3>Conteúdo do módulo</h3>${blocoTextoHtml}</article>` : "";
 
   if (!recursos.length && !blocoTextoHtml) {
     content.innerHTML = `<div class="empty-state">Este módulo ainda não possui conteúdo publicado.</div>`;
@@ -2297,7 +2427,6 @@ async function baixarCarteirinhaPDF() {
     doc.setFont("helvetica","bold"); doc.setFontSize(4.5); doc.setTextColor(255,255,255);
     doc.text("CARTEIRINHA DIGITAL", 6, h - 12);
     doc.setFont("helvetica","normal"); doc.setTextColor(190,218,235);
-    doc.text("Escaneie o QR Code para validar", 6, h - 8.2);
     doc.save(`carteirinha-${slug(state.aluno.nome)}-${slug(state.aluno.ra)}.pdf`);
   } catch (error) {
     console.error(error);

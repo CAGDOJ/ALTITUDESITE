@@ -1,6 +1,0 @@
-VALIDAÇÃO V40
-- JavaScript: node --check em todos os arquivos de assets/js: OK.
-- Referências locais de HTML (scripts, CSS e imagens): 0 arquivos ausentes.
-- Ordem da aba Certificados: aguardando decisão > gerência de horas > processados.
-- CSS V40 carregado por último em Portal do Gestor, Portal do Aluno e Login.
-- Cache-busting atualizado para os arquivos principais modificados.

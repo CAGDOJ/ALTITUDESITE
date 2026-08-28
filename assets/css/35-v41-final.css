@@ -1,0 +1,229 @@
+/* =====================================================================
+   ALTITUDE V41 — AJUSTES 75–99
+   Prioridades: ações padronizadas, certificados compactos, PDFs/LaTeX,
+   recompensas com prévia real, trilha de módulos, prova mobile e analytics.
+   ===================================================================== */
+:root{
+  --v41-navy:#0b3a61;
+  --v41-cyan:#25abc0;
+  --v41-line:#d8e4ea;
+  --v41-soft:#f6f9fb;
+  --v41-muted:#65798a;
+  --v41-danger:#bf3542;
+  --v41-danger-bg:#fff5f6;
+  --v41-ok:#208653;
+  --v41-ok-bg:#effaf4;
+}
+
+/* 78/84/91 — CURSOS E CONTEÚDOS usa EXATAMENTE o padrão dimensional de Alunos. */
+#tabCursos td.course-action-cell{
+  display:grid!important;
+  grid-template-columns:1fr!important;
+  gap:7px!important;
+  width:152px!important;
+  min-width:152px!important;
+  max-width:152px!important;
+  padding:8px!important;
+  vertical-align:top!important;
+  align-content:start!important;
+}
+#tabCursos td.course-action-cell button{
+  display:flex!important;
+  align-items:center!important;
+  justify-content:center!important;
+  width:100%!important;
+  min-width:0!important;
+  max-width:none!important;
+  min-height:38px!important;
+  height:auto!important;
+  padding:7px 10px!important;
+  margin:0!important;
+  border-radius:7px!important;
+  font-size:12px!important;
+  line-height:1.15!important;
+  font-weight:800!important;
+  white-space:normal!important;
+  word-break:normal!important;
+  overflow-wrap:normal!important;
+  box-sizing:border-box!important;
+}
+#tabCursos .course-action-cell .course-build-button{background:#49aabd!important;border-color:#49aabd!important;color:#fff!important}
+#tabCursos .course-action-cell .gc-publish.is-live{background:var(--v41-ok-bg)!important;border-color:#b8e5cc!important;color:#26734b!important}
+#tabCursos .course-action-cell .gc-del{background:var(--v41-danger-bg)!important;border-color:#f0b9bf!important;color:var(--v41-danger)!important}
+@media(min-width:901px){
+  #tabCursos{table-layout:fixed!important;width:100%!important}
+  #tabCursos th:nth-child(1),#tabCursos td:nth-child(1){width:6%!important}
+  #tabCursos th:nth-child(2),#tabCursos td:nth-child(2){width:29%!important}
+  #tabCursos th:nth-child(3),#tabCursos td:nth-child(3){width:16%!important}
+  #tabCursos th:nth-child(4),#tabCursos td:nth-child(4){width:8%!important}
+  #tabCursos th:nth-child(5),#tabCursos td:nth-child(5){width:9%!important}
+  #tabCursos th:nth-child(6),#tabCursos td:nth-child(6){width:170px!important;min-width:170px!important}
+}
+@media(max-width:900px){
+  #tabCursos td.course-action-cell{width:100%!important;min-width:0!important;max-width:100%!important;padding:0!important}
+}
+
+/* 79/87/90 — Certificados processados compactos, legíveis e sem texto vertical no PC. */
+@media(min-width:901px){
+  #tabCertificadosProcessados{
+    display:table!important;
+    width:100%!important;
+    table-layout:fixed!important;
+    border-collapse:separate!important;
+    border-spacing:0 8px!important;
+  }
+  #tabCertificadosProcessados thead{display:table-header-group!important}
+  #tabCertificadosProcessados tbody{display:table-row-group!important}
+  #tabCertificadosProcessados tr{display:table-row!important;background:#fff!important}
+  #tabCertificadosProcessados th,#tabCertificadosProcessados td{
+    display:table-cell!important;
+    width:auto!important;
+    min-width:0!important;
+    max-width:none!important;
+    padding:10px 9px!important;
+    vertical-align:middle!important;
+    border-top:1px solid var(--v41-line)!important;
+    border-bottom:1px solid var(--v41-line)!important;
+    overflow:visible!important;
+    word-break:normal!important;
+    overflow-wrap:normal!important;
+    hyphens:none!important;
+    white-space:normal!important;
+    writing-mode:horizontal-tb!important;
+    text-orientation:mixed!important;
+    line-height:1.25!important;
+    font-size:12px!important;
+  }
+  #tabCertificadosProcessados td::before{display:none!important;content:none!important}
+  #tabCertificadosProcessados th:first-child,#tabCertificadosProcessados td:first-child{width:22%!important;border-left:1px solid var(--v41-line)!important;border-radius:12px 0 0 12px!important}
+  #tabCertificadosProcessados th:nth-child(2),#tabCertificadosProcessados td:nth-child(2){width:18%!important}
+  #tabCertificadosProcessados th:nth-child(3),#tabCertificadosProcessados td:nth-child(3){width:7%!important;text-align:center!important}
+  #tabCertificadosProcessados th:nth-child(4),#tabCertificadosProcessados td:nth-child(4){width:10%!important;text-align:center!important}
+  #tabCertificadosProcessados th:nth-child(5),#tabCertificadosProcessados td:nth-child(5){width:10%!important;text-align:center!important}
+  #tabCertificadosProcessados th:nth-child(6),#tabCertificadosProcessados td:nth-child(6){width:11%!important;white-space:nowrap!important}
+  #tabCertificadosProcessados th:last-child,#tabCertificadosProcessados td:last-child{width:160px!important;border-right:1px solid var(--v41-line)!important;border-radius:0 12px 12px 0!important}
+  #tabCertificadosProcessados td strong,#tabCertificadosProcessados td small,#tabCertificadosProcessados td span{word-break:normal!important;overflow-wrap:normal!important;writing-mode:horizontal-tb!important}
+  #tabCertificadosProcessados .cert-admin-actions{display:grid!important;grid-template-columns:1fr!important;gap:6px!important;width:152px!important;min-width:152px!important;max-width:152px!important}
+  #tabCertificadosProcessados .cert-admin-actions button{width:100%!important;min-height:36px!important;padding:7px 9px!important;font-size:11.5px!important;line-height:1.15!important;white-space:normal!important;border-radius:7px!important}
+}
+@media(max-width:900px){
+  #tabCertificadosProcessados thead{display:none!important}
+  #tabCertificadosProcessados,#tabCertificadosProcessados tbody{display:block!important;width:100%!important}
+  #tabCertificadosProcessados tr{display:grid!important;grid-template-columns:1fr!important;gap:8px!important;margin-bottom:14px!important;padding:14px!important;border:1px solid var(--v41-line)!important;border-radius:14px!important;background:#fff!important}
+  #tabCertificadosProcessados td{display:block!important;width:100%!important;padding:0!important;border:0!important;writing-mode:horizontal-tb!important;word-break:normal!important;overflow-wrap:anywhere!important}
+  #tabCertificadosProcessados td::before{content:attr(data-label);display:block;margin-bottom:4px;color:var(--v41-muted);font-size:10px;font-weight:800;text-transform:uppercase;letter-spacing:.04em}
+}
+
+/* 80/85 — prévia real das medalhas no Gestor e no Aluno. */
+.reward-admin-medal,.reward-coin{
+  position:relative!important;
+  isolation:isolate!important;
+  display:grid!important;
+  place-items:center!important;
+  border-radius:50%!important;
+  aspect-ratio:1!important;
+  overflow:hidden!important;
+  box-shadow:inset 0 0 0 3px rgba(255,255,255,.38), inset 0 -8px 16px rgba(0,0,0,.12), 0 5px 12px rgba(16,52,74,.16)!important;
+}
+.reward-admin-medal::before,.reward-coin::before{
+  content:"";position:absolute;inset:8%;border-radius:50%;border:2px solid rgba(255,255,255,.42);z-index:-1;
+}
+.reward-admin-medal::after,.reward-coin::after{
+  content:"✦";position:absolute;bottom:8%;font-size:10px;opacity:.55;z-index:-1;
+}
+.reward-admin-medal span,.reward-coin span{font-family:Georgia,serif!important;font-weight:900!important;font-size:1.05rem!important;text-shadow:0 1px rgba(255,255,255,.45)!important}
+.reward-bronze{background:radial-gradient(circle at 34% 28%,#ffd2ad 0,#c77743 48%,#884323 100%)!important;color:#5d2a13!important}
+.reward-prata{background:radial-gradient(circle at 34% 28%,#fff 0,#cfd7df 48%,#7c8994 100%)!important;color:#40505e!important}
+.reward-ouro{background:radial-gradient(circle at 34% 28%,#fff4aa 0,#e4b326 46%,#987000 100%)!important;color:#705000!important}
+.reward-diamante{background:radial-gradient(circle at 34% 28%,#f9ffff 0,#89e0ef 42%,#4f89c2 70%,#335f9a 100%)!important;color:#173b69!important}
+.reward-admin-medal{width:72px!important;height:72px!important}
+.reward-admin-medal img{position:absolute!important;inset:0!important;width:100%!important;height:100%!important;object-fit:cover!important;border-radius:50%!important;z-index:3!important}
+
+/* 83 — modal público do curso proporcional no desktop. */
+@media(min-width:901px){
+  .catalog-modal-sheet{grid-template-columns:minmax(300px,42%) minmax(0,58%)!important;width:min(900px,calc(100vw - 64px))!important;max-height:min(78vh,700px)!important;overflow:hidden!important;border-radius:18px!important}
+  .catalog-modal-media{min-height:0!important;height:100%!important;max-height:700px!important}
+  .catalog-modal-cover{min-height:0!important;height:100%!important;max-height:700px!important;object-fit:cover!important}
+  .catalog-modal-content{padding:28px 30px!important;overflow:auto!important}
+  .catalog-modal-content h2{font-size:clamp(1.55rem,2.2vw,2.05rem)!important}
+  .catalog-modal-content>p{line-height:1.55!important;margin:10px 0 16px!important}
+}
+
+/* 94/99 — LaTeX com hierarquia e imagens externas no conteúdo do módulo. */
+.lesson-written-content{font-size:15px!important;line-height:1.75!important;color:#192f40!important}
+.lesson-written-content p{margin:0 0 14px!important;text-align:justify!important;text-justify:inter-word!important;white-space:normal!important}
+.lesson-written-content .latex-heading{margin:24px 0 10px!important;color:#0b3a61!important;line-height:1.25!important}
+.lesson-written-content h3.latex-heading{font-size:1.32rem!important}
+.lesson-written-content h4.latex-heading{font-size:1.12rem!important}
+.lesson-written-content ul,.lesson-written-content ol{margin:8px 0 16px!important;padding-left:26px!important}
+.lesson-written-content li{margin:6px 0!important;line-height:1.6!important}
+.lesson-latex-figure{margin:20px auto!important;display:grid!important;justify-items:center!important;gap:8px!important;max-width:100%!important}
+.lesson-latex-figure img{display:block!important;max-width:100%!important;height:auto!important;border-radius:12px!important;border:1px solid #e0e9ee!important;background:#fff!important}
+.lesson-latex-figure figcaption{color:var(--v41-muted)!important;font-size:12px!important;text-align:center!important}
+.lesson-latex-figure.image-error img{display:none!important}
+.lesson-latex-figure.image-error::before{content:"Imagem indisponível";display:block;padding:16px;border:1px dashed #cbd8df;border-radius:10px;color:#718391;background:#f8fafb}
+
+/* 95 — trilha de módulos: compacta para muitos módulos, sem esmagar. */
+.study-module-list,.module-list,#studyModuleList{display:grid!important;gap:7px!important;align-content:start!important;max-height:min(58vh,540px)!important;overflow-y:auto!important;overflow-x:hidden!important;padding-right:4px!important;scrollbar-width:thin!important}
+#studyModuleList .module-item{min-height:50px!important;padding:8px 9px!important;border:1px solid #d9e5ea!important;border-radius:10px!important;display:grid!important;grid-template-columns:30px minmax(0,1fr)!important;gap:8px!important;align-items:start!important}
+#studyModuleList .module-item strong{font-size:11.5px!important;line-height:1.3!important;display:-webkit-box!important;-webkit-line-clamp:3!important;-webkit-box-orient:vertical!important;overflow:hidden!important}
+#studyModuleList .module-item small{font-size:9.5px!important}
+#studyModuleList .module-item.ativo{border-color:#4db5c7!important;box-shadow:inset 3px 0 0 #26aec1!important;background:#f3fbfc!important}
+@media(max-width:800px){
+  #studyModuleList{display:flex!important;gap:8px!important;max-height:none!important;overflow-x:auto!important;overflow-y:hidden!important;padding:4px 2px 8px!important;scroll-snap-type:x proximity!important}
+  #studyModuleList .module-item{flex:0 0 min(76vw,310px)!important;scroll-snap-align:start!important;min-height:58px!important}
+}
+
+/* 98 — Prova no celular: alternativas legíveis e X alinhado. */
+#modalProva .modal-close{display:grid!important;place-items:center!important;width:44px!important;height:44px!important;min-width:44px!important;padding:0!important;border-radius:12px!important;line-height:1!important;font-size:24px!important;font-family:Arial,sans-serif!important;font-weight:700!important;transform:none!important}
+#modalProva .quiz-option{min-width:0!important}
+#modalProva .quiz-option>b{flex:0 0 44px!important;width:44px!important;height:44px!important;display:grid!important;place-items:center!important}
+#modalProva .quiz-option>span{min-width:0!important;width:100%!important;white-space:normal!important;word-break:normal!important;overflow-wrap:break-word!important;hyphens:none!important}
+@media(max-width:700px){
+  #modalProva .quiz-header{grid-template-columns:minmax(0,1fr) 48px!important;gap:12px!important;align-items:start!important}
+  #modalProva .quiz-header h2{font-size:clamp(1.35rem,6vw,1.85rem)!important;line-height:1.18!important;overflow-wrap:break-word!important}
+  #modalProva #quizBody{overflow-y:auto!important;overflow-x:hidden!important;padding:20px 16px 118px!important}
+  #modalProva .quiz-options{display:grid!important;grid-template-columns:1fr!important;gap:12px!important;width:100%!important}
+  #modalProva .quiz-option{display:grid!important;grid-template-columns:48px minmax(0,1fr)!important;align-items:start!important;gap:12px!important;width:100%!important;min-height:76px!important;padding:14px!important}
+  #modalProva .quiz-option>span{font-size:16px!important;line-height:1.45!important}
+  #modalProva .quiz-footer{position:sticky!important;bottom:0!important;z-index:5!important;background:#fff!important;border-top:1px solid #dce7ec!important;padding:12px 16px calc(12px + env(safe-area-inset-bottom))!important;display:grid!important;grid-template-columns:1fr auto 1fr!important;align-items:end!important;gap:10px!important}
+  #modalProva .quiz-footer #btnQuestaoAnterior{justify-self:stretch!important}
+  #modalProva .quiz-footer #btnQuestaoProxima{justify-self:stretch!important}
+}
+
+/* 77 — seção de cursos aptos não fica com contador solto. */
+#listaSolicitacaoCertificados:empty::after{content:"Carregando cursos aptos…";display:block;padding:22px;border:1px dashed var(--v41-line);border-radius:14px;color:var(--v41-muted);background:#fff}
+
+/* 81 — carteira: texto de escanear escondido em qualquer versão antiga ainda renderizada. */
+.student-card-qr-help,.card-qr-help,.carteirinha-qr-help,[data-carteirinha-qr-help]{display:none!important}
+
+
+/* 94/96/99 — acabamento tipográfico do conteúdo LaTeX e material completo. */
+.lesson-written-content strong{font-weight:800!important;color:#102f48!important}
+.lesson-written-content em{font-style:italic!important}
+.lesson-written-content u{text-underline-offset:2px!important}
+.lesson-written-content .latex-info-box{margin:16px 0!important;padding:14px 16px!important;border:1px solid #cfe3ea!important;border-left:4px solid #25abc0!important;border-radius:12px!important;background:#f5fbfc!important}
+.lesson-written-content .latex-align-center{text-align:center!important}.lesson-written-content .latex-align-right{text-align:right!important}.lesson-written-content .latex-align-left{text-align:left!important}
+.lesson-written-content .latex-inline-break{display:block!important;height:.55em!important}
+.lesson-module-order{display:inline-flex!important;align-items:center!important;gap:7px!important;margin-bottom:6px!important;color:#179bb0!important;font-size:11px!important;font-weight:900!important;text-transform:uppercase!important;letter-spacing:.08em!important}
+
+/* 95 — a trilha lateral não rouba o conteúdo quando há muitos módulos. */
+@media(min-width:801px){
+  #modalCurso .study-layout{grid-template-columns:minmax(210px,260px) minmax(0,1fr)!important}
+  #studyModuleList{max-height:calc(100vh - 330px)!important;min-height:160px!important}
+}
+
+/* 98 — no celular a alternativa inteira é clicável e o texto nunca vira coluna. */
+@media(max-width:700px){
+  #modalProva .quiz-option>b{align-self:start!important}
+  #modalProva .quiz-option>span{display:block!important;max-width:none!important;letter-spacing:normal!important;text-align:left!important}
+  #modalProva .modal-close{margin:0!important;align-self:start!important}
+}
+
+/* 89 — Estatísticas */
+.analytics-kpis{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:12px;margin:16px 0}
+.analytics-kpis article,.analytics-panel{background:#fff;border:1px solid var(--v41-line);border-radius:14px;padding:16px;box-shadow:none}
+.analytics-kpis span{display:block;color:var(--v41-muted);font-size:12px;font-weight:700}.analytics-kpis strong{display:block;color:var(--v41-navy);font-size:28px;margin-top:5px}
+.analytics-grid{display:grid;grid-template-columns:minmax(0,1.3fr) minmax(300px,.7fr);gap:14px}.analytics-list{display:grid;gap:8px}.analytics-row{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:12px;padding:9px 0;border-bottom:1px solid #edf2f4}.analytics-row:last-child{border-bottom:0}.analytics-row small{color:var(--v41-muted)}
+@media(max-width:900px){.analytics-kpis{grid-template-columns:repeat(2,1fr)}.analytics-grid{grid-template-columns:1fr}}
+@media(max-width:520px){.analytics-kpis{grid-template-columns:1fr}}

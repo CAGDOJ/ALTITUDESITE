@@ -258,6 +258,30 @@ Continue o conteúdo aqui.
     return left ? dimensionToMm(left, 11) : 4;
   }
 
+  function safeExternalImageUrl(value) {
+    try {
+      const url = new URL(String(value || '').trim(), location.href);
+      return ['http:', 'https:'].includes(url.protocol) ? url.href : '';
+    } catch (_) { return ''; }
+  }
+
+  function latexImageWidthPercent(options = '') {
+    const width = /width\s*=\s*([^,\]]+)/i.exec(String(options || ''))?.[1]?.trim() || '';
+    if (!width) return 88;
+    const ratio = /([0-9]+(?:[.,][0-9]+)?)\s*\\(?:textwidth|linewidth)/i.exec(width);
+    if (ratio) return Math.max(20, Math.min(100, Number(ratio[1].replace(',', '.')) * 100));
+    if (/\\(?:textwidth|linewidth)/i.test(width)) return 100;
+    const pct = /([0-9]+(?:[.,][0-9]+)?)\s*%/i.exec(width);
+    return pct ? Math.max(20, Math.min(100, Number(pct[1].replace(',', '.')))) : 88;
+  }
+
+  function latexImageHtml(options = '', rawUrl = '', caption = '') {
+    const url = safeExternalImageUrl(rawUrl);
+    if (!url) return '';
+    const width = latexImageWidthPercent(options);
+    return `<figure class=\"lesson-latex-figure latex-import-figure\" style=\"width:min(${width}%,100%)\"><img src=\"${esc(url)}\" alt=\"${esc(caption || 'Imagem do módulo')}\" loading=\"lazy\"><figcaption${caption ? '' : ' hidden'}>${esc(caption)}</figcaption></figure>`;
+  }
+
   function latexToHtml(raw) {
     let source = removeComments(raw)
       .replace(/\\begin\{document\}|\\end\{document\}/g, '')
@@ -270,6 +294,13 @@ Continue o conteúdo aqui.
       return token;
     };
     source = source
+      .replace(/\\begin\{figure\*?\}(?:\[[^\]]*\])?([\s\S]*?)\\end\{figure\*?\}/gi, (_, body) => {
+        const image = /\\includegraphics(?:\[([^\]]*)\])?\{([^{}]+)\}/i.exec(body);
+        if (!image) return '';
+        const caption = /\\caption\{([^{}]*)\}/i.exec(body)?.[1] || '';
+        return protect(latexImageHtml(image[1] || '', image[2], caption));
+      })
+      .replace(/\\includegraphics(?:\[([^\]]*)\])?\{([^{}]+)\}/gi, (_, options, url) => protect(latexImageHtml(options || '', url, '')))
       .replace(/\\begin\{tabularx\}\{[^}]*\}\{[^}]*\}([\s\S]*?)\\end\{tabularx\}/g, (_, body) => protect(latexTableToHtml(body)))
       .replace(/\\begin\{tabular\}\{[^}]*\}([\s\S]*?)\\end\{tabular\}/g, (_, body) => protect(latexTableToHtml(body)))
       .replace(/\\begin\{tcolorbox\}(?:\[[\s\S]*?\])?/g, () => protect('<aside class="latex-info-box">'))
@@ -567,6 +598,28 @@ Continue o conteúdo aqui.
       .replace(/\\begin\{document\}|\\end\{document\}/g, '')
       .replace(/\\documentclass(?:\[[^\]]*\])?\{[^}]*\}/g, '');
 
+    // Protege imagens externas para que a limpeza dos comandos LaTeX não apague
+    // as URLs. O mesmo bloco é usado na prévia, PDF do módulo e material completo.
+    const images = [];
+    const protectImage = (options = '', url = '', caption = '') => {
+      const safe = safeExternalImageUrl(url);
+      if (!safe) return '\n@@IMG_INVALID@@\n';
+      const index = images.push({
+        url: safe,
+        widthPct: latexImageWidthPercent(options),
+        caption: String(caption || '').trim(),
+      }) - 1;
+      return `\n@@IMG:${index}@@\n`;
+    };
+    source = source
+      .replace(/\\begin\{figure\*?\}(?:\[[^\]]*\])?([\s\S]*?)\\end\{figure\*?\}/gi, (_, body) => {
+        const image = /\\includegraphics(?:\[([^\]]*)\])?\{([^{}]+)\}/i.exec(body);
+        if (!image) return '';
+        const caption = /\\caption\{([^{}]*)\}/i.exec(body)?.[1] || '';
+        return protectImage(image[1] || '', image[2], caption);
+      })
+      .replace(/\\includegraphics(?:\[([^\]]*)\])?\{([^{}]+)\}/gi, (_, options, url) => protectImage(options || '', url, ''));
+
     // Converte os ambientes de lista antes de remover comandos. O leftmargin passa a
     // produzir recuo real tanto no HTML quanto no PDF, em vez de ser descartado.
     source = source.replace(/\\begin\{(itemize|enumerate)\}(\[[^\]]*\])?([\s\S]*?)\\end\{\1\}/g,
@@ -600,6 +653,12 @@ Continue o conteúdo aqui.
       .replace(/\r/g, '');
 
     return source.split(/\n+/).map((line) => line.trim()).filter(Boolean).map((line) => {
+      if (line.startsWith('@@IMG:')) {
+        const index = Number(/^@@IMG:(\d+)@@$/.exec(line)?.[1]);
+        const image = images[index];
+        return image ? { type: 'img', ...image } : { type: 'p', text: 'Imagem indisponível.' };
+      }
+      if (line === '@@IMG_INVALID@@') return { type: 'p', text: 'Imagem indisponível.' };
       if (line.startsWith('@@H2@@')) return { type: 'h2', text: line.slice(6).trim() };
       if (line.startsWith('@@H3@@')) return { type: 'h3', text: line.slice(6).trim() };
       if (line.startsWith('@@H4@@')) return { type: 'h4', text: line.slice(6).trim() };
@@ -658,6 +717,15 @@ Continue o conteúdo aqui.
       let used = 90;
       const pushPage = () => { pages.push(current); current = []; used = 35; };
       blocks.forEach((block) => {
+        if (block.type === 'img') {
+          const label = block.caption ? `[Imagem: ${block.caption}]` : '[Imagem do módulo — disponível na versão visual do material]';
+          const lines = wrapPdfText(label, 82);
+          const needed = lines.length * 14 + 8;
+          if (used + needed > 730 && current.length) pushPage();
+          current.push({ text: lines.join('\n'), size: 10.5, bold: false, color: '0.30 0.40 0.48', gap: 16 });
+          used += needed;
+          return;
+        }
         const size = block.type === 'h2' ? 15 : block.type === 'h3' ? 13 : block.type === 'h4' ? 11.5 : 10.5;
         const bold = ['h2','h3','h4'].includes(block.type);
         const prefix = block.type === 'li' ? '• ' : '';
@@ -719,6 +787,26 @@ Continue o conteúdo aqui.
 
   function jsPdfConstructor() {
     return window.jspdf?.jsPDF || window.jsPDF || null;
+  }
+
+  async function remoteImageDataUrl(url) {
+    const safe = safeExternalImageUrl(url);
+    if (!safe) return null;
+    try {
+      const response = await fetch(safe, { mode: 'cors', credentials: 'omit' });
+      if (!response.ok) throw new Error(`HTTP ${response.status}`);
+      const blob = await response.blob();
+      if (!String(blob.type || '').startsWith('image/')) throw new Error('URL não retornou uma imagem.');
+      return await new Promise((resolve, reject) => {
+        const reader = new FileReader();
+        reader.onload = () => resolve(String(reader.result || ''));
+        reader.onerror = () => reject(reader.error || new Error('Falha ao ler imagem.'));
+        reader.readAsDataURL(blob);
+      });
+    } catch (error) {
+      console.warn('Imagem externa indisponível no PDF:', safe, error);
+      return null;
+    }
   }
 
   async function pdfBlobFromContent(content) {
@@ -826,22 +914,51 @@ Continue o conteúdo aqui.
     writeWrapped('Finalidade: apoiar o estudo teórico e servir de base para a avaliação de aprendizagem.', { size: 10.5, after: 2 });
     drawHeaderFooter();
 
-    content.modulos.forEach((module, moduleIndex) => {
+    const orderedModules = [...(content.modulos || [])].sort((a, b) => Number(a.ordem || 0) - Number(b.ordem || 0));
+    for (let moduleIndex = 0; moduleIndex < orderedModules.length; moduleIndex += 1) {
+      const module = orderedModules[moduleIndex];
+      const moduleNumber = Number(module.ordem || moduleIndex + 1);
       doc.addPage();
       pageNumber += 1;
       y = 24;
-      writeWrapped(`${moduleIndex + 1}. ${module.titulo}`, { size: 18, bold: true, color: '#1F70AB', after: 4 });
+      writeWrapped(`Módulo ${moduleNumber} — ${module.titulo}`, { size: 18, bold: true, color: '#1F70AB', after: 4 });
       const blocks = pdfTextBlocks(module.conteudo_latex || module.conteudo || '');
-      blocks.forEach((block) => {
-        if (block.type === 'h2') writeWrapped(block.text, { size: 15, bold: true, color: '#1F70AB', after: 3 });
+      for (const block of blocks) {
+        if (block.type === 'img') {
+          const imageData = await remoteImageDataUrl(block.url);
+          if (!imageData) {
+            writeWrapped(block.caption ? `Imagem indisponível: ${block.caption}` : 'Imagem indisponível.', { size: 9.5, color: '#64748B', after: 3 });
+            continue;
+          }
+          try {
+            const props = doc.getImageProperties(imageData);
+            const requestedWidth = contentWidth * Math.max(.2, Math.min(1, Number(block.widthPct || 88) / 100));
+            let imageWidth = requestedWidth;
+            let imageHeight = imageWidth * (Number(props.height || 1) / Number(props.width || 1));
+            const maxHeight = 150;
+            if (imageHeight > maxHeight) {
+              const ratio = maxHeight / imageHeight;
+              imageHeight *= ratio; imageWidth *= ratio;
+            }
+            ensure(imageHeight + (block.caption ? 12 : 5));
+            const x = marginLeft + (contentWidth - imageWidth) / 2;
+            doc.addImage(imageData, props.fileType || undefined, x, y, imageWidth, imageHeight, undefined, 'FAST');
+            y += imageHeight + 3;
+            if (block.caption) writeWrapped(block.caption, { size: 9, color: '#64748B', align: 'center', after: 4 });
+            else y += 2;
+          } catch (error) {
+            console.warn('Não foi possível inserir imagem no PDF:', error);
+            writeWrapped(block.caption ? `Imagem indisponível: ${block.caption}` : 'Imagem indisponível.', { size: 9.5, color: '#64748B', after: 3 });
+          }
+        } else if (block.type === 'h2') writeWrapped(block.text, { size: 15, bold: true, color: '#1F70AB', after: 3 });
         else if (block.type === 'h3') writeWrapped(block.text, { size: 12.5, bold: true, color: '#0D0A3C', after: 2 });
         else if (block.type === 'h4') writeWrapped(block.text, { size: 11.5, bold: true, color: '#0D0A3C', after: 2 });
         else if (block.type === 'li') writeWrapped(block.text, { size: 10.5, indent: Number(block.indentMm || 4), after: 1.5 });
         else if (block.type === 'eq') writeWrapped(block.text, { size: 10.5, align: 'center', color: '#0D0A3C', after: 3 });
-        else writeWrapped(block.text, { size: 10.5, after: 3 });
-      });
+        else writeWrapped(block.text, { size: 10.5, align: 'justify', after: 3 });
+      }
       drawHeaderFooter();
-    });
+    }
 
     return doc.output('blob');
   }

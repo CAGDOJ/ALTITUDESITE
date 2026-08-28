@@ -1,1 +1,38 @@
-supabase.tar
+# ALTITUDE — arquivos que NUNCA devem ir para o GitHub
+.env
+.env.*
+!.env.example
+
+# Banco / Supabase privado
+supabase/
+*.sql
+*.dump
+*.backup
+*.bak
+*.sqlite
+*.sqlite3
+*.db
+/database/
+/db/
+
+# Exportações e registros
+/exports/
+/export/
+/backups/
+/backup/
+/private/
+/privado/
+*.csv
+*.tsv
+
+# Logs e temporários
+*.log
+*.tmp
+*.temp
+.DS_Store
+Thumbs.db
+
+# IDE/local
+.vscode/
+.idea/
+node_modules/

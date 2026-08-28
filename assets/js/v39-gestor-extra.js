@@ -21,6 +21,19 @@
   /* ================= ÁREAS ================= */
   let areas=[];
   async function loadAreas(){
+    // Uma única fonte de verdade: antes de listar, incorpora ao catálogo qualquer
+    // categoria já usada por cursos antigos. Isso mantém Gerenciar áreas, filtro e
+    // cursos existentes sempre sincronizados.
+    try{
+      const {data:cursos,error:cursosError}=await sb.from('cursos').select('categoria');
+      if(!cursosError){
+        const rows=[...new Map((cursos||[]).map(x=>titleCase(x.categoria||'')).filter(Boolean).map(nome=>{
+          const slug=norm(nome).replace(/[^a-z0-9]+/g,'-').replace(/^-|-$/g,'');
+          return [slug,{nome,slug,ativo:true,atualizado_em:new Date().toISOString()}];
+        })).values()];
+        if(rows.length) await sb.from('areas_cursos_v36').upsert(rows,{onConflict:'slug',ignoreDuplicates:false});
+      }
+    }catch(error){ console.warn('Sincronização de áreas:',error); }
     const {data,error}=await sb.from('areas_cursos_v36').select('*').order('nome');
     if(error){toast(`Não foi possível carregar as áreas: ${error.message}`,true);return;}
     areas=data||[];renderAreas();

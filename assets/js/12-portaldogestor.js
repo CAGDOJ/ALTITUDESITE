@@ -179,24 +179,11 @@ async function carregarAlunosDoSupabase() {
     renderAlunos();
   } catch (error) {
     console.error('❌ Erro ao carregar alunos:', error);
-    
-    alunos = [
-      { 
-        id: '1',
-        user_id: 'cf3c57f7-ea29-4fb0-813f-21aaadcd4a6c',
-        ra: '20251', 
-        nome: 'CARLOS JUNIOR', 
-        email: 'oliveiracagoj@gmail.com', 
-        telefone: null, 
-        status: 'ATIVO',
-        cpf: null,
-        data_nascimento: null,
-        objetivo: null,
-        criado_em: '2025-08-17 05:22:04.142164+00'
-      }
-    ];
-    
+    // Nunca exiba registros reais ou dados de demonstração quando o banco falhar.
+    alunos = [];
     renderAlunos();
+    const tbody = $('#tabAlunos tbody');
+    if (tbody) tbody.innerHTML = '<tr><td colspan="8" class="empty-state">Não foi possível carregar os alunos. Tente novamente.</td></tr>';
   }
 }
 
@@ -306,7 +293,8 @@ async function salvarAluno(alunoData, isEdit = false, alunoId = null) {
       console.log('Editando aluno e sincronizando o Supabase Auth:', alunoId, dadosParaSalvar);
       const { data: sessionData, error: sessionError } = await sb.auth.getSession();
       if (sessionError || !sessionData?.session?.access_token) throw new Error('Sua sessão de gestão expirou. Entre novamente.');
-      const functionUrl = `${String(sb.supabaseUrl || 'https://qwidlndoyhzvsrggwsba.supabase.co').replace(/\/$/,'')}/functions/v1/gerenciar-gestor`;
+      if (!sb.supabaseUrl || !sb.supabaseKey) throw new Error('Configuração do Supabase indisponível.');
+      const functionUrl = `${String(sb.supabaseUrl).replace(/\/$/,'')}/functions/v1/gerenciar-gestor`;
       const response = await fetch(functionUrl, {
         method: 'POST',
         headers: {
@@ -414,7 +402,8 @@ async function redefinirSenhaAluno(event) {
   try {
     const { data: sessionData, error: sessionError } = await sb.auth.getSession();
     if (sessionError || !sessionData?.session?.access_token) throw new Error('Sua sessão de gestão expirou. Entre novamente.');
-    const functionUrl = `${String(sb.supabaseUrl || 'https://qwidlndoyhzvsrggwsba.supabase.co').replace(/\/$/,'')}/functions/v1/gerenciar-gestor`;
+    if (!sb.supabaseUrl || !sb.supabaseKey) throw new Error('Configuração do Supabase indisponível.');
+    const functionUrl = `${String(sb.supabaseUrl).replace(/\/$/,'')}/functions/v1/gerenciar-gestor`;
     let response;
     try {
       response = await fetch(functionUrl, {
@@ -422,7 +411,7 @@ async function redefinirSenhaAluno(event) {
         headers: {
           'Content-Type': 'application/json',
           'Authorization': `Bearer ${sessionData.session.access_token}`,
-          'apikey': sb.supabaseKey || 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJIUzI1NiIsInJlZiI6InF3aWRsbmRveWh6dnNyZ2d3c2JhIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzY2NDY4MjUsImV4cCI6MjA5MjIyMjgyNX0.CPcmbAC9KXLgdLVoAY_lRqjFyVzLLMiv38vKR2DFJeE'
+          'apikey': sb.supabaseKey
         },
         body: JSON.stringify({ acao:'redefinir_senha_aluno', aluno_id:userId, nova_senha:novaSenha })
       });
@@ -459,7 +448,8 @@ async function excluirAlunoGestao(aluno) {
 
   const { data: sessionData, error: sessionError } = await sb.auth.getSession();
   if (sessionError || !sessionData?.session?.access_token) throw new Error('Sua sessão de gestão expirou. Entre novamente.');
-  const functionUrl = `${String(sb.supabaseUrl || 'https://qwidlndoyhzvsrggwsba.supabase.co').replace(/\/$/,'')}/functions/v1/gerenciar-gestor`;
+  if (!sb.supabaseUrl || !sb.supabaseKey) throw new Error('Configuração do Supabase indisponível.');
+  const functionUrl = `${String(sb.supabaseUrl).replace(/\/$/,'')}/functions/v1/gerenciar-gestor`;
   const response = await fetch(functionUrl, {
     method:'POST',
     headers:{
@@ -1356,19 +1346,21 @@ function gerarRaLocal(){
     setNormalPreviewMode('screen');
   }
 
-  async function criarPdfInstitucionalModuloBlob({ title, desc, hours, content, courseTitle }) {
+  async function criarPdfInstitucionalModuloBlob({ title, desc, hours, content, courseTitle, order = 1 }) {
     if (!content) throw new Error('Insira o conteúdo do módulo para gerar a apostila em PDF.');
-    const JsPDF = window.jspdf?.jsPDF || window.jsPDF;
-    if (!JsPDF && window.AltitudeLatexImporter?.createModulePdfBlob) {
+    // Usa o mesmo renderizador do LaTeX da Sala de Estudo para que PDF individual
+    // e material completo preservem títulos, listas, parágrafos e imagens por URL.
+    if (window.AltitudeLatexImporter?.createModulePdfBlob) {
       return window.AltitudeLatexImporter.createModulePdfBlob({
         titulo: title,
         descricao: desc,
         carga_horaria: hours,
         conteudo: content,
         conteudo_latex: content,
-        ordem: 1
+        ordem: Math.max(1, Number(order || 1))
       }, { titulo: courseTitle || 'Curso Altitude', categoria: 'FORMAÇÃO PROFISSIONAL', carga_horaria: hours });
     }
+    const JsPDF = window.jspdf?.jsPDF || window.jsPDF;
     if (!JsPDF) throw new Error('Não foi possível carregar o gerador de PDF. Atualize a página e tente novamente.');
 
     const doc = new JsPDF({ unit: 'mm', format: 'a4', orientation: 'portrait', compress: true });
@@ -1439,14 +1431,14 @@ function gerarRaLocal(){
     doc.line(left, previewBottom + 12, pageWidth - right, previewBottom + 12);
     y = previewBottom + 27;
     write(`Curso: ${courseTitle}`, { bold:true, size:10.5, after:2 });
-    write(`Módulo: ${title}`, { size:10.5, after:2 });
+    write(`Módulo ${Math.max(1, Number(order || 1))}: ${title}`, { size:10.5, after:2 });
     write(`Descrição: ${desc || 'Conteúdo programático do módulo.'}`, { size:10, after:2 });
     headerFooter();
 
     doc.addPage();
     page += 1;
     y = 24;
-    write(title, { size:18, bold:true, color:'#1F70AB', after:5 });
+    write(`Módulo ${Math.max(1, Number(order || 1))} — ${title}`, { size:18, bold:true, color:'#1F70AB', after:5 });
     const paragraphs = String(content).replace(/\r/g,'').split(/\n\s*\n|\n/).map(item => item.trim()).filter(Boolean);
     paragraphs.forEach(paragraph => {
       const bullet = /^[-•*]\s+/.test(paragraph);
@@ -1462,8 +1454,9 @@ function gerarRaLocal(){
     const hours = Math.max(0, Number(document.getElementById('fModuloHoras')?.value || 0));
     const content = document.getElementById('fModuloConteudo')?.value.trim() || '';
     const courseTitle = document.getElementById('modalModulos')?.dataset.courseTitle || 'Curso Altitude';
+    const order = Math.max(1, Number(document.getElementById('fModuloOrdem')?.value || document.getElementById('fModuloOrder')?.value || 1));
     try {
-      const blob = await criarPdfInstitucionalModuloBlob({ title, desc, hours, content, courseTitle });
+      const blob = await criarPdfInstitucionalModuloBlob({ title, desc, hours, content, courseTitle, order });
       if (normalPreviewPdfUrl) URL.revokeObjectURL(normalPreviewPdfUrl);
       normalPreviewPdfUrl = URL.createObjectURL(blob);
       const frame = document.getElementById('normalPdfPreviewFrame');
@@ -1545,7 +1538,7 @@ function gerarRaLocal(){
       let pdfUrl = await uploadPdfModulo(pdfFile, cursoEditandoId);
       if (!pdfUrl && gerarPdfAutomatico && conteudo) {
         const courseTitle = document.getElementById('modalModulos')?.dataset.courseTitle || GC.cursoAtual?.titulo || 'Curso Altitude';
-        const generatedBlob = await criarPdfInstitucionalModuloBlob({ title: titulo, desc: descricao, hours: cargaHoraria, content: conteudo, courseTitle });
+        const generatedBlob = await criarPdfInstitucionalModuloBlob({ title: titulo, desc: descricao, hours: cargaHoraria, content: conteudo, courseTitle, order: ordem });
         pdfUrl = await uploadPdfModulo(generatedBlob, cursoEditandoId);
       }
       const imageUrl = await uploadArquivoCurso(imageFile, cursoEditandoId, 'imagens-modulos');
@@ -2287,7 +2280,8 @@ function gerarRaLocal(){
         pdfUrl = await uploadPdfModulo(newPdfFile, Number(courseId));
       } else if (document.getElementById('editar-gerar-pdf')?.checked && editContent) {
         const courseTitle = document.getElementById('modalModulos')?.dataset.courseTitle || GC.cursoAtual?.titulo || 'Curso Altitude';
-        const generatedBlob = await criarPdfInstitucionalModuloBlob({ title: editTitle, desc: editDescription, hours: editHours, content: editContent, courseTitle });
+        const editOrder = Math.max(1, parseInt(document.getElementById('editar-order')?.value || '1', 10) || 1);
+        const generatedBlob = await criarPdfInstitucionalModuloBlob({ title: editTitle, desc: editDescription, hours: editHours, content: editContent, courseTitle, order: editOrder });
         pdfUrl = await uploadPdfModulo(generatedBlob, Number(courseId));
       }
       if (newImageFile) imageUrl = await uploadArquivoCurso(newImageFile, Number(courseId), 'imagens-modulos');

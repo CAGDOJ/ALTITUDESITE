@@ -47,6 +47,7 @@
   <link rel="stylesheet" href="/assets/css/33-v39-final.css?v=40">
   <link rel="stylesheet" href="/assets/css/34-v40-ajustes.css?v=40">
   <link rel="stylesheet" href="/assets/css/35-v41-final.css?v=41">
+  <link rel="stylesheet" href="/assets/css/36-v42-final.css?v=42">
 </head>
 
 <body class="gestor-auth-pending">
@@ -367,10 +368,14 @@
               <div class="v30-section-heading">
                 <span>CADASTRO MANUAL</span>
                 <h4>Adicione um módulo por vez</h4>
-                <p>Preencha os campos, confira a prévia e salve. Depois adicione o próximo módulo ou publique.</p>
+                <p>O cadastro e a conferência ficam separados para não apertar os campos. Salve o módulo e revise a prévia na aba ao lado.</p>
               </div>
+              <nav class="v42-manual-tabs" aria-label="Etapas do cadastro manual">
+                <button type="button" class="active" data-v42-manual-tab="cadastro" aria-selected="true">1. Cadastro do módulo</button>
+                <button type="button" data-v42-manual-tab="revisao" aria-selected="false">2. Prévia e módulos</button>
+              </nav>
 
-              <div class="course-builder-grid easy-course-builder v30-normal-grid">
+              <div class="course-builder-grid easy-course-builder v30-normal-grid" data-v42-manual-panel="cadastro">
                 <section class="builder-create-panel">
                   <form id="formModulo" class="builder-module-form module-one-screen-form">
                     <fieldset class="builder-form-section">
@@ -428,7 +433,7 @@
                   </form>
                 </section>
 
-                <aside class="builder-list-panel v30-preview-column">
+                <aside class="builder-list-panel v30-preview-column" data-v42-review-part>
                   <section class="normal-live-preview" aria-label="Pré-visualização do módulo">
                     <div class="builder-list-heading compact">
                       <div><span>PRÉ-VISUALIZAÇÃO</span><h4>Como ficará para o aluno</h4><p>Confira antes de salvar.</p></div>
@@ -444,7 +449,7 @@
                 </aside>
               </div>
 
-              <section class="v30-modules-section">
+              <section class="v30-modules-section" data-v42-manual-panel="revisao">
                 <div class="builder-list-heading modules-heading">
                   <div><span>MÓDULOS DO CURSO</span><h4>Conteúdo já cadastrado</h4><p id="builderModuleSummary">Carregando estrutura...</p></div>
                   <button type="button" class="builder-secondary-button" id="btnRecarregarModulos">Atualizar lista</button>
@@ -984,22 +989,30 @@
       </section>
 
       <section id="estatisticas" class="aba" data-min-level="2">
-        <div class="page-heading"><div><span>Uso da plataforma</span><h2>Estatísticas</h2><p>Acompanhe acessos, cliques, estudo e utilização real do Portal Altitude.</p></div><button type="button" class="primary-action" id="analyticsAtualizarV41">Atualizar</button></div>
+        <div class="page-heading"><div><span>Tráfego, alcance e conversão</span><h2>Estatísticas</h2><p>Acompanhe a influência do Portal Altitude com acessos reais, visitantes, origem do tráfego, páginas, cursos e conversões.</p></div><button type="button" class="primary-action" id="analyticsAtualizarV42">Atualizar</button></div>
         <div class="toolbar analytics-toolbar">
-          <select id="analyticsPeriodoV41" aria-label="Período"><option value="7">Últimos 7 dias</option><option value="30" selected>Últimos 30 dias</option><option value="90">Últimos 90 dias</option><option value="365">Últimos 12 meses</option></select>
-          <select id="analyticsDispositivoV41" aria-label="Dispositivo"><option value="">Todos os dispositivos</option><option value="desktop">PC</option><option value="tablet">Tablet</option><option value="mobile">Celular</option></select>
+          <select id="analyticsPeriodoV42" aria-label="Período"><option value="1">Hoje</option><option value="7">Últimos 7 dias</option><option value="30" selected>Últimos 30 dias</option><option value="90">Últimos 90 dias</option><option value="365">Últimos 12 meses</option></select>
+          <select id="analyticsDispositivoV42" aria-label="Dispositivo"><option value="">Todos os dispositivos</option><option value="desktop">PC</option><option value="tablet">Tablet</option><option value="mobile">Celular</option></select>
+          <select id="analyticsOrigemV42" aria-label="Origem"><option value="">Todas as origens</option><option value="direct">Acesso direto</option><option value="google">Google</option><option value="instagram">Instagram</option><option value="other">Outros</option></select>
         </div>
-        <div class="analytics-kpis">
-          <article><span>Eventos registrados</span><strong id="analyticsEventosV41">0</strong></article>
-          <article><span>Sessões</span><strong id="analyticsSessoesV41">0</strong></article>
-          <article><span>Alunos ativos</span><strong id="analyticsAlunosV41">0</strong></article>
-          <article><span>Tempo de estudo</span><strong id="analyticsEstudoV41">0h</strong></article>
+        <div class="analytics-kpis v42-analytics-kpis">
+          <article><span>Visitantes únicos</span><strong id="analyticsVisitantesV42">0</strong></article>
+          <article><span>Sessões</span><strong id="analyticsSessoesV42">0</strong></article>
+          <article><span>Visualizações</span><strong id="analyticsViewsV42">0</strong></article>
+          <article><span>Cliques</span><strong id="analyticsClicksV42">0</strong></article>
+          <article><span>Cadastros</span><strong id="analyticsCadastrosV42">0</strong></article>
+          <article><span>Matrículas</span><strong id="analyticsMatriculasV42">0</strong></article>
+          <article><span>Conversão</span><strong id="analyticsConversaoV42">0%</strong></article>
+          <article><span>Tempo médio</span><strong id="analyticsTempoV42">0min</strong></article>
         </div>
-        <div class="analytics-grid">
-          <div class="analytics-panel"><div class="section-heading"><div><span>Páginas e ações</span><h3>Mais utilizadas</h3></div></div><div id="analyticsPaginasV41" class="analytics-list"><div class="empty-state">Carregando estatísticas…</div></div></div>
-          <div class="analytics-panel"><div class="section-heading"><div><span>Dispositivos</span><h3>Distribuição de uso</h3></div></div><div id="analyticsDevicesV41" class="analytics-list"></div></div>
+        <div class="analytics-grid v42-analytics-grid">
+          <div class="analytics-panel"><div class="section-heading"><div><span>Alcance</span><h3>Evolução de acessos</h3></div></div><canvas id="analyticsChartV42" height="120"></canvas></div>
+          <div class="analytics-panel"><div class="section-heading"><div><span>Aquisição</span><h3>Origem do tráfego</h3></div></div><div id="analyticsOrigensV42" class="analytics-list"></div></div>
+          <div class="analytics-panel"><div class="section-heading"><div><span>Conteúdo</span><h3>Páginas e cursos mais acessados</h3></div></div><div id="analyticsPaginasV42" class="analytics-list"></div></div>
+          <div class="analytics-panel"><div class="section-heading"><div><span>Dispositivos</span><h3>PC, celular e tablet</h3></div></div><div id="analyticsDevicesV42" class="analytics-list"></div></div>
         </div>
-        <div class="analytics-panel" style="margin-top:14px"><div class="section-heading"><div><span>Atividade</span><h3>Eventos recentes</h3></div></div><div id="analyticsRecentesV41" class="analytics-list"></div></div>
+        <div class="analytics-panel v42-funnel-panel"><div class="section-heading"><div><span>Conversão</span><h3>Funil do portal</h3><p>Visualizou → abriu curso → iniciou cadastro → criou conta → matriculou.</p></div></div><div id="analyticsFunilV42" class="v42-funnel"></div></div>
+        <div class="analytics-panel" style="margin-top:14px"><div class="section-heading"><div><span>Atividade</span><h3>Eventos recentes</h3></div></div><div id="analyticsRecentesV42" class="analytics-list"></div></div>
       </section>
 
       <section id="recompensas" class="aba" data-min-level="3">
@@ -1199,5 +1212,7 @@
   <script src="/assets/js/v34-gestor.js?v=34.1" defer></script>
   <script src="/assets/js/v34-emissao-gestor.js?v=39" defer></script>
   <script src="/assets/js/v41-analytics.js?v=41"></script>
+  <script src="/assets/js/v42-analytics.js?v=42"></script>
+  <script src="/assets/js/v42-gestor.js?v=42" defer></script>
 </body>
 </html>

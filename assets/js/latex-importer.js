@@ -2,7 +2,7 @@
   'use strict';
 
   const $ = (selector, scope = document) => scope.querySelector(selector);
-  const state = { parsedContent: null, parsedProof: null, previewUrl: null, previewBlob: null, busy: false };
+  const state = { parsedContent: null, parsedProof: null, previewUrl: null, previewBlob: null, busy: false, previewSeq: 0 };
   const esc = (value = '') => String(value)
     .replaceAll('&', '&amp;').replaceAll('<', '&lt;').replaceAll('>', '&gt;')
     .replaceAll('"', '&quot;').replaceAll("'", '&#039;');
@@ -305,6 +305,11 @@ Continue o conteúdo aqui.
       .replace(/\\begin\{tabular\}\{[^}]*\}([\s\S]*?)\\end\{tabular\}/g, (_, body) => protect(latexTableToHtml(body)))
       .replace(/\\begin\{tcolorbox\}(?:\[[\s\S]*?\])?/g, () => protect('<aside class="latex-info-box">'))
       .replace(/\\end\{tcolorbox\}/g, () => protect('</aside>'))
+      .replace(/\\begin\{(?:justify|justified)\}/gi, () => protect('<div class="latex-align-justify">'))
+      .replace(/\\end\{(?:justify|justified)\}/gi, () => protect('</div>'))
+      .replace(/\\justifying\b/gi, () => protect('<div class="latex-align-justify latex-justify-until-end">'))
+      .replace(/\\raggedright\b/gi, () => protect('<div class="latex-align-left latex-align-until-end">'))
+      .replace(/\\centering\b/gi, () => protect('<div class="latex-align-center latex-align-until-end">'))
       .replace(/\\begin\{center\}/g, () => protect('<div class="latex-align-center">'))
       .replace(/\\end\{center\}/g, () => protect('</div>'))
       .replace(/\\begin\{flushright\}/g, () => protect('<div class="latex-align-right">'))
@@ -333,6 +338,12 @@ Continue o conteúdo aqui.
       .replace(/\\textit\{([^{}]*)\}/g, '<em>$1</em>')
       .replace(/\\emph\{([^{}]*)\}/g, '<em>$1</em>')
       .replace(/\\underline\{([^{}]*)\}/g, '<u>$1</u>')
+      .replace(/\\texttt\{([^{}]*)\}/g, '<code>$1</code>')
+      .replace(/\\href\{([^{}]*)\}\{([^{}]*)\}/g, '<a href="$1" target="_blank" rel="noopener noreferrer">$2</a>')
+      .replace(/\\url\{([^{}]*)\}/g, '<a href="$1" target="_blank" rel="noopener noreferrer">$1</a>')
+      .replace(/\\(?:noindent)\b/g, '')
+      .replace(/\\(?:newline|linebreak)\b/g, '<br>')
+      .replace(/\\(?:newpage|pagebreak)\b/g, '<hr class="latex-page-break">')
       .replace(/\\item\s*/g, '<li>')
       .replace(/\\\\/g, '<br>')
       .replace(/~+/g, ' ')
@@ -350,11 +361,14 @@ Continue o conteúdo aqui.
       .replace(/<p>\s*(<(?:ul|ol) class="latex-list[^"]*"[^>]*>)\s*<\/p>/g, '$1')
       .replace(/<p>\s*(<\/(?:ul|ol)>)\s*<\/p>/g, '$1')
       .replace(/<p>\s*(<\/aside>)\s*<\/p>/g, '$1')
-      .replace(/<p>\s*(<div class="latex-align-(?:center|right|left)">)\s*<\/p>/g, '$1')
+      .replace(/<p>\s*(<div class="latex-align-(?:center|right|left|justify)(?: [^"]+)?">)\s*<\/p>/g, '$1')
       .replace(/<p>\s*(<\/div>)\s*<\/p>/g, '$1')
       .replace(/\?\s*,/g, '? ')
       .replace(/!\s*,/g, '! ')
       .replace(/\s+([,.;:!?])/g, '$1');
+    // Comandos de estado como \justifying/\centering valem até o fim do bloco.
+    const stateOpens = (source.match(/<div class="latex-(?:align-justify|align-left|align-center)[^"]*(?:until-end)[^"]*">/g) || []).length;
+    if (stateOpens) source += '</div>'.repeat(stateOpens);
     return source;
   }
 
@@ -593,14 +607,39 @@ Continue o conteúdo aqui.
     return node;
   }
 
+  function latexTableRowsPlain(raw) {
+    return String(raw || '')
+      .replace(/\\(?:hline|toprule|midrule|bottomrule)\b/g, '')
+      .split(/\\\\/)
+      .map((row) => row.trim())
+      .filter(Boolean)
+      .map((row) => row.split('&').map((cell) => String(cell || '')
+        .replace(/\\multicolumn\{[^}]*\}\{[^}]*\}\{([^{}]*)\}/g, '$1')
+        .replace(/\\(?:textbf|textit|emph|underline|texttt)\{([^{}]*)\}/g, '$1')
+        .replace(/\\href\{[^{}]*\}\{([^{}]*)\}/g, '$1')
+        .replace(/\\url\{([^{}]*)\}/g, '$1')
+        .replace(/\\[a-zA-Z@]+\*?(?:\[[^\]]*\])?/g, '')
+        .replace(/[{}]/g, '')
+        .replace(/\s+/g, ' ')
+        .trim()));
+  }
+
   function pdfTextBlocks(raw) {
     let source = removeComments(raw || '')
       .replace(/\\begin\{document\}|\\end\{document\}/g, '')
       .replace(/\\documentclass(?:\[[^\]]*\])?\{[^}]*\}/g, '');
+    const globalJustify = /\\justifying\b|\\begin\{(?:justify|justified)\}/i.test(source);
 
     // Protege imagens externas para que a limpeza dos comandos LaTeX não apague
     // as URLs. O mesmo bloco é usado na prévia, PDF do módulo e material completo.
     const images = [];
+    const tables = [];
+    const protectTable = (body = '') => {
+      const rows = latexTableRowsPlain(body);
+      if (!rows.length) return '';
+      const index = tables.push(rows) - 1;
+      return `\n@@TABLE:${index}@@\n`;
+    };
     const protectImage = (options = '', url = '', caption = '') => {
       const safe = safeExternalImageUrl(url);
       if (!safe) return '\n@@IMG_INVALID@@\n';
@@ -618,7 +657,9 @@ Continue o conteúdo aqui.
         const caption = /\\caption\{([^{}]*)\}/i.exec(body)?.[1] || '';
         return protectImage(image[1] || '', image[2], caption);
       })
-      .replace(/\\includegraphics(?:\[([^\]]*)\])?\{([^{}]+)\}/gi, (_, options, url) => protectImage(options || '', url, ''));
+      .replace(/\\includegraphics(?:\[([^\]]*)\])?\{([^{}]+)\}/gi, (_, options, url) => protectImage(options || '', url, ''))
+      .replace(/\\begin\{tabularx\}\{[^}]*\}\{[^}]*\}([\s\S]*?)\\end\{tabularx\}/gi, (_, body) => protectTable(body))
+      .replace(/\\begin\{tabular\}\{[^}]*\}([\s\S]*?)\\end\{tabular\}/gi, (_, body) => protectTable(body));
 
     // Converte os ambientes de lista antes de remover comandos. O leftmargin passa a
     // produzir recuo real tanto no HTML quanto no PDF, em vez de ser descartado.
@@ -644,8 +685,14 @@ Continue o conteúdo aqui.
       .replace(/\$\$([\s\S]*?)\$\$/g, '\n@@EQ@@$1\n')
       .replace(/\\begin\{equation\*?\}([\s\S]*?)\\end\{equation\*?\}/g, '\n@@EQ@@$1\n')
       .replace(/\\textbf\{([^{}]*)\}/g, '$1')
-      .replace(/\\(?:textit|emph|underline)\{([^{}]*)\}/g, '$1')
+      .replace(/\\(?:textit|emph|underline|texttt)\{([^{}]*)\}/g, '$1')
+      .replace(/\\href\{([^{}]*)\}\{([^{}]*)\}/g, '$2 ($1)')
+      .replace(/\\url\{([^{}]*)\}/g, '$1')
       .replace(/\\(?:label|ref|cite)\{[^{}]*\}/g, '')
+      .replace(/\\(?:begin|end)\{(?:center|flushright|flushleft|justify|justified)\}/gi, '\n')
+      .replace(/\\(?:justifying|raggedright|centering|noindent)\b/gi, '')
+      .replace(/\\(?:newline|linebreak)\b/g, '\n')
+      .replace(/\\(?:newpage|pagebreak)\b/g, '\n@@PAGEBREAK@@\n')
       .replace(/\\\\/g, '\n')
       .replace(/~/g, ' ')
       .replace(/\\[a-zA-Z@]+\*?(?:\[[^\]]*\])?/g, '')
@@ -658,6 +705,12 @@ Continue o conteúdo aqui.
         const image = images[index];
         return image ? { type: 'img', ...image } : { type: 'p', text: 'Imagem indisponível.' };
       }
+      if (line.startsWith('@@TABLE:')) {
+        const index = Number(/^@@TABLE:(\d+)@@$/.exec(line)?.[1]);
+        const rows = tables[index];
+        return rows ? { type: 'table', rows } : { type: 'p', text: '' };
+      }
+      if (line === '@@PAGEBREAK@@') return { type: 'pagebreak' };
       if (line === '@@IMG_INVALID@@') return { type: 'p', text: 'Imagem indisponível.' };
       if (line.startsWith('@@H2@@')) return { type: 'h2', text: line.slice(6).trim() };
       if (line.startsWith('@@H3@@')) return { type: 'h3', text: line.slice(6).trim() };
@@ -667,7 +720,7 @@ Continue o conteúdo aqui.
         return { type: 'li', indentMm: Number(match?.[1] || 4), text: String(match?.[2] || '').trim() };
       }
       if (line.startsWith('@@EQ@@')) return { type: 'eq', text: line.slice(6).trim() };
-      return { type: 'p', text: line.replace(/\s+/g, ' ').trim() };
+      return { type: 'p', text: line.replace(/\s+/g, ' ').trim(), justify: globalJustify };
     });
   }
 
@@ -789,23 +842,44 @@ Continue o conteúdo aqui.
     return window.jspdf?.jsPDF || window.jsPDF || null;
   }
 
+  async function blobToDataUrl(blob) {
+    return await new Promise((resolve, reject) => {
+      const reader = new FileReader();
+      reader.onload = () => resolve(String(reader.result || ''));
+      reader.onerror = () => reject(reader.error || new Error('Falha ao ler imagem.'));
+      reader.readAsDataURL(blob);
+    });
+  }
+
   async function remoteImageDataUrl(url) {
     const safe = safeExternalImageUrl(url);
     if (!safe) return null;
-    try {
-      const response = await fetch(safe, { mode: 'cors', credentials: 'omit' });
+    const readImageResponse = async (response) => {
       if (!response.ok) throw new Error(`HTTP ${response.status}`);
       const blob = await response.blob();
       if (!String(blob.type || '').startsWith('image/')) throw new Error('URL não retornou uma imagem.');
-      return await new Promise((resolve, reject) => {
-        const reader = new FileReader();
-        reader.onload = () => resolve(String(reader.result || ''));
-        reader.onerror = () => reject(reader.error || new Error('Falha ao ler imagem.'));
-        reader.readAsDataURL(blob);
-      });
-    } catch (error) {
-      console.warn('Imagem externa indisponível no PDF:', safe, error);
-      return null;
+      return blobToDataUrl(blob);
+    };
+    try {
+      return await readImageResponse(await fetch(safe, { mode: 'cors', credentials: 'omit', cache: 'no-store' }));
+    } catch (directError) {
+      try {
+        const sb = window.sb;
+        if (!sb?.supabaseUrl || !sb?.supabaseKey) throw directError;
+        const { data } = await sb.auth.getSession();
+        const token = data?.session?.access_token;
+        if (!token) throw directError;
+        const proxyUrl = `${String(sb.supabaseUrl).replace(/\/$/,'')}/functions/v1/proxy-imagem-latex?url=${encodeURIComponent(safe)}`;
+        const response = await fetch(proxyUrl, {
+          method: 'GET',
+          cache: 'no-store',
+          headers: { apikey: sb.supabaseKey, authorization: `Bearer ${token}` }
+        });
+        return await readImageResponse(response);
+      } catch (proxyError) {
+        console.warn('Imagem externa indisponível no PDF:', safe, { directError, proxyError });
+        return null;
+      }
     }
   }
 
@@ -924,7 +998,31 @@ Continue o conteúdo aqui.
       writeWrapped(`Módulo ${moduleNumber} — ${module.titulo}`, { size: 18, bold: true, color: '#1F70AB', after: 4 });
       const blocks = pdfTextBlocks(module.conteudo_latex || module.conteudo || '');
       for (const block of blocks) {
-        if (block.type === 'img') {
+        if (block.type === 'pagebreak') {
+          newPage();
+        } else if (block.type === 'table') {
+          const rows = Array.isArray(block.rows) ? block.rows : [];
+          const cols = Math.max(1, ...rows.map((row) => row.length));
+          const colWidth = contentWidth / cols;
+          const cellPad = 2;
+          rows.forEach((row, rowIndex) => {
+            const wrapped = Array.from({ length: cols }, (_, colIndex) => doc.splitTextToSize(String(row[colIndex] || ''), colWidth - cellPad * 2));
+            const lines = Math.max(1, ...wrapped.map((parts) => parts.length));
+            const rowHeight = Math.max(8, lines * 4.2 + cellPad * 2);
+            ensure(rowHeight + 1);
+            wrapped.forEach((parts, colIndex) => {
+              const x = marginLeft + colIndex * colWidth;
+              doc.setDrawColor(205, 216, 224);
+              doc.rect(x, y, colWidth, rowHeight);
+              doc.setFont('helvetica', rowIndex === 0 ? 'bold' : 'normal');
+              doc.setFontSize(9.2);
+              setColor('#263746');
+              doc.text(parts, x + cellPad, y + cellPad + 3.2, { maxWidth: colWidth - cellPad * 2 });
+            });
+            y += rowHeight;
+          });
+          y += 4;
+        } else if (block.type === 'img') {
           const imageData = await remoteImageDataUrl(block.url);
           if (!imageData) {
             writeWrapped(block.caption ? `Imagem indisponível: ${block.caption}` : 'Imagem indisponível.', { size: 9.5, color: '#64748B', after: 3 });
@@ -955,7 +1053,7 @@ Continue o conteúdo aqui.
         else if (block.type === 'h4') writeWrapped(block.text, { size: 11.5, bold: true, color: '#0D0A3C', after: 2 });
         else if (block.type === 'li') writeWrapped(block.text, { size: 10.5, indent: Number(block.indentMm || 4), after: 1.5 });
         else if (block.type === 'eq') writeWrapped(block.text, { size: 10.5, align: 'center', color: '#0D0A3C', after: 3 });
-        else writeWrapped(block.text, { size: 10.5, align: 'justify', after: 3 });
+        else writeWrapped(block.text, { size: 10.5, align: block.justify ? 'justify' : 'left', after: 3 });
       }
       drawHeaderFooter();
     }
@@ -968,6 +1066,7 @@ Continue o conteúdo aqui.
   }
 
   async function updateContentPreview() {
+    const requestSeq = ++state.previewSeq;
     const source = $('#latexContentSource')?.value || '';
     const placeholder = $('#latexPdfPlaceholder');
     const frame = $('#latexPdfPreviewFrame');
@@ -982,8 +1081,9 @@ Continue o conteúdo aqui.
       if (downloadButton) downloadButton.disabled = true;
       const blob = await Promise.race([
         pdfBlobFromContent(parsed),
-        new Promise((_, reject) => window.setTimeout(() => reject(new Error('A geração do PDF demorou mais que o esperado. Clique novamente em “Gerar prévia do PDF”.')), 15000))
+        new Promise((_, reject) => window.setTimeout(() => reject(new Error('A geração do PDF demorou mais que o esperado. Revise o conteúdo e tente novamente.')), 25000))
       ]);
+      if (requestSeq !== state.previewSeq) return;
       if (state.previewUrl) URL.revokeObjectURL(state.previewUrl);
       state.previewBlob = blob;
       state.previewUrl = URL.createObjectURL(blob);
@@ -996,6 +1096,7 @@ Continue o conteúdo aqui.
       if (downloadButton) downloadButton.disabled = false;
       showPreviewPane('pdf');
     } catch (error) {
+      if (requestSeq !== state.previewSeq) return;
       state.parsedContent = null;
       state.previewBlob = null;
       if (openButton) openButton.disabled = true;
@@ -1253,6 +1354,16 @@ Continue o conteúdo aqui.
     $('#latexProofTemplate')?.addEventListener('click', () => { $('#latexProofSource').value = PROOF_TEMPLATE; updateProofPreview(); });
     $('#latexValidateContent')?.addEventListener('click', updateContentPreview);
     $('#latexValidateProof')?.addEventListener('click', updateProofPreview);
+    let contentPreviewTimer = 0;
+    let proofPreviewTimer = 0;
+    $('#latexContentSource')?.addEventListener('input', () => {
+      window.clearTimeout(contentPreviewTimer);
+      contentPreviewTimer = window.setTimeout(() => updateContentPreview(), 850);
+    });
+    $('#latexProofSource')?.addEventListener('input', () => {
+      window.clearTimeout(proofPreviewTimer);
+      proofPreviewTimer = window.setTimeout(() => updateProofPreview(), 500);
+    });
     $('#latexOpenPdf')?.addEventListener('click', () => {
       if (state.previewUrl) window.open(state.previewUrl, '_blank', 'noopener');
     });

@@ -899,6 +899,9 @@ function studentContentHtml(value) {
     .replace(/\\end\{(?:itemize|enumerate)\}/gi, "\n@@ENDLIST@@\n")
     .replace(/\\begin\{tcolorbox\}(?:\[[\s\S]*?\])?/gi, "\n@@BOXOPEN@@\n")
     .replace(/\\end\{tcolorbox\}/gi, "\n@@BOXCLOSE@@\n")
+    .replace(/\\begin\{(?:justify|justified)\}/gi, "\n@@JUSTIFYOPEN@@\n")
+    .replace(/\\end\{(?:justify|justified)\}/gi, "\n@@JUSTIFYCL@@\n")
+    .replace(/\\justifying\b/gi, "\n@@JUSTIFYOPEN@@\n")
     .replace(/\\begin\{center\}/gi, "\n@@CENTEROPEN@@\n")
     .replace(/\\end\{center\}/gi, "\n@@CENTERCL@@\n")
     .replace(/\\begin\{flushright\}/gi, "\n@@RIGHTOPEN@@\n")
@@ -946,6 +949,8 @@ function studentContentHtml(value) {
     if (line === "@@ENDLIST@@") { flushParagraph(); flushList(); return; }
     if (line === "@@BOXOPEN@@") { flushParagraph(); flushList(); out.push('<aside class="latex-info-box">'); return; }
     if (line === "@@BOXCLOSE@@") { flushParagraph(); flushList(); out.push('</aside>'); return; }
+    if (line === "@@JUSTIFYOPEN@@") { flushParagraph(); flushList(); out.push('<div class="latex-align-justify">'); return; }
+    if (line === "@@JUSTIFYCL@@") { flushParagraph(); flushList(); out.push('</div>'); return; }
     if (line === "@@CENTEROPEN@@") { flushParagraph(); out.push('<div class="latex-align-center">'); return; }
     if (line === "@@CENTERCL@@") { flushParagraph(); out.push('</div>'); return; }
     if (line === "@@RIGHTOPEN@@") { flushParagraph(); out.push('<div class="latex-align-right">'); return; }
@@ -958,6 +963,9 @@ function studentContentHtml(value) {
     paragraph.push(line);
   });
   flushParagraph(); flushList();
+  const openJustify = out.filter((item) => item === '<div class="latex-align-justify">').length;
+  const closeJustify = out.filter((item) => item === '</div>').length;
+  if (openJustify > closeJustify) out.push(...Array(openJustify - closeJustify).fill('</div>'));
 
   let html = out.join("\n");
   protectedHtml.forEach((valueHtml, index) => { html = html.replaceAll(`@@ALTITUDE_HTML_${index}@@`, valueHtml); });
@@ -974,6 +982,7 @@ function cleanLatexForStudent(value) {
 
 function latexBlocksForStudentPdf(value) {
   let source = String(value || "").replace(/\r/g, "");
+  const globalJustify = /\\justifying\b|\\begin\{(?:justify|justified)\}/i.test(source);
   const images = [];
   const makeImageToken = (options, rawUrl, caption = "") => {
     const url = safeUrl(String(rawUrl || "").trim());
@@ -1011,7 +1020,7 @@ function latexBlocksForStudentPdf(value) {
     if (line.startsWith("@@LI@@")) return { type:"li", text:line.slice(6).trim() };
     const imageMatch = /^@@IMG:(\d+)@@$/.exec(line);
     if (imageMatch) return { type:"image", ...images[Number(imageMatch[1])] };
-    return { type:"p", text:line.replace(/\s+/g, " ").trim() };
+    return { type:"p", text:line.replace(/\s+/g, " ").trim(), justify:globalJustify };
   });
 }
 
@@ -1139,7 +1148,7 @@ async function baixarMaterialCompletoCurso() {
       addPage();
       writeLines(`Módulo ${numero} — ${modulo.titulo || `Conteúdo ${numero}`}`, 16, true, 8, 0, false, [7,59,90]);
       const descricao = cleanLatexForStudent(modulo.descricao || "");
-      if (descricao) writeLines(descricao, 9.5, false, 5, 0, true, [96,116,130]);
+      if (descricao) writeLines(descricao, 9.5, false, 5, 0, false, [96,116,130]);
       const blocks = latexBlocksForStudentPdf(modulo.conteudo_latex || modulo.conteudo || "");
       for (const block of blocks) {
         if (block.type === "image") { await drawRemoteImage(block); continue; }
@@ -1147,7 +1156,7 @@ async function baixarMaterialCompletoCurso() {
         else if (block.type === "h3") writeLines(block.text, 12, true, 6, 0, false, [13,67,99]);
         else if (block.type === "h4") writeLines(block.text, 11, true, 5.5, 0, false, [20,77,105]);
         else if (block.type === "li") writeLines(block.text, 10, false, 5, 5, true);
-        else writeLines(block.text, 10, false, 5, 0, true);
+        else writeLines(block.text, 10, false, 5, 0, Boolean(block.justify));
       }
     }
 
@@ -1267,7 +1276,11 @@ async function abrirProva() {
   }
 
   try {
-    const { data, error } = await sb.rpc("obter_prova_aluno", { p_curso_id: Number(state.cursoAtual.id) });
+    let provaResponse = await sb.rpc("obter_prova_aluno_v42", { p_curso_id: Number(state.cursoAtual.id) });
+    if (provaResponse.error && /function|schema cache|does not exist/i.test(String(provaResponse.error.message || ""))) {
+      provaResponse = await sb.rpc("obter_prova_aluno", { p_curso_id: Number(state.cursoAtual.id) });
+    }
+    const { data, error } = provaResponse;
     if (error) throw error;
     if (!data?.encontrada) return toast(data?.mensagem || "Prova não encontrada.", "error");
     if (!Array.isArray(data.questoes) || !data.questoes.length) return toast("A prova ainda não possui questões.", "error");
@@ -1372,10 +1385,22 @@ async function finalizarProva() {
       questao_id: Number(questao.id),
       resposta: state.respostas[questao.id]
     }));
-    const { data, error } = await sb.rpc("finalizar_prova", {
-      p_prova_id: Number(state.prova.id),
-      p_respostas: respostas
-    });
+    let finalizarResponse;
+    if (state.prova?.v42_curso_completo) {
+      finalizarResponse = await sb.rpc("finalizar_prova_v42", {
+        p_curso_id: Number(state.prova.curso_id || state.cursoAtual?.id),
+        p_respostas: respostas
+      });
+    } else {
+      finalizarResponse = await sb.rpc("finalizar_prova", {
+        p_prova_id: Number(state.prova.id),
+        p_respostas: respostas
+      });
+    }
+    if (finalizarResponse.error && state.prova?.v42_curso_completo && /function|schema cache|does not exist/i.test(String(finalizarResponse.error.message || ""))) {
+      finalizarResponse = await sb.rpc("finalizar_prova", { p_prova_id:Number(state.prova.id), p_respostas:respostas });
+    }
+    const { data, error } = finalizarResponse;
     if (error) throw error;
 
     await carregarResultados();
@@ -1456,7 +1481,7 @@ function continuarEstudando() {
 
 function statusEfetivoCertificado(certificado) {
   const original = String(certificado?.status || "PENDENTE").toUpperCase();
-  if (["CANCELADO","BLOQUEADO","EMITIDO"].includes(original)) return original;
+  if (["CANCELADO","BLOQUEADO","EMITIDO","PACK_PENDENTE_APROVACAO"].includes(original)) return original;
   const faltam = Math.max(0, Number(certificado?.horas_faltantes || 0));
   if (faltam > 0) return "AGUARDANDO_HORAS";
   const pagamento = String(certificado?.pagamento_status || "").toUpperCase();
@@ -1630,7 +1655,7 @@ function certificadoEmitidoDoCurso(cursoId) {
 }
 
 function certificadoPendenteDoCurso(cursoId) {
-  return certificadosDoCurso(cursoId).find((item) => ["PENDENTE","AGUARDANDO_HORAS","AUTORIZADO_AGUARDANDO_DATA"].includes(String(item.status || "").toUpperCase())) || null;
+  return certificadosDoCurso(cursoId).find((item) => ["PENDENTE","AGUARDANDO_HORAS","AUTORIZADO_AGUARDANDO_DATA","PACK_PENDENTE_APROVACAO"].includes(String(item.status || "").toUpperCase())) || null;
 }
 
 function certificadoBloqueadoDoCurso(cursoId) {
@@ -1640,6 +1665,7 @@ function certificadoBloqueadoDoCurso(cursoId) {
 function cardSolicitacaoCertificado(curso) {
   const progressoOk = clamp(curso.progresso) >= 100;
   const resultado = melhorResultadoCurso(curso.id);
+  const notaMinima = Number(curso?.nota_minima ?? resultado?.nota_minima ?? state.prova?.nota_minima ?? 70);
   const provaOk = Boolean(resultado?.aprovado);
   const carteira = carteiraHorasCurso(curso.id);
   const saldo = Number(carteira?.saldo_disponivel || 0);
@@ -1657,7 +1683,11 @@ function cardSolicitacaoCertificado(curso) {
     const status = statusEfetivoCertificado(ativo);
     const previsao = ativo.previsao_liberacao || ativo.data_final_prevista || ativo.periodo_fim || ativo.liberar_em;
     statusVisual = status;
-    if (status === "AGUARDANDO_HORAS") {
+    if (status === "PACK_PENDENTE_APROVACAO") {
+      statusVisual = "PENDENTE";
+      help = "Este certificado faz parte de um PACK e aguarda a aprovação coletiva da gestão.";
+      actions = `<button class="secondary-button" type="button" disabled>Aguardando aprovação do PACK</button>`;
+    } else if (status === "AGUARDANDO_HORAS") {
       const faltam = Number(ativo.horas_faltantes || 0);
       help = `${faltam > 0 ? `Faltam ${faltam}h para completar as ${Number(ativo.horas_solicitadas || 0)}h solicitadas.` : "Aguardando completar as horas solicitadas."}${previsao ? ` Previsão estimada: ${dataBR(previsao)}.` : ""}`;
       actions = `<button class="secondary-button" type="button" disabled>Aguardando horas</button>`;
@@ -1714,30 +1744,42 @@ function cardSolicitacaoCertificado(curso) {
   </article>`;
 }
 
+function cursoAptoOuSolicitadoCertificado(curso) {
+  if (!curso || certificadoEmitidoDoCurso(curso.id)) return false;
+  if (certificadoPendenteDoCurso(curso.id) || certificadoBloqueadoDoCurso(curso.id)) return true;
+  const resultado = melhorResultadoCurso(curso.id);
+  return clamp(curso.progresso) >= 100 && Boolean(resultado?.aprovado) && Boolean(avaliacaoDoCurso(curso.id));
+}
+
 function atualizarMenuSolicitarCertificado() {
   const menu = $("menuSolicitarCertificado");
   const badge = $("badgeSolicitarCertificado");
+  const section = $("solicitar-certificado");
   if (!menu) return;
-  const pendentes = state.cursos.filter((curso) => cursoConcluido(curso) && !certificadoEmitidoDoCurso(curso.id));
-  const count = pendentes.length;
+  const aptos = state.cursos.filter(cursoAptoOuSolicitadoCertificado);
+  const count = aptos.length;
   menu.hidden = count === 0;
+  if (section) section.hidden = count === 0;
+  document.body.classList.toggle("v42-no-eligible", count === 0);
   if (badge) {
-    badge.textContent = String(count);
+    badge.textContent = count ? String(count) : "";
     badge.hidden = count === 0;
   }
-  setText("contadorSolicitacoesCertificado", `${count} ${count === 1 ? "curso" : "cursos"}`);
+  setText("contadorSolicitacoesCertificado", count ? `${count} ${count === 1 ? "curso" : "cursos"}` : "");
 }
 
 function renderSolicitacoesCertificado() {
   const list = $("listaSolicitacaoCertificados");
   if (!list) return;
-  const cursos = state.cursos.filter((curso) => cursoConcluido(curso) && !certificadoEmitidoDoCurso(curso.id));
-  setText("contadorSolicitacoesCertificado", `${cursos.length} ${cursos.length === 1 ? "curso" : "cursos"}`);
+  const cursos = state.cursos.filter(cursoAptoOuSolicitadoCertificado);
+  setText("contadorSolicitacoesCertificado", cursos.length ? `${cursos.length} ${cursos.length === 1 ? "curso" : "cursos"}` : "");
   if (!cursos.length) {
-    list.innerHTML = `<div class="empty-state certificate-request-empty"><strong>Nenhum certificado disponível para solicitar agora.</strong><span>Quando você for aprovado em uma prova, esta aba aparecerá automaticamente com a próxima etapa.</span><button type="button" class="secondary-button" onclick="abrirAba('cursos')">Voltar aos meus cursos</button></div>`;
+    list.innerHTML = "";
+    atualizarMenuSolicitarCertificado();
     return;
   }
   list.innerHTML = cursos.map(cardSolicitacaoCertificado).join("");
+  atualizarMenuSolicitarCertificado();
 }
 
 function renderCertificados() {
@@ -2671,5 +2713,10 @@ window.irParaCertificados = irParaCertificados;
 window.solicitarCertificadoCursoAtual = solicitarCertificadoCursoAtual;
 window.continuarEstudando = continuarEstudando;
 window.baixarMaterialCompletoCurso = baixarMaterialCompletoCurso;
+window.__ALTITUDE_ALUNO_STATE = state;
+window.__ALTITUDE_ALUNO_REFRESH = async () => {
+  await atualizarDadosPrincipais({ silent: true });
+  return state;
+};
 
 iniciarPortal();

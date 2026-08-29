@@ -1,0 +1,295 @@
+/* =====================================================================
+   ALTITUDE V42 — AJUSTES 101–117
+   ===================================================================== */
+:root{
+  --v42-navy:#0b3a61;
+  --v42-cyan:#27aabd;
+  --v42-line:#d6e2e9;
+  --v42-soft:#f7fafc;
+  --v42-text:#183247;
+  --v42-muted:#687f90;
+}
+
+/* 107/108 — padrão único de ações, compacto e sem arco-íris. */
+#tabCursos td.course-action-cell,
+#tabAlunos td.student-actions,
+td[data-label="Ações"].student-actions,
+td[data-label="Ações"].course-action-cell,
+.v42-action-grid,
+.card-actions.v42-action-grid{
+  display:grid!important;
+  grid-template-columns:repeat(3,minmax(94px,1fr))!important;
+  gap:7px!important;
+  align-items:stretch!important;
+  align-content:start!important;
+}
+#tabCursos td.course-action-cell{
+  width:360px!important;
+  min-width:360px!important;
+  max-width:390px!important;
+  padding:8px!important;
+}
+#tabAlunos td.student-actions{
+  width:330px!important;
+  min-width:330px!important;
+  max-width:360px!important;
+}
+#tabCursos td.course-action-cell button,
+#tabAlunos td.student-actions button,
+.v42-action-grid button,
+.card-actions.v42-action-grid button{
+  width:100%!important;
+  min-width:0!important;
+  min-height:36px!important;
+  height:auto!important;
+  padding:7px 9px!important;
+  margin:0!important;
+  border:1px solid #bfd0db!important;
+  border-radius:8px!important;
+  background:#fff!important;
+  color:#0d3d61!important;
+  box-shadow:none!important;
+  font-weight:800!important;
+  font-size:11px!important;
+  line-height:1.15!important;
+  text-align:center!important;
+  justify-content:center!important;
+}
+#tabCursos td.course-action-cell button:hover,
+#tabAlunos td.student-actions button:hover,
+.v42-action-grid button:hover,
+.card-actions.v42-action-grid button:hover{
+  background:#edf7fa!important;
+  border-color:#7fc2cf!important;
+  color:#073956!important;
+}
+#tabCursos .course-build-button,
+#tabCursos .gc-publish,
+#tabCursos .gc-publish.is-live,
+#tabCursos .gc-del,
+#tabCursos .danger,
+#tabAlunos .student-delete-action,
+.v42-action-grid .danger,
+.card-actions.v42-action-grid .danger{
+  background:#fff!important;
+  color:#0d3d61!important;
+  border-color:#bfd0db!important;
+}
+
+/* Demais blocos de ações do gestor recebem o mesmo tratamento sem quebrar formulários. */
+#app .aba .card-actions:not(.payment-request-actions),
+#app .aba .certificate-actions,
+#app .aba .builder-module-actions,
+#app .aba .ticket-actions{
+  gap:7px!important;
+}
+
+/* 116 — cadastro manual dividido em duas etapas/telas internas. */
+.v42-manual-tabs{
+  display:grid;
+  grid-template-columns:repeat(2,minmax(0,1fr));
+  gap:10px;
+  margin:12px 0 16px;
+  padding:5px;
+  background:#eef5f8;
+  border:1px solid var(--v42-line);
+  border-radius:12px;
+}
+.v42-manual-tabs button{
+  min-height:44px;
+  border:1px solid transparent;
+  border-radius:9px;
+  background:transparent;
+  color:#31566e;
+  font-weight:800;
+  cursor:pointer;
+}
+.v42-manual-tabs button.active{
+  background:#fff;
+  border-color:#b9d4df;
+  color:var(--v42-navy);
+  box-shadow:0 1px 2px rgba(18,61,84,.06);
+}
+#normalBuilderPanel .v30-normal-grid[data-v42-manual-panel="cadastro"]{
+  grid-template-columns:minmax(0,1fr)!important;
+  max-width:980px;
+  margin-inline:auto;
+}
+#normalBuilderPanel .v30-normal-grid[data-v42-manual-panel="cadastro"] .builder-create-panel{
+  width:100%;
+}
+#normalBuilderPanel .v30-normal-grid[data-v42-manual-panel="cadastro"] [data-v42-review-part]{
+  display:none!important;
+}
+#normalBuilderPanel[data-v42-manual-view="revisao"] .v30-normal-grid[data-v42-manual-panel="cadastro"] .builder-create-panel{
+  display:none!important;
+}
+#normalBuilderPanel[data-v42-manual-view="revisao"] .v30-normal-grid[data-v42-manual-panel="cadastro"] [data-v42-review-part]{
+  display:block!important;
+  width:100%!important;
+}
+#normalBuilderPanel[data-v42-manual-view="revisao"] .v30-normal-grid[data-v42-manual-panel="cadastro"]{
+  max-width:none;
+}
+#normalBuilderPanel [data-v42-manual-panel="revisao"]{display:none}
+#normalBuilderPanel[data-v42-manual-view="revisao"] [data-v42-manual-panel="revisao"]{display:block}
+#normalBuilderPanel .module-one-screen-form{
+  display:grid!important;
+  grid-template-columns:repeat(2,minmax(0,1fr))!important;
+  gap:14px!important;
+}
+#normalBuilderPanel .module-one-screen-form .builder-form-section:nth-of-type(1),
+#normalBuilderPanel .module-one-screen-form .builder-form-section:nth-of-type(3){grid-column:1}
+#normalBuilderPanel .module-one-screen-form .builder-form-section:nth-of-type(2){grid-column:2;grid-row:1 / span 2}
+#normalBuilderPanel .module-one-screen-form > .builder-check,
+#normalBuilderPanel .module-one-screen-form > .builder-primary-actions{grid-column:1 / -1}
+#normalBuilderPanel #fModuloConteudo{min-height:470px!important;resize:vertical!important}
+#normalBuilderPanel .builder-form-section{padding:14px!important;border-radius:12px!important}
+#normalBuilderPanel .builder-media-grid{grid-template-columns:repeat(2,minmax(0,1fr))!important}
+
+/* 117 — área LaTeX mais limpa, sem sobreposição. */
+#latexBuilderPanel .v30-latex-grid{
+  grid-template-columns:minmax(420px,1fr) minmax(420px,1fr)!important;
+  gap:16px!important;
+  align-items:start!important;
+}
+#latexBuilderPanel .latex-editor-card,
+#latexBuilderPanel .latex-preview-card{min-width:0!important;overflow:hidden!important}
+#latexBuilderPanel #latexContentSource,
+#latexBuilderPanel #latexProofSource{
+  min-height:540px!important;
+  resize:vertical!important;
+  white-space:pre!important;
+  overflow:auto!important;
+  line-height:1.45!important;
+}
+#latexBuilderPanel .latex-preview-card iframe{min-height:600px!important}
+#latexBuilderPanel .latex-editor-card header,
+#latexBuilderPanel .latex-preview-card header{gap:12px!important;align-items:flex-start!important}
+
+/* 103/104 — o alinhamento vem do LaTeX. Não justificar automaticamente. */
+.lesson-written-content p,
+.latex-import-preview p,
+.pdf-module p{
+  text-align:left!important;
+  text-justify:auto!important;
+}
+.lesson-written-content .latex-align-justify,
+.lesson-written-content .latex-align-justify p,
+.latex-import-preview .latex-align-justify,
+.latex-import-preview .latex-align-justify p{
+  text-align:justify!important;
+  text-justify:inter-word!important;
+}
+.lesson-written-content .latex-align-center,
+.lesson-written-content .latex-align-center p{text-align:center!important}
+.lesson-written-content .latex-align-right,
+.lesson-written-content .latex-align-right p{text-align:right!important}
+.lesson-written-content .latex-align-left,
+.lesson-written-content .latex-align-left p{text-align:left!important}
+
+/* 113 — trilha de módulos no PC, sem títulos saindo dos cards. */
+@media(min-width:801px){
+  #modalCurso .study-layout{grid-template-columns:minmax(285px,330px) minmax(0,1fr)!important}
+  #studyModuleList{max-height:calc(100vh - 300px)!important;padding-right:8px!important}
+  #studyModuleList .module-item{
+    min-height:66px!important;
+    height:auto!important;
+    grid-template-columns:34px minmax(0,1fr)!important;
+    padding:10px!important;
+    gap:9px!important;
+    overflow:hidden!important;
+  }
+  #studyModuleList .module-item>div{min-width:0!important;width:100%!important}
+  #studyModuleList .module-item strong{
+    display:block!important;
+    font-size:12px!important;
+    line-height:1.25!important;
+    white-space:normal!important;
+    overflow-wrap:anywhere!important;
+    word-break:normal!important;
+    -webkit-line-clamp:unset!important;
+    overflow:visible!important;
+  }
+  #studyModuleList .module-item small{
+    display:block!important;
+    margin-top:4px!important;
+    font-size:10px!important;
+    line-height:1.2!important;
+    white-space:normal!important;
+  }
+}
+
+/* 110 — seção de cursos aptos some completamente quando vazia. */
+.v42-no-eligible #menuSolicitarCertificado,
+.v42-no-eligible [data-tab="solicitar-certificado"],
+.v42-no-eligible #solicitar-certificado{display:none!important}
+#listaSolicitacaoCertificados:empty::after{content:none!important;display:none!important}
+
+/* 109 — painel de tráfego/alcance. */
+.v42-analytics-kpis{grid-template-columns:repeat(4,minmax(0,1fr))!important}
+.v42-analytics-grid{grid-template-columns:repeat(2,minmax(0,1fr))!important}
+.v42-funnel-panel{margin-top:14px}
+.v42-funnel{display:grid;grid-template-columns:repeat(5,minmax(0,1fr));gap:8px;align-items:stretch}
+.v42-funnel article{position:relative;padding:14px;border:1px solid var(--v42-line);border-radius:12px;background:#f9fbfc;min-width:0}
+.v42-funnel article strong{display:block;font-size:22px;color:var(--v42-navy)}
+.v42-funnel article span{display:block;margin-top:3px;color:var(--v42-muted);font-size:11px;font-weight:700}
+.v42-funnel article small{display:block;margin-top:6px;color:#7990a0;font-size:10px}
+
+/* 114/115 — solicitação de certificados em pack. */
+.v42-pack-request{
+  margin:0 0 18px;
+  border:1px solid var(--v42-line);
+  border-radius:16px;
+  background:#fff;
+  overflow:hidden;
+}
+.v42-pack-request header{display:flex;align-items:flex-start;justify-content:space-between;gap:14px;padding:16px 18px;border-bottom:1px solid #e7eef2;background:#f8fbfc}
+.v42-pack-request header h3{margin:2px 0 3px;color:var(--v42-navy)}
+.v42-pack-request header p{margin:0;color:var(--v42-muted);font-size:12px}
+.v42-pack-items{display:grid;gap:8px;padding:14px 18px}
+.v42-pack-item{display:grid;grid-template-columns:auto minmax(0,1fr) 120px;gap:10px;align-items:center;padding:10px 12px;border:1px solid #dce7ed;border-radius:10px;background:#fff}
+.v42-pack-item strong{display:block;font-size:12px;color:var(--v42-text)}
+.v42-pack-item small{display:block;margin-top:2px;color:var(--v42-muted);font-size:10px}
+.v42-pack-item select{min-height:36px}
+.v42-pack-summary{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:8px;padding:0 18px 14px}
+.v42-pack-summary div{padding:10px;border-radius:10px;background:#f5f9fb;border:1px solid #e2ebef}
+.v42-pack-summary span{display:block;color:var(--v42-muted);font-size:10px;font-weight:700}
+.v42-pack-summary strong{display:block;margin-top:3px;color:var(--v42-navy);font-size:15px}
+.v42-pack-footer{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:10px;padding:14px 18px;border-top:1px solid #e7eef2;background:#fbfdfe}
+.v42-pack-footer input{min-height:40px}
+.v42-pack-status-card{border:1px solid var(--v42-line);border-radius:14px;padding:14px;background:#fff;margin-bottom:10px}
+.v42-pack-status-card header{display:flex;justify-content:space-between;gap:10px}
+.v42-pack-status-card ul{margin:10px 0 0;padding-left:18px}
+
+/* Prova: reforça legibilidade mobile e fechamento. */
+@media(max-width:700px){
+  #modalProva .quiz-option{grid-template-columns:50px minmax(0,1fr)!important;overflow:hidden!important}
+  #modalProva .quiz-option span{width:auto!important;min-width:0!important;max-width:100%!important;word-break:normal!important;overflow-wrap:anywhere!important}
+  #modalProva .modal-close{border:1px solid #cbdbe3!important;background:#fff!important;color:#0d3d61!important}
+}
+
+@media(max-width:1100px){
+  #tabCursos td.course-action-cell,#tabAlunos td.student-actions{width:auto!important;min-width:0!important;max-width:none!important;grid-template-columns:repeat(2,minmax(96px,1fr))!important}
+  #normalBuilderPanel .module-one-screen-form{grid-template-columns:1fr!important}
+  #normalBuilderPanel .module-one-screen-form .builder-form-section:nth-of-type(1),
+  #normalBuilderPanel .module-one-screen-form .builder-form-section:nth-of-type(2),
+  #normalBuilderPanel .module-one-screen-form .builder-form-section:nth-of-type(3){grid-column:1!important;grid-row:auto!important}
+  #latexBuilderPanel .v30-latex-grid{grid-template-columns:1fr!important}
+  .v42-analytics-kpis{grid-template-columns:repeat(2,minmax(0,1fr))!important}
+  .v42-analytics-grid{grid-template-columns:1fr!important}
+  .v42-funnel{grid-template-columns:repeat(2,minmax(0,1fr))}
+}
+@media(max-width:650px){
+  .v42-manual-tabs{grid-template-columns:1fr}
+  .v42-pack-item{grid-template-columns:auto minmax(0,1fr)}
+  .v42-pack-item select{grid-column:2}
+  .v42-pack-summary{grid-template-columns:repeat(2,minmax(0,1fr))}
+  .v42-pack-footer{grid-template-columns:1fr}
+  .v42-analytics-kpis{grid-template-columns:1fr!important}
+  .v42-funnel{grid-template-columns:1fr}
+}
+
+/* V42 — comandos de quebra de página do LaTeX aparecem discretamente na tela. */
+.latex-page-break{border:0;border-top:1px dashed #cbdbe3;margin:18px 0}
+@media print{.latex-page-break{break-after:page;border:0;margin:0}}

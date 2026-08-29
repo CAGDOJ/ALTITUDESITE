@@ -1,24 +1,27 @@
-# ALTITUDE — V42
+# ALTITUDE — V42 (pacote público para GitHub)
 
-Pacote público do Portal Altitude para publicação no GitHub Pages.
+Este pacote contém o frontend público da V42 e consolida as atualizações 101–117 sobre a V41.
 
-## O que este pacote contém
-- frontend público do portal;
-- Portal do Aluno e Portal do Gestor;
-- ajustes V42 (101–117);
-- CSS/JavaScript necessários para a nova interface, LaTeX, provas, estatísticas e PACKs.
+## Principais ajustes da V42
+- exclusão de aluno e redefinição de senha com backend administrativo V42;
+- motor LaTeX revisado, imagens por URL e alinhamento controlado pelo próprio LaTeX;
+- editor/montagem de curso reorganizado e pré-visualização atualizada após alterações;
+- ações compactas e padronizadas no Portal do Gestor;
+- painel de tráfego/alcance e conversão;
+- correções de cursos aptos, nota mínima e prova com todas as questões cadastradas;
+- trilha de módulos corrigida;
+- solicitação/aprovação de certificados em PACK, com cupom e liberação conforme horas;
+- menu hambúrguer do Gestor no mobile.
 
-## O que NÃO está neste pacote
-- SQL de banco de dados;
-- migrations privadas;
-- Service Role/Secret Keys;
+## Importante
+Os recursos que alteram banco/Auth exigem também o pacote privado `ALTITUDESITE_V42_SUPABASE_PRIVADO.zip`.
+Execute o SQL V42 e publique as Edge Functions conforme o arquivo de deploy antes de validar exclusão de aluno, senha, provas agregadas, PACKs e proxy de imagens LaTeX.
+
+## Não incluído neste repositório
+- SQL/migrations privadas;
+- dumps, exports ou registros reais do banco;
 - Edge Functions administrativas;
-- dumps, backups ou exportações do banco;
-- registros reais de alunos.
+- chaves administrativas/service-role;
+- backups e arquivos privados de implantação.
 
-## Implantação
-1. Publique o conteúdo deste diretório no repositório do site.
-2. Antes de testar as funções V42, aplique o pacote privado do Supabase.
-3. Não copie o pacote `ALTITUDESITE_V42_SUPABASE_PRIVADO` para o GitHub.
-
-A URL e a chave pública/publishable do Supabase usadas pelo navegador podem permanecer no frontend. Chaves de serviço/secretas não podem ser publicadas.
+A URL do projeto e a chave pública/anon do Supabase podem existir no frontend por serem credenciais de cliente. A proteção dos dados deve ser feita por RLS e funções server-side. Nunca publique `service_role`, secret keys, dumps ou backups no GitHub.

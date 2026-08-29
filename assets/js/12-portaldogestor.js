@@ -419,7 +419,7 @@ async function redefinirSenhaAluno(event) {
       throw new Error('A função de redefinição não respondeu. Publique a Edge Function gerenciar-gestor no Supabase.');
     }
     const data = await response.json().catch(() => ({}));
-    if (!response.ok || !data?.ok) throw new Error(data?.error || `Falha na função de redefinição (${response.status}).`);
+    if (!response.ok || !data?.ok) { const etapa = data?.etapa ? ` [${data.etapa}]` : ''; throw new Error(`${data?.error || `Falha na função de redefinição (${response.status}).`}${etapa}`); }
     $('#senhaAlunoResultadoCodigo').textContent = novaSenha;
     $('#senhaAlunoResultado').hidden = false;
     alert('Senha redefinida. Copie a senha temporária e entregue ao aluno por um canal seguro.');
@@ -460,7 +460,7 @@ async function excluirAlunoGestao(aluno) {
     body:JSON.stringify({ acao:'excluir_aluno', aluno_id:aluno.user_id, confirmacao:'EXCLUIR', motivo:String(motivo).trim() })
   });
   const payload = await response.json().catch(() => ({}));
-  if (!response.ok || !payload?.ok) throw new Error(payload?.error || `Falha ao excluir aluno (${response.status}).`);
+  if (!response.ok || !payload?.ok) { const etapa = payload?.etapa ? ` [${payload.etapa}]` : ''; const tabela = payload?.tabela ? ` Tabela: ${payload.tabela}.` : ''; throw new Error(`${payload?.error || `Falha ao excluir aluno (${response.status}).`}${etapa}${tabela}`); }
   return true;
 }
 

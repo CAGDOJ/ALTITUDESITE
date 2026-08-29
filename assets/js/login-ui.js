@@ -2,6 +2,12 @@
   "use strict";
   const $ = (id) => document.getElementById(id);
   const onlyDigits = (v) => String(v || "").replace(/\D/g, "");
+  const maskEmail = (email) => {
+    const [local, domain] = String(email || "").split("@");
+    if (!local || !domain) return "e-mail cadastrado";
+    const visible = local.slice(0, Math.min(3, local.length));
+    return `${visible}${"•".repeat(Math.max(4, local.length - visible.length))}@${domain}`;
+  };
 
   function setMessage(id, text, ok = false) {
     const el = $(id);
@@ -64,17 +70,24 @@
       button.disabled = true;
       button.textContent = "Enviando...";
 
+      let masked = "";
       const result = await window.sb.functions.invoke("recuperar-senha", {
         body: { identificador: identifier }
       });
       if (result.error || !result.data?.ok) {
+        // Compatibilidade enquanto a função V43 ainda não tiver sido publicada.
         const email = await resolveRecoveryEmail(identifier);
         const redirectTo = "https://www.portalaltitude.com.br/login/?recovery=1";
         const { error } = await window.sb.auth.resetPasswordForEmail(email, { redirectTo });
         if (error) throw error;
+        masked = maskEmail(email);
+      } else {
+        masked = String(result.data?.email_mascarado || "");
       }
 
-      setMessage("recoveryMessage", "Se os dados estiverem cadastrados, o link será enviado em instantes. Verifique também spam e lixo eletrônico.", true);
+      setMessage("recoveryMessage", masked
+        ? `Link enviado. As instruções foram encaminhadas para ${masked}. Verifique também spam e lixo eletrônico.`
+        : "Se os dados estiverem cadastrados, o link será enviado em instantes. Verifique também spam e lixo eletrônico.", true);
     } catch (error) {
       const message = /rate|limit/i.test(error.message || "")
         ? "Muitas tentativas. Aguarde alguns minutos e tente novamente."

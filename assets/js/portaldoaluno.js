@@ -1699,7 +1699,7 @@ function cardSolicitacaoCertificado(curso) {
   }
 
   const avaliacaoHtml = provaOk && avaliacao
-    ? `<div class="course-review-done"><span class="review-stars-static">${"★".repeat(Number(avaliacao.nota || 0))}${"☆".repeat(5 - Number(avaliacao.nota || 0))}</span><strong>Curso avaliado</strong></div>`
+    ? `<div class="course-review-done course-review-editable" role="button" tabindex="0" onclick="reavaliarCursoCertificado(${Number(curso.id)})" onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();reavaliarCursoCertificado(${Number(curso.id)})}"><span class="review-stars-static">${"★".repeat(Number(avaliacao.nota || 0))}${"☆".repeat(5 - Number(avaliacao.nota || 0))}</span><strong>Curso avaliado</strong><small>Você pode alterar sua avaliação deste curso somente nesta tela.</small></div>`
     : "";
 
   return `<article class="certificate-card hours-wallet-card" data-curso-certificado="${Number(curso.id)}">
@@ -1848,11 +1848,24 @@ async function registrarAvaliacaoImediata(modal, cursoId, nota) {
   if (failure) failure.hidden = true;
 
   try {
-    const { error } = await sb.rpc("avaliar_curso", {
-      p_curso_id: Number(cursoId),
-      p_nota: Number(nota),
-      p_comentario: null
-    });
+    const existente = avaliacaoDoCurso(cursoId);
+    let error = null;
+    if (existente) {
+      // V43: nesta tela o aluno pode substituir a própria nota sem criar
+      // uma segunda avaliação para o mesmo curso.
+      const result = await sb.from("avaliacoes_cursos")
+        .update({ nota:Number(nota) })
+        .eq("aluno_id", state.aluno.user_id)
+        .eq("curso_id", Number(cursoId));
+      error = result.error;
+    } else {
+      const result = await sb.rpc("avaliar_curso", {
+        p_curso_id: Number(cursoId),
+        p_nota: Number(nota),
+        p_comentario: null
+      });
+      error = result.error;
+    }
     if (error) throw error;
 
     await Promise.all([carregarAvaliacoes(), carregarCursos()]);
@@ -1897,13 +1910,22 @@ function abrirAvaliacaoCurso(cursoId, options = {}) {
   failure.hidden = true;
   failure.textContent = "";
   modal.querySelector(".review-star-picker")?.classList.remove("is-saving");
+  const existente = avaliacaoDoCurso(cursoId);
+  const notaExistente = Number(existente?.nota || 0);
   modal.querySelectorAll("[data-review-star]").forEach((star) => {
-    star.classList.remove("selected");
-    star.setAttribute("aria-checked", "false");
+    const n = Number(star.dataset.reviewStar || 0);
+    star.classList.toggle("selected", notaExistente > 0 && n <= notaExistente);
+    star.setAttribute("aria-checked", String(notaExistente > 0 && n === notaExistente));
   });
   modal.setAttribute("aria-hidden", "false");
   document.body.style.overflow = "hidden";
 }
+
+function reavaliarCursoCertificado(cursoId) {
+  // V43: reavaliação disponível somente pelo card da aba Solicitar certificado.
+  abrirAvaliacaoCurso(Number(cursoId), { obrigatoria:false, reavaliacao:true });
+}
+window.reavaliarCursoCertificado = reavaliarCursoCertificado;
 
 async function avaliarCurso(cursoId) {
   const existente = avaliacaoDoCurso(cursoId);

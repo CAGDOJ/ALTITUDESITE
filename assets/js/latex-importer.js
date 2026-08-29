@@ -854,34 +854,63 @@ Continue o conteúdo aqui.
     return window.jspdf?.jsPDF || window.jsPDF || null;
   }
 
+  async function imageBlobToPngDataUrl(blob) {
+    if (!blob || !String(blob.type || '').startsWith('image/')) throw new Error('URL não retornou uma imagem.');
+    const objectUrl = URL.createObjectURL(blob);
+    try {
+      const image = new Image();
+      await new Promise((resolve, reject) => {
+        image.onload = resolve;
+        image.onerror = () => reject(new Error('Não foi possível decodificar a imagem externa.'));
+        image.src = objectUrl;
+      });
+      const width = image.naturalWidth || image.width;
+      const height = image.naturalHeight || image.height;
+      if (!width || !height) throw new Error('Imagem externa sem dimensões válidas.');
+      const maxSide = 2400;
+      const scale = Math.min(1, maxSide / Math.max(width, height));
+      const canvas = document.createElement('canvas');
+      canvas.width = Math.max(1, Math.round(width * scale));
+      canvas.height = Math.max(1, Math.round(height * scale));
+      const ctx = canvas.getContext('2d');
+      if (!ctx) throw new Error('Não foi possível preparar a imagem para o PDF.');
+      ctx.fillStyle = '#ffffff';
+      ctx.fillRect(0, 0, canvas.width, canvas.height);
+      ctx.drawImage(image, 0, 0, canvas.width, canvas.height);
+      return canvas.toDataURL('image/png');
+    } finally {
+      URL.revokeObjectURL(objectUrl);
+    }
+  }
+
   async function remoteImageDataUrl(url) {
     const safe = safeExternalImageUrl(url);
     if (!safe) return null;
     const read = async (response) => {
       if (!response.ok) throw new Error(`HTTP ${response.status}`);
       const blob = await response.blob();
-      if (!String(blob.type || '').startsWith('image/')) throw new Error('URL não retornou uma imagem.');
-      return await new Promise((resolve, reject) => {
-        const reader = new FileReader();
-        reader.onload = () => resolve(String(reader.result || ''));
-        reader.onerror = () => reject(reader.error || new Error('Falha ao ler imagem.'));
-        reader.readAsDataURL(blob);
-      });
+      return await imageBlobToPngDataUrl(blob);
     };
+    // V43: usa primeiro o proxy, evitando que o navegador tente ler diretamente
+    // imagens de sites que bloqueiam CORS. O retorno é sempre rasterizado para PNG
+    // antes de chegar ao jsPDF, eliminando o tipo UNKNOWN.
+    if (window.sb?.supabaseUrl) {
+      try {
+        const proxy = `${String(window.sb.supabaseUrl).replace(/\/$/,'')}/functions/v1/proxy-imagem-latex?url=${encodeURIComponent(safe)}`;
+        return await read(await fetch(proxy, {
+          method:'GET',
+          mode:'cors',
+          credentials:'omit'
+        }));
+      } catch (proxyError) {
+        console.warn('Proxy de imagem LaTeX indisponível; tentando acesso direto:', safe, proxyError);
+      }
+    }
     try {
       return await read(await fetch(safe, { mode:'cors', credentials:'omit' }));
     } catch (directError) {
-      // V42: muitas CDNs exibem a imagem no navegador, mas bloqueiam fetch/CORS,
-      // impedindo a incorporação no PDF. O proxy apenas transmite a imagem; não
-      // faz upload nem a salva no site.
-      try {
-        if (!window.sb?.supabaseUrl || !window.sb?.supabaseKey) throw directError;
-        const proxy = `${String(window.sb.supabaseUrl).replace(/\/$/,'')}/functions/v1/proxy-imagem-latex?url=${encodeURIComponent(safe)}`;
-        return await read(await fetch(proxy, { headers:{ 'apikey':window.sb.supabaseKey, 'Authorization':`Bearer ${window.sb.supabaseKey}` } }));
-      } catch (proxyError) {
-        console.warn('Imagem externa indisponível no PDF:', safe, proxyError);
-        return null;
-      }
+      console.warn('Imagem externa indisponível no PDF:', safe, directError);
+      return null;
     }
   }
 
@@ -1023,7 +1052,7 @@ Continue o conteúdo aqui.
             }
             ensure(imageHeight + (block.caption ? 12 : 5));
             const x = marginLeft + (contentWidth - imageWidth) / 2;
-            doc.addImage(imageData, props.fileType || undefined, x, y, imageWidth, imageHeight, undefined, 'FAST');
+            doc.addImage(imageData, 'PNG', x, y, imageWidth, imageHeight, undefined, 'FAST');
             y += imageHeight + 3;
             if (block.caption) writeWrapped(block.caption, { size: 9, color: '#64748B', align: 'center', after: 4 });
             else y += 2;

@@ -173,8 +173,22 @@ async function carregarAlunosDoSupabase() {
       cpf: aluno.cpf,
       data_nascimento: aluno.data_nascimento,
       objetivo: aluno.objetivo,
-      criado_em: aluno.criado_em
+      criado_em: aluno.criado_em,
+      auth_diag: null
     }));
+
+    // V43: compara o cadastro acadêmico com a conta real do Supabase Auth.
+    // Uma divergência de e-mail deixa de passar despercebida pelo gestor.
+    try {
+      const ids = alunos.map((item) => item.user_id).filter(Boolean);
+      if (ids.length) {
+        const diagnostico = await chamarGerenciarGestor('diagnosticar_acessos_alunos', { aluno_ids: ids });
+        const mapa = new Map((diagnostico?.alunos || []).map((item) => [String(item.user_id), item]));
+        alunos.forEach((item) => { item.auth_diag = mapa.get(String(item.user_id)) || null; });
+      }
+    } catch (diagError) {
+      console.warn('Diagnóstico de contas não disponível:', diagError?.message || diagError);
+    }
     
     renderAlunos();
   } catch (error) {
@@ -206,6 +220,37 @@ function getFilteredAln(){
   return data;
 }
 
+
+async function chamarGerenciarGestor(acao, extra = {}) {
+  const { data: sessionData, error: sessionError } = await sb.auth.getSession();
+  if (sessionError || !sessionData?.session?.access_token) throw new Error('Sua sessão de gestão expirou. Entre novamente.');
+  if (!sb.supabaseUrl || !sb.supabaseKey) throw new Error('Configuração do Supabase indisponível.');
+  const response = await fetch(`${String(sb.supabaseUrl).replace(/\/$/,'')}/functions/v1/gerenciar-gestor`, {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      'Authorization': `Bearer ${sessionData.session.access_token}`,
+      'apikey': sb.supabaseKey
+    },
+    body: JSON.stringify({ acao, ...extra })
+  });
+  const payload = await response.json().catch(() => ({}));
+  if (!response.ok || payload?.ok === false) {
+    const etapa = payload?.etapa ? ` [${payload.etapa}]` : '';
+    throw new Error(`${payload?.error || `Falha na função administrativa (${response.status}).`}${etapa}`);
+  }
+  return payload;
+}
+
+function emailContaResumo(aluno) {
+  const diag = aluno?.auth_diag;
+  if (!diag) return '';
+  if (!diag.auth_existe) return '<small class="account-health account-health-error">⚠ Conta Auth não encontrada</small>';
+  if (diag.divergente) return `<small class="account-health account-health-warning">⚠ E-mail do Auth: ${escapeHTML(diag.email_auth || 'não informado')}</small>`;
+  if (!diag.email_confirmado) return '<small class="account-health account-health-warning">⚠ E-mail de acesso não confirmado</small>';
+  return '<small class="account-health account-health-ok">Acesso sincronizado</small>';
+}
+
 function renderAlunos(){
   const tbody = $('#tabAlunos tbody');
   if(!tbody) return;
@@ -223,12 +268,12 @@ function renderAlunos(){
     <tr data-aluno-id="${a.id}">
       <td data-label="RA"><strong>${a.ra}</strong></td>
       <td data-label="Nome" class="student-name-cell">${String(a.nome || '')}</td>
-      <td data-label="E-mail">${a.email}</td>
+      <td data-label="E-mail"><span>${escapeHTML(a.email)}</span>${emailContaResumo(a)}</td>
       <td data-label="Telefone">${maskPhone(a.telefone)}</td>
       <td data-label="Status"><span class="badge ${a.status==='ATIVO'?'ativo':'inativo'}">${a.status}</span></td>
       <td data-label="Ações" class="student-actions">
         <button class="btn-mini primary-action-mini" data-act="edit" data-id="${a.id}">Editar dados</button>
-        ${podeRedefinirSenha ? `<button class="btn-mini" data-act="password" data-id="${a.id}">Redefinir senha</button>` : ''}
+        ${podeRedefinirSenha ? `<button class="btn-mini" data-act="password" data-id="${a.id}">Redefinir senha</button><button class="btn-mini" data-act="repair" data-id="${a.id}">Reparar conta</button>` : ''}
         <button class="btn-mini" data-act="toggle" data-id="${a.id}">${a.status==='ATIVO'?'Inativar':'Ativar'}</button>
         ${podeExcluirAluno ? `<button class="btn-mini student-delete-action" data-act="delete" data-id="${a.id}">Excluir aluno</button>` : ''}
       </td>
@@ -431,6 +476,77 @@ async function redefinirSenhaAluno(event) {
   }
 }
 
+
+function garantirModalReparoConta() {
+  let modal = document.getElementById('modalReparoContaAluno');
+  if (modal) return modal;
+  modal = document.createElement('div');
+  modal.id = 'modalReparoContaAluno';
+  modal.className = 'modal';
+  modal.setAttribute('aria-hidden', 'true');
+  modal.innerHTML = `
+    <div class="modal__sheet account-repair-sheet" role="dialog" aria-modal="true" aria-labelledby="reparoContaTitulo">
+      <div class="account-repair-head"><div><span>Diagnóstico de acesso</span><h3 id="reparoContaTitulo">Reparar conta do aluno</h3></div><button type="button" id="fecharReparoConta" aria-label="Fechar">×</button></div>
+      <div id="reparoContaResumo" class="account-repair-summary"></div>
+      <form id="formReparoConta" class="account-repair-form">
+        <input type="hidden" id="reparoContaUserId">
+        <label>Novo e-mail de acesso <input id="reparoContaEmail" type="email" autocomplete="off" required></label>
+        <label>Nova senha temporária <div class="account-password-row"><input id="reparoContaSenha" type="text" minlength="8" autocomplete="off"><button type="button" id="gerarSenhaReparo">Gerar senha</button></div><small>Deixe em branco para manter a senha atual.</small></label>
+        <label class="account-confirm-check"><input id="reparoContaConfirmarEmail" type="checkbox" checked> Confirmar administrativamente o e-mail após o reparo</label>
+        <div class="account-repair-actions"><button type="button" id="cancelarReparoConta">Cancelar</button><button type="submit" id="salvarReparoConta">Corrigir conta</button></div>
+      </form>
+    </div>`;
+  document.body.appendChild(modal);
+  const fechar = () => { document.activeElement?.blur?.(); modal.setAttribute('aria-hidden','true'); document.body.classList.remove('gestor-modal-open'); };
+  modal.querySelector('#fecharReparoConta')?.addEventListener('click', fechar);
+  modal.querySelector('#cancelarReparoConta')?.addEventListener('click', fechar);
+  modal.querySelector('#gerarSenhaReparo')?.addEventListener('click', () => { modal.querySelector('#reparoContaSenha').value = gerarSenhaTemporariaAluno(); });
+  modal.querySelector('#formReparoConta')?.addEventListener('submit', async (event) => {
+    event.preventDefault();
+    const button = modal.querySelector('#salvarReparoConta');
+    const original = button.textContent;
+    try {
+      button.disabled = true; button.textContent = 'Corrigindo...';
+      const userId = modal.querySelector('#reparoContaUserId').value;
+      const email = modal.querySelector('#reparoContaEmail').value.trim().toLowerCase();
+      const senha = modal.querySelector('#reparoContaSenha').value;
+      const confirmar = modal.querySelector('#reparoContaConfirmarEmail').checked;
+      const result = await chamarGerenciarGestor('reparar_acesso_aluno', { aluno_id:userId, novo_email:email, nova_senha:senha || null, confirmar_email:confirmar });
+      const senhaMsg = senha ? ` Senha temporária definida: ${senha}` : '';
+      alert(`Conta corrigida com sucesso. E-mail de acesso: ${result.email_auth || email}.${senhaMsg}`);
+      fechar();
+      await carregarAlunosDoSupabase();
+    } catch (error) {
+      alert(`Não foi possível reparar a conta. ${error.message}`);
+    } finally { button.disabled = false; button.textContent = original; }
+  });
+  return modal;
+}
+
+async function abrirReparoContaAluno(aluno) {
+  if (!aluno?.user_id) return alert('Aluno não identificado.');
+  const modal = garantirModalReparoConta();
+  try {
+    mostrarCarregamento('Verificando conta de acesso...');
+    const result = await chamarGerenciarGestor('diagnosticar_acessos_alunos', { aluno_ids:[aluno.user_id] });
+    const diag = result?.alunos?.[0] || {};
+    aluno.auth_diag = diag;
+    modal.querySelector('#reparoContaUserId').value = aluno.user_id;
+    modal.querySelector('#reparoContaEmail').value = diag.email_auth || aluno.email || '';
+    modal.querySelector('#reparoContaSenha').value = '';
+    modal.querySelector('#reparoContaResumo').innerHTML = `
+      <div><span>Aluno</span><strong>${escapeHTML(aluno.nome || '')}</strong></div>
+      <div><span>RA</span><strong>${escapeHTML(aluno.ra || '—')}</strong></div>
+      <div><span>E-mail no cadastro</span><strong>${escapeHTML(diag.email_cadastro || aluno.email || '—')}</strong></div>
+      <div><span>E-mail no Auth</span><strong>${escapeHTML(diag.email_auth || 'Conta Auth não encontrada')}</strong></div>
+      <div><span>Confirmado</span><strong>${diag.email_confirmado ? 'Sim' : 'Não'}</strong></div>
+      <div><span>Último acesso</span><strong>${diag.last_sign_in_at ? new Date(diag.last_sign_in_at).toLocaleString('pt-BR') : 'Nunca'}</strong></div>`;
+    modal.setAttribute('aria-hidden','false');
+    document.body.classList.add('gestor-modal-open');
+  } catch (error) { alert(`Não foi possível diagnosticar a conta. ${error.message}`); }
+  finally { esconderCarregamento(); }
+}
+
 async function excluirAlunoGestao(aluno) {
   if (!aluno?.user_id) throw new Error('Aluno não identificado.');
   if (Number(window.GESTOR_ATUAL?.nivel_acesso || 0) < 4) throw new Error('Somente a gestão de nível 4 pode excluir alunos.');
@@ -441,10 +557,8 @@ async function excluirAlunoGestao(aluno) {
     : window.prompt(aviso, '');
   if (String(confirmacao || '').trim().toUpperCase() !== 'EXCLUIR') return false;
 
-  const motivo = window.AltitudeDialog
-    ? await window.AltitudeDialog.prompt({ title:'Motivo da exclusão', label:'Informe um motivo para o registro de auditoria.', placeholder:'Ex.: cadastro duplicado', required:true, confirmText:'Continuar' })
-    : window.prompt('Informe o motivo da exclusão:', 'Cadastro removido pela gestão');
-  if (!String(motivo || '').trim()) return false;
+  const motivo = 'Exclusão definitiva confirmada no Portal de Gestão';
+  mostrarCarregamento('Excluindo aluno definitivamente...');
 
   const { data: sessionData, error: sessionError } = await sb.auth.getSession();
   if (sessionError || !sessionData?.session?.access_token) throw new Error('Sua sessão de gestão expirou. Entre novamente.');
@@ -510,15 +624,18 @@ function carregarAlunos(){
       if(act==='password'){
         abrirModalSenhaAluno(alunos[idx]);
       }
+
+      if(act==='repair'){
+        await abrirReparoContaAluno(alunos[idx]);
+        return;
+      }
       
       if(act==='delete'){
         try {
-          mostrarCarregamento('Excluindo aluno...');
           const excluido = await excluirAlunoGestao(alunos[idx]);
           if (excluido) {
-            alunos.splice(idx, 1);
-            renderAlunos();
-            alert('Aluno excluído com sucesso.');
+            await carregarAlunosDoSupabase();
+            alert('Aluno excluído definitivamente do cadastro e do acesso Auth.');
           }
         } catch (error) {
           alert(`Não foi possível excluir o aluno. ${error.message}`);
@@ -595,7 +712,7 @@ function gerarRaLocal(){
   const $$ = (s, sc = document) => Array.from(sc.querySelectorAll(s));
 
   const BUCKET_CAPAS = 'capas_cursos';
-  const AREAS_PADRAO = ['Tecnologia', 'Humanas', 'Saúde', 'Administração', 'Engenharia'];
+  const AREAS_PADRAO = []; // V43: catálogo oficial vem de areas_cursos_v36; sem lista hardcoded.
   const AREAS_STORAGE_KEY = 'altitude_areas_custom';
 
   const GC = {
@@ -635,7 +752,7 @@ function gerarRaLocal(){
   }
   function areasDisponiveis() {
     const mapa = new Map();
-    [...AREAS_PADRAO, ...GC.areasDb, ...areasCustomizadas(), ...GC.cursos.map((c) => c.categoria).filter(Boolean)].forEach((item) => {
+    [...GC.areasDb, ...GC.cursos.map((c) => c.categoria).filter(Boolean)].forEach((item) => {
       const area = normalizarArea(item);
       if (area && !mapa.has(areaKey(area))) mapa.set(areaKey(area), area);
     });
@@ -667,9 +784,11 @@ function gerarRaLocal(){
       .order('id', { ascending: false });
 
     const { data: cursosRaw, error } = await q;
+    const todosOrdenadosAsc = [...(cursosRaw || [])].sort((a,b) => Number(a.id) - Number(b.id));
+    const codigoVisual = new Map(todosOrdenadosAsc.map((curso, index) => [Number(curso.id), index + 1]));
     const cursos = (cursosRaw || []).filter((curso) =>
       !filtroArea || filtroArea === 'TODAS' || areaKey(curso.categoria) === areaKey(filtroArea)
-    );
+    ).map((curso) => ({ ...curso, _codigo_visual: codigoVisual.get(Number(curso.id)) || 0 }));
     if (error) throw error;
     if (!cursos || !cursos.length) return [];
 
@@ -739,6 +858,8 @@ function gerarRaLocal(){
     });
   }
 
+  window.altitudeRecarregarAreasCursos = async () => { await carregarAreasCadastradas(); await carregarCursosCompleto(); };
+
   function abrirModalNovaArea() {
     const input = $('#fAreaNome');
     if (input) input.value = '';
@@ -753,7 +874,7 @@ function gerarRaLocal(){
   async function cadastrarNovaArea(event) {
     event?.preventDefault();
     const input = $('#fAreaNome');
-    const nova = salvarAreaCustomizada(input?.value || '');
+    const nova = normalizarArea(input?.value || '');
     if (!nova) return alert('Informe o nome da área.');
     try {
       const slug = areaKey(nova).replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '');
@@ -773,7 +894,7 @@ function gerarRaLocal(){
 
     tbody.innerHTML = GC.cursos.map(c => `
       <tr data-id="${c.id}">
-        <td data-label="Código" class="col-id">${c.id}</td>
+        <td data-label="Código" class="col-id">${c._codigo_visual || c.id}</td>
         <td data-label="Curso" class="col-curso">
           <div class="curso-info">
             <img src="${thumb(c.capa_url)}" class="curso-thumb" alt="Capa do curso">
@@ -828,7 +949,7 @@ function gerarRaLocal(){
 
       $('#fCursoNome').value  = '';
       renderAreasSelects();
-      $('#fCursoArea').value  = AREAS_PADRAO[0] || 'Tecnologia';
+      if ($('#fCursoArea')?.options?.length) $('#fCursoArea').value = $('#fCursoArea').options[0].value;
       $('#fCursoHoras').value = '5';
       $('#fCursoDesc').value  = '';
       $('#fCursoPub').value   = 'NAO';
@@ -855,7 +976,7 @@ function gerarRaLocal(){
       $('#tituloCurso').textContent = `Editar curso #${id}`;
 
       $('#fCursoNome').value  = c.titulo || '';
-      renderAreasSelects(c.categoria || AREAS_PADRAO[0]);
+      renderAreasSelects(c.categoria || '');
       $('#fCursoHoras').value = c.carga_horaria || 0;
       $('#fCursoDesc').value  = c.descricao || '';
       $('#fCursoPub').value   = c.publicado ? 'SIM' : 'NAO';

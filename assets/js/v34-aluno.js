@@ -103,7 +103,7 @@
       ${coupon}
       ${pending ? `<div class="payment-coupon-row"><input type="text" maxlength="30" placeholder="Digite o cupom" data-cert-coupon-input="${Number(cert.id)}"><button type="button" data-apply-cert-coupon="${Number(cert.id)}">Aplicar cupom</button></div>` : ''}
       <div class="payment-request-actions">
-        ${pending ? `<button type="button" class="whatsapp-payment-button" data-open-cert-whatsapp="${Number(cert.id)}">Efetuar pagamento</button><button type="button" class="secondary-button" data-report-cert-payment="${Number(cert.id)}">Já enviei o comprovante</button>` : ''}
+        ${pending ? `<button type="button" class="whatsapp-payment-button" aria-label="Efetuar pagamento" title="Efetuar pagamento" data-open-cert-whatsapp="${Number(cert.id)}">Efetuar pagamento</button><button type="button" class="secondary-button" data-report-cert-payment="${Number(cert.id)}">Já enviei o comprovante</button>` : ''}
         ${status === 'PAGAMENTO_INFORMADO' ? '<small>A equipe financeira foi avisada. A liberação receberá a confirmação automaticamente após a conferência.</small>' : ''}
         ${status === 'PAGO' ? '<small>Pagamento confirmado. A solicitação está disponível para a equipe de certificação.</small>' : ''}
         ${status === 'ISENTO' ? '<small>Esta solicitação está coberta por pack, promoção ou cupom integral.</small>' : ''}
@@ -128,7 +128,7 @@
       ${row.cupom_codigo ? `<span class="payment-coupon-applied">Cupom ${esc(row.cupom_codigo)} aplicado</span>` : ''}
       ${!paid ? `<div class="payment-coupon-row"><input type="text" maxlength="30" placeholder="Digite o cupom" data-pack-coupon-input="${Number(row.id)}"><button type="button" data-apply-pack-coupon="${Number(row.id)}">Aplicar cupom</button></div>` : ''}
       <div class="payment-request-actions">
-        ${!paid ? `<button type="button" class="whatsapp-payment-button" data-open-pack-whatsapp="${Number(row.id)}">Efetuar pagamento</button><button type="button" class="secondary-button" data-report-pack-payment="${Number(row.id)}">Já enviei o comprovante</button>` : '<small>Pack confirmado. O aluno escolhe os cursos posteriormente; somente a quantidade é controlada.</small>'}
+        ${!paid ? `<button type="button" class="whatsapp-payment-button" aria-label="Efetuar pagamento" title="Efetuar pagamento" data-open-pack-whatsapp="${Number(row.id)}">Efetuar pagamento</button><button type="button" class="secondary-button" data-report-pack-payment="${Number(row.id)}">Já enviei o comprovante</button>` : '<small>Pack confirmado. O aluno escolhe os cursos posteriormente; somente a quantidade é controlada.</small>'}
       </div>
     </article>`;
   }

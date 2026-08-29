@@ -63,7 +63,7 @@
     replaceLocalArea(antigo,nome);
     toast('Área renomeada e cursos vinculados atualizados.');
     await loadAreas();
-    await window.carregarCursosCompleto?.();
+    await window.altitudeRecarregarAreasCursos?.();
   }
   async function deleteArea(id){
     const item=areas.find(x=>Number(x.id)===Number(id)); if(!item)return;
@@ -74,7 +74,7 @@
     const {error}=await sb.from('areas_cursos_v36').delete().eq('id',Number(id));
     if(error)return toast(error.message,true);
     removeLocalArea(item.nome);
-    toast('Área excluída.'); await loadAreas(); await window.carregarCursosCompleto?.();
+    toast('Área excluída.'); await loadAreas(); await window.altitudeRecarregarAreasCursos?.();
   }
   function openAreas(){ $('modalGerenciarAreas')?.setAttribute('aria-hidden','false'); loadAreas(); }
   function closeAreas(){ $('modalGerenciarAreas')?.setAttribute('aria-hidden','true'); }

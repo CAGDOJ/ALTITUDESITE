@@ -40,7 +40,12 @@
     document.body.appendChild(overlay);
 
     const close = (value = null) => {
+      // V43: retire o foco de dentro do diálogo antes de ocultá-lo. Isso evita
+      // o aviso do navegador sobre aria-hidden aplicado a um descendente focado.
+      const active = document.activeElement;
+      if (active && overlay.contains(active)) active.blur();
       overlay.setAttribute('aria-hidden', 'true');
+      overlay.inert = true;
       document.documentElement.classList.remove('alt-dialog-open');
       const done = resolver;
       resolver = null;
@@ -104,6 +109,7 @@
     input.placeholder = config.input?.placeholder || '';
     inputLabel.textContent = config.input?.label || 'Informação';
 
+    node.inert = false;
     node.setAttribute('aria-hidden', 'false');
     document.documentElement.classList.add('alt-dialog-open');
     window.setTimeout(() => {

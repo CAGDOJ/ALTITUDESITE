@@ -143,7 +143,7 @@
     <button data-view="cronograma">▤ Cronograma</button>
     <button data-view="monitor">♢ Monitor de Editais</button>
   </nav>
-  <div class="sideFoot">Nenhum edital pré-carregado.<div class="build">Versão 18 · 07/10/2026</div></div>
+  <div class="sideFoot">Nenhum edital pré-carregado.<div class="build">Versão 19 · 07/10/2026</div></div>
 </aside>
 <main class="main">
 <header class="top">
@@ -915,7 +915,6 @@ function setLoadedEditalHeader(cargo,info=examInfo,fileName=''){
 function extractCargoSections(text){
   const t=normalizeText(text);
 
-  // Mantém posição de cada linha para separar corretamente o conteúdo de cada cargo.
   const lines=[];
   const re=/[^\n]+/g;
   let lm;
@@ -927,92 +926,139 @@ function extractCargoSections(text){
   const found=[];
   const seen=new Set();
 
-  const cleanCargoName=(value)=>{
+  const forbiddenContext=/\b(PERFIL|PSICOL[ÓO]GIC|AVALIA[CÇ][AÃ]O|ETAPA|FASE|APROVA[CÇ][AÃ]O|CLASSIFICA[CÇ][AÃ]O|CONVOCA[CÇ][AÃ]O|REQUISITO|EXAME|TESTE|INSPE[CÇ][AÃ]O|INVESTIGA[CÇ][AÃ]O SOCIAL|CURSO DE FORMA[CÇ][AÃ]O|MATR[ÍI]CULA|NOMEA[CÇ][AÃ]O|POSSE|RESULTADO|CONCURSO P[ÚU]BLICO|VAGAS|INSCRI[CÇ][AÃ]O|CRONOGRAMA)\b/i;
+
+  const normalizeCargo=(value)=>{
     let s=cleanLine(value)
       .replace(/^[\s:;,\-–—]+/,'')
       .replace(/[\s:;,\-–—]+$/,'')
       .replace(/^DE\s+/i,'')
+      .replace(/\s*-\s*/g,'-')
+      .replace(/\s{2,}/g,' ')
       .trim();
 
-    // Evita capturar frases administrativas como se fossem cargo.
-    if(!s || s.length<3 || s.length>120) return '';
-    if(/^(CONTE[ÚU]DO PROGRAM[ÁA]TICO|CONHECIMENTOS|DISCIPLINAS|REQUISITOS|ANEXO|OBSERVA[CÇ][AÃ]O)/i.test(s)) return '';
-    if(/\b(VAGAS|INSCRI[CÇ][AÃ]O|PROVA|ETAPA|CAP[ÍI]TULO|CRONOGRAMA)\b/i.test(s) && !/\b(OFICIAL|SOLDADO|AGENTE|DELEGADO|INVESTIGADOR|PERITO|T[ÉE]CNICO|ANALISTA)\b/i.test(s)) return '';
+    if(!s || s.length<3 || s.length>100) return '';
+    if(forbiddenContext.test(s)) return '';
+    if(/^(CONTE[ÚU]DO PROGRAM[ÁA]TICO|CONHECIMENTOS|DISCIPLINAS|ANEXO|OBSERVA[CÇ][AÃ]O)\b/i.test(s)) return '';
 
-    return s.replace(/\s{2,}/g,' ');
+    return s;
   };
 
   const addFound=(cargo,start,end)=>{
-    cargo=cleanCargoName(cargo);
+    cargo=normalizeCargo(cargo);
     if(!cargo) return;
-    const key=searchKey(cargo);
+    const key=compactKey(cargo);
     if(!key || seen.has(key)) return;
     seen.add(key);
-    found.push({cargo,start,end});
+    found.push({cargo,start,end,key});
   };
+
+  const exactRole=/^(ALUNO[\s-]*OFICIAL(?:\s+PM)?|OFICIAL(?:\s+PM)?|SOLDADO(?:\s+PM)?|DELEGADO(?:\s+DE\s+POL[ÍI]CIA(?:\s+CIVIL)?)?|OFICIAL\s+INVESTIGADOR(?:\s+DE\s+POL[ÍI]CIA\s+CIVIL)?|INVESTIGADOR(?:\s+DE\s+POL[ÍI]CIA)?|AGENTE(?:\s+DE\s+POL[ÍI]CIA)?|ESCRIV[AÃ]O(?:\s+DE\s+POL[ÍI]CIA)?|PERITO(?:\s+CRIMINAL)?|T[ÉE]CNICO(?:\s+[^:]{2,60})?|ANALISTA(?:\s+[^:]{2,60})?|AUDITOR(?:\s+[^:]{2,60})?|GUARDA(?:\s+MUNICIPAL)?|INSPETOR(?:\s+[^:]{2,60})?|PROFESSOR(?:\s+[^:]{2,60})?|M[ÉE]DICO(?:\s+[^:]{2,60})?|ENFERMEIRO(?:\s+[^:]{2,60})?|FISCAL(?:\s+[^:]{2,60})?|PROCURADOR(?:\s+[^:]{2,60})?)\s*:?\s*$/i;
 
   for(let i=0;i<lines.length;i++){
     const line=lines[i].text;
 
-    // Exemplos aceitos:
-    // CARGO: ALUNO-OFICIAL PM
-    // CARGOS DE ALUNO-OFICIAL PM
-    // CARGO DE DELEGADO DE POLÍCIA CIVIL
-    // PARA O CARGO DE SOLDADO PM
+    // 1. Marcador explícito de cargo. Aceita qualquer nome, desde que não seja
+    // uma frase de etapa/requisito/avaliação.
     let m=line.match(/^CARGOS?\s*(?::|\-|–|—)?\s*(?:DE\s+)?(.+)$/i);
-    if(m){
+    if(m && !forbiddenContext.test(m[1])){
       addFound(m[1],lines[i].start,lines[i].end);
       continue;
     }
 
     m=line.match(/^PARA\s+(?:O|OS)\s+CARGOS?\s+(?:DE\s+)?(.+)$/i);
+    if(m && !forbiddenContext.test(m[1])){
+      addFound(m[1],lines[i].start,lines[i].end);
+      continue;
+    }
+
+    // 2. Linha isolada que é, por si só, um nome de cargo.
+    m=line.match(exactRole);
     if(m){
       addFound(m[1],lines[i].start,lines[i].end);
       continue;
     }
 
-    m=line.match(/^(?:CONTE[ÚU]DO PROGRAM[ÁA]TICO\s*[-–—:]\s*)?(ALUNO[\s-]*OFICIAL(?:\s+PM)?|OFICIAL(?:\s+PM)?|SOLDADO(?:\s+PM)?|DELEGADO(?:\s+DE\s+POL[ÍI]CIA(?:\s+CIVIL)?)?|OFICIAL\s+INVESTIGADOR(?:\s+DE\s+POL[ÍI]CIA\s+CIVIL)?|INVESTIGADOR(?:\s+DE\s+POL[ÍI]CIA)?|AGENTE(?:\s+DE\s+POL[ÍI]CIA)?|ESCRIV[AÃ]O(?:\s+DE\s+POL[ÍI]CIA)?|PERITO(?:\s+CRIMINAL)?|T[ÉE]CNICO(?:\s+[^:]{2,70})?|ANALISTA(?:\s+[^:]{2,70})?|AUDITOR(?:\s+[^:]{2,70})?|GUARDA(?:\s+MUNICIPAL)?|INSPETOR(?:\s+[^:]{2,70})?)\s*:?\s*$/i);
-    if(m){
-      addFound(m[1],lines[i].start,lines[i].end);
-      continue;
-    }
-
-    // Cabeçalho curto em caixa alta contendo um termo típico de cargo.
+    // 3. Cabeçalho em caixa alta: só vale se COMEÇAR pelo nome do cargo.
+    // Isso impede "PERFIL PSICOLÓGICO DO ALUNO-OFICIAL PM" de virar cargo.
     const letters=line.replace(/[^A-Za-zÀ-ÿ]/g,'');
     const upperLetters=letters.replace(/[^A-ZÁÀÂÃÉÊÍÓÔÕÚÇ]/g,'');
     const mostlyUpper=letters.length>=4 && upperLetters.length/letters.length>.72;
-    const occupation=/\b(ALUNO|OFICIAL|SOLDADO|DELEGADO|INVESTIGADOR|AGENTE|ESCRIV[AÃ]O|PERITO|T[ÉE]CNICO|ANALISTA|AUDITOR|GUARDA|INSPETOR|PROFESSOR|M[ÉE]DICO|ENFERMEIRO|FISCAL|PROCURADOR)\b/i.test(line);
-    if(mostlyUpper && occupation && line.length<=100){
-      addFound(line,lines[i].start,lines[i].end);
-    }
-  }
+    const beginsWithRole=/^(ALUNO[\s-]*OFICIAL|OFICIAL\b|SOLDADO\b|DELEGADO\b|INVESTIGADOR\b|AGENTE\b|ESCRIV[AÃ]O\b|PERITO\b|T[ÉE]CNICO\b|ANALISTA\b|AUDITOR\b|GUARDA\b|INSPETOR\b|PROFESSOR\b|M[ÉE]DICO\b|ENFERMEIRO\b|FISCAL\b|PROCURADOR\b)/i.test(line);
 
-  // Compatibilidade extra com PDFs que quebram o texto do cabeçalho em caracteres/espaços.
-  if(!found.length){
-    const nm=compactNormalizedWithMap(t);
-    const known=[
-      {cargo:'ALUNO-OFICIAL PM',needle:'ALUNOOFICIALPM'},
-      {cargo:'ALUNO-OFICIAL PM',needle:'ALUNOOFICIAL'},
-      {cargo:'DELEGADO DE POLÍCIA CIVIL',needle:'DELEGADODEPOLICIACIVIL'},
-      {cargo:'OFICIAL INVESTIGADOR DE POLÍCIA CIVIL',needle:'OFICIALINVESTIGADORDEPOLICIACIVIL'}
-    ];
-    for(const spec of known){
-      const idx=nm.key.indexOf(spec.needle);
-      if(idx<0) continue;
-      const rawStart=nm.map[idx];
-      const rawEnd=nm.map[Math.min(nm.map.length-1,idx+spec.needle.length-1)]+1;
-      addFound(spec.cargo,rawStart,rawEnd);
+    if(mostlyUpper && beginsWithRole && !forbiddenContext.test(line) && line.length<=90){
+      addFound(line,lines[i].start,lines[i].end);
     }
   }
 
   found.sort((a,b)=>a.start-b.start);
 
+  // Se não houver cabeçalho inequívoco, detecta cargos conhecidos pelo texto,
+  // mas cria apenas UMA entrada por cargo e usa todo o conteúdo do anexo.
+  if(!found.length){
+    const compact=compactKey(t);
+    const known=[
+      {cargo:'ALUNO-OFICIAL PM',needles:['ALUNOOFICIALPM','ALUNOOFICIAL']},
+      {cargo:'DELEGADO DE POLÍCIA CIVIL',needles:['DELEGADODEPOLICIACIVIL']},
+      {cargo:'OFICIAL INVESTIGADOR DE POLÍCIA CIVIL',needles:['OFICIALINVESTIGADORDEPOLICIACIVIL']}
+    ];
+
+    const detected=known.filter(spec=>spec.needles.some(n=>compact.includes(n)));
+
+    if(detected.length===1){
+      return [{cargo:detected[0].cargo,body:t.trim()}];
+    }
+
+    // Para mais de um cargo conhecido, só cria se os nomes realmente ocorrerem
+    // em posições distintas; não usa frases de etapa para inventar seções.
+    if(detected.length>1){
+      const nm=compactNormalizedWithMap(t);
+      for(const spec of detected){
+        let best=-1;
+        for(const needle of spec.needles){
+          const idx=nm.key.indexOf(needle);
+          if(idx>=0 && (best<0 || idx<best)) best=idx;
+        }
+        if(best>=0){
+          const rawStart=nm.map[best]||0;
+          addFound(spec.cargo,rawStart,rawStart);
+        }
+      }
+      found.sort((a,b)=>a.start-b.start);
+    }
+  }
+
   if(!found.length){
     throw new Error('O conteúdo programático foi encontrado, mas não consegui reconhecer automaticamente o nome do cargo.');
   }
 
-  return found.map((item,i)=>{
-    const bodyEnd=i+1<found.length?found[i+1].start:t.length;
+  // Remove detecções que sejam apenas variações do MESMO cargo.
+  const canonical=[];
+  const canonicalKeys=[];
+  for(const item of found){
+    const k=compactKey(item.cargo);
+    const normalizedK=k
+      .replace(/^CARGO/,'')
+      .replace(/^DE/,'');
+    const duplicate=canonicalKeys.some(existing=>
+      existing===normalizedK ||
+      existing.includes(normalizedK) ||
+      normalizedK.includes(existing)
+    );
+    if(!duplicate){
+      canonical.push(item);
+      canonicalKeys.push(normalizedK);
+    }
+  }
+
+  // Caso todas as ocorrências apontem para um único cargo, todo o anexo pertence
+  // a esse cargo. Assim títulos de etapas posteriores não quebram o conteúdo.
+  if(canonical.length===1){
+    return [{cargo:canonical[0].cargo,body:t.trim()}];
+  }
+
+  return canonical.map((item,i)=>{
+    const bodyEnd=i+1<canonical.length?canonical[i+1].start:t.length;
     return {
       cargo:item.cargo,
       body:t.slice(item.end,bodyEnd).trim()

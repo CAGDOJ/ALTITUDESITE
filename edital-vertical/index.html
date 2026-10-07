@@ -141,7 +141,7 @@
     <button data-view="cronograma">▤ Cronograma</button>
     <button data-view="monitor">♢ Monitor de Editais</button>
   </nav>
-  <div class="sideFoot">Nenhum edital pré-carregado.<div class="build">Versão 15 · 07/10/2026</div></div>
+  <div class="sideFoot">Nenhum edital pré-carregado.<div class="build">Versão 16 · 07/10/2026</div></div>
 </aside>
 <main class="main">
 <header class="top">
@@ -228,6 +228,7 @@ let currentFileHash='';
 let currentEditalId='';
 let currentUser=null;
 let supabaseClient=null;
+let googleProviderEnabled=false;
 const qs=s=>document.querySelector(s),qsa=s=>[...document.querySelectorAll(s)];
 const esc=s=>String(s??'').replace(/[&<>"']/g,ch=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#039;'}[ch]));
 
@@ -384,6 +385,32 @@ function updateTopicFromRow(id,field,value){
   if(['q','c','e'].includes(field)) recordAreaSnapshot(t.area);
   render();
 }
+async function refreshGoogleProviderState(){
+  const cfg=window.EDITAL_VERTICAL_SUPABASE||{};
+  const btn=qs('#googleLoginBtn');
+  if(!cfg.url||!cfg.anonKey||!btn) return false;
+  try{
+    const res=await fetch(cfg.url.replace(/\/$/,'')+'/auth/v1/settings',{
+      headers:{apikey:cfg.anonKey}
+    });
+    const settings=await res.json();
+    googleProviderEnabled=!!settings?.external?.google;
+  }catch{
+    googleProviderEnabled=false;
+  }
+  btn.classList.toggle('disabledGoogle',!googleProviderEnabled);
+  btn.setAttribute('aria-disabled',googleProviderEnabled?'false':'true');
+  const badge=btn.querySelector('small');
+  if(googleProviderEnabled){
+    badge?.remove();
+  }else if(!badge){
+    const small=document.createElement('small');
+    small.textContent='finalizando configuração';
+    btn.appendChild(small);
+  }
+  return googleProviderEnabled;
+}
+
 async function initSupabase(){
   const cfg=window.EDITAL_VERTICAL_SUPABASE||{};
   if(!cfg.url||!cfg.anonKey||!window.supabase){
@@ -391,6 +418,7 @@ async function initSupabase(){
     return;
   }
   supabaseClient=window.supabase.createClient(cfg.url,cfg.anonKey);
+  await refreshGoogleProviderState();
   const {data}=await supabaseClient.auth.getSession();
   currentUser=data.session?.user||null;
   updateAuthUI();
@@ -440,7 +468,29 @@ function updateAuthUI(){
 }
 
 async function loginGoogle(){
-  showAuthMessage('O Google ainda não está habilitado no Supabase. Conclua o provedor Google no painel; enquanto isso, use e-mail e senha.',true);
+  if(!supabaseClient){
+    showAuthMessage('Não foi possível conectar ao serviço de autenticação. Atualize a página e tente novamente.',true);
+    return;
+  }
+
+  if(!googleProviderEnabled){
+    await refreshGoogleProviderState();
+  }
+
+  if(!googleProviderEnabled){
+    showAuthMessage('O login com Google ainda não foi habilitado no Supabase. Por enquanto, use e-mail e senha.',true);
+    return;
+  }
+
+  const {error}=await supabaseClient.auth.signInWithOAuth({
+    provider:'google',
+    options:{
+      redirectTo:'https://www.portalaltitude.com.br/edital-vertical/',
+      queryParams:{access_type:'offline',prompt:'select_account'}
+    }
+  });
+
+  if(error) showAuthMessage('Não foi possível entrar com Google: '+error.message,true);
 }
 async function loginEmail(email,password){
   if(!supabaseClient){

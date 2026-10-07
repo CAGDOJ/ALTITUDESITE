@@ -143,7 +143,7 @@
     <button data-view="cronograma">▤ Cronograma</button>
     <button data-view="monitor">♢ Monitor de Editais</button>
   </nav>
-  <div class="sideFoot">Nenhum edital pré-carregado.<div class="build">Versão 17 · 07/10/2026</div></div>
+  <div class="sideFoot">Nenhum edital pré-carregado.<div class="build">Versão 18 · 07/10/2026</div></div>
 </aside>
 <main class="main">
 <header class="top">
@@ -709,9 +709,10 @@ async function readProgrammaticAnnex(file,onProgress){
 
   const isCargoProgramPage=(txt)=>{
     const k=compactKey(txt);
-    return k.includes('CONTEUDOPROGRAMATICO') &&
-      (k.includes('DELEGADODEPOLICIACIVIL') ||
-       k.includes('OFICIALINVESTIGADORDEPOLICIACIVIL'));
+    if(!k.includes('CONTEUDOPROGRAMATICO')) return false;
+    const n=searchKey(txt);
+    return /\bCARGOS?\b/.test(n) ||
+           /\b(ALUNO|OFICIAL|SOLDADO|DELEGADO|INVESTIGADOR|AGENTE|ESCRIVAO|PERITO|TECNICO|ANALISTA|AUDITOR|GUARDA|INSPETOR|PROFESSOR|MEDICO|ENFERMEIRO|FISCAL|PROCURADOR)\b/.test(n);
   };
 
   // IMPORTANT: find the actual ANEXO I first, not the later Oficial heading.
@@ -913,35 +914,108 @@ function setLoadedEditalHeader(cargo,info=examInfo,fileName=''){
 
 function extractCargoSections(text){
   const t=normalizeText(text);
-  const nm=compactNormalizedWithMap(t);
 
-  const wanted=[
-    {cargo:'DELEGADO DE POLÍCIA CIVIL',needle:'DELEGADODEPOLICIACIVIL'},
-    {cargo:'OFICIAL INVESTIGADOR DE POLÍCIA CIVIL',needle:'OFICIALINVESTIGADORDEPOLICIACIVIL'}
-  ];
+  // Mantém posição de cada linha para separar corretamente o conteúdo de cada cargo.
+  const lines=[];
+  const re=/[^\n]+/g;
+  let lm;
+  while((lm=re.exec(t))){
+    const value=cleanLine(lm[0]);
+    if(value) lines.push({text:value,start:lm.index,end:lm.index+lm[0].length});
+  }
 
   const found=[];
+  const seen=new Set();
 
-  for(const spec of wanted){
-    const idx=nm.key.indexOf(spec.needle);
-    if(idx<0) continue;
+  const cleanCargoName=(value)=>{
+    let s=cleanLine(value)
+      .replace(/^[\s:;,\-–—]+/,'')
+      .replace(/[\s:;,\-–—]+$/,'')
+      .replace(/^DE\s+/i,'')
+      .trim();
 
-    const rawStart=nm.map[idx];
-    const rawEnd=nm.map[Math.min(nm.map.length-1,idx+spec.needle.length-1)]+1;
-    found.push({cargo:spec.cargo,start:rawStart,end:rawEnd});
+    // Evita capturar frases administrativas como se fossem cargo.
+    if(!s || s.length<3 || s.length>120) return '';
+    if(/^(CONTE[ÚU]DO PROGRAM[ÁA]TICO|CONHECIMENTOS|DISCIPLINAS|REQUISITOS|ANEXO|OBSERVA[CÇ][AÃ]O)/i.test(s)) return '';
+    if(/\b(VAGAS|INSCRI[CÇ][AÃ]O|PROVA|ETAPA|CAP[ÍI]TULO|CRONOGRAMA)\b/i.test(s) && !/\b(OFICIAL|SOLDADO|AGENTE|DELEGADO|INVESTIGADOR|PERITO|T[ÉE]CNICO|ANALISTA)\b/i.test(s)) return '';
+
+    return s.replace(/\s{2,}/g,' ');
+  };
+
+  const addFound=(cargo,start,end)=>{
+    cargo=cleanCargoName(cargo);
+    if(!cargo) return;
+    const key=searchKey(cargo);
+    if(!key || seen.has(key)) return;
+    seen.add(key);
+    found.push({cargo,start,end});
+  };
+
+  for(let i=0;i<lines.length;i++){
+    const line=lines[i].text;
+
+    // Exemplos aceitos:
+    // CARGO: ALUNO-OFICIAL PM
+    // CARGOS DE ALUNO-OFICIAL PM
+    // CARGO DE DELEGADO DE POLÍCIA CIVIL
+    // PARA O CARGO DE SOLDADO PM
+    let m=line.match(/^CARGOS?\s*(?::|\-|–|—)?\s*(?:DE\s+)?(.+)$/i);
+    if(m){
+      addFound(m[1],lines[i].start,lines[i].end);
+      continue;
+    }
+
+    m=line.match(/^PARA\s+(?:O|OS)\s+CARGOS?\s+(?:DE\s+)?(.+)$/i);
+    if(m){
+      addFound(m[1],lines[i].start,lines[i].end);
+      continue;
+    }
+
+    m=line.match(/^(?:CONTE[ÚU]DO PROGRAM[ÁA]TICO\s*[-–—:]\s*)?(ALUNO[\s-]*OFICIAL(?:\s+PM)?|OFICIAL(?:\s+PM)?|SOLDADO(?:\s+PM)?|DELEGADO(?:\s+DE\s+POL[ÍI]CIA(?:\s+CIVIL)?)?|OFICIAL\s+INVESTIGADOR(?:\s+DE\s+POL[ÍI]CIA\s+CIVIL)?|INVESTIGADOR(?:\s+DE\s+POL[ÍI]CIA)?|AGENTE(?:\s+DE\s+POL[ÍI]CIA)?|ESCRIV[AÃ]O(?:\s+DE\s+POL[ÍI]CIA)?|PERITO(?:\s+CRIMINAL)?|T[ÉE]CNICO(?:\s+[^:]{2,70})?|ANALISTA(?:\s+[^:]{2,70})?|AUDITOR(?:\s+[^:]{2,70})?|GUARDA(?:\s+MUNICIPAL)?|INSPETOR(?:\s+[^:]{2,70})?)\s*:?\s*$/i);
+    if(m){
+      addFound(m[1],lines[i].start,lines[i].end);
+      continue;
+    }
+
+    // Cabeçalho curto em caixa alta contendo um termo típico de cargo.
+    const letters=line.replace(/[^A-Za-zÀ-ÿ]/g,'');
+    const upperLetters=letters.replace(/[^A-ZÁÀÂÃÉÊÍÓÔÕÚÇ]/g,'');
+    const mostlyUpper=letters.length>=4 && upperLetters.length/letters.length>.72;
+    const occupation=/\b(ALUNO|OFICIAL|SOLDADO|DELEGADO|INVESTIGADOR|AGENTE|ESCRIV[AÃ]O|PERITO|T[ÉE]CNICO|ANALISTA|AUDITOR|GUARDA|INSPETOR|PROFESSOR|M[ÉE]DICO|ENFERMEIRO|FISCAL|PROCURADOR)\b/i.test(line);
+    if(mostlyUpper && occupation && line.length<=100){
+      addFound(line,lines[i].start,lines[i].end);
+    }
+  }
+
+  // Compatibilidade extra com PDFs que quebram o texto do cabeçalho em caracteres/espaços.
+  if(!found.length){
+    const nm=compactNormalizedWithMap(t);
+    const known=[
+      {cargo:'ALUNO-OFICIAL PM',needle:'ALUNOOFICIALPM'},
+      {cargo:'ALUNO-OFICIAL PM',needle:'ALUNOOFICIAL'},
+      {cargo:'DELEGADO DE POLÍCIA CIVIL',needle:'DELEGADODEPOLICIACIVIL'},
+      {cargo:'OFICIAL INVESTIGADOR DE POLÍCIA CIVIL',needle:'OFICIALINVESTIGADORDEPOLICIACIVIL'}
+    ];
+    for(const spec of known){
+      const idx=nm.key.indexOf(spec.needle);
+      if(idx<0) continue;
+      const rawStart=nm.map[idx];
+      const rawEnd=nm.map[Math.min(nm.map.length-1,idx+spec.needle.length-1)]+1;
+      addFound(spec.cargo,rawStart,rawEnd);
+    }
   }
 
   found.sort((a,b)=>a.start-b.start);
 
   if(!found.length){
-    throw new Error('O conteúdo programático foi encontrado, mas nenhum cargo foi identificado.');
+    throw new Error('O conteúdo programático foi encontrado, mas não consegui reconhecer automaticamente o nome do cargo.');
   }
 
-  return found.map((m,i)=>{
+  return found.map((item,i)=>{
     const bodyEnd=i+1<found.length?found[i+1].start:t.length;
     return {
-      cargo:m.cargo,
-      body:t.slice(m.end,bodyEnd).trim()
+      cargo:item.cargo,
+      body:t.slice(item.end,bodyEnd).trim()
     };
   });
 }

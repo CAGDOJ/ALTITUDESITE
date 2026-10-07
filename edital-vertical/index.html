@@ -32,6 +32,8 @@
 .savedCard{border:1px solid var(--line);border-radius:16px;padding:16px;background:#fff;box-shadow:var(--shadow)}
 .savedCard h3{margin:4px 0 8px}.savedCard .meta{display:flex;gap:8px;flex-wrap:wrap;margin:10px 0}.savedCard .meta span{background:#eef4ff;color:#245a9c;padding:6px 9px;border-radius:999px;font-size:12px;font-weight:700}
 .topicInput,.topicSelect{width:100%;min-width:70px;padding:7px 8px;border:1px solid var(--line);border-radius:8px;background:#fff}
+.tableWrap th:nth-child(5),.tableWrap td:nth-child(5){min-width:132px;width:132px;white-space:nowrap}
+.topicStatus{min-width:118px;width:100%;padding-right:26px}
 .topicNum{width:72px;text-align:center}
 .evolutionGrid{display:grid;grid-template-columns:repeat(auto-fit,minmax(240px,1fr));gap:14px}
 .evoCard{border:1px solid var(--line);border-radius:16px;padding:14px;background:#fff}
@@ -66,7 +68,7 @@
 .authMsg{margin-top:12px;padding:10px 12px;border-radius:10px;background:#f4f7fb;color:#52647a;font-size:13px;display:none}.authMsg.show{display:block}
 .landingFoot{margin-top:20px;padding-top:16px;border-top:1px solid #eef1f5;font-size:11px;color:#9aa6b5;text-align:center}
 .app.authLocked{display:none!important}.landingGate.hidden{display:none!important}
-@media(max-width:900px){.landingGate{padding:24px 16px;align-items:flex-start}.landingWrap{grid-template-columns:1fr;gap:34px;max-width:620px}.landingHero{text-align:center}.landingLogo{width:205px;margin:0 auto 26px}.eyebrow{margin-bottom:14px}.landingHero h1{font-size:40px}.landingLead{font-size:16px;margin:18px auto 24px}.steps{max-width:470px;margin:0 auto;text-align:left}.landingHint{text-align:center}.authPanel{padding:22px}}
+@media(max-width:900px){.tableWrap th:nth-child(5),.tableWrap td:nth-child(5){min-width:108px;width:108px}.topicStatus{min-width:96px}.landingGate{padding:24px 16px;align-items:flex-start}.landingWrap{grid-template-columns:1fr;gap:34px;max-width:620px}.landingHero{text-align:center}.landingLogo{width:205px;margin:0 auto 26px}.eyebrow{margin-bottom:14px}.landingHero h1{font-size:40px}.landingLead{font-size:16px;margin:18px auto 24px}.steps{max-width:470px;margin:0 auto;text-align:left}.landingHint{text-align:center}.authPanel{padding:22px}}
 @media(max-width:520px){.landingGate{padding:18px 12px}.landingWrap{gap:26px}.landingLogo{width:185px}.landingHero h1{font-size:34px}.landingLead{font-size:15px}.step small{font-size:12px}.authPanel{border-radius:18px;padding:18px}.authHead h2{font-size:22px}}
 </style>
 </head>
@@ -141,7 +143,7 @@
     <button data-view="cronograma">▤ Cronograma</button>
     <button data-view="monitor">♢ Monitor de Editais</button>
   </nav>
-  <div class="sideFoot">Nenhum edital pré-carregado.<div class="build">Versão 16 · 07/10/2026</div></div>
+  <div class="sideFoot">Nenhum edital pré-carregado.<div class="build">Versão 17 · 07/10/2026</div></div>
 </aside>
 <main class="main">
 <header class="top">
@@ -159,7 +161,7 @@
   <div id="cloudInfo" class="cloudNotice">Se entrar com Google, seus editais, questões e evolução poderão ficar vinculados à sua conta. Enquanto o banco não estiver conectado, o site salva neste dispositivo.</div>
   <div id="emptyState" class="card emptyHero" style="margin-top:16px"><img src="./icon.svg?v=12" alt=""><h2>Nenhum edital carregado</h2><p class="muted">O painel começa vazio. Depois do PDF, os dados encontrados aparecem aqui.</p><button class="btn" data-view="novo">Selecionar edital em PDF</button></div>
   <div id="loadedState" class="hidden">
-    <div class="card" style="margin-top:16px"><div class="row"><div><span class="muted">Edital carregado</span><h2 id="loadedFileName" style="margin:4px 0 0">—</h2></div><span class="status green">PDF analisado</span></div></div>
+    <div class="card" style="margin-top:16px"><div class="row"><div><span class="muted">Edital carregado</span><h2 id="loadedFileName" style="margin:4px 0 0">—</h2><div id="loadedMeta" class="muted" style="margin-top:6px">—</div></div><span class="status green">PDF analisado</span></div></div>
     <section class="kpis"><div class="card kpi"><span class="muted">Tópicos detectados</span><strong id="kTopics">0</strong></div><div class="card kpi"><span class="muted">Estudados</span><strong id="kStudied">0</strong></div><div class="card kpi"><span class="muted">Questões registradas</span><strong id="kQuestions">0</strong></div><div class="card kpi"><span class="muted">Desempenho</span><strong id="kPerf">—</strong></div></section>
     <div class="tabs"><button class="tab active" data-tab="vertical">Verticalização</button><button class="tab" data-tab="resumo">Resumo</button><button class="tab" data-tab="ret">Retificações</button></div>
     <section id="panel-vertical" class="panel card active"><div class="row"><div><h3 style="margin:0">Verticalização gerada</h3><p class="muted">Tudo abaixo vem do PDF carregado nesta sessão.</p></div><button id="exportExcel" class="btn">Exportar Excel</button></div><div class="filters"><input id="filter" placeholder="Buscar conteúdo..."><select id="statusFilter"><option value="">Todos os status</option><option>Estudado</option><option>Estudando</option><option>A Estudar</option></select><select id="discFilter"><option value="">Todas as disciplinas</option></select></div><div class="tableWrap"><table><thead><tr><th>#</th><th>CONHECIMENTO</th><th>ÁREA</th><th>CONTEÚDO</th><th>STATUS</th><th>QUESTÕES</th><th>CERTAS</th><th>ERRADAS</th><th>DESEMPENHO</th><th>ANOTAÇÕES</th></tr></thead><tbody id="tbody"></tbody></table></div></section>
@@ -298,7 +300,7 @@ function restoreSavedEdital(saved){
   qs('#emptyState').classList.add('hidden');
   qs('#loadedState').classList.remove('hidden');
   clear.classList.remove('hidden');
-  qs('#loadedFileName').textContent=(saved.fileName||'Edital')+' — '+saved.cargo;
+  setLoadedEditalHeader(saved.cargo,examInfo,saved.fileName||'');
   const areas=[...new Set(topics.map(t=>t.area))];
   qs('#summaryText').textContent=(examInfo.name?examInfo.name+' · ':'')+'Cargo: '+saved.cargo+' · '+areas.length+' disciplinas · '+topics.length+' tópicos salvos.';
   qs('#globalSearch').disabled=false;
@@ -838,13 +840,35 @@ function normalizeText(text){
 
 
 function extractExamInfo(firstPageText){
-  const lines=normalizeText(firstPageText).split(/\n/).map(cleanLine).filter(Boolean);
+  const normalized=normalizeText(firstPageText);
+  const lines=normalized.split(/\n/).map(cleanLine).filter(Boolean);
   const editalLine=lines.find(x=>/EDITAL.*CONCURSO P[ÚU]BLICO/i.test(x)) || '';
-  const editalMatch=editalLine.match(/EDITAL\s*N[º°O]?\s*([0-9./-]+)/i);
-  let name=editalLine.replace(/^.*?DE ABERTURA DO\s+/i,'').trim();
+  const editalAnywhere=normalized.match(/EDITAL\s*N[º°O]?\s*([0-9./-]+)/i);
+  let name='';
 
-  if(!name || name===editalLine){
-    name=(lines.find(x=>/CONCURSO P[ÚU]BLICO/i.test(x))||'').trim();
+  // Prioriza o nome institucional quando ele aparece claramente no edital.
+  const pcLine=lines.find(x=>/POL[ÍI]CIA CIVIL/i.test(x) && /ESTADO/i.test(x));
+  if(pcLine){
+    const m=pcLine.match(/POL[ÍI]CIA CIVIL(?:\s+DO)?\s+ESTADO\s+DO\s+([A-ZÁÀÂÃÉÊÍÓÔÕÚÇ\s-]+)/i);
+    if(m){
+      let state=m[1].replace(/\s{2,}/g,' ').trim().replace(/[|•].*$/,'').trim();
+      state=state.toLowerCase().replace(/(^|\s)([a-záàâãéêíóôõúç])/g,(all,sp,ch)=>sp+ch.toUpperCase());
+      name='Polícia Civil do Estado do '+state;
+    }else{
+      name=pcLine.trim();
+    }
+  }
+
+  // Tratamento conhecido do edital PC-AP quando o PDF separa o nome em linhas.
+  if(!name && /POL[ÍI]CIA CIVIL/i.test(normalized) && /AMAP[ÁA]/i.test(normalized)){
+    name='Polícia Civil do Estado do Amapá';
+  }
+
+  if(!name){
+    name=editalLine.replace(/^.*?DE ABERTURA DO\s+/i,'').trim();
+    if(!name || name===editalLine){
+      name=(lines.find(x=>/CONCURSO P[ÚU]BLICO/i.test(x))||'').trim();
+    }
   }
 
   const stateLine=lines.find(x=>/^GOVERNO DO ESTADO DO /i.test(x));
@@ -853,14 +877,38 @@ function extractExamInfo(firstPageText){
     name=name+' DO '+state;
   }
 
-  if(!name) name='Concurso Público';
+  name=name
+    .replace(/^EDITAL.*?CONCURSO P[ÚU]BLICO\s*/i,'')
+    .replace(/\s{2,}/g,' ')
+    .trim();
+
+  if(!name || /^CONCURSO P[ÚU]BLICO$/i.test(name)) name='Concurso Público';
+
   const organizer=/FUNDA[CÇ][AÃ]O CESGRANRIO/i.test(firstPageText)?'Fundação Cesgranrio':'';
 
   return {
     name,
-    edital:editalMatch?('Edital nº '+editalMatch[1]):'',
+    edital:editalAnywhere?('Edital nº '+editalAnywhere[1]):'',
     organizer
   };
+}
+
+function setLoadedEditalHeader(cargo,info=examInfo,fileName=''){
+  const cleanFile=String(fileName||'').replace(/\.pdf$/i,'');
+  const uglyFile=/^[a-f0-9-]{20,}$/i.test(cleanFile) || /^\d{6,}[-_]/.test(cleanFile);
+  const title=(info?.name && info.name!=='Concurso Público')
+    ? info.name
+    : (!uglyFile && cleanFile ? cleanFile : 'Concurso Público');
+
+  qs('#loadedFileName').textContent=title;
+
+  const meta=[];
+  if(cargo) meta.push('Cargo: '+cargo);
+  if(info?.edital) meta.push(info.edital);
+  if(info?.organizer) meta.push(info.organizer);
+
+  const metaEl=qs('#loadedMeta');
+  if(metaEl) metaEl.textContent=meta.join(' · ') || 'Edital analisado';
 }
 
 function extractCargoSections(text){
@@ -1043,7 +1091,7 @@ function applyCargo(section,pages){
   qs('#emptyState').classList.add('hidden');
   qs('#loadedState').classList.remove('hidden');
   clear.classList.remove('hidden');
-  qs('#loadedFileName').textContent=currentFile.name+' — '+section.cargo;
+  setLoadedEditalHeader(section.cargo,examInfo,currentFile?.name||'');
   const areas=[...new Set(topics.map(t=>t.area))];
   qs('#summaryText').textContent=
     (examInfo.name?examInfo.name+' · ':'')+

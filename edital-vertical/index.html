@@ -64,7 +64,7 @@
 .authDivider{display:flex;align-items:center;gap:10px;margin:16px 0;color:#9aa6b5;font-size:11px}.authDivider:before,.authDivider:after{content:"";height:1px;background:#e7ebf0;flex:1}
 .googleLogin{width:100%;border:1px solid #dce3eb;background:#fff;border-radius:10px;padding:11px 13px;font-weight:800;display:flex;align-items:center;justify-content:center;gap:9px;position:relative;color:#233247}
 .googleLogin small{position:absolute;right:9px;font-size:9px;font-weight:800;color:#9ba7b5;background:#f1f4f7;border-radius:999px;padding:3px 6px}
-.googleMark{font-size:18px;font-weight:900;color:#4285f4}.googleLogin{cursor:pointer}.googleLogin:hover{border-color:#b9c8da;background:#fbfdff}.disabledGoogle{cursor:not-allowed;opacity:.72}
+.googleMark{font-size:18px;font-weight:900;color:#4285f4}.googleLogin{cursor:pointer}.googleLogin:hover{border-color:#b9c8da;background:#fbfdff}
 .authMsg{margin-top:12px;padding:10px 12px;border-radius:10px;background:#f4f7fb;color:#52647a;font-size:13px;display:none}.authMsg.show{display:block}
 .landingFoot{margin-top:20px;padding-top:16px;border-top:1px solid #eef1f5;font-size:11px;color:#9aa6b5;text-align:center}
 .app.authLocked{display:none!important}.landingGate.hidden{display:none!important}
@@ -97,10 +97,9 @@
         <p>Continue seus estudos de onde parou.</p>
       </div>
 
-      <button id="googleLoginBtn" class="googleLogin disabledGoogle" type="button" aria-disabled="true">
+      <button id="googleLoginBtn" class="googleLogin" type="button" aria-disabled="false">
         <span class="googleMark">G</span>
         <span>Continuar com Google</span>
-        <small>finalizando configuração</small>
       </button>
 
       <div class="authDivider">ou</div>
@@ -143,7 +142,7 @@
     <button data-view="cronograma">▤ Cronograma</button>
     <button data-view="monitor">♢ Monitor de Editais</button>
   </nav>
-  <div class="sideFoot">Nenhum edital pré-carregado.<div class="build">Versão 19 · 07/10/2026</div></div>
+  <div class="sideFoot">Nenhum edital pré-carregado.<div class="build">Versão 20 · 21/10/2026</div></div>
 </aside>
 <main class="main">
 <header class="top">
@@ -230,7 +229,6 @@ let currentFileHash='';
 let currentEditalId='';
 let currentUser=null;
 let supabaseClient=null;
-let googleProviderEnabled=false;
 const qs=s=>document.querySelector(s),qsa=s=>[...document.querySelectorAll(s)];
 const esc=s=>String(s??'').replace(/[&<>"']/g,ch=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#039;'}[ch]));
 
@@ -387,32 +385,6 @@ function updateTopicFromRow(id,field,value){
   if(['q','c','e'].includes(field)) recordAreaSnapshot(t.area);
   render();
 }
-async function refreshGoogleProviderState(){
-  const cfg=window.EDITAL_VERTICAL_SUPABASE||{};
-  const btn=qs('#googleLoginBtn');
-  if(!cfg.url||!cfg.anonKey||!btn) return false;
-  try{
-    const res=await fetch(cfg.url.replace(/\/$/,'')+'/auth/v1/settings',{
-      headers:{apikey:cfg.anonKey}
-    });
-    const settings=await res.json();
-    googleProviderEnabled=!!settings?.external?.google;
-  }catch{
-    googleProviderEnabled=false;
-  }
-  btn.classList.toggle('disabledGoogle',!googleProviderEnabled);
-  btn.setAttribute('aria-disabled',googleProviderEnabled?'false':'true');
-  const badge=btn.querySelector('small');
-  if(googleProviderEnabled){
-    badge?.remove();
-  }else if(!badge){
-    const small=document.createElement('small');
-    small.textContent='finalizando configuração';
-    btn.appendChild(small);
-  }
-  return googleProviderEnabled;
-}
-
 async function initSupabase(){
   const cfg=window.EDITAL_VERTICAL_SUPABASE||{};
   if(!cfg.url||!cfg.anonKey||!window.supabase){
@@ -420,7 +392,6 @@ async function initSupabase(){
     return;
   }
   supabaseClient=window.supabase.createClient(cfg.url,cfg.anonKey);
-  await refreshGoogleProviderState();
   const {data}=await supabaseClient.auth.getSession();
   currentUser=data.session?.user||null;
   updateAuthUI();
@@ -475,24 +446,27 @@ async function loginGoogle(){
     return;
   }
 
-  if(!googleProviderEnabled){
-    await refreshGoogleProviderState();
-  }
+  showAuthMessage('Abrindo login do Google...');
 
-  if(!googleProviderEnabled){
-    showAuthMessage('O login com Google ainda não foi habilitado no Supabase. Por enquanto, use e-mail e senha.',true);
-    return;
-  }
-
-  const {error}=await supabaseClient.auth.signInWithOAuth({
+  const {data,error}=await supabaseClient.auth.signInWithOAuth({
     provider:'google',
     options:{
       redirectTo:'https://www.portalaltitude.com.br/edital-vertical/',
-      queryParams:{access_type:'offline',prompt:'select_account'}
+      queryParams:{
+        access_type:'offline',
+        prompt:'select_account'
+      }
     }
   });
 
-  if(error) showAuthMessage('Não foi possível entrar com Google: '+error.message,true);
+  if(error){
+    showAuthMessage('Não foi possível entrar com Google: '+error.message,true);
+    return;
+  }
+
+  if(data?.url){
+    window.location.assign(data.url);
+  }
 }
 async function loginEmail(email,password){
   if(!supabaseClient){

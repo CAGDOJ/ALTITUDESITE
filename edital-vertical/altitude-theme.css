@@ -1,0 +1,176 @@
+:root{
+  --navy:#07314f!important;
+  --navy2:#0a3d62!important;
+  --blue:#38b1cb!important;
+  --cyan:#52c0d9!important;
+  --bg:#f5f8fb!important;
+  --text:#17344a!important;
+  --muted:#6b7f90!important;
+  --line:#d8e6ef!important;
+  --shadow:0 14px 34px rgba(7,49,79,.08)!important;
+}
+
+/* Área autenticada */
+body{background:#f5f8fb!important;color:#17344a!important}
+.side{
+  background:linear-gradient(180deg,#07314f 0%,#0a3d62 100%)!important;
+}
+.nav button{color:#d9edf2!important}
+.nav button.active,
+.nav button:hover{
+  background:#38b1cb!important;
+  color:#fff!important;
+}
+.sideFoot{color:#b9d1da!important}
+.build{color:#a9c6d0!important}
+
+.top{
+  background:rgba(7,49,79,.97)!important;
+  border-bottom:1px solid rgba(255,255,255,.08)!important;
+}
+.search{
+  background:#0d4569!important;
+  border-color:#2f6785!important;
+  color:#fff!important;
+}
+.search::placeholder{color:#bcd0dc!important}
+.avatar{
+  background:linear-gradient(135deg,#52c0d9,#38b1cb)!important;
+}
+.authBtn,
+.userChip{
+  background:#0d4569!important;
+  border-color:#2f6785!important;
+}
+.userChip small{color:#c4d8e2!important}
+
+.card,
+.savedCard,
+.evoCard{
+  border-color:#d8e6ef!important;
+  box-shadow:0 12px 28px rgba(7,49,79,.06)!important;
+}
+.btn{
+  background:#38b1cb!important;
+  color:#fff!important;
+}
+.btn:hover{background:#07314f!important}
+.btn.secondary{
+  background:#edf8fb!important;
+  color:#117a91!important;
+}
+.tab.active{
+  background:#38b1cb!important;
+  border-color:#38b1cb!important;
+  color:#fff!important;
+}
+.upload{
+  border-color:#8fd1df!important;
+  background:#f8fcfd!important;
+}
+.upload.drag{background:#edf8fb!important}
+.fileBox{
+  background:#edf8fb!important;
+  color:#28566c!important;
+}
+.tableWrap th{background:#f4f9fb!important}
+.status.gray{background:#eef4f6!important;color:#607889!important}
+.savedCard .meta span{
+  background:#edf8fb!important;
+  color:#117a91!important;
+}
+.cloudNotice{
+  border-color:#cde8ef!important;
+  background:#f4fbfd!important;
+  color:#35677a!important;
+}
+.loadingBox{
+  background:#f2fafc!important;
+  border-color:#cde8ef!important;
+}
+.spinner{
+  border-color:#cde8ef!important;
+  border-top-color:#38b1cb!important;
+}
+.topicInput:focus,
+.topicSelect:focus,
+.filters input:focus,
+.filters select:focus{
+  outline:none!important;
+  border-color:#38b1cb!important;
+  box-shadow:0 0 0 3px rgba(56,177,203,.12)!important;
+}
+
+/* Landing / login */
+.landingGate{
+  background:linear-gradient(180deg,#ffffff 0%,#f5f8fb 100%)!important;
+  color:#17344a!important;
+}
+.eyebrow{
+  color:#117a91!important;
+  background:#edf8fb!important;
+}
+.landingHero h1{color:#07314f!important}
+.landingLead{color:#6b7f90!important}
+.step>span{
+  background:#38b1cb!important;
+  color:#fff!important;
+}
+.step b{color:#17344a!important}
+.step small{color:#718594!important}
+.authPanel{
+  border-color:#d8e6ef!important;
+  box-shadow:0 18px 45px rgba(7,49,79,.08)!important;
+}
+.authHead h2{color:#07314f!important}
+.authHead p{color:#758896!important}
+.authTabs{background:#eff5f7!important}
+.authTabs button{color:#6c7f8e!important}
+.authTabs button.active{
+  color:#117a91!important;
+  background:#fff!important;
+}
+.authForm label{color:#314f62!important}
+.authForm input{
+  border-color:#d8e6ef!important;
+  background:#fbfdfe!important;
+}
+.authForm input:focus{
+  border-color:#38b1cb!important;
+  box-shadow:0 0 0 3px rgba(56,177,203,.12)!important;
+  background:#fff!important;
+}
+.authPrimary{
+  background:#38b1cb!important;
+  box-shadow:0 8px 18px rgba(56,177,203,.18)!important;
+}
+.authPrimary:hover{background:#07314f!important}
+.googleLogin{
+  border-color:#d8e6ef!important;
+  color:#27485b!important;
+}
+.googleLogin:hover{
+  border-color:#8fd1df!important;
+  background:#f8fcfd!important;
+}
+.authDivider{color:#93a4af!important}
+.authDivider:before,
+.authDivider:after{background:#e1eaee!important}
+.authMsg{
+  background:#f2fafc!important;
+  color:#35677a!important;
+}
+.landingFoot{border-color:#e7eef1!important;color:#94a5af!important}
+
+/* Mobile */
+@media(max-width:900px){
+  .hamb{
+    background:#0d4569!important;
+    color:#fff!important;
+  }
+  .shade{background:rgba(7,49,79,.62)!important}
+  .bottom button.active{
+    background:#edf8fb!important;
+    color:#117a91!important;
+  }
+}

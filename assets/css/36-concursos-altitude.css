@@ -1,0 +1,154 @@
+:root{
+  --conc-navy:#07314f;
+  --conc-navy-2:#0a3d62;
+  --conc-cyan:#38b1cb;
+  --conc-cyan-2:#52c0d9;
+  --conc-soft:#edf8fb;
+  --conc-bg:#f5f8fb;
+  --conc-line:#d8e6ef;
+  --conc-text:#17344a;
+  --conc-muted:#6b7f90;
+}
+body{background:var(--conc-bg)!important;color:var(--conc-text)!important}
+.concursos-main{max-width:1180px!important;margin:0 auto!important;padding:42px 22px 72px!important}
+.concursos-hero{
+  display:grid!important;
+  grid-template-columns:minmax(0,1.25fr) minmax(300px,.75fr)!important;
+  gap:28px!important;
+  align-items:center!important;
+  padding:34px!important;
+  border-radius:24px!important;
+  background:linear-gradient(135deg,#f8fcfd 0%,#edf8fb 100%)!important;
+  border:1px solid var(--conc-line)!important;
+  color:var(--conc-text)!important;
+  box-shadow:0 14px 34px rgba(7,49,79,.07)!important;
+}
+.concursos-kicker{
+  display:inline-block!important;
+  margin-bottom:12px!important;
+  color:#1689a4!important;
+  font-size:12px!important;
+  font-weight:900!important;
+  letter-spacing:.12em!important;
+}
+.concursos-hero h1{
+  margin:0 0 14px!important;
+  color:var(--conc-navy)!important;
+  font-size:clamp(36px,5vw,56px)!important;
+  line-height:1.04!important;
+  letter-spacing:-.04em!important;
+}
+.concursos-hero p{
+  max-width:700px!important;
+  margin:0!important;
+  color:var(--conc-muted)!important;
+  font-size:17px!important;
+  line-height:1.65!important;
+}
+.concursos-hero-panel{
+  padding:20px!important;
+  border:1px solid var(--conc-line)!important;
+  border-radius:18px!important;
+  background:#fff!important;
+  box-shadow:0 10px 26px rgba(7,49,79,.06)!important;
+}
+.concursos-hero-panel strong{
+  display:block!important;
+  margin-bottom:12px!important;
+  color:var(--conc-navy)!important;
+  font-size:16px!important;
+}
+.concursos-hero-panel div{
+  display:flex!important;
+  gap:10px!important;
+  align-items:flex-start!important;
+  margin:10px 0!important;
+  color:#526b7d!important;
+  font-size:14px!important;
+}
+.concursos-hero-panel i{margin-top:3px!important;color:var(--conc-cyan)!important}
+.concursos-section{margin-top:34px!important}
+.concursos-heading{
+  display:flex!important;
+  justify-content:space-between!important;
+  gap:18px!important;
+  align-items:end!important;
+  margin-bottom:16px!important;
+}
+.concursos-heading h2{
+  margin:4px 0 0!important;
+  color:var(--conc-navy)!important;
+  font-size:30px!important;
+}
+.concursos-heading p{margin:0!important;color:var(--conc-muted)!important}
+.tool-grid{display:grid!important;grid-template-columns:minmax(0,1fr)!important;gap:18px!important}
+.tool-card{
+  display:grid!important;
+  grid-template-columns:92px minmax(0,1fr) auto!important;
+  gap:22px!important;
+  align-items:center!important;
+  padding:24px!important;
+  border:1px solid var(--conc-line)!important;
+  border-radius:20px!important;
+  background:#fff!important;
+  box-shadow:0 10px 28px rgba(7,49,79,.06)!important;
+}
+.tool-card img{
+  width:84px!important;
+  height:84px!important;
+  padding:10px!important;
+  border-radius:16px!important;
+  background:var(--conc-soft)!important;
+  object-fit:contain!important;
+}
+.tool-card h3{margin:0 0 7px!important;color:var(--conc-navy)!important;font-size:25px!important}
+.tool-card p{margin:0!important;color:var(--conc-muted)!important;line-height:1.55!important}
+.tool-tags{display:flex!important;flex-wrap:wrap!important;gap:8px!important;margin-top:14px!important}
+.tool-tags span{
+  padding:6px 9px!important;
+  border:1px solid #d7eef4!important;
+  border-radius:999px!important;
+  background:var(--conc-soft)!important;
+  color:#117a91!important;
+  font-size:12px!important;
+  font-weight:800!important;
+}
+.tool-action{
+  display:inline-flex!important;
+  align-items:center!important;
+  justify-content:center!important;
+  gap:8px!important;
+  padding:12px 17px!important;
+  border-radius:10px!important;
+  background:var(--conc-cyan)!important;
+  color:#fff!important;
+  box-shadow:0 8px 18px rgba(56,177,203,.18)!important;
+  font-weight:900!important;
+  text-decoration:none!important;
+  white-space:nowrap!important;
+}
+.tool-action:hover,.tool-action:focus-visible{
+  background:var(--conc-navy)!important;
+  color:#fff!important;
+  outline:none!important;
+}
+.concursos-note{
+  margin-top:20px!important;
+  padding:16px 18px!important;
+  border:1px solid var(--conc-line)!important;
+  border-radius:14px!important;
+  background:#fff!important;
+  color:#5b7183!important;
+  font-size:14px!important;
+  line-height:1.55!important;
+}
+@media(max-width:820px){
+  .concursos-main{padding:28px 14px 52px!important}
+  .concursos-hero{grid-template-columns:1fr!important;padding:24px!important}
+  .concursos-hero h1{font-size:38px!important}
+  .tool-card{grid-template-columns:72px 1fr!important;gap:16px!important}
+  .tool-card img{width:68px!important;height:68px!important}
+  .tool-action{grid-column:1/-1!important;width:100%!important}
+  .concursos-heading{display:block!important}
+  .concursos-heading p{margin-top:8px!important}
+}

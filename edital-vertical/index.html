@@ -9,8 +9,8 @@
 <meta name="theme-color" content="#071a2f">
 <title>Edital Vertical</title>
 <meta name="description" content="Verticalização automática de editais em PDF.">
-<link rel="icon" href="./icon.svg?v=12" type="image/svg+xml">
-<link rel="apple-touch-icon" href="./icon.svg?v=12">
+<link rel="icon" href="./icon.svg?v=15" type="image/svg+xml">
+<link rel="apple-touch-icon" href="./icon.svg?v=15">
 <link rel="manifest" href="./manifest.webmanifest?v=3">
 <style>
 :root{--navy:#071a2f;--navy2:#0d2746;--blue:#1269d8;--cyan:#21c7ff;--bg:#f4f7fb;--card:#fff;--text:#15243a;--muted:#6d7a8e;--line:#dfe6ef;--green:#16a36a;--red:#e14f61;--yellow:#f3ad2b;--shadow:0 14px 34px rgba(13,39,70,.08)}
@@ -64,7 +64,7 @@
 .authDivider{display:flex;align-items:center;gap:10px;margin:16px 0;color:#9aa6b5;font-size:11px}.authDivider:before,.authDivider:after{content:"";height:1px;background:#e7ebf0;flex:1}
 .googleLogin{width:100%;border:1px solid #dce3eb;background:#fff;border-radius:10px;padding:11px 13px;font-weight:800;display:flex;align-items:center;justify-content:center;gap:9px;position:relative;color:#233247}
 .googleLogin small{position:absolute;right:9px;font-size:9px;font-weight:800;color:#9ba7b5;background:#f1f4f7;border-radius:999px;padding:3px 6px}
-.googleMark{font-size:18px;font-weight:900;color:#4285f4}.googleLogin{cursor:pointer}.googleLogin:hover{border-color:#b9c8da;background:#fbfdff}
+.googleMark{width:18px;height:18px;display:inline-flex;align-items:center;justify-content:center;flex:0 0 18px}.googleMark svg{display:block;width:18px;height:18px}.googleLogin{cursor:pointer}.googleLogin:hover{border-color:#b9c8da;background:#fbfdff}
 .authMsg{margin-top:12px;padding:10px 12px;border-radius:10px;background:#f4f7fb;color:#52647a;font-size:13px;display:none}.authMsg.show{display:block}
 .landingFoot{margin-top:20px;padding-top:16px;border-top:1px solid #eef1f5;font-size:11px;color:#9aa6b5;text-align:center}
 .app.authLocked{display:none!important}.landingGate.hidden{display:none!important}
@@ -77,7 +77,7 @@
 <section id="landingGate" class="landingGate">
   <div class="landingWrap">
     <div class="landingHero">
-      <img src="./logo.svg?v=14" class="landingLogo" alt="Edital Vertical">
+      <img src="./logo.svg?v=15" class="landingLogo" alt="Edital Vertical">
 
       <div class="eyebrow">ESTUDE O EDITAL COM MAIS CLAREZA</div>
       <h1>Seu edital organizado.<br>Seu progresso visível.</h1>
@@ -99,7 +99,14 @@
       </div>
 
       <button id="googleLoginBtn" class="googleLogin" type="button" aria-disabled="false">
-        <span class="googleMark">G</span>
+        <span class="googleMark" aria-hidden="true">
+          <svg viewBox="0 0 18 18" width="18" height="18" focusable="false">
+            <path fill="#4285F4" d="M17.64 9.205c0-.638-.057-1.252-.164-1.841H9v3.482h4.844a4.14 4.14 0 0 1-1.797 2.716v2.258h2.909c1.702-1.567 2.684-3.875 2.684-6.615z"/>
+            <path fill="#34A853" d="M9 18c2.43 0 4.467-.806 5.956-2.18l-2.909-2.258c-.806.54-1.835.859-3.047.859-2.344 0-4.328-1.584-5.037-3.711H.956v2.332A9 9 0 0 0 9 18z"/>
+            <path fill="#FBBC05" d="M3.963 10.71A5.41 5.41 0 0 1 3.682 9c0-.594.102-1.172.281-1.71V4.958H.956A9 9 0 0 0 0 9c0 1.452.347 2.827.956 4.042l3.007-2.332z"/>
+            <path fill="#EA4335" d="M9 3.579c1.322 0 2.508.454 3.441 1.346l2.582-2.582C13.463.892 11.425 0 9 0A9 9 0 0 0 .956 4.958L3.963 7.29C4.672 5.163 6.656 3.579 9 3.579z"/>
+          </svg>
+        </span>
         <span>Continuar com Google</span>
       </button>
 
@@ -131,7 +138,7 @@
 <div id="shade" class="shade"></div>
 <div class="app authLocked" id="appShell">
 <aside class="side">
-  <img src="./logo-light.svg?v=12" class="brandLogo" alt="Edital Vertical">
+  <img src="./logo-light.svg?v=15" class="brandLogo" alt="Edital Vertical">
   <nav class="nav">
     <button class="active" data-view="inicio">⌂ Início</button>
     <button data-view="editais">▣ Meus Editais</button>
@@ -143,12 +150,12 @@
     <button data-view="cronograma">▤ Cronograma</button>
     <button data-view="monitor">♢ Monitor de Editais</button>
   </nav>
-  <div class="sideFoot">Nenhum edital pré-carregado.<div class="build">Versão 22 · 22/10/2026</div></div>
+  <div class="sideFoot">Nenhum edital pré-carregado.<div class="build">Versão 23 · 22/10/2026</div></div>
 </aside>
 <main class="main">
 <header class="top">
   <button id="hamb" class="hamb" aria-label="Abrir menu">☰</button>
-  <img src="./icon.svg?v=12" class="mobileLogo" alt="">
+  <img src="./icon.svg?v=15" class="mobileLogo" alt="">
   <input id="globalSearch" class="search" placeholder="Buscar no edital carregado..." disabled>
   <div class="topright">
       <span id="syncState">Conta</span>
@@ -159,7 +166,7 @@
 <section id="view-inicio" class="view active">
   <div class="row"><div><h1 style="margin:0">Edital Vertical</h1><p class="muted">Envie um edital real para começar a verticalização.</p></div><div style="display:flex;gap:8px;flex-wrap:wrap"><button id="clearEdital" class="btn secondary hidden">Limpar edital</button><button class="btn" data-view="novo">Carregar PDF</button></div></div>
   <div id="cloudInfo" class="cloudNotice">Se entrar com Google, seus editais, questões e evolução poderão ficar vinculados à sua conta. Enquanto o banco não estiver conectado, o site salva neste dispositivo.</div>
-  <div id="emptyState" class="card emptyHero" style="margin-top:16px"><img src="./icon.svg?v=12" alt=""><h2>Nenhum edital carregado</h2><p class="muted">O painel começa vazio. Depois do PDF, os dados encontrados aparecem aqui.</p><button class="btn" data-view="novo">Selecionar edital em PDF</button></div>
+  <div id="emptyState" class="card emptyHero" style="margin-top:16px"><img src="./icon.svg?v=15" alt=""><h2>Nenhum edital carregado</h2><p class="muted">O painel começa vazio. Depois do PDF, os dados encontrados aparecem aqui.</p><button class="btn" data-view="novo">Selecionar edital em PDF</button></div>
   <div id="loadedState" class="hidden">
     <div class="card" style="margin-top:16px"><div class="row"><div><span class="muted">Edital carregado</span><h2 id="loadedFileName" style="margin:4px 0 0">—</h2><div id="loadedMeta" class="muted" style="margin-top:6px">—</div></div><span class="status green">PDF analisado</span></div></div>
     <section class="kpis"><div class="card kpi"><span class="muted">Tópicos detectados</span><strong id="kTopics">0</strong></div><div class="card kpi"><span class="muted">Estudados</span><strong id="kStudied">0</strong></div><div class="card kpi"><span class="muted">Questões registradas</span><strong id="kQuestions">0</strong></div><div class="card kpi"><span class="muted">Desempenho</span><strong id="kPerf">—</strong></div></section>
@@ -430,7 +437,7 @@ function updateAuthUI(){
     const meta=currentUser.user_metadata||{};
     qs('#userName').textContent=meta.full_name||meta.name||'Usuário';
     qs('#userEmail').textContent=currentUser.email||'';
-    qs('#userPhoto').src=meta.avatar_url||'./icon.svg?v=12';
+    qs('#userPhoto').src=meta.avatar_url||'./icon.svg?v=15';
     qs('#syncState').textContent='Conta conectada';
     loadCloudEditals().catch(()=>{});
   }else{
@@ -1296,7 +1303,7 @@ function render(){
 qs('#globalSearch')?.addEventListener('input',e=>{if(!topics.length)return;qs('#filter').value=e.target.value;render();qs('.tab[data-tab="vertical"]')?.click()});
 
 async function logoPngBase64(){
-  const svg=await fetch('./logo.svg?v=12').then(r=>{
+  const svg=await fetch('./logo.svg?v=15').then(r=>{
     if(!r.ok) throw new Error('Logo não encontrada');
     return r.text();
   });

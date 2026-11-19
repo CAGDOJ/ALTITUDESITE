@@ -24,7 +24,7 @@
     if (m.includes('senha incorreta')) return 'Senha incorreta.';
     if (m.includes('não encontrado')) return err.message;
     if (m.includes('email not confirmed') || m.includes('email_not_confirmed')) return 'E-mail ainda não confirmado. Use a confirmação recebida ou a opção “Cadastrei meu e-mail errado”.';
-    if (m.includes('invalid login credentials')) return 'Senha incorreta.';
+    if (m.includes('invalid login credentials')) return 'E-mail ou senha não conferem. Caso tenha criado a conta com Google, utilize esse método de acesso ou redefina sua senha.';
     if (s === 429 || m.includes('rate limit')) return 'Muitas tentativas. Aguarde e tente novamente.';
     if (s >= 500) return 'Serviço indisponível no momento. Tente novamente.';
     return 'Não foi possível entrar. Verifique os dados e tente novamente.';
@@ -99,10 +99,7 @@
 
       try {
         const email = await resolveEmail(ident);
-        if (ident.type === 'email') {
-          const existe = await emailCadastrado(email);
-          if (existe === false) throw new Error('E-mail não cadastrado.');
-        }
+        // Não bloquear credenciais válidas por consulta auxiliar ao cadastro.
         await sb.auth.signOut({ scope: 'local' }).catch(() => {});
         const { data, error } = await sb.auth.signInWithPassword({ email, password });
         if (error || !data?.session) {
@@ -110,7 +107,7 @@
           if (raw.includes('email not confirmed') || raw.includes('email_not_confirmed')) {
             throw new Error('E-mail ainda não confirmado.');
           }
-          if (raw.includes('invalid login credentials')) throw new Error('Senha incorreta.');
+          if (raw.includes('invalid login credentials')) throw new Error('E-mail ou senha não conferem. Caso tenha criado a conta com Google, utilize esse método de acesso ou redefina sua senha.');
           throw error || new Error('Credenciais inválidas.');
         }
 

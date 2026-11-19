@@ -138,7 +138,19 @@ export function setupStudyV25(opts) {
       if(!user)return;
       const {data:aluno}=await client.from("alunos").select("nome,ra").eq("user_id",user.id).maybeSingle();
       if(aluno)profile={nome:aluno.nome,ra:aluno.ra};
-      if(profile)render();
+      if(profile){
+        // Leitura opcional e restrita ao próprio usuário, no banco original
+        // ALTITUDE. Não replica CPF, contatos, pagamentos ou notas.
+        try{
+          const {data:matriculas,error:matriculasErro}=await client.from("matriculas")
+            .select("curso_id").eq("aluno_id",user.id).limit(100);
+          if(!matriculasErro)profile.cursos=matriculas?.length||0;
+          const {data:resultados,error:resultadosErro}=await client.from("resultados_provas")
+            .select("curso_id,aprovado").eq("aluno_id",user.id).eq("aprovado",true).limit(100);
+          if(!resultadosErro)profile.concluidos=new Set((resultados||[]).map(x=>x.curso_id)).size;
+        }catch(_e){/* Perfil acadêmico opcional. */}
+        render();
+      }
     }catch(e){console.warn("Perfil opcional ALTITUDE:",e.message);}
   }
   function refresh() {
@@ -162,7 +174,10 @@ export function setupStudyV25(opts) {
     return '<div class="v25-lead"><small>ALTITUDE · EDITAL VERTICAL</small><h2>Estudo organizado para concursos</h2>'+
       '<div>Diagnóstico, questões comentadas, leitura de PDFs e revisões em um plano de 2 a 6 meses.</div>'+
       '<small>'+(profile?.nome?"Aluno: "+esc(profile.nome)+(profile.ra?" · RA "+esc(profile.ra):"")+" · ":"")+
-      "Cargo: "+esc(opts.getCargo()||"Não selecionado")+" · "+esc(syncMessage)+'</small></div>';
+      "Cargo: "+esc(opts.getCargo()||"Não selecionado")+
+      (profile?.cursos!==undefined?" · "+profile.cursos+" matrícula(s) ALTITUDE":"")+
+      (profile?.concluidos!==undefined?" · "+profile.concluidos+" curso(s) aprovados":"")+
+      " · "+esc(syncMessage)+'</small></div>';
   }
   function eligibleQuiz() {
     const all=getAreas(), used=new Set(), out=[];

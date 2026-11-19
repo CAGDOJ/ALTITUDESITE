@@ -251,6 +251,13 @@ const qs=s=>document.querySelector(s),qsa=s=>[...document.querySelectorAll(s)];
 const esc=s=>String(s??'').replace(/[&<>"']/g,ch=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#039;'}[ch]));
 
 function setView(v){
+  // Mantém o menu anterior funcionando: os atalhos abrem os recursos reais
+  // do novo módulo, sem levar o aluno a telas antigas que estavam vazias.
+  const studyRoutes={plano:'plano',cronograma:'plano',questoes:'questoes',revisoes:'revisoes',desempenho:'evolucao'};
+  if(studyRoutes[v] && studyV25){
+    studyV25.openTab(studyRoutes[v]);
+    return;
+  }
   qsa('.view').forEach(x=>x.classList.remove('active'));
   qs('#view-'+v)?.classList.add('active');
   qsa('[data-view]').forEach(x=>x.classList.toggle('active',x.dataset.view===v));

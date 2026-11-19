@@ -257,6 +257,7 @@ function setView(v){
   document.body.classList.remove('menuOpen');
   if(v==='editais') renderSavedEditals();
   if(v==='desempenho') renderPerformance();
+  if(v==='estudar') studyV25?.render();
 }
 qsa('[data-view]').forEach(b=>b.addEventListener('click',()=>setView(b.dataset.view)));
 qs('#hamb')?.addEventListener('click',()=>document.body.classList.toggle('menuOpen'));
@@ -307,6 +308,7 @@ function persistCurrentEdital(){
   saveLocalEditals(all);
   currentEditalId=key;
   syncCurrentToCloud().catch(()=>{});
+  studyV25?.refresh();
 }
 function restoreSavedEdital(saved){
   topics=(saved.topics||[]).map(x=>({...x}));
@@ -417,6 +419,7 @@ async function initSupabase(){
     currentUser=session?.user||null;
     updateAuthUI();
     if(currentUser) loadCloudEditals().catch(()=>{});
+    studyV25?.refresh();
   });
 }
 function showAuthMessage(message,isError=false){
@@ -1384,6 +1387,7 @@ function render(){
   qsa('.topicE').forEach(el=>el.addEventListener('change',()=>updateTopicFromRow(+el.dataset.id,'e',el.value)));
   qsa('.topicNote').forEach(el=>el.addEventListener('change',()=>updateTopicFromRow(+el.dataset.id,'note',el.value)));
 
+  studyV25?.refresh();
   const areas=[...new Set(topics.map(t=>t.area))];
   qs('#discFilter').innerHTML='<option value="">Todas as disciplinas</option>'+areas.map(a=>'<option '+(a===d?'selected':'')+'>'+esc(a)+'</option>').join('');
 
@@ -1573,6 +1577,19 @@ qs('#exportExcel')?.addEventListener('click',async()=>{
   setTimeout(()=>URL.revokeObjectURL(a.href),5000);
 });
 clear.addEventListener('click',()=>{topics=[];currentFile=null;currentFileHash='';currentEditalId='';selectedCargoSection=null;pdf.value='';fileInfo.classList.add('hidden');qs('#analysis').classList.add('hidden');qs('#emptyState').classList.remove('hidden');qs('#loadedState').classList.add('hidden');clear.classList.add('hidden');qs('#globalSearch').value='';qs('#globalSearch').disabled=true;analyze.disabled=true;analyze.textContent='Analisar edital';setView('inicio')});
+studyV25=setupStudyV25({
+  getTopics:()=>topics,
+  getEditalKey:()=>currentEditalId,
+  getCargo:()=>selectedCargoSection?.cargo||"",
+  getExamInfo:()=>examInfo,
+  getFile:()=>currentFile,
+  getUser:()=>currentUser,
+  getStudyClient:()=>supabaseClient,
+  getPortalClient:()=>altitudeAuth,
+  navigate:setView
+});
+studyV25.refresh();
+
 </script>
 </body>
 </html>

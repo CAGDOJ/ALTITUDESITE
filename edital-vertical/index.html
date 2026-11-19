@@ -477,8 +477,9 @@ async function entrarComContaAltitude(session, explicito=false){
   if(!explicito && currentUser)return true;
   if(altitudeSSOPending)return altitudeSSOPending;
   altitudeSSOPending=(async()=>{
-    try{
-      showAuthMessage('Verificando sua conta ALTITUDE...');
+    const transferir=async()=>{
+      const existing=await supabaseClient.auth.getSession();
+      if(existing?.data?.session) return true;
       const cfg=window.EDITAL_VERTICAL_SUPABASE||{};
       const response=await fetch(cfg.url+'/functions/v1/altitude-edital-sso',{
         method:'POST',
@@ -490,6 +491,18 @@ async function entrarComContaAltitude(session, explicito=false){
       if(!response.ok || !result.token_hash)throw new Error(result.error||'Não foi possível validar o acesso.');
       const {error}=await supabaseClient.auth.verifyOtp({type:result.type||'magiclink',token_hash:result.token_hash});
       if(error)throw error;
+      return true;
+    };
+    try{
+      showAuthMessage('Verificando sua conta ALTITUDE...');
+      // Várias abas simultâneas podiam invalidar o token de uso único
+      // ao gerar um segundo token antes da primeira confirmação.
+      // Serialização nativa por origem, sem transmitir senhas entre abas.
+      if(navigator.locks?.request){
+        await navigator.locks.request('altitude-edital-sso-v25',{mode:'exclusive'},transferir);
+      }else{
+        await transferir();
+      }
       sessionStorage.removeItem('ev_sso_manual_logout');
       qs('#authMessage')?.classList.remove('show');
       return true;

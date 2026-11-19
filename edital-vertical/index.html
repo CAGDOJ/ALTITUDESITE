@@ -72,6 +72,7 @@
 @media(max-width:520px){.landingGate{padding:18px 12px}.landingWrap{gap:26px}.landingLogo{width:185px}.landingHero h1{font-size:34px}.landingLead{font-size:15px}.step small{font-size:12px}.authPanel{border-radius:18px;padding:18px}.authHead h2{font-size:22px}}
 </style>
 <link rel="stylesheet" href="./altitude-theme.css?v=1">
+<link rel="stylesheet" href="./study-v25.css?v=25">
 </head>
 <body>
 <section id="landingGate" class="landingGate">
@@ -149,7 +150,7 @@
     <button data-view="cronograma">▤ Cronograma</button>
     <button data-view="monitor">♢ Monitor de Editais</button>
   </nav>
-  <div class="sideFoot">Nenhum edital pré-carregado.<div class="build">Versão 24 · 19/11/2026</div></div>
+  <div class="sideFoot">Nenhum edital pré-carregado.<div class="build">Versão 25 · 19/11/2026</div></div>
 </aside>
 <main class="main">
 <header class="top">
@@ -226,6 +227,8 @@
 <nav class="bottom"><button class="active" data-view="inicio">⌂<br>Início</button><button data-view="editais">▣<br>Editais</button><button data-view="novo">＋<br>Novo</button><button data-view="monitor">♢<br>Monitor</button><button data-view="desempenho">↗<br>Desempenho</button></nav>
 
 <script type="module">
+import { setupStudyV25 } from "./study-v25.js?v=25";
+let studyV25=null;
 let topics=[];
 let currentFile=null;
 let running=false;
@@ -699,8 +702,27 @@ async function setFile(f){
       '<h3>Não foi possível identificar os cargos</h3>'+
       '<p class="muted">'+esc(e?.message||e)+'</p>'+
       '<p><b>O PDF foi carregado.</b> A falha ocorreu apenas na leitura automática dos cargos.</p>';
+    // O aluno ainda pode prosseguir mesmo quando o PDF tem diagramação
+    // incompatível. Nunca inventar nomes de cargos.
+    const manual=document.createElement('div');
+    manual.className='ev-manual-cargo';
+    manual.innerHTML='<label for="manualCargoName">Informe o nome exato do cargo</label>'+
+      '<input id="manualCargoName" placeholder="Ex.: Agente Administrativo" maxlength="100">'+
+      '<button id="manualCargoApply" class="btn" type="button">Continuar com este cargo</button>'+
+      '<p class="muted">O nome será usado para organizar o plano. Confirme sempre o conteúdo e as disciplinas extraídos.</p>';
+    box.appendChild(manual);
+    qs('#manualCargoApply').onclick=async()=>{
+      const cargo=qs('#manualCargoName')?.value.trim();
+      if(!cargo||cargo.length<3){alert('Informe o cargo completo.');return;}
+      try{
+        const full=await readProgrammaticAnnex(currentFile,()=>{});
+        examInfo={...extractExamInfo(full.firstPageText),file:currentFile.name};
+        pendingAnalysis={sections:[{cargo,body:full.text}],pages:full.pages,annexStart:full.annexStart,examInfo};
+        showCargoStep(pendingAnalysis.sections,pendingAnalysis.pages);
+      }catch(err){alert('O PDF não pôde ser lido: '+(err.message||err));}
+    };
     analyze.disabled=true;
-    analyze.textContent='Cargo não identificado';
+    analyze.textContent='Escolha o cargo';
   }
 }
 pdf.addEventListener('change',()=>setFile(pdf.files?.[0]));
@@ -727,62 +749,51 @@ async function pageText(doc,pageNum){
 async function readProgrammaticAnnex(file,onProgress){
   const doc=await loadPdf(file);
   const total=doc.numPages;
-  const firstPageText=await pageText(doc,1);
-  let annexStart=-1;
-
-  const isExactAnnexPage=(txt)=>{
+  const pageTexts=[];
+  let firstPageText='';
+  // Os anexos variam: I, II, IV, V e até documentos sem "anexo".
+  // Não presumimos que o conteúdo programático está sempre no Anexo I.
+  for(let p=1;p<=total;p++){
+    onProgress?.('Lendo e pesquisando os cargos... página '+p+' de '+total);
+    const txt=await pageText(doc,p);
+    pageTexts.push(txt);
+    if(p===1)firstPageText=txt;
+    if(p%20===0)await new Promise(resolve=>setTimeout(resolve,0));
+  }
+  const matches=pageTexts.map((txt,i)=>{
     const k=compactKey(txt);
-    return (k.includes('ANEXOI') || k.includes('ANEXO1')) &&
-           k.includes('CONTEUDOPROGRAMATICO');
-  };
-
-  const isCargoProgramPage=(txt)=>{
-    const k=compactKey(txt);
-    if(!k.includes('CONTEUDOPROGRAMATICO')) return false;
     const n=searchKey(txt);
-    return /\bCARGOS?\b/.test(n) ||
-           /\b(ALUNO|OFICIAL|SOLDADO|DELEGADO|INVESTIGADOR|AGENTE|ESCRIVAO|PERITO|TECNICO|ANALISTA|AUDITOR|GUARDA|INSPETOR|PROFESSOR|MEDICO|ENFERMEIRO|FISCAL|PROCURADOR)\b/.test(n);
-  };
-
-  // IMPORTANT: find the actual ANEXO I first, not the later Oficial heading.
-  for(let p=total;p>=1;p--){
-    onProgress?.('Procurando o início do Anexo I... página '+p+' de '+total);
-    const txt=await pageText(doc,p);
-    if(isExactAnnexPage(txt)){
-      annexStart=p;
-      break;
-    }
+    const hasProgram=k.includes('CONTEUDOPROGRAMATICO') ||
+      k.includes('CONHECIMENTOSBASICOS') || k.includes('CONHECIMENTOSESPECIFICOS') ||
+      k.includes('PROGRAMADEPROVAS') || k.includes('PROGRAMADASPROVAS') ||
+      k.includes('OBJETOSDEAVALIACAO');
+    const hasAppendix=/\bANEXO\s+(?:[IVX]+|[0-9]+)\b/i.test(n);
+    const hasRole=/\b(CARGO|FUNCAO|EMPREGO|ESPECIALIDADE|DISCIPLINA|AGENTE|ANALISTA|DELEGADO|ASSISTENTE|TECNICO|PROFESSOR|SOLDADO|OFICIAL)\b/.test(n);
+    return {p:i+1,hasProgram,hasAppendix,hasRole,score:(hasProgram?4:0)+(hasRole?2:0)+(hasAppendix?1:0)};
+  });
+  let start=matches.find(x=>x.hasProgram&&x.hasRole)?.p ||
+    matches.find(x=>x.hasProgram)?.p ||
+    matches.find(x=>x.hasRole&&x.hasAppendix)?.p || 1;
+  // Um sumário pode citar "Conteúdo Programático" sem trazer o programa.
+  // Prefere a última página em que o título aparece e é seguido de disciplinas.
+  const candidate=matches.filter(x=>x.hasProgram&&x.hasRole&&x.p>1);
+  if(candidate.length>1){
+    const real=candidate.find(x=>x.p>=Math.max(2,Math.floor(total*.20)) &&
+      pageTexts.slice(x.p-1,Math.min(total,x.p+2)).join(' ').length>900);
+    if(real)start=real.p;
   }
-
-  // Fallback only when the PDF extraction lost the "ANEXO I" text.
-  if(annexStart<0){
-    let firstCargoPage=-1;
-    for(let p=1;p<=total;p++){
-      onProgress?.('Procurando o conteúdo programático... página '+p+' de '+total);
-      const txt=await pageText(doc,p);
-      if(isCargoProgramPage(txt)){
-        firstCargoPage=p;
-        break;
-      }
-    }
-    annexStart=firstCargoPage;
+  // Escaneia todas as páginas até o fim: não corta ao detectar "Anexo II",
+  // pois o próprio programa pode estar nesse anexo.
+  const fullText=pageTexts.map((txt,i)=>'\n[INICIO PAGINA '+(i+1)+']\n'+txt).join('\n');
+  let text=pageTexts.slice(start-1).join('\n');
+  const prefix=pageTexts.slice(0,start-1).join('\n');
+  // Se o trecho não contém cargos, usa o texto inteiro para poder permitir
+  // seleção manual e reconhecimento por nomenclaturas genéricas.
+  if(text.length<100 || (!/\bCARGO\b/i.test(text)&&/\bCARGO\b/i.test(prefix))){
+    text=pageTexts.join('\n');
+    start=1;
   }
-
-  if(annexStart<0){
-    throw new Error('Não encontrei o bloco de CONTEÚDO PROGRAMÁTICO no PDF.');
-  }
-
-  onProgress?.('Anexo I encontrado na página '+annexStart+'.');
-  let text='';
-  for(let p=annexStart;p<=total;p++){
-    onProgress?.('Lendo conteúdo programático... página '+p+' de '+total);
-    const txt=await pageText(doc,p);
-    const k=compactKey(txt);
-    if(p>annexStart && (k.includes('ANEXOII') || k.includes('ANEXO2'))) break;
-    text+='\n'+txt;
-  }
-
-  return {text,pages:total,annexStart,firstPageText};
+  return {text,pages:total,annexStart:start,firstPageText,fullText};
 }
 
 function cleanLine(s){
@@ -1020,6 +1031,16 @@ function extractCargoSections(text){
     }
   }
 
+  // Outros padrões comuns: CARGO 01 - ASSISTENTE..., CÓDIGO 101:
+  // ANALISTA..., "NÍVEL MÉDIO - AGENTE..." e títulos após "Cargo".
+  for(let i=0;i<lines.length;i++){
+    const line=lines[i].text;
+    let match=line.match(/^(?:CARGO|EMPREGO|FUN[CÇ][AÃ]O|ESPECIALIDADE)\s*(?:N[º°.]?\s*)?(?:\d{1,4}|[A-Z]{1,3}\d{1,3})?\s*[:\-–—]\s*(.{3,110})$/i);
+    if(!match)match=line.match(/^(?:C[ÓO]DIGO|COD)\s*\d{1,5}\s*[:\-–—]\s*(.{3,110})$/i);
+    if(!match)match=line.match(/^\d{1,3}\s*[-–—]\s*((?:AGENTE|ASSISTENTE|OFICIAL|ANALISTA|T[ÉE]CNICO|AUXILIAR|ESCRIV[AÃ]O|POLICIAL|DELEGADO|PERITO|PROFESSOR|M[ÉE]DICO|ENFERMEIRO|ADMINISTRADOR|CONTADOR|ENGENHEIRO|ADVOGADO|PSIC[ÓO]LOGO|FISCAL|AUDITOR|GUARDA|INSPETOR|MOTORISTA|OPERADOR|ATENDENTE)[^:]{0,100})$/i);
+    if(match && !forbiddenContext.test(match[1]))addFound(match[1],lines[i].start,lines[i].end);
+  }
+
   found.sort((a,b)=>a.start-b.start);
 
   // Se não houver cabeçalho inequívoco, detecta cargos conhecidos pelo texto,
@@ -1057,6 +1078,17 @@ function extractCargoSections(text){
     }
   }
 
+  if(!found.length){
+    // Reconhecimento genérico de nomes de cargo que aparecem na descrição
+    // das provas sem o prefixo "Cargo:" (ex.: ASSISTENTE ADMINISTRATIVO).
+    const roleWords='AGENTE|ASSISTENTE|OFICIAL|SOLDADO|ANALISTA|T[ÉE]CNICO|AUXILIAR|ESCRIV[AÃ]O|POLICIAL|DELEGADO|PERITO|PROFESSOR|M[ÉE]DICO|ENFERMEIRO|ADMINISTRADOR|CONTADOR|ENGENHEIRO|ADVOGADO|PSIC[ÓO]LOGO|FISCAL|AUDITOR|GUARDA|INSPETOR|MOTORISTA|OPERADOR|ATENDENTE|PROCURADOR';
+    const re=new RegExp('^(?:\\d{1,3}\\s*[.\\-]\\s*)?(?:'+roleWords+')\\b[\\s\\-A-ZÁÀÂÃÉÊÍÓÔÕÚÜÇ/()]{0,95}$','i');
+    for(const line of lines){
+      if(re.test(line.text)&&!forbiddenContext.test(line.text)){
+        addFound(line.text,line.start,line.end);
+      }
+    }
+  }
   if(!found.length){
     throw new Error('O conteúdo programático foi encontrado, mas não consegui reconhecer automaticamente o nome do cargo.');
   }
@@ -1156,33 +1188,49 @@ function splitNumberedTopics(block){
 function parseDisciplineTopics(body,cargo){
   const rawLines=body.split(/\n/).map(cleanLine).filter(Boolean);
   const headings=[];
+  const common=/^(?:L[ÍI]NGUA PORTUGUESA|PORTUGU[ÊE]S|MATEM[ÁA]TICA|RACIOC[ÍI]NIO L[ÓO]GICO|INFORM[ÁA]TICA|NO[CÇ][ÕO]ES DE |DIREITO |LEGISLA[CÇ][AÃ]O|ATUALIDADES|CONHECIMENTOS (?:GERAIS|B[ÁA]SICOS|ESPEC[ÍI]FICOS)|HIST[ÓO]RIA |GEOGRAFIA |REDA[CÇ][AÃ]O|ESTAT[ÍI]STICA|ADMINISTRA[CÇ][AÃ]O|ARQUIVOLOGIA|CONTABILIDADE|[ÉE]TICA|INGL[ÊE]S|F[ÍI]SICA|QU[ÍI]MICA|BIOLOGIA)/i;
   for(let i=0;i<rawLines.length;i++){
-    let j=i+1; while(j<rawLines.length && !rawLines[j]) j++;
-    if(looksLikeDiscipline(rawLines[i],rawLines[j]||'')) headings.push({i,name:rawLines[i].replace(/:$/,'')});
+    const item=rawLines[i],next=rawLines[i+1]||'';
+    if(looksLikeDiscipline(item,next) || (common.test(item) && item.length<=110 &&
+      (/[:：]$/.test(item)||/^\d+(?:\.\d+)*[.)]\s/.test(next)||/^[A-ZÁÉÍÓÚÇ ]{5,80}$/.test(item)))){
+      headings.push({i,name:item.replace(/[:：]$/,'')});
+    }
   }
-  if(!headings.length) throw new Error('Não consegui reconhecer as disciplinas desse cargo.');
-
   const result=[];
-  for(let h=0;h<headings.length;h++){
-    const start=headings[h].i+1;
-    const end=h+1<headings.length?headings[h+1].i:rawLines.length;
-    const area=headings[h].name;
-    const block=rawLines.slice(start,end).join(' ');
-    const items=splitNumberedTopics(block);
-    items.forEach(content=>{
-      const itemMatch=content.match(/^(d+(?:.d+)*)./);
+  function append(area,block){
+    const parts=splitNumberedTopics(block);
+    const usable=parts.length?parts:[block];
+    usable.forEach(content=>{
+      const clean=cleanLine(content);
+      if(clean.length<5)return;
+      const itemMatch=clean.match(/^(\d+(?:\.\d+)*)\./);
       result.push({
-        id:result.length+1,
-        sourceOrder:result.length+1,
+        id:result.length+1,sourceOrder:result.length+1,
         itemNumber:itemMatch?itemMatch[1]:'',
-        knowledge:'PROVA OBJETIVA',
-        area,
-        content,
-        status:'A Estudar',
-        q:0,c:0,e:0,note:''
+        knowledge:'PROVA OBJETIVA',area:area||'CONTEÚDO PROGRAMÁTICO',content:clean,
+        status:'A Estudar',q:0,c:0,e:0,note:''
       });
     });
   }
+  if(headings.length){
+    for(let i=0;i<headings.length;i++){
+      const start=headings[i].i+1;
+      const end=i+1<headings.length?headings[i+1].i:rawLines.length;
+      const block=rawLines.slice(start,end).join(' ');
+      if(block.trim())append(headings[i].name,block);
+    }
+  }
+  if(!result.length){
+    // Fallback para editais que organizam conteúdos em parágrafos, e não
+    // em tópicos numerados. Não declarar matérias que não constam do PDF.
+    const filtered=rawLines.filter(l=>l.length>=8 && !/^(?:ANEXO|EDITAL|P[ÁA]GINA|SUM[ÁA]RIO)\b/i.test(l));
+    for(let i=0;i<filtered.length && result.length<350;i++){
+      const line=filtered[i];
+      const match=line.match(/^([^:：]{5,80})[:：]\s*(.{8,})$/);
+      if(match && common.test(match[1]))append(match[1],match[2]);
+    }
+  }
+  if(!result.length)throw new Error('Disciplinas não reconhecidas no PDF. Selecione outro cargo ou confira se o documento possui conteúdo programático em texto selecionável.');
   return result;
 }
 

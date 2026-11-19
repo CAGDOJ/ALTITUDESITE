@@ -284,13 +284,14 @@ export function setupStudyV25(opts) {
   function renderEvolution(){
     const areas=getAreas();
     return '<div class="v25-panel"><h3>5. Evolução por disciplina</h3><p>O quadro mostra número de questões, acertos, erros, percentual e mudança em pontos percentuais. A comparação inicial depende de ter respondido questões diagnósticas da mesma disciplina.</p>'+
-      '<div class="v25-table-scroll"><table class="v25-table"><thead><tr><th>Conhecimento / disciplina</th><th>Estado inicial</th><th>Questões</th><th>Certas</th><th>Erradas</th><th>Desempenho</th><th>Melhora ou queda</th></tr></thead><tbody>'+
+      '<div class="v25-table-scroll"><table class="v25-table"><thead><tr><th>Conhecimento / disciplina</th><th>Estado inicial</th><th>Questões</th><th>Certas</th><th>Erradas</th><th>Desempenho</th><th>Média das sessões</th><th>Melhora ou queda</th></tr></thead><tbody>'+
       areas.map(a=>{
         const sessions=state.sessions.filter(s=>s.type!=="diagnostico" && group(s.area)===group(a.name));
         const answered=sessions.reduce((t,s)=>t+s.total,0),correct=sessions.reduce((t,s)=>t+s.correct,0);
         const current=pct(correct,answered),initial=state.baselineObjective?.areas?.[group(a.name)]?.score;
+        const media=sessions.length?Math.round(sessions.reduce((sum,item)=>sum+100*(item.correct/item.total),0)*10/sessions.length)/10:null;
         const delta=initial==null||current==null?null:Math.round((current-initial)*10)/10;
-        return '<tr><td><b>'+esc(a.name)+'</b></td><td>'+esc(levelNames[state.self[a.name]]||"—")+'</td><td>'+answered+'</td><td>'+correct+'</td><td>'+(answered-correct)+'</td><td>'+(current===null?"—":current+"%")+'</td><td>'+(delta===null?"Sem comparação":(delta>0?"+":"")+delta+" p.p.")+'</td></tr>';
+        return '<tr><td><b>'+esc(a.name)+'</b></td><td>'+esc(levelNames[state.self[a.name]]||"—")+'</td><td>'+answered+'</td><td>'+correct+'</td><td>'+(answered-correct)+'</td><td>'+(current===null?"—":current+"%")+'</td><td>'+(media===null?"—":media+"%")+'</td><td>'+(delta===null?"Sem comparação":(delta>0?"+":"")+delta+" p.p.")+'</td></tr>';
       }).join('')+'</tbody></table></div><p class="v25-tiny">A autoavaliação e o resultado objetivo são medidas diferentes. Não são tratados como a mesma nota.</p></div>'+
       '<div class="v25-panel"><h3>Últimas sessões</h3>'+(state.sessions.length?'<div class="v25-steps">'+[...state.sessions].reverse().slice(0,20).map(s=>'<div class="v25-step"><span>'+dateBR(s.at)+'</span><span>'+esc(s.area||"Múltiplas disciplinas")+' · '+esc(s.type)+'</span><strong>'+s.correct+'/'+s.total+' ('+pct(s.correct,s.total)+'%)</strong></div>').join('')+'</div>':'<p>Você ainda não respondeu questões.</p>')+'</div>';
   }
@@ -376,6 +377,7 @@ export function setupStudyV25(opts) {
     const correct=ended.answers.filter(x=>x.correct).length,total=ended.items.length;
     const snapshot={type:ended.type,area:ended.area,correct,total,at:new Date().toISOString(),answers:ended.answers};
     state.sessions.push(snapshot);
+    if(ended.type!=="diagnostico")opts.onQuestionResult?.(ended.answers);
     if(ended.type==="diagnostico"){
       const areaGroups={};
       for(const ans of ended.answers){

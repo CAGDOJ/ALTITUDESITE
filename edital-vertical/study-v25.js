@@ -1,5 +1,5 @@
 
-import { QUESTOES_BASE } from "./questoes-v25.js?v=25";
+import { QUESTOES_BASE } from "./questoes-v25.js?v=25.2";
 
 const $ = (root, selector) => root.querySelector(selector);
 const esc = (value) => String(value ?? "").replace(/[&<>"']/g, ch => ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#039;"}[ch]));

@@ -123,14 +123,13 @@
         <button class="authPrimary" type="submit">Entrar</button>
       </form>
 
-      <form id="registerForm" class="authForm">
-        <div><label for="registerName">Nome</label><input id="registerName" type="text" autocomplete="name" required placeholder="Seu nome"></div>
-        <div><label for="registerEmail">E-mail</label><input id="registerEmail" type="email" autocomplete="email" required placeholder="seuemail@gmail.com"></div>
-        <div><label for="registerPassword">Senha</label><input id="registerPassword" type="password" autocomplete="new-password" required minlength="6" placeholder="Mínimo 6 caracteres"></div>
-        <button class="authPrimary" type="submit">Criar minha conta</button>
+<form id="registerForm" class="authForm">
+        <p class="muted" style="font-size:14px;line-height:1.5;margin:0">Seu cadastro é único para o Portal do Aluno e o Edital Vertical. Crie a conta na ALTITUDE e retorne aqui para entrar.</p>
+        <button class="authPrimary" type="submit">Cadastrar na ALTITUDE</button>
       </form>
 
-      <div id="authMessage" class="authMsg"></div>
+      <div style="font-size:12px;margin-top:10px;text-align:center"><a href="/login/" style="color:#1269d8;font-weight:700">Esqueci minha senha da ALTITUDE</a></div>
+      <div id="authMessage" class="authMsg" role="status" aria-live="polite"></div>
       <div class="landingFoot">Edital Vertical · seus estudos organizados em um só lugar.</div>
     </aside>
   </div>
@@ -150,7 +149,7 @@
     <button data-view="cronograma">▤ Cronograma</button>
     <button data-view="monitor">♢ Monitor de Editais</button>
   </nav>
-  <div class="sideFoot">Nenhum edital pré-carregado.<div class="build">Versão 23 · 22/10/2026</div></div>
+  <div class="sideFoot">Nenhum edital pré-carregado.<div class="build">Versão 24 · 19/11/2026</div></div>
 </aside>
 <main class="main">
 <header class="top">
@@ -237,6 +236,14 @@ let currentFileHash='';
 let currentEditalId='';
 let currentUser=null;
 let supabaseClient=null;
+// Identidade central: Portal do Aluno ALTITUDE. O armazenamento é compartilhado
+// com o portal, mas o banco de editais mantém a sua própria sessão isolada.
+const ALTITUDE_URL='https://qwidlndoyhzvsrggwsba.supabase.co';
+const ALTITUDE_ANON='eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InF3aWRsbmRveWh6dnNyZ2d3c2JhIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzY2NDY4MjUsImV4cCI6MjA5MjIyMjgyNX0.CPcmbAC9KXLgdLVoAY_lRqjFyVzLLMiv38vKR2DFJeE';
+const altitudeAuth=window.supabase.createClient(ALTITUDE_URL,ALTITUDE_ANON,{
+  auth:{storageKey:'altitude-auth-aluno-v17',persistSession:true,autoRefreshToken:true,detectSessionInUrl:true,flowType:'pkce'}
+});
+let altitudeSSOPending=null;
 const qs=s=>document.querySelector(s),qsa=s=>[...document.querySelectorAll(s)];
 const esc=s=>String(s??'').replace(/[&<>"']/g,ch=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#039;'}[ch]));
 
@@ -399,7 +406,7 @@ async function initSupabase(){
     qs('#syncState').textContent='Modo local';
     return;
   }
-  supabaseClient=window.supabase.createClient(cfg.url,cfg.anonKey);
+  supabaseClient=window.supabase.createClient(cfg.url,cfg.anonKey,{auth:{detectSessionInUrl:false}});
   const {data}=await supabaseClient.auth.getSession();
   currentUser=data.session?.user||null;
   updateAuthUI();
@@ -448,54 +455,88 @@ function updateAuthUI(){
   }
 }
 
-async function loginGoogle(){
-  if(!supabaseClient){
-    showAuthMessage('Não foi possível conectar ao serviço de autenticação. Atualize a página e tente novamente.',true);
-    return;
-  }
 
-  showAuthMessage('Abrindo login do Google...');
-
-  const {data,error}=await supabaseClient.auth.signInWithOAuth({
-    provider:'google',
-    options:{
-      redirectTo:'https://www.portalaltitude.com.br/edital-vertical/',
-      queryParams:{
-        access_type:'offline',
-        prompt:'select_account'
-      }
+// Abre uma sessão no projeto de editais somente após validar o JWT com o
+// Supabase principal. Não compartilha senha com o banco do Edital Vertical.
+async function entrarComContaAltitude(session, explicito=false){
+  if(!session?.access_token || !supabaseClient)return false;
+  if(!explicito && sessionStorage.getItem('ev_sso_manual_logout')==='1')return false;
+  if(!explicito && currentUser)return true;
+  if(altitudeSSOPending)return altitudeSSOPending;
+  altitudeSSOPending=(async()=>{
+    try{
+      showAuthMessage('Verificando sua conta ALTITUDE...');
+      const cfg=window.EDITAL_VERTICAL_SUPABASE||{};
+      const response=await fetch(cfg.url+'/functions/v1/altitude-edital-sso',{
+        method:'POST',
+        headers:{'Content-Type':'application/json','apikey':cfg.anonKey,'Authorization':'Bearer '+session.access_token},
+        body:'{}',
+        cache:'no-store'
+      });
+      const result=await response.json().catch(()=>({}));
+      if(!response.ok || !result.token_hash)throw new Error(result.error||'Não foi possível validar o acesso.');
+      const {error}=await supabaseClient.auth.verifyOtp({type:result.type||'magiclink',token_hash:result.token_hash});
+      if(error)throw error;
+      sessionStorage.removeItem('ev_sso_manual_logout');
+      qs('#authMessage')?.classList.remove('show');
+      return true;
+    }catch(error){
+      console.warn('Integração ALTITUDE/Edital Vertical:',error.message);
+      showAuthMessage('Não foi possível conectar sua conta ALTITUDE: '+(error.message||'Falha de conexão.'),true);
+      return false;
+    }finally{
+      altitudeSSOPending=null;
     }
-  });
-
-  if(error){
-    showAuthMessage('Não foi possível entrar com Google: '+error.message,true);
+  })();
+  return altitudeSSOPending;
+}
+async function loginGoogle(){
+  if(!altitudeAuth){
+    showAuthMessage('Não foi possível carregar o login ALTITUDE.',true);
     return;
   }
-
-  if(data?.url){
-    window.location.assign(data.url);
-  }
+  sessionStorage.removeItem('ev_sso_manual_logout');
+  showAuthMessage('Abrindo acesso Google da ALTITUDE...');
+  const {data,error}=await altitudeAuth.auth.signInWithOAuth({
+    provider:'google',
+    options:{redirectTo:location.origin+'/edital-vertical/',queryParams:{prompt:'select_account'}}
+  });
+  if(error)showAuthMessage('Não foi possível iniciar o login com Google: '+error.message,true);
+  else if(data?.url)location.assign(data.url);
 }
 async function loginEmail(email,password){
   if(!supabaseClient){
-    showAuthMessage('O banco Supabase ainda não foi conectado.',true);
+    showAuthMessage('O banco de estudos ainda não foi conectado.',true);
     return;
   }
-  const {error}=await supabaseClient.auth.signInWithPassword({email,password});
-  if(error) showAuthMessage(error.message,true);
-}
-async function registerEmail(name,email,password){
-  if(!supabaseClient){
-    showAuthMessage('O banco Supabase ainda não foi conectado.',true);
+  showAuthMessage('Validando sua conta ALTITUDE...');
+  // Fonte primária: credenciais da conta já existente no Portal do Aluno.
+  const {data:principal,error:erroPrincipal}=await altitudeAuth.auth.signInWithPassword({email,password});
+  if(!erroPrincipal && principal?.session){
+    sessionStorage.removeItem('ev_sso_manual_logout');
+    await entrarComContaAltitude(principal.session,true);
     return;
   }
-  const {data,error}=await supabaseClient.auth.signUp({
-    email,password,
-    options:{data:{full_name:name}}
-  });
-  if(error){showAuthMessage(error.message,true);return;}
-  if(!data.session) showAuthMessage('Conta criada. Verifique seu e-mail para confirmar o cadastro.');
+  // Compatibilidade: usuários que já tinham conta independente no Edital Vertical.
+  const {error:erroAnterior}=await supabaseClient.auth.signInWithPassword({email,password});
+  if(erroAnterior){
+    showAuthMessage('E-mail ou senha não conferem na ALTITUDE. Use a senha do Portal do Aluno ou recupere-a em portalaltitude.com.br/login/.',true);
+  }else{
+    sessionStorage.removeItem('ev_sso_manual_logout');
+    qs('#authMessage')?.classList.remove('show');
+  }
 }
+async function registerEmail(){
+  location.assign('/cadastro/');
+}
+// O OAuth Google e a sessão existente do Portal usam a mesma chave de
+// armazenamento do Portal do Aluno; a troca de sessão se faz sem nova senha.
+altitudeAuth.auth.onAuthStateChange((event,session)=>{
+  if(event==='SIGNED_IN' && session && !currentUser && supabaseClient &&
+     sessionStorage.getItem('ev_sso_manual_logout')!=='1'){
+    setTimeout(()=>entrarComContaAltitude(session).catch(()=>{}),0);
+  }
+});
 
 
 async function loadCloudEditals(){
@@ -591,16 +632,22 @@ qs('#loginForm')?.addEventListener('submit',async(e)=>{
 });
 qs('#registerForm')?.addEventListener('submit',async(e)=>{
   e.preventDefault();
-  await registerEmail(qs('#registerName').value.trim(),qs('#registerEmail').value.trim(),qs('#registerPassword').value);
+  await registerEmail();
 });
 qs('#logoutBtn')?.addEventListener('click',async()=>{
+  sessionStorage.setItem('ev_sso_manual_logout','1');
   if(supabaseClient) await supabaseClient.auth.signOut();
   currentUser=null;
   updateAuthUI();
 });
 setAuthTab('login');
 updateAuthUI();
-initSupabase().catch(()=>{});
+initSupabase().then(async()=>{
+  const {data}=await altitudeAuth.auth.getSession();
+  if(data?.session && !currentUser && sessionStorage.getItem('ev_sso_manual_logout')!=='1'){
+    await entrarComContaAltitude(data.session);
+  }
+}).catch(error=>console.warn('Inicialização de contas:',error.message));
 async function setFile(f){
   if(!f)return;
   if(!(f.type==='application/pdf'||/\.pdf$/i.test(f.name))){

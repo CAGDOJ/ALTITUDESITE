@@ -1593,7 +1593,45 @@ studyV25=setupStudyV25({
   getUser:()=>currentUser,
   getStudyClient:()=>supabaseClient,
   getPortalClient:()=>altitudeAuth,
-  navigate:setView
+  navigate:setView,
+  onQuestionResult:(answers)=>{
+    // Alimenta o quadro da verticalização apenas quando a questão puder
+    // ser vinculada a um tópico real do edital (nunca atribui ao acaso).
+    const grupo=(value)=>{
+      const v=searchKey(value);
+      if(v.includes('PORTUGU'))return 'PORTUGUES';
+      if(v.includes('MATEMATICA'))return 'MATEMATICA';
+      if(v.includes('RACIOCINIO LOGICO'))return 'LOGICA';
+      if(v.includes('INFORMATICA'))return 'INFORMATICA';
+      if(v.includes('CONSTITUCIONAL'))return 'CONSTITUCIONAL';
+      if(v.includes('ADMINISTRATIVO'))return 'ADMINISTRATIVO';
+      if(v.includes('ADMINISTRACAO PUBLICA'))return 'ADMINISTRACAO PUBLICA';
+      if(v.includes('ETICA'))return 'ETICA';
+      return v;
+    };
+    let mudou=false;
+    for(const answer of answers||[]){
+      const terms=searchKey(answer.assunto||'').split(' ').filter(x=>x.length>=4);
+      if(!terms.length)continue;
+      const found=topics.map(t=>{
+        if(grupo(t.area)!==grupo(answer.area))return null;
+        const content=searchKey(t.content);
+        const hits=terms.filter(term=>content.includes(term)).length;
+        return {t,score:hits/terms.length};
+      }).filter(Boolean).sort((a,b)=>b.score-a.score)[0];
+      if(!found||found.score<0.75)continue;
+      const t=found.t;
+      t.q=Math.max(0,Number(t.q)||0)+1;
+      if(answer.correct)t.c=Math.max(0,Number(t.c)||0)+1;
+      else t.e=Math.max(0,Number(t.e)||0)+1;
+      if(t.status==='A Estudar')t.status='Estudando';
+      mudou=true;
+    }
+    if(mudou){
+      persistCurrentEdital();
+      render();
+    }
+  }
 });
 studyV25.refresh();
 
